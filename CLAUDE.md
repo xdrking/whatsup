@@ -206,12 +206,12 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
   karakter genişliği elle hesaplanmaz). Profil fotoğrafı yoksa/gizliyse baş harfli renkli
   daire üretilir. Medya her zaman önceliklidir: açıklamalı bir görsele yanıt verilirse
   görselin kendisi sticker olur, açıklamasının kartı değil.
-- **Faz 7:** eğlence komutları — `data/*.json` havuzlarından rastgele içerik +
+- **Faz 7 (tamam):** eğlence komutları — `data/*.json` havuzlarından rastgele içerik +
   hedef alan (mention/reply) komutlar. Ayrıntı aşağıda.
-- **Faz 8:** grup yardımcı komutları — grup bilgisi, üye listesi, etiketleme,
+- **Faz 8 (tamam):** grup yardımcı komutları — grup bilgisi, üye listesi, etiketleme,
   profil fotoğrafı. Ayrıntı aşağıda.
-- **Faz 9:** istatistik + XP/level sistemi (SQLite). **En son yapılır**, çünkü
-  tek kalıcı veri katmanını o getirir. Ayrıntı aşağıda.
+- **Faz 9 (tamam):** istatistik + XP/level sistemi (SQLite). Kalıcı veri katmanını
+  getirdiği için en son yapıldı. Ayrıntı aşağıda.
 - **Faz 10+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
