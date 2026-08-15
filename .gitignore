@@ -1,0 +1,22 @@
+node_modules/
+
+# WhatsApp oturum dosyaları: telefon numarası ve kimlik anahtarları içerir.
+# Sızması hesabın ele geçirilmesi demektir. Asla commit edilmez.
+auth/
+
+# Ortam değişkenleri (.env.example şablon olarak commit edilir)
+.env
+.env.local
+
+# Medya işleme sırasında oluşan geçici dosyalar
+temp/
+
+# İstatistik veritabanı: grup üyelerinin JID'lerini ve sayaçlarını tutar.
+# data/*.json içerik havuzları ise commit edilir.
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+*.log
+npm-debug.log*
+.DS_Store
