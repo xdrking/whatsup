@@ -1,0 +1,603 @@
+[
+  {
+    "name": "Recep Tayyip Erdoğan",
+    "hints": [
+      "Bir ülkenin siyasetçisiyim.",
+      "Türkiye ile çok yakından bağlantılıyım.",
+      "Uzun yıllardır iktidardayım.",
+      "İstanbul Belediye Başkanlığı da yaptım.",
+      "1990'larda bir şiir okuduğum için hapis yattım."
+    ]
+  },
+  {
+    "name": "Kemal Kılıçdaroğlu",
+    "hints": [
+      "Türk siyasetçisiyim.",
+      "Uzun yıllar ana muhalefet partisinin genel başkanlığını yaptım.",
+      "2023 seçimlerinde cumhurbaşkanı adayıydım.",
+      "Sosyal Güvenlik Kurumu başkanlığından siyasete geçtim.",
+      "Alevi kimliğini siyasi arenada açıkça paylaşan ilk genel başkanlardan biriyim."
+    ]
+  },
+  {
+    "name": "Mansur Yavaş",
+    "hints": [
+      "Türk siyasetçisiyim.",
+      "Büyük bir şehrin belediye başkanıyım.",
+      "Avukat kökenli bir siyasetçiyim.",
+      "2014 seçimlerinde çok az farkla kaybettim; sonuçlara itirazlarım uzun süre gündemde kaldı.",
+      "Sosyal medya anketlerinde cumhurbaşkanlığı için sıkça adım geçiyor."
+    ]
+  },
+  {
+    "name": "Ekrem İmamoğlu",
+    "hints": [
+      "Türk siyasetçisiyim.",
+      "Türkiye’nin en büyük şehrinin belediye başkanıyım.",
+      "Trabzon kökenli bir iş insanından siyasete geçtim.",
+      "Bir dönem görevden uzaklaştırıldım, seçimler yenilendi ve yeniden kazandım.",
+      "Hakkımdaki siyasi davalar ülke gündemini uzun süre meşgul etti."
+    ]
+  },
+  {
+    "name": "Devlet Bahçeli",
+    "hints": [
+      "Türk siyasetçisiyim.",
+      "Milliyetçi bir partinin genel başkanıyım.",
+      "Uzun yıllardır siyasetteyim.",
+      "Alparslan Türkeş'in vefatının ardından partinin başına geçtim.",
+      "1997'de genel başkanlık koltuğuna oturdum; o günden bu yana kesintisiz görevdeyim."
+    ]
+  },
+  {
+    "name": "Meral Akşener",
+    "hints": [
+      "Türk siyasetçisiyim.",
+      "Bir dönem İçişleri Bakanı oldum.",
+      "Kendi partimi kurdum.",
+      "Daha önce üyesi olduğum milliyetçi partiden ihraç edildim.",
+      "1996'daki bakanlık dönemimde Susurluk skandalının gölgesinde kaldım."
+    ]
+  },
+  {
+    "name": "Donald Trump",
+    "hints": [
+      "Bir ülkenin eski başkanıyım.",
+      "ABD ile bağlantılıyım.",
+      "İş insanıyken siyasete atıldım.",
+      "2024’te tekrar aday oldum ve kazandım.",
+      "Aynı yıl birden fazla suçlamaya muhatap olurken seçim kazanan tek ABD başkanıyım."
+    ]
+  },
+  {
+    "name": "Joe Biden",
+    "hints": [
+      "ABD’li bir siyasetçiyim.",
+      "Delaware eyaletinin tarihinin en genç senatörü olarak göreve başladım.",
+      "Bir dönem başkan yardımcılığı yaptım.",
+      "2020'de başkan seçildim.",
+      "Tren yolculuklarına olan tutkumla 'Amtrak Joe' lakabını kazandım."
+    ]
+  },
+  {
+    "name": "Vladimir Putin",
+    "hints": [
+      "Bir ülkenin lideriyim.",
+      "Rusya ile özdeşleşmiş durumdayım.",
+      "KGB'de görev yaptım, istihbarat geçmişim var.",
+      "Doğu Almanya'da görev yaparken Berlin Duvarı'nın yıkılışına tanıklık ettim.",
+      "1999'da Boris Yeltsin tarafından başbakanlığa atandım; bir yıl sonra cumhurbaşkanı oldum."
+    ]
+  },
+  {
+    "name": "Elon Musk",
+    "hints": [
+      "İş insanıyım ve girişimciyim.",
+      "Birden fazla büyük şirketin sahibiyim.",
+      "Güney Afrika'da doğdum, Kanada üzerinden ABD'ye göç ettim.",
+      "İlk büyük çıkışım PayPal'ın öncüsü olan X.com şirketiyle oldu.",
+      "Elektrikli araç şirketimle özel uzay şirketimi birbirine yakın dönemde kurdum."
+    ]
+  },
+  {
+    "name": "Cristiano Ronaldo",
+    "hints": [
+      "Futbolcuyum.",
+      "Portekizliyim.",
+      "Birçok büyük kulüpte oynadım.",
+      "Madeira adasında doğdum ve çocukken kalp ameliyatı geçirdim.",
+      "İlk büyük transferimde Sporting CP'den 12 milyon Euro'ya bir Premier League kulübüne gittim."
+    ]
+  },
+  {
+    "name": "Lionel Messi",
+    "hints": [
+      "Futbolcuyum.",
+      "Arjantinliyim.",
+      "Uzun yıllar Barcelona’da oynadım.",
+      "Çocukken büyüme hormonu eksikliği teşhisi konuldu; tedavi masraflarımı kulübüm karşıladı.",
+      "Kariyerim boyunca sekiz kez dünyanın en iyi futbolcusu seçildim."
+    ]
+  },
+  {
+    "name": "Tarkan",
+    "hints": [
+      "Türk şarkıcıyım.",
+      "1990’lardan beri sahnedeyim.",
+      "Almanya'da doğdum, çift vatandaşım.",
+      "Askerlik sorunum yıllarca gündemde kaldı; bir süre yurt dışında kalmak zorunda kaldım.",
+      "Danslarım ve sahnedeki enerjimle biliniyorum; şarkılarımın sözlerini başkaları yazar."
+    ]
+  },
+  {
+    "name": "Sezen Aksu",
+    "hints": [
+      "Türk şarkıcı ve söz yazarıyım.",
+      "Türk pop müziğinin efsane isimlerindenim.",
+      "Birçok ünlü şarkıcıya şarkı yazdım.",
+      "İzmir doğumluyum; kariyerime Bodrum'daki küçük sahnelerde başladım.",
+      "Küçük boyuma rağmen müzik sektörünü derinden etkilemiş biri olarak anılırım."
+    ]
+  },
+  {
+    "name": "Kenan İmirzalıoğlu",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Dizi ve sinema filmlerinde rol aldım.",
+      "Trabzon doğumluyum; kariyerime genç yaşta başladım.",
+      "İlk büyük tanınırlığım bir aksiyon dizisiyle geldi.",
+      "2021'de eşi de oyuncu olan biriyle evlendim."
+    ]
+  },
+  {
+    "name": "Beren Saat",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Dizilerde çok başarılı rollerim oldu.",
+      "Ankara doğumluyum; üniversitede tiyatro eğitimi aldım.",
+      "Yabancı dijital yayın platformlarında oynayan ilk Türk oyuncular arasındayım.",
+      "Bir dönem Türk pop müziğinin önemli bir isminin eşiydim."
+    ]
+  },
+  {
+    "name": "Necati Şaşmaz",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Çok uzun soluklu bir dizinin başrolündeyim.",
+      "Sinop doğumluyum; oyunculuktan önce gazetecilik okudum.",
+      "Onlarca ülkede prime time'da yayımlanan bir Türk dizisinin yüzüyüm.",
+      "Canlandırdığım karakter Türk kültür ihracatının sembollerinden biri haline geldi."
+    ]
+  },
+  {
+    "name": "Cem Yılmaz",
+    "hints": [
+      "Türk komedyen ve oyuncuyum.",
+      "Stand-up gösterilerimle çok ünlüyüm.",
+      "Gazetecilik bölümü okudum ama farklı bir yol seçtim.",
+      "Karikatüristlik geçmişim var; erken dönemde çizgi dalında ödül aldım.",
+      "Sinema filmlerim de çekiyorum; iki filmim birbirinin devamı niteliğinde ve uzayda geçiyor."
+    ]
+  },
+  {
+    "name": "Şahan Gökbakar",
+    "hints": [
+      "Türk komedyen ve oyuncuyum.",
+      "Sahne performanslarımla sektöre girdim.",
+      "Kardeşimle birlikte uzun süre sahne aldım.",
+      "Yarattığım tek bir karakter hem beni hem de Türk sinemasını dönüştürdü.",
+      "Bu karakterin filmleri on yılı aşkın sürede Türk gişesinin rekortmenleri arasına girdi."
+    ]
+  },
+  {
+    "name": "Hadise",
+    "hints": [
+      "Şarkıcıyım.",
+      "Belçika doğumluyum ama Türkiye’de çok ünlüyüm.",
+      "Asıl adım Hadise Açıkgöz'dür.",
+      "Avrupa'nın en büyük müzik yarışmasında ülkemi temsil edip 4. oldum.",
+      "O Ses Türkiye’de jüri üyeliği yaptım."
+    ]
+  },
+  {
+    "name": "Murat Boz",
+    "hints": [
+      "Türk şarkıcı ve oyuncuyum.",
+      "Pop müzik yapıyorum.",
+      "O Ses Türkiye'de jüri üyesiydim.",
+      "Magazin haberlerim zaman zaman müziğimin önüne geçti.",
+      "Hem sahne hem dizi dünyasında yer aldım; ama müzisyen kimliğim her zaman önde oldu."
+    ]
+  },
+  {
+    "name": "Sıla Gençoğlu",
+    "hints": [
+      "Türk şarkıcıyım.",
+      "Güçlü sesimle biliniyorum.",
+      "Hatay doğumluyum; üniversite için İstanbul'a taşındım.",
+      "Sahne performanslarımla öne çıkıyorum.",
+      "Özel hayatımın medyaya yansıması bir dönem kariyer haberlerimi gölgede bıraktı."
+    ]
+  },
+  {
+    "name": "İbrahim Tatlıses",
+    "hints": [
+      "Türk arabesk ve fantezi müziğin efsane ismiyim.",
+      "‘İbo’ lakabıyla anılırım.",
+      "Şanlıurfa doğumluyum; inşaat işçisiyken müziğe başladım.",
+      "Silahlı saldırıya uğradım ve uzun bir iyileşme sürecinden geçtim.",
+      "Hayatım film olur dedirtecek kadar hareketli geçti; şarkıcılığın yanı sıra sunuculuk ve iş dünyasında da var oldum."
+    ]
+  },
+  {
+    "name": "Ajda Pekkan",
+    "hints": [
+      "Türk şarkıcı ve oyuncuyum.",
+      "1960'lardan beri sahnedeyim.",
+      "1969'da Avrupa'nın büyük müzik yarışmasında Türkiye'yi temsil ettim.",
+      "Onlarca yıl geçmesine rağmen genç duruşumu koruduğum için sıkça konuşulurum.",
+      "Türk pop tarihinin en uzun soluklu kadın seslerinden biriyim."
+    ]
+  },
+  {
+    "name": "Barış Manço",
+    "hints": [
+      "Türk rock müziğin efsane ismiyim.",
+      "Hem şarkıcı hem besteci hem de televizyon programcısıyım.",
+      "1943'te İstanbul'da doğdum; Belçika'da güzel sanatlar eğitimi aldım.",
+      "Anadolu Rock'ın kurucuları arasında sayılırım.",
+      "Uzun saçlarım ve bıyığımla ikonik bir görünümüm vardı; çocuklar için çektiğim program kuşaklar boyu izlendi."
+    ]
+  },
+  {
+    "name": "Michael Jackson",
+    "hints": [
+      "Amerikalı şarkıcı ve dansçıyım.",
+      "‘Pop’un Kralı’ olarak anılırım.",
+      "Çocuk oyuncu olarak başladım; aile grubunun en parlak üyesiydim.",
+      "Neverland adını verdiğim bir malikaneye sahiptim.",
+      "Satın aldığım Beatles kataloğu için onlarca milyon dolar ödedim."
+    ]
+  },
+  {
+    "name": "Taylor Swift",
+    "hints": [
+      "Amerikalı şarkıcı ve söz yazarıyım.",
+      "Country’den pop’a geçiş yaptım.",
+      "Kendi yazdığım şarkılarla biliniyorum.",
+      "Pennsylvania'nın Reading şehrinde doğdum; kariyerim için Nashville'e taşındım.",
+      "Eski şarkılarımın masterleri satıldığında tüm albümlerimi yeniden kaydetme kararı aldım."
+    ]
+  },
+  {
+    "name": "Ronaldo Nazário",
+    "hints": [
+      "Brezilyalı eski futbolcuyum.",
+
+      "İki kez Dünya Kupası kazandım.",
+      "Barcelona, Inter ve Real Madrid forması giydim.",
+      "Sakatlıklarıma rağmen efsane oldum.",
+      "Dünya Kupası finalinden bir gece önce geçirdiğim tuhaf nöbet yıllarca tartışıldı."
+    ]
+  },
+  {
+    "name": "Arda Güler",
+    "hints": [
+      "Türk futbolcuyum.",
+      "İlk profesyonel sözleşmemi 16 yaşında imzaladım.",
+      "İstanbul'daki bir kulüpte parlayarak Avrupa'nın en büyük kulüplerinden birine transfer oldum.",
+      "A Milli Takım'a ilk kez 18 yaşında çağrıldım.",
+      "Milli takımda forma giyiyorum."
+    ]
+  },
+  {
+    "name": "Hakan Altun",
+    "hints": [
+      "Türk şarkıcıyım.",
+      "Arabesk-fantezi tarzında şarkılar söylüyorum.",
+      "‘Kırmızı Gül’, ‘Yalan’ gibi parçalarım var.",
+      "Sahne performanslarımla biliniyorum.",
+      "Uzun yıllardır müzik sektöründeyim."
+    ]
+  },
+  {
+    "name": "Kıvanç Tatlıtuğ",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Hem dizi hem filmlerde rol aldım.",
+      "Kariyerim bir model yarışması kazanarak başladı.",
+      "Önce model, sonra oyuncu kimliğiyle öne çıktım.",
+      "Yurt dışında da yayımlanan romantik dizilerde başrol oynadım."
+    ]
+  },
+  {
+    "name": "Beren Saat",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Güçlü kadın karakterleriyle biliniyorum.",
+      "Ankara'da doğdum; üniversitede tiyatro eğitimi aldım.",
+      "Hem yerli hem uluslararası projelerde yer aldım.",
+      "Bir dönem Türk pop müziğinin önemli bir isminin eşiydim."
+    ]
+  },
+  {
+    "name": "Kenan İmirzalıoğlu",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Aksiyon ve dram dizilerinde sıkça rol aldım.",
+      "Trabzon doğumluyum; genç yaşta sektöre adım attım.",
+      "İlk büyük tanınırlığım bir aksiyon dizisiyle geldi; ardından farklı bir türde daha derin bir karakteri canlandırdım.",
+      "2021'de evlendim; eşim de oyuncu."
+    ]
+  },
+  {
+    "name": "Tuba Büyüküstün",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Hem yerli hem uluslararası projelerde yer aldım.",
+      "Ankara'da doğdum; Hacettepe Üniversitesi'nde tiyatro eğitimi aldım.",
+      "Latin Amerika ve Orta Doğu'da büyük bir hayran kitlesine sahip Türk oyuncular arasındayım.",
+      "Doğal güzelliğimle ve farklı karakterlere bürünebilmemle sıkça övülürüm."
+    ]
+  },
+  {
+    "name": "Halit Ergenç",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Tarihî dizilerde sıkça rol aldım.",
+      "İstanbul Devlet Tiyatrosu'nda yıllarca sahne aldım; kökenim sahne tiyatrosudur.",
+      "Canlandırdığım bir Osmanlı padişahı uluslararası kamuoyunda ciddi tartışmalara yol açtı.",
+      "Bergüzar Korel ile evliyim."
+    ]
+  },
+  {
+    "name": "Bergüzar Korel",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Güçlü ve duygusal rollerimle biliniyorum.",
+      "Babam Pulat Korel da sektörde tanınan bir isimdir; sanatçı bir aileden geliyorum.",
+      "Başrolde oynadığım bir dizi hem yurt içinde hem yurt dışında büyük ilgi gördü.",
+      "Halit Ergenç ile evliyim."
+    ]
+  },
+  {
+    "name": "Necati Şaşmaz",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Çok uzun soluklu bir aksiyon dizisinin başrolündeyim.",
+      "Sinop doğumluyum; gazetecilik bölümü okudum.",
+      "Canlandırdığım karakter onlarca ülkede yayımlandı; yabancı izleyiciler tarafından da tanındı.",
+      "Filmlerde de aynı karakteri sürdürdüm; Türk kültür ihracatının sembolü haline geldi."
+    ]
+  },
+  {
+    "name": "Engin Akyürek",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Duygusal ve derin karakterler canlandırırım.",
+      "Psikoloji bölümünden oyunculuğa geçiş yaptım.",
+      "Latin Amerika ve Orta Doğu'da milyonlarca hayranı olan Türk oyuncular arasındayım.",
+      "Bir dizi uluslararası arenada büyük başarı kazandıktan sonra yabancı platformlardan teklif aldım."
+    ]
+  },
+  {
+    "name": "İbrahim Çelikkol",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Hem model hem oyuncuyum.",
+      "Kariyerime bir model yarışması kazanarak başladım.",
+      "Atletik fiziğim ve sert görünüşümle dikkat çekerim.",
+      "Pek çok başarılı dizide başrol üstlendim."
+    ]
+  },
+  {
+    "name": "Serenay Sarıkaya",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Genç yaşta yıldızlaştım.",
+      "Küçük yaşta reklam filmlerinde oynamaya başladım.",
+      "Tanınmadan önce moda dergilerinin kapağında yer aldım.",
+      "Hem komedi hem dram türünde başarılı projelerim var."
+    ]
+  },
+  {
+    "name": "Çağatay Ulusoy",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Hem dizi hem Netflix projelerinde yer aldım.",
+      "Kariyerime bir model yarışması kazanarak başladım.",
+      "Uluslararası bir platformun Türk orijinal içeriğinde başrol oynayan ilk isimler arasındayım.",
+      "Farklı türlerde rol alarak tek tip bir imajdan kaçındım."
+    ]
+  },
+  {
+    "name": "Hande Erçel",
+    "hints": [
+      "Türk oyuncuyum.",
+      "Romantik komedi ve dram dizilerinde sıkça rol alırım.",
+      "Sosyal medyada milyonlarca takipçim var.",
+      "Takipçilerimin büyük çoğunluğu Türkiye dışından; uluslararası bir hayran kitlesine sahibim.",
+      "Bir dizi uluslararası arenada patladıktan sonra Türkiye'nin en tanınan yüzlerinden biri haline geldim."
+    ]
+  },
+  {
+    "name": "Kerimcan Durmaz",
+    "hints": [
+      "Türk oyuncuyum ve fenomenim.",
+      "Daha çok sosyal medya ve televizyon programlarıyla tanınıyorum.",
+      "Bir dönem dizilerde de rol aldım.",
+      "Renkli ve iddialı kişiliğimle biliniyorum.",
+      "‘İşte Bu Benim Masalım’ gibi projelerde yer aldım."
+    ]
+  },
+  {
+    "name": "Leonardo DiCaprio",
+    "hints": [
+      "Amerikalı oyuncuyum.",
+      "Daha çok filmlerle tanınıyorum.",
+      "İlk Oscar adaylığımı zihinsel engelli bir genci canlandırdığım bir filmle aldım.",
+      "Defalarca Oscar'a aday gösterildim ama uzun süre kazanamadım; bu durum esprilere konu oldu.",
+      "Çevre aktivizmine büyük önem veriyor; bu konuda ciddi girişimlere imza atıyorum."
+    ]
+  },
+  {
+    "name": "Brad Pitt",
+    "hints": [
+      "Amerikalı oyuncuyum.",
+      "Uzun yıllardır Hollywood’un en yakışıklı isimlerinden biri olarak görülüyorum.",
+      "Missouri'de büyüdüm; üniversiteyi bırakıp oyunculuk için Los Angeles'a taşındım.",
+      "'Once Upon a Time in Hollywood' ile övgü aldım.",
+      "Mimari ve tasarıma ilgi duyarım; New Orleans'ta afet sonrası düşük maliyetli konut projesi yürüttüm."
+    ]
+  },
+  {
+    "name": "Angelina Jolie",
+    "hints": [
+      "Amerikalı oyuncu ve yönetmenim.",
+      "Hem aksiyon hem dram filmlerinde rol aldım.",
+      "Babam da Hollywood'un tanınan bir oyuncusudur; ama aramızdaki ilişki yıllarca gerilimli oldu.",
+      "BM İyi Niyet Elçisi olarak dünya genelinde mülteci krizleri için savunuculuk yaptım.",
+      "Çok sayıda çocuk edindim; bir kısmı evlat edinme yoluyla aileme katıldı."
+    ]
+  },
+  {
+    "name": "Tom Cruise",
+    "hints": [
+      "Amerikalı oyuncuyum.",
+      "Aksiyon filmleriyle meşhurum.",
+      "Disleksiyle mücadele ederek büyüdüm.",
+      "Kendi dublörlüğümü kendim yaparım.",
+      "Bir dini akımla bağlantım onlarca yıldır medyanın gündeminde."
+    ]
+  },
+  {
+    "name": "Scarlett Johansson",
+    "hints": [
+      "Amerikalı oyuncuyum.",
+      "Hem bağımsız filmlerde hem büyük prodüksiyonlarda oynadım.",
+      "İkiz kardeşim Hunter da oyuncudur.",
+      "Hollywood'un en yüksek ücret alan oyuncuları arasındayım.",
+      "Güçlü sesim ve duruşumla biliniyorum."
+    ]
+  },
+  {
+    "name": "Robert Downey Jr.",
+    "hints": [
+      "Amerikalı oyuncuyum.",
+      "Bir dönem hayatımdaki sorunlarla gündeme gelmiştim.",
+      "Marvel evreninde ikonik bir karakter canlandırdım.",
+      "Kariyerimin en karanlık döneminden sonra kimsenin beklemediği bir süper kahraman rolüyle Hollywood'un en çok kazanan oyuncusuna döndüm.",
+      "‘Sherlock Holmes’ filmlerinde de oynadım."
+    ]
+  },
+  {
+    "name": "Keanu Reeves",
+    "hints": [
+      "Kanadalı-Amerikalı oyuncuyum.",
+      "Aksiyon ve bilim kurgu filmleriyle biliniyorum.",
+      "Lübnanlı kökenli babamdan dolayı farklı bir etnik arkaplanım var.",
+      "Hayatımda birden fazla büyük kişisel trajedi yaşadım; buna rağmen sakin ve mütevazı kalmamla tanınırım.",
+      "İki farklı dönemde, birbirinden bağımsız iki ikonik aksiyon serisinin başrolünde yer aldım."
+    ]
+  },
+  {
+    "name": "Cillian Murphy",
+    "hints": [
+      "İrlandalı oyuncuyum.",
+      "Hem dizi hem filmlerde rol aldım.",
+      "Birmingham merkezli suç dünyasını anlatan uzun soluklu bir dizi prodüksiyonunda başrol üstlendim.",
+      "Cork'ta doğdum; hukuk okurken müzik ve tiyatroya yöneldim.",
+      "Mavi gözlerimle dikkat çekerim."
+    ]
+  },
+  {
+    "name": "Pedro Pascal",
+    "hints": [
+      "Şilili-Amerikalı oyuncuyum.",
+      "Son yıllarda dizilerle çok ünlendim.",
+      "Şili'de doğdum ama askeri cunta döneminde ailem mülteci olarak yurt dışına kaçmak zorunda kaldı.",
+      "Uyuşturucu kartelini anlatan büyük bir dizi prodüksiyonunda önemli bir rolüm vardı.",
+      "Hem bilim kurgu hem de post-apokaliptik türlerde başrolde yer aldım."
+    ]
+  },
+  {
+    "name": "Zendaya",
+    "hints": [
+      "Amerikalı oyuncu ve şarkıcıyım.",
+      "Genç yaşta Disney ile başladım.",
+      "Annem okul tiyatrosunda çalışırdı; bu sayede küçük yaşta sahneyle tanıştım.",
+      "Hem bir süper kahraman serisinde hem de ağır temalar içeren bağımsız bir dizide başrol üstlendim.",
+      "Hem oyunculuğum hem de tarz seçimlerimle moda ikonuna dönüştüm."
+    ]
+  },
+  {
+    "name": "Timothée Chalamet",
+    "hints": [
+      "Amerikalı oyuncuyum.",
+      "Genç ve yetenekli oyuncular arasında gösteriliyorum.",
+      "Hem Fransız hem Amerikan vatandaşıyım; iki kültür arasında büyüdüm.",
+      "İlk Oscar adaylığımı yirmili yaşlarımın başında aldım.",
+      "Uzun soluklu bir bilim kurgu serinin başrol oyuncusuyum."
+    ]
+  },
+  {
+    "name": "Anya Taylor-Joy",
+    "hints": [
+      "Amerikalı-İngiliz oyuncuyum.",
+      "Alışılmadık güzelliğimle dikkat çekerim.",
+      "Arjantin'de doğdum ama İngiltere'de büyüdüm; iki dili anadil gibi konuşurum.",
+      "Bağımsız korku filmlerinde çarpıcı çıkışlar yaptım.",
+      "Satrançla ilgili bir mini dizi beni dünyaya tanıttı."
+    ]
+  },
+  {
+    "name": "Henry Cavill",
+    "hints": [
+      "İngiliz oyuncuyum.",
+      "Süper kahraman ve fantastik rollerimle biliniyorum.",
+      "Jersey Adası'nda beş kardeşin ortancasıyım.",
+      "Gençliğimde kilosu nedeniyle zorbalığa maruz kaldım; 'Fat Cavill' lakabı takılmıştı.",
+      "Hem bir DC karakterini hem de bir video oyununa dayalı fantezi karakterini canlandırdım."
+    ]
+  },
+  {
+    "name": "Emilia Clarke",
+    "hints": [
+      "İngiliz oyuncuyum.",
+      "Büyük bir fantazi dizisinde başroldeydim.",
+      "Dizi çekimleri devam ederken iki kez beyin kanaması geçirdim; uzun bir iyileşme sürecinden geçtim.",
+      "'Me Before You' filminde de oynadım.",
+      "Canlandırdığım karakter hem çok sevildi hem de son sezon gelişimiyle büyük tartışma yarattı."
+    ]
+  },
+  {
+    "name": "Kit Harington",
+    "hints": [
+      "İngiliz oyuncuyum.",
+      "Büyük bir fantazi dizisinde önemli bir rolüm vardı.",
+      "Canlandırdığım karakterin bir sezonda öldüğü ilan edilip bir sonraki sezonda hayatta çıkması büyük tartışma yarattı.",
+      "Dizi bitince tükenmişlik sendromu yaşayıp bir rehabilitasyon merkezine başvurdum.",
+      "İngiltere Kraliyet Ailesi'yle soy bağım olduğu söylenir."
+    ]
+  },
+  {
+    "name": "Bryan Cranston",
+    "hints": [
+      "Amerikalı oyuncuyum.",
+      "Hem komedi hem dram dizilerinde oynadım.",
+      "Babam evi terk edince küçük yaşta çalışmak zorunda kaldım; garsonluktan tatil köyü işçiliğine pek çok iş yaptım.",
+      "Antihero olarak tanımlanan ve izleyiciyi empati kurarken sorgulamaya iten bir karakterin sembolü haline geldim.",
+      "Oynadığım dizinin spin-off'unda küçük bir rolüm var; ama o spin-off benden sonra geldi."
+    ]
+  },
+  {
+    "name": "Bob Odenkirk",
+    "hints": [
+      "Amerikalı oyuncu ve komedyenim.",
+      "Oyuncudan çok komedyenlerin skeçlerini yazan biri olarak bilinirken başrol oynadım.",
+      "Saturday Night Live ve Late Night gibi programlar için uzun yıllar yazar olarak çalıştım.",
+      "Başrolümü üstlendiğim dizi başka bir ünlü prodüksiyonun spin-off'uydu.",
+      "Komedi kökenli olmama rağmen dramatik rollerde de başarılıyım."
+    ]
+  }
+]

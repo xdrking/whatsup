@@ -45,17 +45,24 @@ export default {
       return
     }
 
-    const lines = visible
-      .sort((a, b) => a.name.localeCompare(b.name, 'tr'))
-      .map((c) => `• \`${prefix}${c.name}\` — ${c.description}${c.ownerOnly ? ' _(sadece sahip)_' : ''}`)
+    const satir = (c) =>
+      `• \`${prefix}${c.name}\` — ${c.description}${c.ownerOnly ? ' _(sadece sahip)_' : ''}`
+
+    const sirala = (list) => list.sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(satir)
+
+    // Kategorisiz komutlar eski düz listeyi aynen korur; oyunlar sona ayrı
+    // başlıkla eklenir.
+    const genel = sirala(visible.filter((c) => c.category !== 'oyun'))
+    const oyunlar = sirala(visible.filter((c) => c.category === 'oyun'))
 
     await sock.sendMessage(
       from,
       {
         text: [
-          `*${botName}* — ${lines.length} komut`,
+          `*${botName}* — ${genel.length + oyunlar.length} komut`,
           '',
-          ...lines,
+          ...genel,
+          ...(oyunlar.length ? ['', '🎮 *OYUNLAR*', ...oyunlar] : []),
           '',
           `Ayrıntı için: \`${prefix}help <komut>\``,
         ].join('\n'),

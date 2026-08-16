@@ -61,10 +61,15 @@ Test altyapısı yok — bot davranışı canlı WhatsApp bağlantısıyla elle 
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
 auth/           Baileys oturum dosyaları — GİT'E ASLA GİRMEZ
 temp/           Medya işleme sırasında geçici dosyalar — her işlemden sonra silinir
 ```
+
+`games/` içindeki `.js` dosyaları komut değildir; `commands/index.js` klasörü düz
+tarar, alt klasöre inmez. Oyun komutları `commands/kelime.js`, `commands/kimim.js`
+ve `commands/oyunbitir.js`'tir; gövde `games/` altındadır.
 
 `data/*.json` dosyaları **elle yazılmış içerik havuzlarıdır** (şaka, fal, roast…).
 Biçim: düz string dizisi. Kod bu dosyaları asla yazmaz, yalnızca okur.
@@ -110,14 +115,16 @@ Bilerek yalnızca bellekte tutulur, diske yazılmaz: grup üyelerinin adlarını
 
 ### Durum (state) nerede tutulur
 
-Komutlar durumsuzdur; durum yalnızca `lib/` içindeki şu üç yerdedir:
+Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 
 | Yer | İçerik | Kalıcılık |
 |---|---|---|
 | `lib/contacts.js` | JID → pushName | bellek (süreçle ölür) |
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
 Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe.
 
@@ -212,7 +219,9 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
   profil fotoğrafı. Ayrıntı aşağıda.
 - **Faz 9 (tamam):** istatistik + XP/level sistemi (SQLite). Kalıcı veri katmanını
   getirdiği için en son yapıldı. Ayrıntı aşağıda.
-- **Faz 10+:** yeni komutlar, her biri ayrı adım
+- **Faz 10 (tamam):** `.kelime` ve `.kimim` grup oyunları — `games/` altında ayrı
+  bir oyun katmanı, yanıt (reply) tabanlı cevap akışı. Ayrıntı aşağıda.
+- **Faz 11+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -339,6 +348,112 @@ aynı satırı yarıda kesemez — race condition yoktur. Okuma yapan komutlar
 İstatistikler bot yeniden başlayınca kaybolmaz; kaybolan tek şey XP cooldown
 haritasıdır (zararsız).
 
+### Faz 10 — `.kelime` ve `.kimim` grup oyunları
+
+Oyunlar `commands/` içine değil, **`games/` altına** yazılır; `commands/kelime.js`
+ve `commands/kimim.js` yalnızca grup kontrolü yapıp oyunu başlatır.
+`commands/index.js` klasörü düz taradığı için `games/*.js` komut sanılmaz.
+
+```
+games/gameManager.js  grup başına aktif oyun state'i, zaman aşımı, yanıt yönlendirme
+games/kelime.js       kelime zinciri
+games/kimim.js        karakter tahmini
+games/kelimeler.json  başlangıç kelimeleri (elle yazılır, kod yazmaz)
+games/kimim.json      karakter + ipucu havuzu (elle yazılır, kod yazmaz)
+```
+
+**Bir grupta aynı anda tek oyun.** `startGame()` zaten oyun varsa `null` döner,
+komut "⚠️ Bu grupta zaten aktif bir oyun var." yazar. Durum yalnızca bellektedir;
+bot yeniden başlayınca yarım oyunlar düşer — beklenen davranış.
+
+#### Yanıt (reply) tabanlı cevap akışı
+
+Oyun cevapları prefix taşımaz, bu yüzden `lib/handler.js` prefix kontrolünden
+**önce** `handleGameReply()` çağırır. Kanca yalnızca şu koşulların tamamı
+sağlanırsa mesajı tüketir: grup + aktif oyun + mesaj bir yanıt + yanıtlanan id
+oyunun `lastMessageId`'si + gövde prefix ile başlamıyor. Aksi halde `false`
+döner ve mesaj hiç dokunulmadan normal akışa devam eder.
+
+`lastMessageId`, botun **en son** oyun mesajının id'sidir ve her yeni oyun
+mesajından sonra `setLastMessage()` ile güncellenir. Eski oyun mesajına verilen
+yanıtlar sessizce yok sayılır.
+
+Kancanın `sentByBot` kontrolü zorunludur: botun kendi oyun mesajları `append`
+olarak geri düşer ve `{ quoted: msg }` ile gönderildiği için alıntı taşır —
+süzülmezse bot kendi cevabını oyuncu tahmini sanar.
+
+#### `.kelime`
+
+Kabul sırası: tek kelime mi → doğru harfle mi başlıyor → daha önce kullanıldı mı
+→ TDK'de var mı. **Ağ isteği en sona bırakılır.** Geçersiz cevapta `currentWord`,
+`requiredLetter`, `lastMessageId` ve zaman aşımı sayacı **değişmez**.
+
+Doğrulama `lib/turkishWords.js:isValidTurkishWord()` üzerinden yapılır; oyun kodu
+TDK'yı bilmez. Birincil kaynak `sozluk.gov.tr/gts` (Node yerleşik `fetch`,
+6 sn timeout): madde dizisi → geçerli, `{error: "Sonuç bulunamadı"}` → geçersiz.
+Yedek kaynak `tdk-all-api` paketidir ama **şu an çalışmıyor** (aşağıya bak).
+
+Servise ulaşılamazsa `WordServiceError` atılır ve **kelime geçersiz sayılmaz**;
+kullanıcıya "servise ulaşılamıyor" yazılır, oyun aynı noktadan devam eder.
+Sonuçlar `data/stats.db` içindeki `word_cache` tablosunda saklanır — yalnızca
+kesin sonuçlar, hata asla önbelleğe girmez.
+
+Zincir harfi `lastLetter()` ile bulunur: kelime `ğ` ile bitiyorsa bir önceki
+harfe düşülür, çünkü Türkçede hiçbir kelime `ğ` ile başlamaz.
+
+Karşılaştırmalar `toLocaleLowerCase('tr')` / `toLocaleUpperCase('tr')` ile
+yapılır (`trLower` / `trUpper`); varsayılan locale "İ" ve "ı" harflerini bozar.
+
+**Eşzamanlı iki cevap:** TDK isteği bir `await` noktasıdır. Kilit yerine
+"await sonrası yeniden doğrulama" kullanılır: oyun `lastMessageId` ve
+`currentWord`'ü await'ten önce not eder, sonra değişmiş mi diye bakar.
+Değişmişse geç kalan cevap sessizce düşer — **ilk geçerli cevap kazanır.**
+
+#### `.kimim`
+
+`games/kimim.json` biçimi: `[{ name, hints[] }]`. Bozuk kayıtlar elenir, hiç
+kullanılabilir kayıt kalmazsa komut kısa bir Türkçe hata yazar, bot çökmez.
+
+İlk ipucu başlangıçta gösterilir, sonrakiler **her 3 yanlış tahminde** açılır.
+Yanlış tahmin oyunu bitirmez ve süreyi **uzatmaz** — 1 saat, doğru cevap
+gelmediği sürece işler. Doğru cevap oyunu bitirir.
+
+Cevap eşleştirme tamamen yereldir, ağ kullanılmaz: Türkçe harfler ASCII'ye
+katlanır (`ç→c, ğ→g, ı/İ→i, ö→o, ş→s, ü→u`), noktalama atılır. Tam ad, soyad
+(en az 4 harf) ve "ad + soyad" kabul edilir.
+
+#### Zaman aşımı ve XP
+
+Her iki oyun da **1 saat** sonra kapanır (`OYUN_TIMEOUT_MS` ile denemede
+kısaltılabilir). `.kelime`'de sayaç her geçerli kelimede sıfırlanır
+(`touchGame`), `.kimim`'de yalnızca doğru cevap oyunu bitirir. Zaman aşımı
+mesajı gönderilemese bile oyun mutlaka temizlenir, yoksa grup kalıcı olarak
+"zaten aktif bir oyun var" durumunda kilitlenir.
+
+XP mevcut sistemden verilir: `lib/stats.js:addXp()` — geçerli kelime +3, doğru
+tahmin +10. `recordMessage`'ın 30 sn'lik cooldown'u burada uygulanmaz (oyun XP'si
+kazanılmış XP'dir) ve `hours` tablosuna yazılmaz. `.stats`, `.profil` ve `.top`
+aynı `stats.xp` sütununu okuduğu için ek iş yoktur.
+
+`.oyunbitir` oyunu erkenden kapatır; yalnızca **oyunu başlatan kişi** veya
+`OWNER_NUMBER` çalıştırabilir.
+
+#### `tdk-all-api` neden yedek ve neden şu an ölü
+
+Paket kelime başına yedi ardışık TDK isteği atar, zaman aşımı yoktur ve tüm
+gövdesi boş bir `catch` içindedir. Bu yüzden hem "kelime yok" hem "servis çöktü"
+durumunda `undefined` döner — ikisi ayırt edilemez. Dahası, çağırdığı uçlardan
+biri (`terim?eser_ad=tümü`) 2026-08 itibarıyla bağlantıyı reddediyor, yani paket
+**her kelime için** `undefined` döndürüyor. Bu nedenle:
+
+- birincil yol doğrudan `fetch`'tir,
+- paketten yalnızca **olumlu** sonuç kabul edilir, `undefined` "karar veremedim"
+  sayılır,
+- import dinamiktir; paket silinse bile bot açılışta patlamaz.
+
+Paket kaldırılırsa `lib/turkishWords.js` içindeki `yedekSorgula()` silinir,
+başka hiçbir yer etkilenmez.
+
 ## Elle Doğrulama
 
 Otomatik test yok. Değişiklik sonrası:
@@ -354,3 +469,10 @@ Otomatik test yok. Değişiklik sonrası:
    `.stats` → **sayılar duruyor** (SQLite kalıcı)
 9. Bot bir komuta yanıt verdikten hemen sonra `.son` → botu değil, son yazan
    kişiyi göstermeli
+10. `.kelime` → gruba **yanıtsız** normal mesaj yaz: bot sessiz kalmalı. Aynı
+    kelimeyi botun oyun mesajına **yanıt olarak** yaz: işlenmeli.
+11. Botun **eski** bir oyun mesajına yanıt → hiç tepki yok; yalnızca en son
+    oyun mesajına verilen yanıt işlenir
+12. Oyun açıkken ikinci bir `.kelime`/`.kimim` → "zaten aktif bir oyun var"
+13. `.oyunbitir` başkası tarafından → reddedilir; başlatan kişi ya da bot sahibi
+    tarafından → oyun kapanır ve özet gelir
