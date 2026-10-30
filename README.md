@@ -106,6 +106,7 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 | `.sticker` | Yanıtlanan görsel/video/GIF'i sticker yapar; düz metni yanıtlarsan sohbet balonu sticker'ı üretir |
 | `.al` | Sticker'ı görsele (animasyonluysa videoya) geri çevirir |
 | `.tts <metin> \| <dil>` | Metni sesli mesaj olarak gönderir. Örn. `.tts merhaba \| tr` |
+| `.efekt <ad>` | Yanıtlanan sese efekt: ters, hızlı, yavaş, incelt, kalın, yankı, robot, telefon, bas |
 
 ### Eğlence
 
@@ -124,6 +125,10 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 | `.coin` | Yazı tura |
 | `.meme` | İnternetten rastgele meme |
 | `.anket Soru \| a \| b` | Tek seçimli WhatsApp anketi (2-12 seçenek) |
+| `.dc` | Doğruluk mu cesaret mi. `.dc d @kişi`, `.dc c` |
+| `.seç a \| b \| c` | Seçeneklerden birini rastgele seçer |
+| `.hesap <ifade>` | Dört işlem, üs, mod, parantez. Örn. `.hesap (12+3)*4` |
+| `.hava <şehir>` | Anlık hava durumu (Open-Meteo) |
 
 ### Grup
 
@@ -138,6 +143,7 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 | `.son` | En son yazan kişi |
 | `.pp` | Profil fotoğrafı |
 | `.id` | JID bilgisi |
+| `.sus` / `.konuş` | Botu bu grupta susturur / açar (yalnızca admin veya owner) |
 
 Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 
@@ -152,7 +158,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
 XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu),
-geçerli oyun kelimesi +3, doğru quiz cevabı +5, doğru kimim tahmini +10,
+geçerli oyun kelimesi +3, doğru quiz cevabı ve düello galibiyeti +5, doğru kimim tahmini +10,
 `.günlük` 20-50 (seri 7. günde tavana ulaşır). Level = `floor(sqrt(xp / 50))`.
 
 **Mesaj içeriği hiçbir yerde saklanmaz** — yalnızca sayaçlar.
@@ -164,6 +170,7 @@ geçerli oyun kelimesi +3, doğru quiz cevabı +5, doğru kimim tahmini +10,
 | `.kelime` | Türkçe kelime zinciri. Kelimeler TDK'de doğrulanır |
 | `.kimim` | Karakter tahmini; her 3 yanlışta yeni ipucu |
 | `.quiz` | 4 şıklı bilgi sorusu; herkesin tek hakkı var, ilk bilen kazanır (10 dk) |
+| `.düello @kişi` | İki kişilik hızlı matematik düellosu; ilk doğru cevap kazanır (2 dk) |
 | `.oyunbitir` | Aktif oyunu kapatır (başlatan kişi, grup admini veya owner) |
 
 Oyun cevapları prefix taşımaz: botun **en son** oyun mesajını **yanıtlayarak**
@@ -175,7 +182,7 @@ Durum yalnızca bellektedir — bot yeniden başlarsa yarım oyunlar düşer.
 
 Aynı kişi aynı komutu art arda yazarsa komut çalışmaz; ilk denemede bir kez
 "⏳ biraz yavaş" uyarısı gelir, sonrakiler sessizce yok sayılır. Varsayılan 3 sn;
-`.sticker`, `.al`, `.tts`, `.meme`, `.anket` 10 sn, `.etiket` 30 sn. Bot sahibi muaftır.
+`.sticker`, `.al`, `.tts`, `.efekt`, `.meme`, `.hava`, `.anket` 10 sn, `.etiket` 30 sn. Bot sahibi muaftır.
 
 ## Yeni komut ekleme
 
@@ -205,7 +212,7 @@ Ayrıntı ve komut sözleşmesinin tamamı için `CLAUDE.md`'ye bakın.
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma
 lib/            Paylaşılan yardımcılar (parse, router, sticker, tts, db, stats)
 commands/       Her komut ayrı dosya; index.js klasörü otomatik tarar
-games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz)
+games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .düello)
 data/           İçerik havuzları (JSON) + stats.db
 auth/           Baileys oturum dosyaları — commit edilmez
 temp/           Medya işleme geçici dosyaları — işlem sonrası silinir

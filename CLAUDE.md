@@ -61,7 +61,7 @@ Test altyapısı yok — bot davranışı canlı WhatsApp bağlantısıyla elle 
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
-games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz)
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
 auth/           Baileys oturum dosyaları — GİT'E ASLA GİRMEZ
 temp/           Medya işleme sırasında geçici dosyalar — her işlemden sonra silinir
@@ -69,7 +69,7 @@ temp/           Medya işleme sırasında geçici dosyalar — her işlemden son
 
 `games/` içindeki `.js` dosyaları komut değildir; `commands/index.js` klasörü düz
 tarar, alt klasöre inmez. Oyun komutları `commands/kelime.js`, `commands/kimim.js`,
-`commands/quiz.js` ve `commands/oyunbitir.js`'tir; gövde `games/` altındadır.
+`commands/quiz.js`, `commands/duello.js` ve `commands/oyunbitir.js`'tir; gövde `games/` altındadır.
 
 `data/*.json` dosyaları **elle yazılmış içerik havuzlarıdır** (şaka, fal, roast…).
 Biçim: düz string dizisi. Kod bu dosyaları asla yazmaz, yalnızca okur.
@@ -123,9 +123,10 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
-| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`) | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
 Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe.
@@ -159,6 +160,10 @@ export default {
 ### Yetki
 
 Komutlar varsayılan olarak herkese açıktır. `ownerOnly: true` işaretli komutlar yalnızca `.env` içindeki `OWNER_NUMBER` için çalışır. Yetkisiz kullanımda komut sessizce reddedilir, hata detayı sohbete yazılmaz.
+
+Sahip kontrolü `parsed.senderPn` ile yapılır, `parsed.sender` ile **değil**. LID adreslemeli gruplarda `sender` "...@lid" gelir ve rakamları telefon numarası değildir; `senderPn`, Baileys'in `key.participantPn` / `key.senderPn` alanından gelen numaralı JID'dir (yoksa `sender`'a düşer). `sender` bilerek LID olarak kalır: istatistik ve etiketler WhatsApp'ın verdiği kimlikle çalışır.
+
+Grup admini kontrolü `lib/group.js:senderIsAdmin()` ile yapılır (`.oyunbitir`, `.sus`, `.konuş`).
 
 JID karşılaştırırken `jidNormalizedUser()` kullan. Baileys yeni sürümlerde grup katılımcısını LID (`@lid`) olarak verebilir; ham string eşitliği (`===`) güvenilir değildir.
 
@@ -225,7 +230,9 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 10 (tamam):** `.kelime` ve `.kimim` grup oyunları — `games/` altında ayrı
   bir oyun katmanı, yanıt (reply) tabanlı cevap akışı. Ayrıntı aşağıda.
 - **Faz 11 (tamam):** komut bekleme süresi, `.anket`, `.günlük`, `.quiz`. Ayrıntı aşağıda.
-- **Faz 12+:** yeni komutlar, her biri ayrı adım
+- **Faz 12 (tamam):** LID sahip düzeltmesi, `.sus`/`.konuş`, `.dc`, `.efekt`, `.hava`,
+  `.düello`, `.seç`, `.hesap`. Ayrıntı aşağıda.
+- **Faz 13+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -267,7 +274,7 @@ kaç kez çağrılırsa çağrılsın aynı söz döner.
 `.ship` yüzdesi iki JID'in **sıralanmış** çiftinden FNV-1a hash ile üretilir:
 sıra değişse de sonuç aynıdır ve bot yeniden başlayınca değişmez.
 
-`.meme` tek dış servise bağlı olan komuttur. Zaman aşımı verilir
+`.meme` (ve Faz 12'de eklenen `.hava`) dış servise bağlı komutlardır. Zaman aşımı verilir
 (`AbortSignal.timeout`), NSFW işaretli gönderi atlanır, servis düşükse
 kullanıcıya "meme servisi şu an cevap vermiyor" yazılır — bot çökmez.
 
@@ -510,6 +517,54 @@ sırası her oyunda karışır.
   kullanır; `OYUN_TIMEOUT_MS` daha kısaysa o kazanır. Diğer oyunlar 1 saatte.
 - Doğru cevap +5 XP (`addXp`).
 
+### Faz 12 — LID sahip, susturma, `.dc`, `.efekt`, `.hava`, `.düello`, `.seç`, `.hesap`
+
+#### Susturma (`.sus` / `.konuş`, `lib/mute.js`)
+
+Yalnızca grup adminleri ve `OWNER_NUMBER`. Durum `muted_chats` tablosundadır,
+yeniden başlatmada korunur (yoksa her çökmede bot kendiliğinden konuşmaya başlar).
+
+```
+muted_chats(chat_jid PK, muted_at ms)
+```
+
+`lib/handler.js` susturulmuş grupta: sayaçlar **işlemeye devam eder**, oyun
+cevap kancası çağrılmaz, komutlar düşer. Tek istisna `worksWhenMuted: true`
+taşıyan komuttur (`.konuş`). `.sus` aktif oyunu da kapatır, aksi halde zaman
+aşımı mesajı susturulmuş gruba kendiliğinden düşer.
+
+#### `.efekt` ve `lib/audio.js`
+
+`lib/audio.js:toVoiceNote()` ffmpeg ile her sesi ogg/opus sesli mesaja çevirir;
+`.tts` ve `.efekt` aynı fonksiyonu kullanır. `.efekt` yanıtlanan `audioMessage`'ı
+indirir, `-af` filtresi uygular; girdinin yalnızca ilk 60 sn'si işlenir (`-t`
+girdiden önce, `areverse` tüm sesi belleğe aldığı için). Yeni efekt =
+`commands/efekt.js` içindeki `EFEKTLER`'e bir satır.
+
+#### `.dc`
+
+`data/dogruluk.json` ve `data/cesaret.json` (düz string dizisi, elle yazılır).
+`.dc d` / `.dc c` türü seçer, yoksa rastgele. Hedef: mention → reply sahibi →
+komutu yazan.
+
+#### `.hava`
+
+Open-Meteo (API key yok, 6 sn timeout). Geocoding ilk sonucu küçük bir köy
+olabildiği için ("Kadıköy" → Yalova'da bir köy) ilk 5 sonuçtan **nüfusu en
+büyük** olan seçilir.
+
+#### `.düello`
+
+`games/duello.js`. İki oyuncu aynı tam sayılı işlemi görür (+, −, ×). Yalnızca
+iki oyuncunun yanıtı sayılır, seyirci yanıtı yok sayılır. Kişi başı tek hak;
+ikisi de yanarsa berabere biter. Galibe +5 XP, süre 2 dk (`timeoutMs`).
+
+#### `.hesap` ve `lib/calc.js`
+
+Elle yazılmış özyinelemeli ayrıştırıcı: `+ - * / % ^ ( )`, `×`/`x`, `÷`/`:`,
+ondalık virgül. **`eval`/`Function` kullanılmaz** — grupta herkes yazabildiği için
+girdi asla kod olarak çalışmamalı. Sıfıra bölme / sonsuz sonuç `CalcError` olur.
+
 ## Elle Doğrulama
 
 Otomatik test yok. Değişiklik sonrası:
@@ -538,3 +593,9 @@ Otomatik test yok. Değişiklik sonrası:
 16. `.günlük` iki kez → ikincisi "zaten aldın"; `.profil` XP'yi göstermeli
 17. `.quiz` → yanlış cevap veren aynı soruda tekrar deneyemez; doğru cevapta
     oyun kapanır, +5 XP
+18. Sahip LID'li bir grupta `ownerOnly` komut yazar → çalışmalı
+19. Admin `.sus` → `.zar` sessiz, sıradan üye `.konuş` → reddedilir; admin
+    `.konuş` → bot döner. Bot yeniden başlatılırsa susturma korunur
+20. Bir sesli mesaja `.efekt ters` → tersten çalan sesli mesaj gelir
+21. `.hava İzmir` → hava kartı; uydurma şehir → "bulamadım"
+22. `.düello @kişi` → seyirci yanıtı yok sayılır; ilk doğru cevap kazanır
