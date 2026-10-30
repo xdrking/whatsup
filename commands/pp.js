@@ -5,6 +5,7 @@ export default {
   aliases: ['profilfoto', 'avatar'],
   description: 'Hedefin profil fotoğrafını getirir',
   usage: '.pp @kişi  —  bir mesajı yanıtlayarak .pp  —  hedefsiz .pp kendi fotoğrafını getirir',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

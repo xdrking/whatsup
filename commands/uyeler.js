@@ -9,6 +9,7 @@ export default {
   aliases: ['uyeler', 'liste', 'members'],
   description: 'Grup üyelerini listeler (etiketlemeden)',
   usage: '.üyeler',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

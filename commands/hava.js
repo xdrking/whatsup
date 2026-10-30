@@ -1,9 +1,9 @@
 import logger from '../lib/logger.js'
+import { getJson } from '../lib/http.js'
 
 // Open-Meteo: ücretsiz, API key istemez.
 const GEO_URL = 'https://geocoding-api.open-meteo.com/v1/search'
 const HAVA_URL = 'https://api.open-meteo.com/v1/forecast'
-const ZAMAN_ASIMI_MS = 6000
 
 // WMO hava durumu kodları (Open-Meteo `weather_code`).
 const DURUMLAR = [
@@ -20,12 +20,6 @@ const DURUMLAR = [
 function durum(kod) {
   const bulunan = DURUMLAR.find(([kodlar]) => kodlar.includes(kod))
   return bulunan ? { emoji: bulunan[1], ad: bulunan[2] } : { emoji: '🌡️', ad: 'Bilinmiyor' }
-}
-
-async function getJson(url) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(ZAMAN_ASIMI_MS) })
-  if (!response.ok) throw new Error(`Open-Meteo ${response.status} döndü`)
-  return response.json()
 }
 
 /**
@@ -51,6 +45,7 @@ export default {
     'Anlık sıcaklık ve hissedilen, günün en düşük/en yüksek sıcaklığı, nem, rüzgâr, yağış ihtimali.',
     'Aynı adlı birden fazla yer varsa en kalabalık olanı seçilir.',
   ],
+  category: 'araç',
   ownerOnly: false,
   // Dış servis: hız sınırına takılmayalım.
   cooldown: 10,

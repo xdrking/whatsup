@@ -13,6 +13,7 @@ export default {
     'Aktif oyun varsa kapatılır. Bot yeniden başlasa da susmaya devam eder.',
     'Açmak için `.konuş`.',
   ],
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, sender, parsed, isOwner }) {

@@ -7,6 +7,7 @@ export default {
     'Seçenekleri `|` ya da virgülle ayır:',
     '`.seç çay, kahve`  •  `.seç sinema | maç | evde kal`',
   ],
+  category: 'eğlence',
   ownerOnly: false,
 
   async execute({ sock, msg, from, text }) {

@@ -11,6 +11,7 @@ export default {
     'Bir sticker\'ı yanıtlayıp `.al` yaz → görsel olarak geri gelir.',
     'Animasyonlu sticker, GIF gibi döngüsel oynayan video olarak gelir.',
   ],
+  category: 'medya',
   ownerOnly: false,
   // Medya dönüşümü (sharp/ffmpeg) ağır: arka arkaya tetiklenmesin.
   cooldown: 10,

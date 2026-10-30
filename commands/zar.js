@@ -5,6 +5,7 @@ export default {
   aliases: ['zaratt', 'dice'],
   description: '1-6 arası zar atar',
   usage: '.zar',
+  category: 'eğlence',
   ownerOnly: false,
 
   async execute({ sock, msg, from }) {

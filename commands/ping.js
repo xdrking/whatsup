@@ -24,6 +24,7 @@ export default {
   aliases: ['p'],
   description: 'Botun ayakta olduğunu ve gecikmeyi gösterir',
   usage: '.ping',
+  category: 'araç',
   ownerOnly: false,
 
   async execute({ sock, msg, from }) {

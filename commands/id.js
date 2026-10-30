@@ -5,6 +5,7 @@ export default {
   aliases: ['jid', 'kimlik'],
   description: 'WhatsApp JID bilgini (ve sohbetin JID\'ini) gösterir',
   usage: '.id  —  ya da .id @kişi / bir mesajı yanıtlayarak .id',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

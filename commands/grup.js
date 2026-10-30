@@ -18,6 +18,7 @@ export default {
   aliases: ['grupbilgi', 'groupinfo'],
   description: 'Grup adı, ID\'si, üye sayısı ve oluşturulma bilgisini gösterir',
   usage: '.grup',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

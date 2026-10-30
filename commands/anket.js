@@ -19,6 +19,7 @@ export default {
     'İlk parça soru, `|` ile ayrılan diğerleri seçenek.',
     '2-12 seçenek, herkes tek seçim yapar. Oylar WhatsApp\'ın kendi anketinde sayılır.',
   ],
+  category: 'grup',
   ownerOnly: false,
   cooldown: 10,
 

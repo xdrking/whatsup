@@ -27,6 +27,7 @@ export default {
     'Sonuna not ekleyebilirsin: `.etiket toplantı var`  •  `.etiket 2 bulaşık sırası`',
     'Aynı kişi 30 sn içinde tekrar kullanamaz.',
   ],
+  category: 'grup',
   ownerOnly: false,
   // Her çağrı tüm gruba bildirim düşürür.
   cooldown: 30,

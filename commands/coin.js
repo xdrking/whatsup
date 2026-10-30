@@ -3,6 +3,7 @@ export default {
   aliases: ['yazitura', 'yazıtura', 'para'],
   description: 'Yazı tura atar',
   usage: '.coin',
+  category: 'eğlence',
   ownerOnly: false,
 
   async execute({ sock, msg, from }) {

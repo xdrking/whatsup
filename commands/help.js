@@ -1,8 +1,20 @@
+// .help listesindeki başlıklar ve sırası. Komut dosyasındaki `category` alanı
+// buradaki kodlardan biri olmalı.
+const KATEGORILER = [
+  ['medya', '🖼️ *MEDYA*'],
+  ['eğlence', '🎉 *EĞLENCE*'],
+  ['grup', '👥 *GRUP*'],
+  ['istatistik', '📊 *İSTATİSTİK*'],
+  ['araç', '🛠️ *ARAÇLAR*'],
+  ['oyun', '🎮 *OYUNLAR*'],
+]
+
 export default {
   name: 'help',
   aliases: ['yardim', 'yardım', 'menu', 'komutlar'],
   description: 'Komut listesini veya tek bir komutun ayrıntısını gösterir',
   usage: '.help  ya da  .help sticker',
+  category: 'araç',
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, commands, isOwner }) {
@@ -52,19 +64,22 @@ export default {
 
     const sirala = (list) => list.sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(satir)
 
-    // Kategorisiz komutlar eski düz listeyi aynen korur; oyunlar sona ayrı
-    // başlıkla eklenir.
-    const genel = sirala(visible.filter((c) => c.category !== 'oyun'))
-    const oyunlar = sirala(visible.filter((c) => c.category === 'oyun'))
+    const bolumler = KATEGORILER.map(([kod, baslik]) => [
+      baslik,
+      sirala(visible.filter((c) => c.category === kod)),
+    ])
+    // Kategorisi unutulmuş komut listeden kaybolmasın: sona "Diğer" olarak düşer.
+    const bilinen = new Set(KATEGORILER.map(([kod]) => kod))
+    bolumler.push(['📦 *DİĞER*', sirala(visible.filter((c) => !bilinen.has(c.category)))])
 
     await sock.sendMessage(
       from,
       {
         text: [
-          `*${botName}* — ${genel.length + oyunlar.length} komut`,
-          '',
-          ...genel,
-          ...(oyunlar.length ? ['', '🎮 *OYUNLAR*', ...oyunlar] : []),
+          `*${botName}* — ${visible.length} komut`,
+          ...bolumler
+            .filter(([, satirlar]) => satirlar.length)
+            .flatMap(([baslik, satirlar]) => ['', baslik, ...satirlar]),
           '',
           `Ayrıntı için: \`${prefix}help <komut>\``,
         ].join('\n'),

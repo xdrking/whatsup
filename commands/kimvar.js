@@ -10,6 +10,7 @@ export default {
   aliases: ['aktif', 'aktifler'],
   description: 'Son bir saatte mesaj yazan kişileri gösterir',
   usage: '.kimvar',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

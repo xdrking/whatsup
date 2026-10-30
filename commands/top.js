@@ -16,6 +16,7 @@ export default {
     '`.top` → ilk 10, `.top 5` → ilk 5 (en fazla 25).',
     'Sıralama XP\'ye göredir ve her grupta ayrıdır.',
   ],
+  category: 'istatistik',
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

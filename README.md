@@ -71,6 +71,7 @@ grup adminlerinin yetkileri yine çalışır.
 ```bash
 npm start      # botu başlat
 npm run dev    # dosya değişince otomatik yeniden başlat (node --watch)
+npm test       # otomatik testler (WhatsApp bağlantısı gerekmez)
 ```
 
 İlk çalıştırmada terminale bir QR kodu basılır:
@@ -90,7 +91,7 @@ Bot yalnızca **prefix ile başlayan** mesajlara tepki verir. Prefix'siz mesajla
 sessizce yok sayılır (yalnızca istatistik sayaçlarına işlenir).
 
 ```
-.help            komut listesi
+.help            komut listesi (medya, eğlence, grup… başlıklarıyla)
 .help sticker    tek komutun ayrıntısı
 ```
 
@@ -111,6 +112,8 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 | `.al` | Sticker'ı görsele (animasyonluysa videoya) geri çevirir |
 | `.tts <metin> \| <dil>` | Metni sesli mesaj olarak gönderir. Örn. `.tts merhaba \| tr` |
 | `.efekt <ad>` | Yanıtlanan sese efekt: ters, hızlı, yavaş, incelt, kalın, yankı, robot, telefon, bas |
+| `.foto <efekt>` | Yanıtlanan fotoğrafa efekt: sb, sepya, bulanık, keskin, ayna, ters, negatif, piksel |
+| `.yaz <metin>` | Metinden kenarlıklı yazı sticker'ı |
 
 ### Eğlence
 
@@ -133,6 +136,11 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 | `.seç a \| b \| c` | Seçeneklerden birini rastgele seçer |
 | `.hesap <ifade>` | Dört işlem, üs, mod, parantez. Örn. `.hesap (12+3)*4` |
 | `.hava <şehir>` | Anlık hava durumu (Open-Meteo) |
+| `.deprem` | AFAD'a göre son depremler. `.deprem 4` → son 7 günün 4+ depremleri |
+| `.döviz` | Dolar/euro/sterlin TL karşılığı. `.döviz 100 dolar` |
+| `.namaz <şehir>` | Bugünkü namaz vakitleri (Diyanet hesabı) |
+| `.8top <soru>` | Sihirli 8 top evet/hayır cevabı |
+| `.burç <burç>` | Günlük burç yorumu, gün boyu aynı |
 
 ### Grup
 
@@ -160,6 +168,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.profil` | Ad, level, XP |
 | `.top` | Sohbetteki XP sıralaması. `.top 5` |
 | `.günlük` | Günde bir kez XP ödülü; üst üste gelirsen seri büyür |
+| `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
 XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu),
@@ -187,7 +196,8 @@ Durum yalnızca bellektedir — bot yeniden başlarsa yarım oyunlar düşer.
 
 Aynı kişi aynı komutu art arda yazarsa komut çalışmaz; ilk denemede bir kez
 "⏳ biraz yavaş" uyarısı gelir, sonrakiler sessizce yok sayılır. Varsayılan 3 sn;
-`.sticker`, `.al`, `.tts`, `.efekt`, `.meme`, `.hava`, `.anket` 10 sn, `.etiket` 30 sn. Bot sahibi muaftır.
+medya ve dış servis komutları (`.sticker`, `.al`, `.tts`, `.efekt`, `.foto`, `.yaz`,
+`.meme`, `.hava`, `.deprem`, `.döviz`, `.namaz`) ve `.anket` 10 sn, `.etiket` 30 sn. Bot sahibi muaftır.
 
 ## Yeni komut ekleme
 
@@ -205,7 +215,7 @@ export default {
   // Opsiyonel alanlar:
   // cooldown: 10,          bekleme süresi (sn); yoksa 3, 0 = sınırsız
   // details: ['…'],        .help selam yazınca gösterilen örnekli açıklama
-  // category: 'oyun',      .help'te "Oyunlar" başlığı altında listelenir
+  // category: 'eğlence',   .help başlığı: medya | eğlence | grup | istatistik | araç | oyun
   // worksWhenMuted: true,  .sus ile susturulmuş grupta da çalışır (yalnızca .konuş)
   async execute({ sock, from, msg }) {
     await sock.sendMessage(from, { text: 'Selam!' }, { quoted: msg })
@@ -224,6 +234,7 @@ lib/            Paylaşılan yardımcılar (parse, router, sticker, ses, db, sta
                 bekleme süresi, susturma, hesap makinesi)
 commands/       Her komut ayrı dosya; index.js klasörü otomatik tarar
 games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .düello)
+test/           Otomatik testler (npm test)
 data/           İçerik havuzları (JSON) + stats.db (sayaçlar, XP, günlük seri, susturulan gruplar)
 auth/           Baileys oturum dosyaları — commit edilmez
 temp/           Medya işleme geçici dosyaları — işlem sonrası silinir
@@ -263,5 +274,14 @@ hızında ve yalnızca yanıt vererek çalışacak şekilde yazılmıştır; kö
 
 ## Test
 
-Otomatik test yoktur; bot davranışı canlı bağlantıyla elle doğrulanır. Adım adım
-doğrulama listesi `CLAUDE.md` → **Elle Doğrulama** bölümündedir.
+```bash
+npm test
+```
+
+WhatsApp bağlantısı gerektirmeyen kısımları dener: hesap makinesi, bekleme süresi,
+oyun cevapları, XP ve günlük seri, fotoğraf efektleri, komutların ve `data/*.json`
+havuzlarının biçimi. Gerçek `data/stats.db`'ye dokunmaz. Yeni komut ya da havuz
+satırı ekledikten sonra çalıştırmak, botu açmadan önce hataları yakalar.
+
+Mesaj gönderme, medya indirme ve grup davranışı canlı bağlantıyla elle
+doğrulanır: adım adım liste `CLAUDE.md` → **Elle Doğrulama** bölümündedir.

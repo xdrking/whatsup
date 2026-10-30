@@ -21,6 +21,7 @@ export default {
     'Kendin için `.stats`; başkası için etiketle ya da mesajını yanıtla.',
     'Mesaj, sticker, ses sayıları ve en aktif olduğun saat. Sayaçlar her grupta ayrıdır.',
   ],
+  category: 'istatistik',
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

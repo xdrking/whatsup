@@ -25,6 +25,7 @@ export default {
     '`.dc d` → doğruluk sorusu, `.dc c` → cesaret görevi.',
     'Başkasına vermek için etiketle ya da mesajını yanıtla: `.dc c @kişi`',
   ],
+  category: 'eğlence',
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

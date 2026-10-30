@@ -86,6 +86,7 @@ export default {
     'Düz bir metin mesajını yanıtlarsan yazarın adı ve fotoğrafıyla sohbet balonu sticker\'ı çıkar.',
     'Açıklamalı bir görseli yanıtlarsan açıklama değil, görselin kendisi sticker olur.',
   ],
+  category: 'medya',
   ownerOnly: false,
   // Medya dönüşümü (sharp/ffmpeg) ağır: arka arkaya tetiklenmesin.
   cooldown: 10,

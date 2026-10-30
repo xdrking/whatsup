@@ -6,6 +6,7 @@ export default {
   aliases: ['adminler', 'yoneticiler', 'yöneticiler'],
   description: 'Gruptaki adminleri etiketleyerek listeler',
   usage: '.admin',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

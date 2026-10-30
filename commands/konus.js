@@ -10,6 +10,7 @@ export default {
     'Yalnızca grup adminleri ve bot sahibi kullanabilir.',
     'Susturulmuş grupta çalışan tek komut budur.',
   ],
+  category: 'grup',
   ownerOnly: false,
   // Susturulmuş grupta çalışan tek komut.
   worksWhenMuted: true,

@@ -51,9 +51,17 @@ seriliş — ayrı bir kilit/kuyruk katmanı gerekmez.
 npm install        # bağımlılıklar
 npm start          # botu başlat (node index.js)
 npm run dev        # otomatik yeniden başlatmalı geliştirme (node --watch index.js)
+npm test           # node --test: test/*.test.js
 ```
 
-Test altyapısı yok — bot davranışı canlı WhatsApp bağlantısıyla elle doğrulanır (aşağıya bak).
+Otomatik testler (`test/`) WhatsApp bağlantısı gerektirmeyen kısmı kapsar: hesap
+ayrıştırıcısı, bekleme süresi, oyun cevap eşleştirme, XP/günlük seri, `.foto`
+efektleri, komut sözleşmesi ve içerik havuzlarının biçimi. Testler `STATS_DB=:memory:`
+ile çalışır, `data/stats.db`'ye dokunmaz. Soket davranışı (mesaj gönderme, medya
+indirme, gruplar) hâlâ canlı bağlantıyla elle doğrulanır (aşağıya bak).
+
+Yeni komut ya da havuz eklendiğinde `npm test` çalıştırılır: `test/komutlar.test.js`
+kategori, ad çakışması, `details` biçimi ve `data/*.json` hatalarını yakalar.
 
 ## Klasör Yapısı
 
@@ -62,6 +70,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event ka
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
 games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello)
+test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
 auth/           Baileys oturum dosyaları — GİT'E ASLA GİRMEZ
 temp/           Medya işleme sırasında geçici dosyalar — her işlemden sonra silinir
@@ -144,6 +153,7 @@ export default {
   ownerOnly: false,
   cooldown: 10,          // opsiyonel, saniye; yoksa 3, 0 = sınırsız
   details: ['…'],        // opsiyonel, `.help <komut>` örnekli açıklaması
+  category: 'medya',     // .help başlığı: medya|eğlence|grup|istatistik|araç|oyun
   async execute({ sock, msg, args, text, from, sender, parsed, commands, isOwner }) { }
 }
 ```
@@ -157,6 +167,10 @@ export default {
   `parsed.mentions` mesajda etiketlenen JID'ler
 - `commands` — ad/alias → komut eşlemesi (`.help` bunu kullanır)
 - `isOwner` — gönderen `OWNER_NUMBER` mı
+
+`category` zorunludur; bilinmeyen kategori `.help`'te "Diğer" başlığına düşer ve
+`npm test` hata verir. Başlıkların sırası `commands/help.js:KATEGORILER`'dedir.
+`createDatasetCommand` ile üretilen havuz komutları varsayılan olarak `eğlence`'dir.
 
 `details` yalnızca kullanımı tek satıra sığmayan komutlara yazılır (`.tts`, `.efekt`,
 oyunlar…); `.ping`, `.zar` gibi basit komutlarda yoktur. Değer koddan türetilebiliyorsa
@@ -237,7 +251,9 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 11 (tamam):** komut bekleme süresi, `.anket`, `.günlük`, `.quiz`. Ayrıntı aşağıda.
 - **Faz 12 (tamam):** LID sahip düzeltmesi, `.sus`/`.konuş`, `.dc`, `.efekt`, `.hava`,
   `.düello`, `.seç`, `.hesap`. Ayrıntı aşağıda.
-- **Faz 13+:** yeni komutlar, her biri ayrı adım
+- **Faz 13 (tamam):** `.help` kategorileri, otomatik testler, `.foto`, `.yaz`,
+  `.deprem`, `.döviz`, `.namaz`, `.8top`, `.burç`, `.rozet`. Ayrıntı aşağıda.
+- **Faz 14+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -279,7 +295,8 @@ kaç kez çağrılırsa çağrılsın aynı söz döner.
 `.ship` yüzdesi iki JID'in **sıralanmış** çiftinden FNV-1a hash ile üretilir:
 sıra değişse de sonuç aynıdır ve bot yeniden başlayınca değişmez.
 
-`.meme` (ve Faz 12'de eklenen `.hava`) dış servise bağlı komutlardır. Zaman aşımı verilir
+`.meme`, `.hava`, `.deprem`, `.döviz` ve `.namaz` dış servise bağlı komutlardır
+(son dördü `lib/http.js:getJson` kullanır). Zaman aşımı verilir
 (`AbortSignal.timeout`), NSFW işaretli gönderi atlanır, servis düşükse
 kullanıcıya "meme servisi şu an cevap vermiyor" yazılır — bot çökmez.
 
@@ -570,9 +587,37 @@ Elle yazılmış özyinelemeli ayrıştırıcı: `+ - * / % ^ ( )`, `×`/`x`, `�
 ondalık virgül. **`eval`/`Function` kullanılmaz** — grupta herkes yazabildiği için
 girdi asla kod olarak çalışmamalı. Sıfıra bölme / sonsuz sonuç `CalcError` olur.
 
+### Faz 13 — Kategoriler, testler, medya ve bilgi komutları
+
+#### Görsel komutları
+
+- `.foto <efekt>` — yanıtlanan `imageMessage`'a `sharp` efekti (sb, sepya, bulanık,
+  keskin, ayna, ters, negatif, piksel). Önce `rotate()` (EXIF yönü) ve en fazla
+  1280 px'e küçültme. `EFEKTLER` dışa açıktır, `test/foto.test.js` her efekti dener.
+- `.yaz <metin>` — `lib/quote.js:renderTextSticker()`: beyaz kalın yazı, siyah
+  kopyanın 8 yöne kaydırılmasıyla kenarlık (pango'da stroke yok), sonra
+  `imageToSticker`. Metin yazılmazsa yanıtlanan mesajın metni kullanılır.
+
+#### Bilgi komutları (API key yok)
+
+| Komut | Servis | Not |
+|---|---|---|
+| `.deprem` | AFAD `apiv2/event/filter` | Tarihler UTC gönderilir/gelir, İstanbul saatine çevrilir. Varsayılan son 24 saat 2.5+, `.deprem 4` son 7 gün |
+| `.döviz` | Frankfurter (ECB) | Günlük referans kur, anlık değil; EUR tabanlı gelir, TL'ye çevrilir |
+| `.namaz` | Aladhan `timingsByAddress`, `method=13` | Diyanet hesabı; imsak = `Fajr` (Aladhan'ın `Imsak` alanı 10 dk ihtiyatlıdır, kullanılmaz). Bulunamayan adres 400 döner |
+
+#### Eğlence ve istatistik
+
+- `.8top` — `data/8top.json`, rastgele.
+- `.burç` — `data/burclar.json`; seçim `fnv1a(burç|istanbulDay())`, yani aynı gün
+  aynı burç aynı yorumu ve aynı yıldızları alır (`.gününsözü` gibi).
+- `.rozet` — hiçbir şey saklamaz; `stats`, `hours` ve `daily`'den hesaplar. Yeni
+  rozet = `commands/rozet.js:ROZETLER`'e bir satır. Seri için
+  `lib/stats.js:getDailyStreak()` (son ödül bugün ya da dün değilse 0).
+
 ## Elle Doğrulama
 
-Otomatik test yok. Değişiklik sonrası:
+`npm test` soket davranışını kapsamaz. Değişiklik sonrası:
 
 1. `npm start` → QR terminale düşer, telefondan okutulur
 2. Süreç durdurulup tekrar başlatılır → QR **sormamalı** (oturum kalıcı)
@@ -604,3 +649,7 @@ Otomatik test yok. Değişiklik sonrası:
 20. Bir sesli mesaja `.efekt ters` → tersten çalan sesli mesaj gelir
 21. `.hava İzmir` → hava kartı; uydurma şehir → "bulamadım"
 22. `.düello @kişi` → seyirci yanıtı yok sayılır; ilk doğru cevap kazanır
+23. `npm test` → hepsi geçer; sonrasında `data/stats.db` değişmemiş olmalı
+24. Bir fotoğrafa `.foto sb` → siyah-beyaz hali gelir; telefonla çekilmiş dikey
+    fotoğraf yan dönmemeli
+25. `.yaz merhaba` → yazı sticker'ı; `.deprem`, `.döviz`, `.namaz Ankara` → veri gelir

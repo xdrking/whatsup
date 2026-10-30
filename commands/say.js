@@ -5,6 +5,7 @@ export default {
   aliases: ['sayi', 'sayı', 'uyesayisi', 'üyesayısı'],
   description: 'Grubun üye sayısını gösterir',
   usage: '.say',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

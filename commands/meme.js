@@ -33,6 +33,7 @@ export default {
   aliases: ['caps', 'mim'],
   description: 'İnternetten rastgele bir meme getirir',
   usage: '.meme',
+  category: 'eğlence',
   ownerOnly: false,
   // Dış servis: hız sınırına takılmayalım.
   cooldown: 10,

@@ -37,6 +37,7 @@ export default {
     'Tek kişi etiketlersen seninle eşleştirir.',
     'Aynı çift için sonuç hep aynıdır; sıra fark etmez.',
   ],
+  category: 'eğlence',
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

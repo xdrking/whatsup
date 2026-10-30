@@ -45,6 +45,7 @@ export default {
     ...Object.entries(EFEKTLER).map(([ad, e]) => `• *${ad}* — ${e.aciklama}`),
     'Sesin ilk 60 saniyesi işlenir.',
   ],
+  category: 'medya',
   ownerOnly: false,
   // Ses indirme + ffmpeg: arka arkaya tetiklenmesin.
   cooldown: 10,

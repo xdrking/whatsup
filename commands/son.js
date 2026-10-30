@@ -7,6 +7,7 @@ export default {
   aliases: ['sonmesaj', 'sonyazan'],
   description: 'Grupta en son mesaj yazan kişiyi gösterir',
   usage: '.son',
+  category: 'grup',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

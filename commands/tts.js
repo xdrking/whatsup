@@ -13,6 +13,7 @@ export default {
     'Bazı dil kodları: tr, en, de, fr, es, it, ru, ar, ja',
     'En fazla 500 karakter.',
   ],
+  category: 'medya',
   ownerOnly: false,
   // Her çağrı Google TTS isteği + ffmpeg dönüşümü.
   cooldown: 10,
