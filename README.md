@@ -12,7 +12,7 @@ yazılan komutlara yanıt verir, kendiliğinden mesaj başlatmaz.
 | Gereksinim | Not |
 |---|---|
 | Node.js 20+ (22 önerilir) | `package.json` → `"type": "module"`, ESM |
-| `ffmpeg` | **Sistem paketi**, npm paketi değil. Yoksa `.sticker`'ın video/GIF kolu ve `.tts` çalışmaz |
+| `ffmpeg` | **Sistem paketi**, npm paketi değil. Yoksa `.sticker`'ın video/GIF kolu, `.tts` ve `.efekt` çalışmaz |
 | `DejaVu Sans` + renkli emoji fontu | `.sticker`'ın metin (alıntı kartı) kolu için |
 | WhatsApp hesabı olan bir telefon | QR okutmak için |
 
@@ -53,15 +53,18 @@ PREFIX=.
 # Sticker paketinde ve yardım metninde görünen ad
 BOT_NAME=wp-bot
 
-# Oyun zaman aşımı (ms). Boş bırakılırsa 1 saat.
+# Oyun zaman aşımı (ms). Boş bırakılırsa .kelime/.kimim 1 saat, .quiz 10 dk,
+# .düello 2 dk. Daha kısa bir değer verilirse tüm oyunlar için o geçerli olur.
 OYUN_TIMEOUT_MS=
 
 # trace | debug | info | warn | error | silent
 LOG_LEVEL=info
 ```
 
-`OWNER_NUMBER` yalnızca `ownerOnly` işaretli komutlar için kullanılır; başka bir
-işlevi yoktur. Boş bırakılabilir, o zaman owner komutu kimsede çalışmaz.
+`OWNER_NUMBER` bot sahibini tanımlar: `ownerOnly` komutlarını yalnızca o çalıştırır,
+bekleme süresine takılmaz ve her grupta `.oyunbitir`, `.sus`, `.konuş` yetkisi vardır
+(grup admini olmasa bile). Boş bırakılabilir; o zaman bu yetkiler kimsede olmaz,
+grup adminlerinin yetkileri yine çalışır.
 
 ## Çalıştırma
 
@@ -91,8 +94,9 @@ sessizce yok sayılır (yalnızca istatistik sayaçlarına işlenir).
 .help sticker    tek komutun ayrıntısı
 ```
 
-Bazı komutlar bir mesajı **yanıtlayarak** çalışır (`.sticker`, `.al`, `.tts`),
-bazıları etiket alır (`.roast @kişi`).
+Bazı komutlar bir mesajı **yanıtlayarak** çalışır (`.sticker`, `.al`, `.tts`, `.efekt`),
+bazıları etiket alır (`.roast @kişi`, `.düello @kişi`). Etiket alan komutlar
+etiket yerine yanıtla da çalışır.
 
 ## Komutlar
 
@@ -143,6 +147,7 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 | `.son` | En son yazan kişi |
 | `.pp` | Profil fotoğrafı |
 | `.id` | JID bilgisi |
+| `.ping` | Botun ayakta olduğunu ve gecikmeyi gösterir |
 | `.sus` / `.konuş` | Botu bu grupta susturur / açar (yalnızca admin veya owner) |
 
 Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
@@ -197,6 +202,10 @@ export default {
   description: 'Selam verir',
   usage: '.selam',
   ownerOnly: false,
+  // Opsiyonel alanlar:
+  // cooldown: 10,          bekleme süresi (sn); yoksa 3, 0 = sınırsız
+  // category: 'oyun',      .help'te "Oyunlar" başlığı altında listelenir
+  // worksWhenMuted: true,  .sus ile susturulmuş grupta da çalışır (yalnızca .konuş)
   async execute({ sock, from, msg }) {
     await sock.sendMessage(from, { text: 'Selam!' }, { quoted: msg })
   }
@@ -210,10 +219,11 @@ Ayrıntı ve komut sözleşmesinin tamamı için `CLAUDE.md`'ye bakın.
 
 ```
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma
-lib/            Paylaşılan yardımcılar (parse, router, sticker, tts, db, stats)
+lib/            Paylaşılan yardımcılar (parse, router, sticker, ses, db, stats,
+                bekleme süresi, susturma, hesap makinesi)
 commands/       Her komut ayrı dosya; index.js klasörü otomatik tarar
 games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .düello)
-data/           İçerik havuzları (JSON) + stats.db
+data/           İçerik havuzları (JSON) + stats.db (sayaçlar, XP, günlük seri, susturulan gruplar)
 auth/           Baileys oturum dosyaları — commit edilmez
 temp/           Medya işleme geçici dosyaları — işlem sonrası silinir
 ```
@@ -245,6 +255,8 @@ hızında ve yalnızca yanıt vererek çalışacak şekilde yazılmıştır; kö
 | `.sticker` video/GIF'te hata veriyor | `ffmpeg` kurulu değil |
 | Sticker metninde kutu karakterler | Font eksik: `fonts-dejavu`, `fonts-noto-color-emoji` |
 | Her açılışta QR soruyor | Oturum düşmüş. `auth/` sil, yeniden okut |
+| Bot bir grupta hiçbir komuta cevap vermiyor | Grup `.sus` ile susturulmuş olabilir. Bir admin `.konuş` yazsın |
+| `.hava` "servis cevap vermiyor" diyor | Open-Meteo'ya ulaşılamıyor; bot çökmez, biraz sonra tekrar deneyin |
 | `.kelime` "servise ulaşılamıyor" diyor | `sozluk.gov.tr` yanıt vermiyor. Kelime geçersiz sayılmaz, oyun devam eder |
 | Konsolda `logged out` | Oturum ölmüştür, yeniden bağlanma denenmez. `auth/` temizleyip yeni QR okutun |
 
