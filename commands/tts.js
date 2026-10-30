@@ -7,6 +7,8 @@ export default {
   description: 'Metni sese çevirip sesli mesaj olarak gönderir',
   usage: '.tts merhaba dünya | tr  —  ya da bir mesajı yanıtlayarak .tts | en',
   ownerOnly: false,
+  // Her çağrı Google TTS isteği + ffmpeg dönüşümü.
+  cooldown: 10,
 
   async execute({ sock, msg, from, text: raw, parsed }) {
     const { text: typed, lang } = parseTtsInput(raw)

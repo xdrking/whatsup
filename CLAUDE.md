@@ -61,15 +61,15 @@ Test altyapısı yok — bot davranışı canlı WhatsApp bağlantısıyla elle 
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
-games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim)
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
 auth/           Baileys oturum dosyaları — GİT'E ASLA GİRMEZ
 temp/           Medya işleme sırasında geçici dosyalar — her işlemden sonra silinir
 ```
 
 `games/` içindeki `.js` dosyaları komut değildir; `commands/index.js` klasörü düz
-tarar, alt klasöre inmez. Oyun komutları `commands/kelime.js`, `commands/kimim.js`
-ve `commands/oyunbitir.js`'tir; gövde `games/` altındadır.
+tarar, alt klasöre inmez. Oyun komutları `commands/kelime.js`, `commands/kimim.js`,
+`commands/quiz.js` ve `commands/oyunbitir.js`'tir; gövde `games/` altındadır.
 
 `data/*.json` dosyaları **elle yazılmış içerik havuzlarıdır** (şaka, fal, roast…).
 Biçim: düz string dizisi. Kod bu dosyaları asla yazmaz, yalnızca okur.
@@ -122,8 +122,10 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/contacts.js` | JID → pushName | bellek (süreçle ölür) |
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
-| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`) | bellek (süreçle ölür) |
+| `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
 Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe.
@@ -139,6 +141,7 @@ export default {
   description: 'Yanıtlanan görsel/video/gif dosyasını sticker yapar',
   usage: '.sticker (bir medyayı yanıtlayarak)',
   ownerOnly: false,
+  cooldown: 10,          // opsiyonel, saniye; yoksa 3, 0 = sınırsız
   async execute({ sock, msg, args, text, from, sender, parsed, commands, isOwner }) { }
 }
 ```
@@ -221,7 +224,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
   getirdiği için en son yapıldı. Ayrıntı aşağıda.
 - **Faz 10 (tamam):** `.kelime` ve `.kimim` grup oyunları — `games/` altında ayrı
   bir oyun katmanı, yanıt (reply) tabanlı cevap akışı. Ayrıntı aşağıda.
-- **Faz 11+:** yeni komutlar, her biri ayrı adım
+- **Faz 11 (tamam):** komut bekleme süresi, `.anket`, `.günlük`, `.quiz`. Ayrıntı aşağıda.
+- **Faz 12+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -435,8 +439,11 @@ tahmin +10. `recordMessage`'ın 30 sn'lik cooldown'u burada uygulanmaz (oyun XP'
 kazanılmış XP'dir) ve `hours` tablosuna yazılmaz. `.stats`, `.profil` ve `.top`
 aynı `stats.xp` sütununu okuduğu için ek iş yoktur.
 
-`.oyunbitir` oyunu erkenden kapatır; yalnızca **oyunu başlatan kişi** veya
-`OWNER_NUMBER` çalıştırabilir.
+`.oyunbitir` oyunu erkenden kapatır; **oyunu başlatan kişi**, **grup adminleri**
+ve `OWNER_NUMBER` çalıştırabilir. Admin kontrolü `lib/group.js:isGroupAdmin()`
+ile yapılır (60 sn önbellekli grup bilgisi; katılımcının `id`/`lid`/`jid`
+alanlarının hepsine bakılır). Grup bilgisi alınamazsa kişi admin sayılmaz.
+Başlatan kişi ve sahip için grup bilgisi hiç sorulmaz.
 
 #### `tdk-all-api` neden yedek ve neden şu an ölü
 
@@ -453,6 +460,55 @@ biri (`terim?eser_ad=tümü`) 2026-08 itibarıyla bağlantıyı reddediyor, yani
 
 Paket kaldırılırsa `lib/turkishWords.js` içindeki `yedekSorgula()` silinir,
 başka hiçbir yer etkilenmez.
+
+### Faz 11 — Bekleme süresi, `.anket`, `.günlük`, `.quiz`
+
+#### Komut bekleme süresi (`lib/cooldown.js`)
+
+`lib/handler.js`, yetki kontrolünden sonra `checkCooldown()` çağırır. Anahtar
+**kullanıcı + komut adı**dır (alias'lar aynı komuta düşer). Süre komut
+dosyasındaki `cooldown` alanından (saniye) okunur, yoksa 3 sn. Ağır komutlar:
+`.sticker`/`.al`/`.tts`/`.meme`/`.anket` 10 sn, `.etiket` 30 sn.
+
+- Bekleme penceresinde **ilk** reddedilen denemeye bir kez "⏳ biraz yavaş"
+  yazılır, sonrakiler sessizce düşer — her spam'e cevap vermek de spam olurdu.
+- Süre komut çalışmadan **önce** başlar: komut hatalı kullanılsa da bekleme
+  işler. Bilinçli: aksi halde eşzamanlı iki çağrı ikisi de geçer.
+- Bot sahibi (`OWNER_NUMBER`) muaftır.
+- Oyun cevapları komut değildir, bekleme süresinden etkilenmez.
+
+#### `.anket`
+
+`.anket Soru | a | b | c` → Baileys'in yerel `poll` mesajı, tek seçimli
+(`selectableCount: 1`). 2-12 seçenek; aynı seçenek iki kez yazılırsa reddedilir.
+Oylar WhatsApp'ta kalır, bot oyları okumaz/saymaz.
+
+#### `.günlük`
+
+Günde bir kez XP. Gün sınırı `.gününsözü` ile aynıdır: `istanbulDay()`
+(Europe/Istanbul). Ödül `20 + 5 × (seri − 1)`, seri 7'de tavan (50 XP). Dün
+alınmadıysa seri 1'e döner. Hesap tek yerde: `lib/stats.js:claimDaily()`.
+
+```
+daily(chat_jid, user_jid, last_day 'YYYY-MM-DD', streak)   PK(chat_jid,user_jid)
+```
+
+Okuma + yazma + XP ekleme tek transaction'dadır. XP `stats.xp`'ye gider;
+`.profil`/`.top` ek iş olmadan görür.
+
+#### `.quiz`
+
+`games/quiz.js` + `games/quiz.json` (`[{ question, options[2-4], answer }]`,
+`answer` seçeneklerden birinin **metni**; tutmayan kayıt elenir). Seçenek
+sırası her oyunda karışır.
+
+- Cevap harf (`b`, `B)`), sıra numarası (`2`) ya da seçeneğin kendisi olabilir.
+  Anlaşılmayan yanıta kısa bir hatırlatma yazılır, hak yanmaz.
+- **Kişi başı tek hak**: yanlış cevap veren o soruda tekrar deneyemez —
+  şıkları sırayla deneyerek kazanılmasın.
+- Süre 10 dk: `startGame` state'inde `timeoutMs` verilirse `gameManager` onu
+  kullanır; `OYUN_TIMEOUT_MS` daha kısaysa o kazanır. Diğer oyunlar 1 saatte.
+- Doğru cevap +5 XP (`addXp`).
 
 ## Elle Doğrulama
 
@@ -474,5 +530,11 @@ Otomatik test yok. Değişiklik sonrası:
 11. Botun **eski** bir oyun mesajına yanıt → hiç tepki yok; yalnızca en son
     oyun mesajına verilen yanıt işlenir
 12. Oyun açıkken ikinci bir `.kelime`/`.kimim` → "zaten aktif bir oyun var"
-13. `.oyunbitir` başkası tarafından → reddedilir; başlatan kişi ya da bot sahibi
-    tarafından → oyun kapanır ve özet gelir
+13. `.oyunbitir` sıradan üye tarafından → reddedilir; başlatan kişi, grup admini
+    ya da bot sahibi tarafından → oyun kapanır ve özet gelir
+14. Aynı komut 3 sn içinde üç kez → ilki çalışır, ikincisine "⏳" uyarısı,
+    üçüncüsüne hiç tepki yok; bot sahibi için bekleme yok
+15. `.anket Soru | a | b` → yerel anket; tek seçenekle → kullanım metni
+16. `.günlük` iki kez → ikincisi "zaten aldın"; `.profil` XP'yi göstermeli
+17. `.quiz` → yanlış cevap veren aynı soruda tekrar deneyemez; doğru cevapta
+    oyun kapanır, +5 XP

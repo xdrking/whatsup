@@ -22,6 +22,8 @@ export default {
   description: 'Gruptaki herkesi etiketler; sayı verilirse o kadar rastgele kişiyi',
   usage: '.etiket  —  .etiket 3  —  .etiket toplantı var',
   ownerOnly: false,
+  // Her çağrı tüm gruba bildirim düşürür.
+  cooldown: 30,
 
   async execute({ sock, msg, from, args, parsed }) {
     const meta = await requireGroupMetadata({ sock, msg, from, parsed })

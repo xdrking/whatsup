@@ -123,6 +123,7 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 | `.zar` | 1-6 zar |
 | `.coin` | Yazı tura |
 | `.meme` | İnternetten rastgele meme |
+| `.anket Soru \| a \| b` | Tek seçimli WhatsApp anketi (2-12 seçenek) |
 
 ### Grup
 
@@ -147,10 +148,12 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.stats` | Mesaj/sticker/ses sayıları ve en aktif saat |
 | `.profil` | Ad, level, XP |
 | `.top` | Sohbetteki XP sıralaması. `.top 5` |
+| `.günlük` | Günde bir kez XP ödülü; üst üste gelirsen seri büyür |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
 XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu),
-geçerli oyun kelimesi +3, doğru oyun tahmini +10. Level = `floor(sqrt(xp / 50))`.
+geçerli oyun kelimesi +3, doğru quiz cevabı +5, doğru kimim tahmini +10,
+`.günlük` 20-50 (seri 7. günde tavana ulaşır). Level = `floor(sqrt(xp / 50))`.
 
 **Mesaj içeriği hiçbir yerde saklanmaz** — yalnızca sayaçlar.
 
@@ -160,12 +163,19 @@ geçerli oyun kelimesi +3, doğru oyun tahmini +10. Level = `floor(sqrt(xp / 50)
 |---|---|
 | `.kelime` | Türkçe kelime zinciri. Kelimeler TDK'de doğrulanır |
 | `.kimim` | Karakter tahmini; her 3 yanlışta yeni ipucu |
-| `.oyunbitir` | Aktif oyunu kapatır (yalnızca başlatan kişi veya owner) |
+| `.quiz` | 4 şıklı bilgi sorusu; herkesin tek hakkı var, ilk bilen kazanır (10 dk) |
+| `.oyunbitir` | Aktif oyunu kapatır (başlatan kişi, grup admini veya owner) |
 
 Oyun cevapları prefix taşımaz: botun **en son** oyun mesajını **yanıtlayarak**
 yazılır. Başka bir mesaja verilen yanıtlar ya da yanıtsız mesajlar yok sayılır.
-Bir grupta aynı anda tek oyun çalışır; oyunlar 1 saat sonra kendiliğinden kapanır.
+Bir grupta aynı anda tek oyun çalışır; oyunlar 1 saat (quiz 10 dk) sonra kendiliğinden kapanır.
 Durum yalnızca bellektedir — bot yeniden başlarsa yarım oyunlar düşer.
+
+### Bekleme süresi
+
+Aynı kişi aynı komutu art arda yazarsa komut çalışmaz; ilk denemede bir kez
+"⏳ biraz yavaş" uyarısı gelir, sonrakiler sessizce yok sayılır. Varsayılan 3 sn;
+`.sticker`, `.al`, `.tts`, `.meme`, `.anket` 10 sn, `.etiket` 30 sn. Bot sahibi muaftır.
 
 ## Yeni komut ekleme
 
@@ -195,7 +205,7 @@ Ayrıntı ve komut sözleşmesinin tamamı için `CLAUDE.md`'ye bakın.
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma
 lib/            Paylaşılan yardımcılar (parse, router, sticker, tts, db, stats)
 commands/       Her komut ayrı dosya; index.js klasörü otomatik tarar
-games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim)
+games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz)
 data/           İçerik havuzları (JSON) + stats.db
 auth/           Baileys oturum dosyaları — commit edilmez
 temp/           Medya işleme geçici dosyaları — işlem sonrası silinir

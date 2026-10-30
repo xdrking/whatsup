@@ -17,7 +17,9 @@ export function getGame(chatJid) {
 }
 
 function zamanlayiciKur(state) {
-  const sure = timeoutMs()
+  // Oyun kendi süresini verebilir (quiz: tek soru, 10 dk). OYUN_TIMEOUT_MS
+  // denemede daha kısaysa o kazanır.
+  const sure = Math.min(state.timeoutMs ?? Infinity, timeoutMs())
   state.expiresAt = Date.now() + sure
 
   // unref: bekleyen bir oyun zamanlayıcısı süreç kapanışını geciktirmesin.

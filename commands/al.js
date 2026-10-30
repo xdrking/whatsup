@@ -8,6 +8,8 @@ export default {
   description: 'Yanıtlanan sticker\'ı görsele (animasyonluysa videoya) çevirir',
   usage: '.al (bir sticker\'ı yanıtlayarak)',
   ownerOnly: false,
+  // Medya dönüşümü (sharp/ffmpeg) ağır: arka arkaya tetiklenmesin.
+  cooldown: 10,
 
   async execute({ sock, msg, from, parsed }) {
     const quoted = parsed.quoted

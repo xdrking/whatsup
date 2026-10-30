@@ -81,6 +81,8 @@ export default {
   description: 'Yanıtlanan görseli, videoyu, GIF\'i veya metin mesajını sticker\'a çevirir',
   usage: '.sticker (bir medyayı ya da bir mesajı yanıtlayarak)',
   ownerOnly: false,
+  // Medya dönüşümü (sharp/ffmpeg) ağır: arka arkaya tetiklenmesin.
+  cooldown: 10,
 
   async execute({ sock, msg, from, parsed }) {
     const media = findMedia(msg, parsed)

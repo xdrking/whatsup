@@ -34,6 +34,8 @@ export default {
   description: 'İnternetten rastgele bir meme getirir',
   usage: '.meme',
   ownerOnly: false,
+  // Dış servis: hız sınırına takılmayalım.
+  cooldown: 10,
 
   async execute({ sock, msg, from }) {
     await sock.sendMessage(from, { react: { text: '⏳', key: msg.key } })
