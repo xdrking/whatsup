@@ -7,6 +7,12 @@ export default {
   aliases: ['botsus', 'mute'],
   description: 'Botu bu grupta susturur (admin) — açmak için .konuş',
   usage: '.sus',
+  details: [
+    'Yalnızca grup adminleri ve bot sahibi kullanabilir.',
+    'Susturulunca bot komutlara ve oyun cevaplarına yanıt vermez; istatistikler sayılmaya devam eder.',
+    'Aktif oyun varsa kapatılır. Bot yeniden başlasa da susmaya devam eder.',
+    'Açmak için `.konuş`.',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, sender, parsed, isOwner }) {

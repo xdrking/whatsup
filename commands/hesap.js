@@ -9,6 +9,11 @@ export default {
   aliases: ['hesapla', 'calc'],
   description: 'Dört işlem, üs, mod ve parantezli hesap yapar',
   usage: '.hesap (12 + 3) * 4 / 2',
+  details: [
+    'İşlemler: `+ - * / % ^` ve parantez. `×`, `x`, `÷`, `:` de olur.',
+    'Ondalık için virgül ya da nokta: `.hesap 3,5 * 2`',
+    'Örnekler: `.hesap 2^10`  •  `.hesap (120 - 20) / 4`  •  `.hesap 17 % 5`',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, text }) {

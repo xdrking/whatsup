@@ -12,6 +12,10 @@ export default {
   aliases: ['sıralama', 'siralama', 'liderlik'],
   description: 'Gruptaki en yüksek XP\'ye sahip kullanıcıları sıralar',
   usage: '.top  —  .top 5',
+  details: [
+    '`.top` → ilk 10, `.top 5` → ilk 5 (en fazla 25).',
+    'Sıralama XP\'ye göredir ve her grupta ayrıdır.',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

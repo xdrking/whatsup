@@ -46,6 +46,11 @@ export default {
   aliases: ['havadurumu', 'weather'],
   description: 'Şehrin anlık hava durumu ve günün en düşük/en yüksek sıcaklığı',
   usage: '.hava İstanbul',
+  details: [
+    'Örnekler: `.hava İzmir`  •  `.hava Kadıköy`  •  `.hava Berlin`',
+    'Anlık sıcaklık ve hissedilen, günün en düşük/en yüksek sıcaklığı, nem, rüzgâr, yağış ihtimali.',
+    'Aynı adlı birden fazla yer varsa en kalabalık olanı seçilir.',
+  ],
   ownerOnly: false,
   // Dış servis: hız sınırına takılmayalım.
   cooldown: 10,

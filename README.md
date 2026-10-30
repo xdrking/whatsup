@@ -204,6 +204,7 @@ export default {
   ownerOnly: false,
   // Opsiyonel alanlar:
   // cooldown: 10,          bekleme süresi (sn); yoksa 3, 0 = sınırsız
+  // details: ['…'],        .help selam yazınca gösterilen örnekli açıklama
   // category: 'oyun',      .help'te "Oyunlar" başlığı altında listelenir
   // worksWhenMuted: true,  .sus ile susturulmuş grupta da çalışır (yalnızca .konuş)
   async execute({ sock, from, msg }) {

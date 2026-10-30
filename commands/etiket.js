@@ -21,6 +21,12 @@ export default {
   aliases: ['tagall', 'herkes', 'duyuru'],
   description: 'Gruptaki herkesi etiketler; sayı verilirse o kadar rastgele kişiyi',
   usage: '.etiket  —  .etiket 3  —  .etiket toplantı var',
+  details: [
+    '`.etiket` → herkesi etiketler.',
+    '`.etiket 3` → rastgele 3 kişiyi etiketler.',
+    'Sonuna not ekleyebilirsin: `.etiket toplantı var`  •  `.etiket 2 bulaşık sırası`',
+    'Aynı kişi 30 sn içinde tekrar kullanamaz.',
+  ],
   ownerOnly: false,
   // Her çağrı tüm gruba bildirim düşürür.
   cooldown: 30,

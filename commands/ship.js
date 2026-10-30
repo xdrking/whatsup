@@ -32,6 +32,11 @@ export default {
   aliases: ['uyum', 'eşleştir', 'eslestir'],
   description: 'İki kişi arasında uyumluluk yüzdesi hesaplar (hep aynı sonucu verir)',
   usage: '.ship @kişi1 @kişi2  —  tek kişi etiketlersen seninle eşleştirir',
+  details: [
+    '`.ship @a @b` → iki kişinin uyumu.',
+    'Tek kişi etiketlersen seninle eşleştirir.',
+    'Aynı çift için sonuç hep aynıdır; sıra fark etmez.',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

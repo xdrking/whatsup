@@ -7,6 +7,12 @@ export default {
   aliases: ['bilmece', 'bilgi', 'yarışma', 'yarisma'],
   description: '4 şıklı bilgi sorusu — ilk bilen XP kazanır',
   usage: '.quiz',
+  details: [
+    'Bot 4 şıklı bir bilgi sorusu sorar.',
+    'Cevabı soru mesajını yanıtlayarak yaz: harf (`b`), numara (`2`) ya da şıkkın kendisi.',
+    'Herkesin tek hakkı var; ilk doğru cevap +5 XP alır.',
+    '10 dakika içinde bilen çıkmazsa oyun kapanır ve cevap söylenir.',
+  ],
   category: 'oyun',
   ownerOnly: false,
 

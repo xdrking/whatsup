@@ -20,6 +20,11 @@ export default {
   aliases: ['doğrulukcesaret', 'dogrulukcesaret', 'td'],
   description: 'Doğruluk mu cesaret mi — hedefe soru ya da görev verir',
   usage: '.dc  —  .dc d @kişi  —  .dc c (bir mesajı yanıtlayarak)',
+  details: [
+    '`.dc` → kendine rastgele doğruluk ya da cesaret.',
+    '`.dc d` → doğruluk sorusu, `.dc c` → cesaret görevi.',
+    'Başkasına vermek için etiketle ya da mesajını yanıtla: `.dc c @kişi`',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

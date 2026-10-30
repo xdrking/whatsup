@@ -6,6 +6,13 @@ export default {
   aliases: ['ses', 'seslendir'],
   description: 'Metni sese çevirip sesli mesaj olarak gönderir',
   usage: '.tts merhaba dünya | tr  —  ya da bir mesajı yanıtlayarak .tts | en',
+  details: [
+    '`.tts merhaba dünya` → Türkçe sesli mesaj.',
+    'Dil için sona `| dil kodu` ekle: `.tts hello world | en`',
+    'Bir mesajı yanıtlayıp `.tts` yazarsan o mesaj okunur; dil için `.tts | en`',
+    'Bazı dil kodları: tr, en, de, fr, es, it, ru, ar, ja',
+    'En fazla 500 karakter.',
+  ],
   ownerOnly: false,
   // Her çağrı Google TTS isteği + ffmpeg dönüşümü.
   cooldown: 10,

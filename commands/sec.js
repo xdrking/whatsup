@@ -3,6 +3,10 @@ export default {
   aliases: ['sec', 'karar', 'choose'],
   description: 'Yazılan seçeneklerden birini rastgele seçer',
   usage: '.seç pizza | döner | lahmacun',
+  details: [
+    'Seçenekleri `|` ya da virgülle ayır:',
+    '`.seç çay, kahve`  •  `.seç sinema | maç | evde kal`',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, text }) {

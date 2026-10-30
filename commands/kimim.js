@@ -7,6 +7,12 @@ export default {
   aliases: ['kimimben', 'tahmin'],
   description: 'Karakter tahmin oyunu başlatır',
   usage: '.kimim',
+  details: [
+    'Bot bir ünlü seçer ve ipucu verir; tahminini botun *son* oyun mesajını yanıtlayarak yaz.',
+    'Her 3 yanlış tahminde yeni ipucu açılır.',
+    'Tam ad, soyad ya da ad + soyad kabul edilir; Türkçe karakter kullanmak şart değil.',
+    'Doğru bilen +10 XP alır. 1 saat içinde bilen çıkmazsa cevap söylenir.',
+  ],
   category: 'oyun',
   ownerOnly: false,
 

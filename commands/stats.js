@@ -17,6 +17,10 @@ export default {
   aliases: ['istatistik', 'ist'],
   description: 'Kullanıcının mesaj/sticker/ses istatistiklerini gösterir',
   usage: '.stats  —  .stats @kişi  —  bir mesajı yanıtlayarak .stats',
+  details: [
+    'Kendin için `.stats`; başkası için etiketle ya da mesajını yanıtla.',
+    'Mesaj, sticker, ses sayıları ve en aktif olduğun saat. Sayaçlar her grupta ayrıdır.',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

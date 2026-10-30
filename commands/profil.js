@@ -14,6 +14,10 @@ export default {
   aliases: ['profile', 'level', 'seviye'],
   description: 'Kullanıcının seviye ve XP profilini gösterir',
   usage: '.profil  —  .profil @kişi  —  bir mesajı yanıtlayarak .profil',
+  details: [
+    'Kendin için `.profil`; başkası için etiketle ya da mesajını yanıtla.',
+    'XP: mesaj +1, sticker/ses +2 (30 sn\'de bir), `.günlük` 20-50, oyunlar +3/+5/+10.',
+  ],
   ownerOnly: false,
 
   async execute({ sock, msg, from, args, parsed }) {

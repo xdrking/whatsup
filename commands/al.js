@@ -7,6 +7,10 @@ export default {
   aliases: ['toimg', 'gorsel', 'görsel'],
   description: 'Yanıtlanan sticker\'ı görsele (animasyonluysa videoya) çevirir',
   usage: '.al (bir sticker\'ı yanıtlayarak)',
+  details: [
+    'Bir sticker\'ı yanıtlayıp `.al` yaz → görsel olarak geri gelir.',
+    'Animasyonlu sticker, GIF gibi döngüsel oynayan video olarak gelir.',
+  ],
   ownerOnly: false,
   // Medya dönüşümü (sharp/ffmpeg) ağır: arka arkaya tetiklenmesin.
   cooldown: 10,

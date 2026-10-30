@@ -14,6 +14,11 @@ export default {
   aliases: ['oylama', 'poll'],
   description: 'Tek seçimli WhatsApp anketi açar',
   usage: '.anket Soru | seçenek 1 | seçenek 2',
+  details: [
+    '`.anket Akşam ne yiyelim? | pizza | döner | lahmacun`',
+    'İlk parça soru, `|` ile ayrılan diğerleri seçenek.',
+    '2-12 seçenek, herkes tek seçim yapar. Oylar WhatsApp\'ın kendi anketinde sayılır.',
+  ],
   ownerOnly: false,
   cooldown: 10,
 

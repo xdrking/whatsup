@@ -80,6 +80,12 @@ export default {
   aliases: ['s', 'stiker'],
   description: 'Yanıtlanan görseli, videoyu, GIF\'i veya metin mesajını sticker\'a çevirir',
   usage: '.sticker (bir medyayı ya da bir mesajı yanıtlayarak)',
+  details: [
+    'Bir görseli, videoyu ya da GIF\'i yanıtlayıp `.sticker` yaz → sticker olur.',
+    'Video/GIF en fazla 30 sn olmalı; ilk 6 saniyesi animasyonlu sticker yapılır.',
+    'Düz bir metin mesajını yanıtlarsan yazarın adı ve fotoğrafıyla sohbet balonu sticker\'ı çıkar.',
+    'Açıklamalı bir görseli yanıtlarsan açıklama değil, görselin kendisi sticker olur.',
+  ],
   ownerOnly: false,
   // Medya dönüşümü (sharp/ffmpeg) ağır: arka arkaya tetiklenmesin.
   cooldown: 10,

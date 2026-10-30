@@ -7,6 +7,10 @@ export default {
   aliases: ['oyundur', 'oyuniptal'],
   description: 'Gruptaki aktif oyunu durdurur',
   usage: '.oyunbitir',
+  details: [
+    'Aktif oyunu kapatır ve cevabı/özeti gösterir.',
+    'Yalnızca oyunu başlatan kişi, grup adminleri ve bot sahibi kullanabilir.',
+  ],
   category: 'oyun',
   ownerOnly: false,
 

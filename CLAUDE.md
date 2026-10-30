@@ -143,6 +143,7 @@ export default {
   usage: '.sticker (bir medyayı yanıtlayarak)',
   ownerOnly: false,
   cooldown: 10,          // opsiyonel, saniye; yoksa 3, 0 = sınırsız
+  details: ['…'],        // opsiyonel, `.help <komut>` örnekli açıklaması
   async execute({ sock, msg, args, text, from, sender, parsed, commands, isOwner }) { }
 }
 ```
@@ -156,6 +157,10 @@ export default {
   `parsed.mentions` mesajda etiketlenen JID'ler
 - `commands` — ad/alias → komut eşlemesi (`.help` bunu kullanır)
 - `isOwner` — gönderen `OWNER_NUMBER` mı
+
+`details` yalnızca kullanımı tek satıra sığmayan komutlara yazılır (`.tts`, `.efekt`,
+oyunlar…); `.ping`, `.zar` gibi basit komutlarda yoktur. Değer koddan türetilebiliyorsa
+elle tekrar yazılmaz: `.efekt`'in listesi `EFEKTLER`'den üretilir.
 
 ### Yetki
 

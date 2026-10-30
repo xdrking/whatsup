@@ -9,6 +9,12 @@ export default {
   aliases: ['duello', 'kapışma', 'kapisma', 'vs'],
   description: 'Biriyle hızlı matematik düellosu — ilk doğru cevap kazanır',
   usage: '.düello @kişi  —  ya da bir mesajı yanıtlayarak .düello',
+  details: [
+    'İkinize aynı işlem sorulur (toplama, çıkarma ya da çarpma).',
+    'Cevabı botun düello mesajını yanıtlayarak sayıyla yazın.',
+    'İlk doğru cevap kazanır (+5 XP). Herkesin tek hakkı var; ikiniz de yanlış derseniz berabere.',
+    '2 dakikada cevap gelmezse düello kapanır. Seyircilerin cevabı sayılmaz.',
+  ],
   category: 'oyun',
   ownerOnly: false,
 

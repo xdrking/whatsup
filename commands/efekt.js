@@ -38,6 +38,13 @@ export default {
   aliases: ['sesefekt', 'fx'],
   description: 'Yanıtlanan sese efekt uygular (ters, hızlı, incelt, robot…)',
   usage: '.efekt ters (bir sesli mesajı yanıtlayarak)',
+  // Efekt listesi EFEKTLER'den üretilir: yeni efekt eklenince yardım da güncellenir.
+  details: [
+    'Bir sesli mesajı yanıtlayıp `.efekt <ad>` yaz → efektli hali sesli mesaj olarak gelir.',
+    'Efektler:',
+    ...Object.entries(EFEKTLER).map(([ad, e]) => `• *${ad}* — ${e.aciklama}`),
+    'Sesin ilk 60 saniyesi işlenir.',
+  ],
   ownerOnly: false,
   // Ses indirme + ffmpeg: arka arkaya tetiklenmesin.
   cooldown: 10,

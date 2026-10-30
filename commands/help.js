@@ -37,6 +37,8 @@ export default {
             command.description,
             '',
             `Kullanım: \`${command.usage}\``,
+            // Karmaşık komutlar örnekli açıklama taşır; basit komutlarda yoktur.
+            ...(command.details?.length ? ['', ...command.details, ''] : []),
             `Diğer adları: ${aliases}`,
           ].join('\n'),
         },
