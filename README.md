@@ -172,7 +172,8 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
 XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu),
-geçerli oyun kelimesi +3, doğru quiz cevabı ve düello galibiyeti +5, doğru kimim tahmini +10,
+geçerli oyun kelimesi +3, doğru quiz cevabı, düello galibiyeti, emoji tahmini ve adam asmacada
+kelimeyi bulmak +5, doğru kimim tahmini +10,
 `.günlük` 20-50 (seri 7. günde tavana ulaşır). Level = `floor(sqrt(xp / 50))`.
 
 **Mesaj içeriği hiçbir yerde saklanmaz** — yalnızca sayaçlar.
@@ -185,11 +186,14 @@ geçerli oyun kelimesi +3, doğru quiz cevabı ve düello galibiyeti +5, doğru 
 | `.kimim` | Karakter tahmini; her 3 yanlışta yeni ipucu |
 | `.quiz` | 4 şıklı bilgi sorusu; herkesin tek hakkı var, ilk bilen kazanır (10 dk) |
 | `.düello @kişi` | İki kişilik hızlı matematik düellosu; ilk doğru cevap kazanır (2 dk) |
+| `.emoji` | Emojilerden film/dizi/şarkı tahmini; her 3 yanlışta ipucu, ilk bilen kazanır (10 dk) |
+| `.adamasmaca` | Grupça adam asmaca: harf ya da kelimenin tamamı yazılır, 6 yanlışta adam asılır |
 | `.oyunbitir` | Aktif oyunu kapatır (başlatan kişi, grup admini veya owner) |
 
 Oyun cevapları prefix taşımaz: botun **en son** oyun mesajını **yanıtlayarak**
 yazılır. Başka bir mesaja verilen yanıtlar ya da yanıtsız mesajlar yok sayılır.
-Bir grupta aynı anda tek oyun çalışır; oyunlar 1 saat (quiz 10 dk) sonra kendiliğinden kapanır.
+Bir grupta aynı anda tek oyun çalışır; oyunlar 1 saat (quiz ve emoji 10 dk, adam asmaca son
+tahminden 10 dk) sonra kendiliğinden kapanır.
 Durum yalnızca bellektedir — bot yeniden başlarsa yarım oyunlar düşer.
 
 ### Bekleme süresi
@@ -233,7 +237,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma
 lib/            Paylaşılan yardımcılar (parse, router, sticker, ses, db, stats,
                 bekleme süresi, susturma, hesap makinesi)
 commands/       Her komut ayrı dosya; index.js klasörü otomatik tarar
-games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .düello)
+games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca)
 test/           Otomatik testler (npm test)
 data/           İçerik havuzları (JSON) + stats.db (sayaçlar, XP, günlük seri, susturulan gruplar)
 auth/           Baileys oturum dosyaları — commit edilmez

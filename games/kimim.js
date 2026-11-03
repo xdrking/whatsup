@@ -72,7 +72,7 @@ const KATLAMA = {
   û: 'u',
 }
 
-function katla(text) {
+export function katla(text) {
   return String(text || '')
     .toLocaleLowerCase('tr')
     .split('')

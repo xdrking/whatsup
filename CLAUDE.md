@@ -69,7 +69,7 @@ kategori, ad çakışması, `details` biçimi ve `data/*.json` hatalarını yaka
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
-games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello)
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
 auth/           Baileys oturum dosyaları — GİT'E ASLA GİRMEZ
@@ -78,7 +78,8 @@ temp/           Medya işleme sırasında geçici dosyalar — her işlemden son
 
 `games/` içindeki `.js` dosyaları komut değildir; `commands/index.js` klasörü düz
 tarar, alt klasöre inmez. Oyun komutları `commands/kelime.js`, `commands/kimim.js`,
-`commands/quiz.js`, `commands/duello.js` ve `commands/oyunbitir.js`'tir; gövde `games/` altındadır.
+`commands/quiz.js`, `commands/duello.js`, `commands/emoji.js`, `commands/adamasmaca.js` ve
+`commands/oyunbitir.js`'tir; gövde `games/` altındadır.
 
 `data/*.json` dosyaları **elle yazılmış içerik havuzlarıdır** (şaka, fal, roast…).
 Biçim: düz string dizisi. Kod bu dosyaları asla yazmaz, yalnızca okur.
@@ -132,7 +133,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
-| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`) | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
@@ -253,7 +254,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
   `.düello`, `.seç`, `.hesap`. Ayrıntı aşağıda.
 - **Faz 13 (tamam):** `.help` kategorileri, otomatik testler, `.foto`, `.yaz`,
   `.deprem`, `.döviz`, `.namaz`, `.8top`, `.burç`, `.rozet`. Ayrıntı aşağıda.
-- **Faz 14+:** yeni komutlar, her biri ayrı adım
+- **Faz 14 (tamam):** `.kimim` alternatif cevapları, `.emoji` ve `.adamasmaca`. Ayrıntı aşağıda.
+- **Faz 15+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -617,6 +619,27 @@ girdi asla kod olarak çalışmamalı. Sıfıra bölme / sonsuz sonuç `CalcErro
   rozet = `commands/rozet.js:ROZETLER`'e bir satır. Seri için
   `lib/stats.js:getDailyStreak()` (son ödül bugün ya da dün değilse 0).
 
+### Faz 14 — Alternatif cevaplar, `.emoji`, `.adamasmaca`
+
+#### `.emoji`
+
+`games/emoji.js` + `games/emoji.json` (`[{ emoji, type, answer, aliases?[] }]`,
+`type` başlangıçta gösterilir: Film/Dizi/Şarkı). Eşleştirme `.kimim`'in
+`katla()`'sını kullanır ama **yalnızca tam eşleşme** kabul eder — soyad kuralı
+yok, "Kurtlar Vadisi" için "vadisi" geçmez. Yabancı yapımlar Türkçe adıyla
+sorulur, bilinen özgün adı `aliases`'a yazılır. Her 3 yanlışta ipucu: önce harf
+kalıbı (`_ _ _ _   _ _ _`), sonra baş harfler. Süre 10 dk (`timeoutMs`), +5 XP.
+
+#### `.adamasmaca`
+
+`games/adamasmaca.js`; ayrı havuz yok, `games/kelimeler.json`'daki 4-10 harfli
+kelimeler kullanılır. Yanıt tek harf ya da tek kelime olmalı, başka her şeye
+kısa bir hatırlatma yazılır ve ceza verilmez. Tekrar edilen harf ceza almaz;
+yanlış harf ve yanlış kelime tahmini 1 yanlış sayılır, 6'da oyun biter.
+Değerlendirme (`tahminEt`) senkron olduğu için eşzamanlı iki tahmin sırayla
+işlenir. Süre her tahminde sıfırlanır (`touchGame`), 10 dk tahmin gelmezse
+kapanır. Kelimeyi tamamlayan ya da bilen +5 XP.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -655,3 +678,5 @@ girdi asla kod olarak çalışmamalı. Sıfıra bölme / sonsuz sonuç `CalcErro
 24. Bir fotoğrafa `.foto sb` → siyah-beyaz hali gelir; telefonla çekilmiş dikey
     fotoğraf yan dönmemeli
 25. `.yaz merhaba` → yazı sticker'ı; `.deprem`, `.döviz`, `.namaz Ankara` → veri gelir
+26. `.emoji` → 3 yanlışta harf kalıbı gelir; doğru cevap (ya da İngilizce adı) oyunu bitirir
+27. `.adamasmaca` → harf yanıtı tahtayı günceller, aynı harf tekrar ceza almaz; 6 yanlışta adam asılır

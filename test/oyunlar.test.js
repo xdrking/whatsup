@@ -8,6 +8,8 @@ process.env.STATS_DB = ':memory:'
 const { secenekIndeksi } = await import('../games/quiz.js')
 const { tahminDogruMu } = await import('../games/kimim.js')
 const { soruUret } = await import('../games/duello.js')
+const { emojiTahminDogruMu, kalip } = await import('../games/emoji.js')
+const { tahminEt, maske } = await import('../games/adamasmaca.js')
 
 test('quiz: harf, numara ve şık metni kabul edilir', () => {
   const secenekler = ['Ankara', 'İstanbul', '3,14', 'Ağrı Dağı']
@@ -56,4 +58,35 @@ test('düello: soru metni ve cevap tutarlı, cevap pozitif tam sayı', () => {
     assert.equal(cevap, beklenen, metin)
     assert.ok(Number.isInteger(cevap) && cevap > 0, metin)
   }
+})
+
+test('emoji: adın tamamı, alternatifler ve Türkçe karaktersiz yazım', () => {
+  assert.equal(emojiTahminDogruMu('kurtlar vadisi', 'Kurtlar Vadisi'), true)
+  assert.equal(emojiTahminDogruMu('gora', 'G.O.R.A.', ['Gora']), true)
+  assert.equal(emojiTahminDogruMu('lion king', 'Aslan Kral', ['Lion King']), true)
+  assert.equal(emojiTahminDogruMu('vadisi', 'Kurtlar Vadisi'), false)
+})
+
+test('emoji: harf kalıbı noktalamayı korur, baş harf ipucu ilk harfi açar', () => {
+  assert.equal(kalip('Kara Sevda'), '_ _ _ _   _ _ _ _ _')
+  assert.equal(kalip('Kara Sevda', true), 'K _ _ _   S _ _ _ _')
+  assert.equal(kalip('E.T.'), '_ . _ .')
+})
+
+test('adam asmaca: harf, tekrar, yanlış ve kelime tahmini', () => {
+  const s = { kelime: 'kalem', tahminler: new Set(), yanlis: 0 }
+  assert.equal(tahminEt(s, 'A'), 'dogru')
+  assert.equal(tahminEt(s, 'a'), 'tekrar')
+  assert.equal(tahminEt(s, 'z'), 'yanlis')
+  assert.equal(s.yanlis, 1)
+  assert.equal(maske(s.kelime, s.tahminler), '_ A _ _ _')
+  assert.equal(tahminEt(s, 'iki kelime'), 'gecersiz')
+  assert.equal(tahminEt(s, 'kalem'), 'kazandi')
+})
+
+test('adam asmaca: Türkçe büyük İ küçük i sayılır, 6 yanlışta oyun biter', () => {
+  const s = { kelime: 'işçi', tahminler: new Set(), yanlis: 0 }
+  assert.equal(tahminEt(s, 'İ'), 'dogru')
+  for (const h of ['a', 'b', 'd', 'e', 'f']) assert.equal(tahminEt(s, h), 'yanlis')
+  assert.equal(tahminEt(s, 'g'), 'kaybetti')
 })

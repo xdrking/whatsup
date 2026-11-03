@@ -53,6 +53,16 @@ test('games/kimim.json: tekrar eden isim yok, her kayıtta ipucu var', async () 
   }
 })
 
+test('games/emoji.json: her kayıtta emoji, tür ve cevap var', async () => {
+  const veri = JSON.parse(await readFile(new URL('../games/emoji.json', import.meta.url), 'utf8'))
+  const cevaplar = veri.map((k) => k.answer)
+  assert.equal(new Set(cevaplar).size, cevaplar.length, 'aynı cevap iki kez var')
+  for (const k of veri) {
+    assert.ok(k.emoji?.trim() && k.type?.trim() && k.answer?.trim(), JSON.stringify(k))
+    if ('aliases' in k) assert.ok(Array.isArray(k.aliases) && k.aliases.every((a) => a.trim()), k.answer)
+  }
+})
+
 test('games/quiz.json: cevap her zaman şıklardan biri', async () => {
   const veri = JSON.parse(await readFile(new URL('../games/quiz.json', import.meta.url), 'utf8'))
   for (const s of veri) {
