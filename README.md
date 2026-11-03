@@ -46,6 +46,7 @@ Ardından `.env` dosyasını doldurun:
 ```ini
 # Ülke koduyla, + ve boşluk olmadan. Örnek: 905551112233
 OWNER_NUMBER=905551112233
+OWNER_LID=
 
 # Komut ön eki
 PREFIX=.
@@ -65,6 +66,11 @@ LOG_LEVEL=info
 bekleme süresine takılmaz ve her grupta `.oyunbitir`, `.sus`, `.konuş` yetkisi vardır
 (grup admini olmasa bile). Boş bırakılabilir; o zaman bu yetkiler kimsede olmaz,
 grup adminlerinin yetkileri yine çalışır.
+
+`OWNER_LID` isteğe bağlıdır. WhatsApp bazı hesaplarda özel sohbette numarayı
+göstermez, yalnızca `...@lid` kimliği gönderir; o zaman owner komutları sessiz
+kalır ve log'a `Yetkisiz komut denemesi` + `sender: "...@lid"` düşer. O değer
+(ya da grupta `.id` yazınca "Sen" satırındaki değer) `OWNER_LID`'e yazılır.
 
 ## Çalıştırma
 

@@ -167,7 +167,7 @@ export default {
   `parsed.quoted.message` medyası (`downloadMediaMessage`'a doğrudan verilebilir),
   `parsed.mentions` mesajda etiketlenen JID'ler
 - `commands` — ad/alias → komut eşlemesi (`.help` bunu kullanır)
-- `isOwner` — gönderen `OWNER_NUMBER` mı
+- `isOwner` — gönderen `OWNER_NUMBER` (ya da `OWNER_LID`) mı
 
 `category` zorunludur; bilinmeyen kategori `.help`'te "Diğer" başlığına düşer ve
 `npm test` hata verir. Başlıkların sırası `commands/help.js:KATEGORILER`'dedir.
@@ -182,6 +182,8 @@ elle tekrar yazılmaz: `.efekt`'in listesi `EFEKTLER`'den üretilir.
 Komutlar varsayılan olarak herkese açıktır. `ownerOnly: true` işaretli komutlar yalnızca `.env` içindeki `OWNER_NUMBER` için çalışır. Yetkisiz kullanımda komut sessizce reddedilir, hata detayı sohbete yazılmaz.
 
 Sahip kontrolü `parsed.senderPn` ile yapılır, `parsed.sender` ile **değil**. LID adreslemeli gruplarda `sender` "...@lid" gelir ve rakamları telefon numarası değildir; `senderPn`, Baileys'in `key.participantPn` / `key.senderPn` alanından gelen numaralı JID'dir (yoksa `sender`'a düşer). `sender` bilerek LID olarak kalır: istatistik ve etiketler WhatsApp'ın verdiği kimlikle çalışır.
+
+WhatsApp bazen numarayı hiç vermez (LID'li hesaptan **özel sohbet**: `senderPn` de "...@lid" olur). Bu durumda sahip `.env`'deki `OWNER_LID` (virgülle ayrılmış liste, `@lid` eki isteğe bağlı) ile tanınır; eşleşme yalnızca `sender` gerçekten "...@lid" ise yapılır. Değer log'daki "Yetkisiz komut denemesi" satırından ya da grupta `.id` çıktısından alınır.
 
 Grup admini kontrolü `lib/group.js:senderIsAdmin()` ile yapılır (`.oyunbitir`, `.sus`, `.konuş`).
 

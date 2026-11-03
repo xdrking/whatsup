@@ -41,3 +41,20 @@ test('xpAyarla: ekler, eksi miktar sıfırda durur', () => {
   assert.deepEqual(xpAyarla({ ...k, miktar: -500 }), { once: 70, xp: 0 })
   assert.equal(getStats(k.chatJid, k.userJid).xp, 0)
 })
+
+test('sahip: numarayla ya da OWNER_LID ile tanınır', async () => {
+  const { isOwner } = await import('../lib/handler.js')
+  process.env.OWNER_NUMBER = '905551234567'
+  process.env.OWNER_LID = '30344061436076@lid, 111'
+  try {
+    assert.equal(isOwner('905551234567@s.whatsapp.net', 'x@lid'), true)
+    assert.equal(isOwner('30344061436076@lid', '30344061436076@lid'), true)
+    assert.equal(isOwner('111@lid', '111@lid'), true)
+    assert.equal(isOwner('999@lid', '999@lid'), false)
+    // LID rakamları numara alanında eşleşse bile @lid olmayan gönderen tanınmaz.
+    assert.equal(isOwner('30344061436076@s.whatsapp.net', '30344061436076@s.whatsapp.net'), false)
+  } finally {
+    delete process.env.OWNER_NUMBER
+    delete process.env.OWNER_LID
+  }
+})
