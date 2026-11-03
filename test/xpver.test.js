@@ -13,6 +13,7 @@ test('numara ve grup id ayrıştırma', () => {
   assert.equal(numaraCoz('+90 555 123 45 67'), '905551234567')
   assert.equal(numaraCoz('05551234567'), '905551234567')
   assert.equal(numaraCoz('abc'), null)
+  assert.equal(numaraCoz('`277983940071628@lid`'), '277983940071628@lid')
   assert.equal(grupIdCoz('120363012345678901@g.us'), '120363012345678901@g.us')
   assert.equal(grupIdCoz('120363012345678901'), '120363012345678901@g.us')
   assert.equal(grupIdCoz('selam'), null)
@@ -29,6 +30,8 @@ test('üye bulma: numaralı ve LID\'li katılımcı', () => {
   assert.equal(uyeKimligiBul(metadata, '905550000001'), '905550000001@s.whatsapp.net')
   assert.equal(uyeKimligiBul(metadata, '905550000002'), '123456789@lid')
   assert.equal(uyeKimligiBul(metadata, '905550000003'), null)
+  assert.equal(uyeKimligiBul(metadata, '987654321@lid'), '987654321@lid')
+  assert.equal(uyeKimligiBul(metadata, '555@lid'), null)
 })
 
 test('xpAyarla: ekler, eksi miktar sıfırda durur', () => {

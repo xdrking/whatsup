@@ -169,7 +169,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.top` | Sohbetteki XP sıralaması. `.top 5` |
 | `.günlük` | Günde bir kez XP ödülü; üst üste gelirsen seri büyür |
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
-| `.xpver <grup id> <numara> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır |
+| `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
 XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu),

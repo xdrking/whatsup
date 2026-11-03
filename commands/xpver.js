@@ -1,10 +1,17 @@
 import { groupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { xpAyarla } from '../lib/stats.js'
+import { lookupName } from '../lib/contacts.js'
 import logger from '../lib/logger.js'
 
-/** "0555 123 45 67", "+90 555…" → "905551234567"; anlaşılmazsa null. */
+/**
+ * "0555 123 45 67", "+90 555…" → "905551234567". `.id @kişi` çıktısındaki
+ * "...@lid" kimliği olduğu gibi döner (numarayı göstermeyen gruplar için).
+ * Anlaşılmazsa null.
+ */
 export function numaraCoz(arg) {
-  let n = String(arg || '').replace(/\D/g, '')
+  const ham = String(arg || '').trim().replace(/`/g, '')
+  if (/^\d+@lid$/.test(ham)) return ham
+  let n = ham.replace(/\D/g, '')
   if (/^0\d{10}$/.test(n)) n = `9${n}`
   return /^\d{10,15}$/.test(n) ? n : null
 }
@@ -21,7 +28,7 @@ export default {
   name: 'xpver',
   aliases: ['xpekle'],
   description: 'Bot sahibi: gruptaki kişiye özelden XP verir/alır',
-  usage: '.xpver <grup id> <numara> <miktar>',
+  usage: '.xpver <grup id> <numara ya da @lid id> <miktar>',
   category: 'istatistik',
   // .help'te hiç görünmez (sahibe de); kullanımı yalnızca README'de.
   hidden: true,
@@ -39,12 +46,12 @@ export default {
 
     try {
       const [grupArg, numaraArg, miktarArg] = args
-      const grup = grupIdCoz(grupArg)
+      const grup = grupIdCoz(String(grupArg || '').replace(/`/g, ''))
       const numara = numaraCoz(numaraArg)
       const miktar = /^[+-]?\d+$/.test(miktarArg || '') ? Number(miktarArg) : NaN
 
       if (!grup || !numara || !Number.isSafeInteger(miktar) || miktar === 0) {
-        await yaz('Kullanım: `.xpver <grup id> <numara> <miktar>`\nÖrnek: `.xpver 120363012345678901@g.us 905551234567 100`')
+        await yaz('Kullanım: `.xpver <grup id> <numara ya da @lid id> <miktar>`\nÖrnek: `.xpver 120363012345678901@g.us 905551234567 100`')
         return
       }
 
@@ -72,7 +79,7 @@ export default {
       const fark = sonuc.xp - sonuc.once
       await yaz([
         `✅ *${metadata.subject || grup}*`,
-        `👤 ${numara}: ${fark >= 0 ? '+' : ''}${fark} XP`,
+        `👤 ${lookupName(kimlik) || numara}: ${fark >= 0 ? '+' : ''}${fark} XP`,
         `💰 XP: ${sonuc.once} → ${sonuc.xp}`,
       ].join('\n'))
     } catch (err) {

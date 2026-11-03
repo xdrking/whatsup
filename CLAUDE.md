@@ -671,7 +671,8 @@ altına indirmez.
 Numara doğrudan istatistik anahtarı **yapılmaz**: LID'li gruplarda istatistikler
 "...@lid" kimliğiyle tutulur. `lib/group.js:uyeKimligiBul()` grup üyelerinde
 numarayı (`id` ya da `jid` alanı) arar ve üyenin `id`'sini döner. WhatsApp
-numarayı vermiyorsa üye bulunamaz ve hiçbir şey yazılmaz.
+numarayı vermiyorsa üye bulunamaz ve hiçbir şey yazılmaz; bu durumda `.id @kişi`
+çıktısındaki "...@lid" kimliği numara yerine verilebilir (üyelik yine doğrulanır).
 
 ## Elle Doğrulama
 
