@@ -15,7 +15,7 @@
       "Türk siyasetçisiyim.",
       "Uzun yıllar ana muhalefet partisinin genel başkanlığını yaptım.",
       "2023 seçimlerinde cumhurbaşkanı adayıydım.",
-      "Sosyal Güvenlik Kurumu başkanlığından siyasete geçtim.",
+      "SSK Genel Müdürlüğünden siyasete geçtim.",
       "Alevi kimliğini siyasi arenada açıkça paylaşan ilk genel başkanlardan biriyim."
     ]
   },
@@ -33,9 +33,9 @@
     "name": "Ekrem İmamoğlu",
     "hints": [
       "Türk siyasetçisiyim.",
-      "Türkiye’nin en büyük şehrinin belediye başkanıyım.",
-      "Trabzon kökenli bir iş insanından siyasete geçtim.",
-      "Bir dönem görevden uzaklaştırıldım, seçimler yenilendi ve yeniden kazandım.",
+      "Türkiye’nin en büyük şehrinin belediye başkanı seçildim.",
+      "Trabzon doğumluyum; siyasete girmeden önce iş insanıydım.",
+      "2019'da kazandığım seçim iptal edildi, yenilenen seçimi daha büyük farkla kazandım.",
       "Hakkımdaki siyasi davalar ülke gündemini uzun süre meşgul etti."
     ]
   },
@@ -62,18 +62,18 @@
   {
     "name": "Donald Trump",
     "hints": [
-      "Bir ülkenin eski başkanıyım.",
+      "Bir ülkenin devlet başkanıyım.",
       "ABD ile bağlantılıyım.",
       "İş insanıyken siyasete atıldım.",
       "2024’te tekrar aday oldum ve kazandım.",
-      "Aynı yıl birden fazla suçlamaya muhatap olurken seçim kazanan tek ABD başkanıyım."
+      "Ceza davasında mahkûm edilmiş ilk ABD başkanıyım."
     ]
   },
   {
     "name": "Joe Biden",
     "hints": [
       "ABD’li bir siyasetçiyim.",
-      "Delaware eyaletinin tarihinin en genç senatörü olarak göreve başladım.",
+      "30 yaşında, ABD tarihinin en genç senatörlerinden biri olarak seçildim.",
       "Bir dönem başkan yardımcılığı yaptım.",
       "2020'de başkan seçildim.",
       "Tren yolculuklarına olan tutkumla 'Amtrak Joe' lakabını kazandım."
@@ -96,7 +96,7 @@
       "Birden fazla büyük şirketin sahibiyim.",
       "Güney Afrika'da doğdum, Kanada üzerinden ABD'ye göç ettim.",
       "İlk büyük çıkışım PayPal'ın öncüsü olan X.com şirketiyle oldu.",
-      "Elektrikli araç şirketimle özel uzay şirketimi birbirine yakın dönemde kurdum."
+      "Bir uzay şirketi kurdum, bir elektrikli araç şirketinin de CEO'su oldum."
     ]
   },
   {
@@ -106,7 +106,7 @@
       "Portekizliyim.",
       "Birçok büyük kulüpte oynadım.",
       "Madeira adasında doğdum ve çocukken kalp ameliyatı geçirdim.",
-      "İlk büyük transferimde Sporting CP'den 12 milyon Euro'ya bir Premier League kulübüne gittim."
+      "İlk büyük transferimde Sporting CP'den Manchester United'a gittim."
     ]
   },
   {
@@ -124,9 +124,9 @@
     "hints": [
       "Türk şarkıcıyım.",
       "1990’lardan beri sahnedeyim.",
-      "Almanya'da doğdum, çift vatandaşım.",
+      "Almanya'da doğdum, gençliğimde ailemle Türkiye'ye döndüm.",
       "Askerlik sorunum yıllarca gündemde kaldı; bir süre yurt dışında kalmak zorunda kaldım.",
-      "Danslarım ve sahnedeki enerjimle biliniyorum; şarkılarımın sözlerini başkaları yazar."
+      "'Şımarık' şarkım Avrupa listelerinde hit oldu."
     ]
   },
   {
@@ -135,8 +135,8 @@
       "Türk şarkıcı ve söz yazarıyım.",
       "Türk pop müziğinin efsane isimlerindenim.",
       "Birçok ünlü şarkıcıya şarkı yazdım.",
-      "İzmir doğumluyum; kariyerime Bodrum'daki küçük sahnelerde başladım.",
-      "Küçük boyuma rağmen müzik sektörünü derinden etkilemiş biri olarak anılırım."
+      "Denizli'de doğdum, İzmir'de büyüdüm.",
+      "'Minik Serçe' lakabıyla anılırım."
     ]
   },
   {
@@ -144,9 +144,9 @@
     "hints": [
       "Türk oyuncuyum.",
       "Dizi ve sinema filmlerinde rol aldım.",
-      "Trabzon doğumluyum; kariyerime genç yaşta başladım.",
-      "İlk büyük tanınırlığım bir aksiyon dizisiyle geldi.",
-      "2021'de eşi de oyuncu olan biriyle evlendim."
+      "Ankara doğumluyum; bir model yarışmasını kazanarak tanındım.",
+      "İlk büyük tanınırlığım Deli Yürek dizisiyle geldi.",
+      "Ezel dizisinde Ezel'i canlandırdım; eşim oyuncu Sinem Kobal."
     ]
   },
   {
@@ -154,9 +154,9 @@
     "hints": [
       "Türk oyuncuyum.",
       "Dizilerde çok başarılı rollerim oldu.",
-      "Ankara doğumluyum; üniversitede tiyatro eğitimi aldım.",
-      "Yabancı dijital yayın platformlarında oynayan ilk Türk oyuncular arasındayım.",
-      "Bir dönem Türk pop müziğinin önemli bir isminin eşiydim."
+      "Ankara doğumluyum.",
+      "Netflix'in Atiye dizisinde başrol oynadım; eşim şarkıcı Kenan Doğulu.",
+      "Fatmagül'ün Suçu Ne? dizisinde Fatmagül'ü canlandırdım."
     ]
   },
   {
@@ -164,9 +164,9 @@
     "hints": [
       "Türk oyuncuyum.",
       "Çok uzun soluklu bir dizinin başrolündeyim.",
-      "Sinop doğumluyum; oyunculuktan önce gazetecilik okudum.",
-      "Onlarca ülkede prime time'da yayımlanan bir Türk dizisinin yüzüyüm.",
-      "Canlandırdığım karakter Türk kültür ihracatının sembollerinden biri haline geldi."
+      "Elazığ doğumluyum; oyunculuktan önce turizm sektöründeydim.",
+      "Oynadığım dizi ve filmler Orta Doğu'da da çok izlendi.",
+      "Kurtlar Vadisi'nde Polat Alemdar'ı canlandırdım."
     ]
   },
   {
@@ -174,9 +174,9 @@
     "hints": [
       "Türk komedyen ve oyuncuyum.",
       "Stand-up gösterilerimle çok ünlüyüm.",
-      "Gazetecilik bölümü okudum ama farklı bir yol seçtim.",
-      "Karikatüristlik geçmişim var; erken dönemde çizgi dalında ödül aldım.",
-      "Sinema filmlerim de çekiyorum; iki filmim birbirinin devamı niteliğinde ve uzayda geçiyor."
+      "Sahneye çıkmadan önce mizah dergilerinde karikatür çizdim.",
+      "Filmlerimde çoğu zaman birden fazla karakteri aynı anda oynarım.",
+      "G.O.R.A. filmimde uzaylılara kaçırılan bir halı satıcısını oynadım."
     ]
   },
   {
@@ -214,9 +214,9 @@
     "hints": [
       "Türk şarkıcıyım.",
       "Güçlü sesimle biliniyorum.",
-      "Hatay doğumluyum; üniversite için İstanbul'a taşındım.",
+      "Denizli doğumluyum.",
       "Sahne performanslarımla öne çıkıyorum.",
-      "Özel hayatımın medyaya yansıması bir dönem kariyer haberlerimi gölgede bıraktı."
+      "'Kenar Süsü', 'Boş Ver' ve 'Vaziyetler' şarkılarımla tanınırım."
     ]
   },
   {
@@ -234,7 +234,7 @@
     "hints": [
       "Türk şarkıcı ve oyuncuyum.",
       "1960'lardan beri sahnedeyim.",
-      "1969'da Avrupa'nın büyük müzik yarışmasında Türkiye'yi temsil ettim.",
+      "1980'de Eurovision'da 'Petrol' şarkısıyla Türkiye'yi temsil ettim.",
       "Onlarca yıl geçmesine rağmen genç duruşumu koruduğum için sıkça konuşulurum.",
       "Türk pop tarihinin en uzun soluklu kadın seslerinden biriyim."
     ]
@@ -273,7 +273,6 @@
     "name": "Ronaldo Nazário",
     "hints": [
       "Brezilyalı eski futbolcuyum.",
-
       "İki kez Dünya Kupası kazandım.",
       "Barcelona, Inter ve Real Madrid forması giydim.",
       "Sakatlıklarıma rağmen efsane oldum.",
@@ -295,7 +294,7 @@
     "hints": [
       "Türk şarkıcıyım.",
       "Arabesk-fantezi tarzında şarkılar söylüyorum.",
-      "‘Kırmızı Gül’, ‘Yalan’ gibi parçalarım var.",
+      "'Telefon' ve 'Ağlamak Yok Yüreğim' gibi parçalarım var.",
       "Sahne performanslarımla biliniyorum.",
       "Uzun yıllardır müzik sektöründeyim."
     ]
@@ -325,7 +324,7 @@
     "hints": [
       "Türk oyuncuyum.",
       "Tarihî dizilerde sıkça rol aldım.",
-      "İstanbul Devlet Tiyatrosu'nda yıllarca sahne aldım; kökenim sahne tiyatrosudur.",
+      "Kökenim tiyatro ve müzikaldir; sahneden ekrana geçtim.",
       "Canlandırdığım bir Osmanlı padişahı uluslararası kamuoyunda ciddi tartışmalara yol açtı.",
       "Bergüzar Korel ile evliyim."
     ]
@@ -335,7 +334,7 @@
     "hints": [
       "Türk oyuncuyum.",
       "Güçlü ve duygusal rollerimle biliniyorum.",
-      "Babam Pulat Korel da sektörde tanınan bir isimdir; sanatçı bir aileden geliyorum.",
+      "Babam oyuncu Tanju Korel, annem oyuncu Hülya Darcan'dır.",
       "Başrolde oynadığım bir dizi hem yurt içinde hem yurt dışında büyük ilgi gördü.",
       "Halit Ergenç ile evliyim."
     ]
@@ -345,9 +344,9 @@
     "hints": [
       "Türk oyuncuyum.",
       "Duygusal ve derin karakterler canlandırırım.",
-      "Psikoloji bölümünden oyunculuğa geçiş yaptım.",
+      "Ankara Üniversitesi'nde tarih okudum, oyunculuğa sonradan geçtim.",
       "Latin Amerika ve Orta Doğu'da milyonlarca hayranı olan Türk oyuncular arasındayım.",
-      "Bir dizi uluslararası arenada büyük başarı kazandıktan sonra yabancı platformlardan teklif aldım."
+      "Fatmagül'ün Suçu Ne? dizisinde Kerim'i canlandırdım."
     ]
   },
   {
@@ -355,9 +354,9 @@
     "hints": [
       "Türk oyuncuyum.",
       "Hem model hem oyuncuyum.",
-      "Kariyerime bir model yarışması kazanarak başladım.",
+      "Oyunculuktan önce profesyonel basketbolcuydum, genç milli takımda oynadım.",
       "Atletik fiziğim ve sert görünüşümle dikkat çekerim.",
-      "Pek çok başarılı dizide başrol üstlendim."
+      "Doğduğun Ev Kaderindir ve Kuş Uçuşu dizilerinde başrol oynadım."
     ]
   },
   {
@@ -393,11 +392,11 @@
   {
     "name": "Kerimcan Durmaz",
     "hints": [
-      "Türk oyuncuyum ve fenomenim.",
+      "Sosyal medya fenomeni ve DJ'im.",
       "Daha çok sosyal medya ve televizyon programlarıyla tanınıyorum.",
-      "Bir dönem dizilerde de rol aldım.",
+      "TV8'deki İşte Benim Stilim yarışmasında jüri üyeliği yaptım.",
       "Renkli ve iddialı kişiliğimle biliniyorum.",
-      "‘İşte Bu Benim Masalım’ gibi projelerde yer aldım."
+      "1994'te İstanbul'da doğdum; fenomenlikten DJ'liğe geçtim."
     ]
   },
   {
@@ -445,9 +444,9 @@
     "hints": [
       "Amerikalı oyuncuyum.",
       "Hem bağımsız filmlerde hem büyük prodüksiyonlarda oynadım.",
-      "İkiz kardeşim Hunter da oyuncudur.",
+      "Hunter adında bir ikiz kardeşim var.",
       "Hollywood'un en yüksek ücret alan oyuncuları arasındayım.",
-      "Güçlü sesim ve duruşumla biliniyorum."
+      "Marvel filmlerinde Black Widow'u canlandırdım."
     ]
   },
   {
@@ -465,7 +464,7 @@
     "hints": [
       "Kanadalı-Amerikalı oyuncuyum.",
       "Aksiyon ve bilim kurgu filmleriyle biliniyorum.",
-      "Lübnanlı kökenli babamdan dolayı farklı bir etnik arkaplanım var.",
+      "Lübnan'ın Beyrut şehrinde doğdum, Toronto'da büyüdüm.",
       "Hayatımda birden fazla büyük kişisel trajedi yaşadım; buna rağmen sakin ve mütevazı kalmamla tanınırım.",
       "İki farklı dönemde, birbirinden bağımsız iki ikonik aksiyon serisinin başrolünde yer aldım."
     ]
@@ -515,7 +514,7 @@
     "hints": [
       "Amerikalı-İngiliz oyuncuyum.",
       "Alışılmadık güzelliğimle dikkat çekerim.",
-      "Arjantin'de doğdum ama İngiltere'de büyüdüm; iki dili anadil gibi konuşurum.",
+      "Miami'de doğdum, çocukluğum Arjantin'de geçti, sonra Londra'ya taşındık.",
       "Bağımsız korku filmlerinde çarpıcı çıkışlar yaptım.",
       "Satrançla ilgili bir mini dizi beni dünyaya tanıttı."
     ]
@@ -525,9 +524,9 @@
     "hints": [
       "İngiliz oyuncuyum.",
       "Süper kahraman ve fantastik rollerimle biliniyorum.",
-      "Jersey Adası'nda beş kardeşin ortancasıyım.",
+      "Jersey Adası'nda doğdum; beş erkek kardeşin dördüncüsüyüm.",
       "Gençliğimde kilosu nedeniyle zorbalığa maruz kaldım; 'Fat Cavill' lakabı takılmıştı.",
-      "Hem bir DC karakterini hem de bir video oyununa dayalı fantezi karakterini canlandırdım."
+      "Hem Süpermen'i hem de The Witcher dizisinde Geralt'ı canlandırdım."
     ]
   },
   {
@@ -557,7 +556,7 @@
       "Hem komedi hem dram dizilerinde oynadım.",
       "Babam evi terk edince küçük yaşta çalışmak zorunda kaldım; garsonluktan tatil köyü işçiliğine pek çok iş yaptım.",
       "Antihero olarak tanımlanan ve izleyiciyi empati kurarken sorgulamaya iten bir karakterin sembolü haline geldim.",
-      "Oynadığım dizinin spin-off'unda küçük bir rolüm var; ama o spin-off benden sonra geldi."
+      "Breaking Bad dizisinde Walter White'ı canlandırdım."
     ]
   },
   {
@@ -567,7 +566,7 @@
       "Oyuncudan çok komedyenlerin skeçlerini yazan biri olarak bilinirken başrol oynadım.",
       "Saturday Night Live ve Late Night gibi programlar için uzun yıllar yazar olarak çalıştım.",
       "Başrolümü üstlendiğim dizi başka bir ünlü prodüksiyonun spin-off'uydu.",
-      "Komedi kökenli olmama rağmen dramatik rollerde de başarılıyım."
+      "Better Call Saul dizisinde Saul Goodman'ı canlandırdım."
     ]
   },
   {
@@ -676,7 +675,7 @@
       "İzmir doğumlu bir tiyatro ve sinema oyuncusuyum.",
       "İngiltere'de yaşadım ve EastEnders dizisinde oynadım.",
       "Cannes'da Altın Palmiye kazanan Kış Uykusu filminin başrolündeydim.",
-      "Alzheimer olan emekli bir noterin seri cinayetlerini anlatan dizide oynadım.",
+      "Alzheimer teşhisi konan emekli bir adliye kâtibinin cinayetlerini anlatan dizide oynadım.",
       "Şahsiyet dizisindeki Agâh Beyoğlu rolüyle Uluslararası Emmy kazandım."
     ]
   },
@@ -754,7 +753,7 @@
     "name": "Aras Bulut İynemli",
     "hints": [
       "İzmir doğumlu bir oyuncuyum.",
-      "Behzat Ç. dizisinde Akbaba lakaplı polisi oynadım.",
+      "İçerde dizisinde polis Sarp Yılmaz'ı oynadım.",
       "Atatürk'ün gençlik yıllarını anlatan filmde Atatürk'ü canlandırdım.",
       "En bilinen karakterim mahallesine geri dönen bir ailenin en küçük oğlu.",
       "Çukur dizisinde Yamaç Koçovalı'yı canlandırdım."
