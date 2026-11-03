@@ -41,6 +41,9 @@ async function karakterleriYukle() {
     .map((item) => ({
       name: item.name.trim(),
       hints: item.hints.filter((hint) => typeof hint === 'string' && hint.trim()),
+      aliases: Array.isArray(item.aliases)
+        ? item.aliases.filter((alias) => typeof alias === 'string' && alias.trim())
+        : [],
     }))
     .filter((item) => item.hints.length)
 
@@ -75,6 +78,9 @@ function katla(text) {
     .split('')
     .map((ch) => KATLAMA[ch] || ch)
     .join('')
+    // "Timothée", "Nazário" gibi yabancı aksanlar: aksan atılır, harf kalır.
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9\s]/g, ' ')
     .trim()
     .replace(/\s+/g, ' ')
@@ -82,14 +88,16 @@ function katla(text) {
 
 /**
  * Tahmin doğru mu? Tam ad, soyad (en az 4 harf) ve "ad + soyad" kabul edilir;
- * "Erdo" gibi kısaltmalar edilmez.
+ * "Erdo" gibi kısaltmalar edilmez. `aliases` kayıttaki alternatif cevaplardır
+ * ("Ronaldo", "Tayyip Erdoğan"); yalnızca tam eşleşmeyle kabul edilir.
  */
-export function tahminDogruMu(guess, name) {
+export function tahminDogruMu(guess, name, aliases = []) {
   const t = katla(guess)
   if (!t) return false
 
   const tam = katla(name)
   if (t === tam) return true
+  if (aliases.some((alias) => katla(alias) === t)) return true
 
   const parcalar = tam.split(' ')
   if (parcalar.length < 2) return false
@@ -142,7 +150,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   // await'lerden önce, senkron olarak konur.
   if (state.finished) return
 
-  if (tahminDogruMu(body, state.character.name)) {
+  if (tahminDogruMu(body, state.character.name, state.character.aliases)) {
     state.finished = true
     endGame(from)
 

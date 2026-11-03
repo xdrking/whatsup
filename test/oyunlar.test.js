@@ -32,6 +32,16 @@ test('kimim: ad, soyad, Türkçe karaktersiz yazım', () => {
   assert.equal(tahminDogruMu('İYNEMLİ', 'Aras Bulut İynemli'), true)
 })
 
+test('kimim: alternatif cevaplar ve yabancı aksanlar', () => {
+  assert.equal(tahminDogruMu('ronaldo', 'Ronaldo Nazário', ['Ronaldo', 'R9']), true)
+  assert.equal(tahminDogruMu('nazario', 'Ronaldo Nazário'), true)
+  assert.equal(tahminDogruMu('timothee chalamet', 'Timothée Chalamet'), true)
+  assert.equal(tahminDogruMu('tayyip erdogan', 'Recep Tayyip Erdoğan', ['Tayyip Erdoğan']), true)
+  // Alternatif yalnızca tam eşleşir; parçası kabul edilmez.
+  assert.equal(tahminDogruMu('tay', 'Recep Tayyip Erdoğan', ['Tayyip']), false)
+  assert.equal(tahminDogruMu('ronaldo', 'Ronaldo Nazário'), false)
+})
+
 test('kimim: kısaltma ve yalnız ad kabul edilmez', () => {
   assert.equal(tahminDogruMu('penn', 'Penn Badgley'), false)
   assert.equal(tahminDogruMu('şen', 'Şener Şen'), false)

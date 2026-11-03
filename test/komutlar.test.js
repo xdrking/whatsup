@@ -47,6 +47,10 @@ test('games/kimim.json: tekrar eden isim yok, her kayıtta ipucu var', async () 
   const adlar = veri.map((k) => k.name)
   assert.equal(new Set(adlar).size, adlar.length, 'aynı isim iki kez var')
   assert.ok(veri.every((k) => Array.isArray(k.hints) && k.hints.length))
+  for (const k of veri.filter((k) => 'aliases' in k)) {
+    assert.ok(Array.isArray(k.aliases), `${k.name}: aliases dizi olmalı`)
+    assert.ok(k.aliases.every((a) => typeof a === 'string' && a.trim()), `${k.name}: boş alternatif`)
+  }
 })
 
 test('games/quiz.json: cevap her zaman şıklardan biri', async () => {

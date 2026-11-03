@@ -392,7 +392,7 @@ games/gameManager.js  grup başına aktif oyun state'i, zaman aşımı, yanıt y
 games/kelime.js       kelime zinciri
 games/kimim.js        karakter tahmini
 games/kelimeler.json  başlangıç kelimeleri (elle yazılır, kod yazmaz)
-games/kimim.json      karakter + ipucu havuzu (elle yazılır, kod yazmaz)
+games/kimim.json      karakter + ipucu + alternatif cevap havuzu (elle yazılır, kod yazmaz)
 ```
 
 **Bir grupta aynı anda tek oyun.** `startGame()` zaten oyun varsa `null` döner,
@@ -444,7 +444,7 @@ Değişmişse geç kalan cevap sessizce düşer — **ilk geçerli cevap kazanı
 
 #### `.kimim`
 
-`games/kimim.json` biçimi: `[{ name, hints[] }]`. Bozuk kayıtlar elenir, hiç
+`games/kimim.json` biçimi: `[{ name, aliases?[], hints[] }]`. Bozuk kayıtlar elenir, hiç
 kullanılabilir kayıt kalmazsa komut kısa bir Türkçe hata yazar, bot çökmez.
 
 İlk ipucu başlangıçta gösterilir, sonrakiler **her 3 yanlış tahminde** açılır.
@@ -453,7 +453,9 @@ gelmediği sürece işler. Doğru cevap oyunu bitirir.
 
 Cevap eşleştirme tamamen yereldir, ağ kullanılmaz: Türkçe harfler ASCII'ye
 katlanır (`ç→c, ğ→g, ı/İ→i, ö→o, ş→s, ü→u`), noktalama atılır. Tam ad, soyad
-(en az 4 harf) ve "ad + soyad" kabul edilir.
+(en az 4 harf) ve "ad + soyad" kabul edilir. Yabancı aksanlar da atılır
+(`Timothée` → `timothee`). Bu kurala uymayan bilinen adlar (`Ronaldo`, `Tayyip
+Erdoğan`, `İbo`) kayda `aliases` olarak yazılır; alternatif yalnızca tam eşleşir.
 
 #### Zaman aşımı ve XP
 

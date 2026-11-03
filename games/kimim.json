@@ -1,6 +1,11 @@
 [
   {
     "name": "Recep Tayyip Erdoğan",
+    "aliases": [
+      "Tayyip Erdoğan",
+      "Tayyip",
+      "RTE"
+    ],
     "hints": [
       "Bir ülkenin siyasetçisiyim.",
       "Türkiye ile çok yakından bağlantılıyım.",
@@ -101,6 +106,9 @@
   },
   {
     "name": "Cristiano Ronaldo",
+    "aliases": [
+      "CR7"
+    ],
     "hints": [
       "Futbolcuyum.",
       "Portekizliyim.",
@@ -211,6 +219,9 @@
   },
   {
     "name": "Sıla Gençoğlu",
+    "aliases": [
+      "Sıla"
+    ],
     "hints": [
       "Türk şarkıcıyım.",
       "Güçlü sesimle biliniyorum.",
@@ -221,6 +232,10 @@
   },
   {
     "name": "İbrahim Tatlıses",
+    "aliases": [
+      "İbo",
+      "İbo Tatlıses"
+    ],
     "hints": [
       "Türk arabesk ve fantezi müziğin efsane ismiyim.",
       "‘İbo’ lakabıyla anılırım.",
@@ -251,6 +266,9 @@
   },
   {
     "name": "Michael Jackson",
+    "aliases": [
+      "MJ"
+    ],
     "hints": [
       "Amerikalı şarkıcı ve dansçıyım.",
       "‘Pop’un Kralı’ olarak anılırım.",
@@ -271,6 +289,10 @@
   },
   {
     "name": "Ronaldo Nazário",
+    "aliases": [
+      "Ronaldo",
+      "R9"
+    ],
     "hints": [
       "Brezilyalı eski futbolcuyum.",
       "İki kez Dünya Kupası kazandım.",
@@ -401,6 +423,9 @@
   },
   {
     "name": "Leonardo DiCaprio",
+    "aliases": [
+      "Leo DiCaprio"
+    ],
     "hints": [
       "Amerikalı oyuncuyum.",
       "Daha çok filmlerle tanınıyorum.",
@@ -451,6 +476,10 @@
   },
   {
     "name": "Robert Downey Jr.",
+    "aliases": [
+      "Robert Downey",
+      "Downey"
+    ],
     "hints": [
       "Amerikalı oyuncuyum.",
       "Bir dönem hayatımdaki sorunlarla gündeme gelmiştim.",
@@ -511,6 +540,10 @@
   },
   {
     "name": "Anya Taylor-Joy",
+    "aliases": [
+      "Taylor-Joy",
+      "Anya Taylor"
+    ],
     "hints": [
       "Amerikalı-İngiliz oyuncuyum.",
       "Alışılmadık güzelliğimle dikkat çekerim.",
@@ -621,6 +654,9 @@
   },
   {
     "name": "Millie Bobby Brown",
+    "aliases": [
+      "Millie Bobby"
+    ],
     "hints": [
       "İngiliz bir oyuncuyum ama İspanya'da doğdum.",
       "Ünlü olduğumda daha 12 yaşındaydım.",
@@ -701,6 +737,9 @@
   },
   {
     "name": "Engin Altan Düzyatan",
+    "aliases": [
+      "Engin Altan"
+    ],
     "hints": [
       "İzmir doğumlu bir oyuncuyum.",
       "Rol aldığım tarihi dizi Pakistan'da öyle sevildi ki orada büyük ilgi gördüm.",
@@ -751,6 +790,9 @@
   },
   {
     "name": "Aras Bulut İynemli",
+    "aliases": [
+      "Aras Bulut"
+    ],
     "hints": [
       "İzmir doğumlu bir oyuncuyum.",
       "İçerde dizisinde polis Sarp Yılmaz'ı oynadım.",
