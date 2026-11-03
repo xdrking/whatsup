@@ -1085,5 +1085,170 @@
       "Arabamın el freninin tutmamasıyla bilinirim.",
       "Kullanıcı adım adımla başlar, sonunda 5 rakamı var."
     ]
+  },
+  {
+    "name": "Orkun Işıtmak",
+    "hints": [
+      "Türk YouTuber'ıyım.",
+      "İzmirliyim.",
+      "Kanalımı 2010'da açtım; oyun videolarıyla başlayıp vlog ve eğlence içeriklerine geçtim.",
+      "Eşimin adı Merve Yorgancılar.",
+      "Kanalımın adı adım ve soyadım; soyadım \"ışık\" kelimesini çağrıştırır."
+    ]
+  },
+  {
+    "name": "Berkcan Güven",
+    "aliases": [
+      "BEGE",
+      "Lil Bege"
+    ],
+    "hints": [
+      "Türk YouTuber ve şarkıcıyım.",
+      "1996'da İstanbul'da doğdum, kariyerime 2013'te Vine ile başladım.",
+      "2017'deki \"YouTube Benim İşim\" diss şarkısıyla geniş kitlelere ulaştım.",
+      "Babam ses sanatçısı Burhan Güven; videolarımda kardeşim Baran'a sık yer veririm.",
+      "Müzik yaparken BEGE adını kullanırım."
+    ]
+  },
+  {
+    "name": "Testo Taylan",
+    "aliases": [
+      "Taylan Özgüç Danyıldız",
+      "Testo"
+    ],
+    "hints": [
+      "Türk sosyal medya fenomeniyim.",
+      "Vücut geliştirme ve fitness içerikleri üretirim.",
+      "Takipçilerimin evine yaptığım ev ziyareti videolarıyla ünlendim.",
+      "Sokak röportajları ve sosyal deney videoları da çekerim.",
+      "Lakabım bir erkeklik hormonunun kısaltmasıdır."
+    ]
+  },
+  {
+    "name": "Ali Biçim",
+    "hints": [
+      "Türk YouTuber ve sunucuyum.",
+      "1987'de Kocaeli İzmit'te doğdum.",
+      "Kendi adımı taşıyan bir şov programı hazırlayıp sundum.",
+      "2017'de \"Bu Ne Biçim Hikaye Böyle\" adlı kitabımı yayımladım.",
+      "Mesut Can Tomay ile birlikte çektiğimiz videolarla tanınırım."
+    ]
+  },
+  {
+    "name": "Mesut Can Tomay",
+    "hints": [
+      "Türk YouTuber ve oyuncuyum.",
+      "1999'da İstanbul'da doğdum; baba tarafım Karslı.",
+      "Çocukluğumun bir kısmı Kars'ta geçti.",
+      "Exxen'de \"O Adam Oldun mu?\" programında yer aldım.",
+      "Ali Biçim ile birlikte ürettiğimiz içeriklerle tanınırım."
+    ]
+  },
+  {
+    "name": "Hayrettin Karaoğuz",
+    "aliases": [
+      "Hayrettin"
+    ],
+    "hints": [
+      "Türk komedyen ve YouTuber'ım.",
+      "1984 doğumluyum; televizyondan YouTube'a geçtim.",
+      "İngiliz YouTuber Sam Pepper ile video çektim.",
+      "Exatlon'a ve Survivor 2021 Ünlüler-Gönüllüler'e katıldım.",
+      "\"Kaos Show\" programını sundum; çoğu kişi beni yalnızca adımla tanır."
+    ]
+  },
+  {
+    "name": "Alper Rende",
+    "hints": [
+      "Türk YouTuber'ıyım.",
+      "1995'te İzmit'te doğdum.",
+      "Babamla birlikte çektiğim eğlenceli videolarla tanındım.",
+      "2019'da Enes Batur'un \"Gerçek Kahraman\" filminde rol aldım.",
+      "Survivor 2023'te yarıştım."
+    ]
+  },
+  {
+    "name": "Oğuzhan Uğur",
+    "hints": [
+      "Türk dijital içerik üreticisi, müzisyen ve yönetmenim.",
+      "1984'te Ankara'da doğdum.",
+      "RÖNT ve Mevzular programlarını sundum.",
+      "2023 seçimleri öncesi adaylarla \"Mevzular: Açık Mikrofon\" programını yaptım.",
+      "2017'de Babala TV'yi kurdum."
+    ]
+  },
+  {
+    "name": "Ali Can",
+    "aliases": [
+      "Alex745alejandro",
+      "Tırcı Ali"
+    ],
+    "hints": [
+      "Almanya'da yaşayan Türk YouTuber'dım.",
+      "Mesleğim TIR şoförlüğüydü; videolarımı yollardan çekerdim.",
+      "Kanal adım İspanyolca bir isim ve rakamlardan oluşuyordu.",
+      "Memleketim Nevşehir Ürgüp'tü.",
+      "2017'de kalp krizi sonucu hayatımı kaybettim; hâlâ efsane olarak anılırım."
+    ]
+  },
+  {
+    "name": "Mithrain",
+    "aliases": [
+      "Cem Karakoç"
+    ],
+    "hints": [
+      "Türk Twitch yayıncısıyım.",
+      "Yayıncılığa H1Z1 oyunuyla başladım.",
+      "PUBG çıkınca o oyuna geçip ünlendim.",
+      "Gerçek adım Cem Karakoç."
+    ]
+  },
+  {
+    "name": "Unlost",
+    "aliases": [
+      "Cantuğ Özsoy",
+      "UNLOSTV"
+    ],
+    "hints": [
+      "Türk Twitch yayıncısıyım.",
+      "CS:GO ve Valorant gibi rekabetçi oyunlar oynarım.",
+      "Twitch Türkiye'nin anlık izlenme rekorunu 139 bin kişiyle kırdım.",
+      "Gerçek adım Cantuğ Özsoy."
+    ]
+  },
+  {
+    "name": "Kendine Müzisyen",
+    "aliases": [
+      "Kemal Can Parlak"
+    ],
+    "hints": [
+      "Türk Twitch ve YouTube yayıncısıyım.",
+      "Üniversitede ses mühendisliği okudum.",
+      "YouTube'da şarkı cover'larıyla başladım.",
+      "Jahrein'in desteğiyle Twitch'te tanındım.",
+      "Gerçek adım Kemal Can Parlak; lakabım müzikle ilgili."
+    ]
+  },
+  {
+    "name": "Mertcan Bahar",
+    "aliases": [
+      "Mevtcan"
+    ],
+    "hints": [
+      "Türk YouTuber'ıyım.",
+      "2012'den beri video çekiyorum.",
+      "Deli Mi Ne ile ringde yüzleşme videom çok konuşuldu.",
+      "\"R\" harfini söyleyemediğim için izleyicilerim bana \"Mevtcan\" der."
+    ]
+  },
+  {
+    "name": "Mesut Süre",
+    "hints": [
+      "Türk komedyen ve radyocuyum.",
+      "1981'de Bursa'da doğdum.",
+      "Anadolu Üniversitesi İşletme bölümünde okudum.",
+      "\"Rabarba\" programını hazırlayıp sundum.",
+      "Çiftleri konuk aldığım \"İlişki Testi\" programıyla YouTube'da ünlendim."
+    ]
   }
 ]
