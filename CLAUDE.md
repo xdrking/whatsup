@@ -256,7 +256,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
   `.deprem`, `.döviz`, `.namaz`, `.8top`, `.burç`, `.rozet`. Ayrıntı aşağıda.
 - **Faz 14 (tamam):** `.kimim` alternatif cevapları, `.emoji` ve `.adamasmaca`. Ayrıntı aşağıda.
 - **Faz 15 (tamam):** XP kumar komutları: `.bahis`, `.slot`, `.rulet`. Ayrıntı aşağıda.
-- **Faz 16+:** yeni komutlar, her biri ayrı adım
+- **Faz 16 (tamam):** `.xpver` — sahibin özelden elle XP vermesi. Ayrıntı aşağıda.
+- **Faz 17+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -657,6 +658,18 @@ testte dışarıdan verilir), üç komutun ortak akışı `kumarOyna()`'dadır.
   değişirse `test/kumar.test.js` beklenen dönüşü %90-100 aralığında tutar.
 - Grup komutudur; kasa her grupta ayrıdır (XP gibi).
 
+### Faz 16 — `.xpver`
+
+`.xpver <grup id> <numara> <miktar>`: `ownerOnly` **ve yalnızca özel sohbet**.
+Grupta yazılırsa sahip için bile sessizce düşer (yalnızca loglanır) — kimin XP
+bastığı grupta görünmesin. Eksi miktar XP alır, `lib/stats.js:xpAyarla()` sıfırın
+altına indirmez.
+
+Numara doğrudan istatistik anahtarı **yapılmaz**: LID'li gruplarda istatistikler
+"...@lid" kimliğiyle tutulur. `lib/group.js:uyeKimligiBul()` grup üyelerinde
+numarayı (`id` ya da `jid` alanı) arar ve üyenin `id`'sini döner. WhatsApp
+numarayı vermiyorsa üye bulunamaz ve hiçbir şey yazılmaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -698,3 +711,5 @@ testte dışarıdan verilir), üç komutun ortak akışı `kumarOyna()`'dadır.
 26. `.emoji` → 3 yanlışta harf kalıbı gelir; doğru cevap (ya da İngilizce adı) oyunu bitirir
 27. `.adamasmaca` → harf yanıtı tahtayı günceller, aynı harf tekrar ceza almaz; 6 yanlışta adam asılır
 28. `.bahis 100 tura` → sonuç ve yeni XP; bakiyeden fazla bahis → "o kadar XP'n yok"; `.profil` aynı XP'yi göstermeli
+29. Sahip özelden `.xpver <grup id> <numara> 100` → onay gelir, kişi grupta `.profil`'de XP'yi görür;
+    aynı komut grupta → hiç tepki yok; başkası özelden yazarsa → hiç tepki yok
