@@ -810,5 +810,254 @@
       "Canlandırdığım dizinin alt başlığı 'Bir Ankara Polisiyesi'ydi.",
       "Behzat Ç. dizisinde Behzat'ı canlandırdım."
     ]
+  },
+  {
+    "name": "Burak Oyunda",
+    "hints": [
+      "Türk YouTuber'ım.",
+      "Oyun videolarıyla tanınırım.",
+      "Kanalımı 2012'de açtım; milyonlarca abonem var.",
+      "En çok Minecraft videolarımla bilinirim.",
+      "Kanal adım: adım + 'Oyunda'."
+    ]
+  },
+  {
+    "name": "Murat Abi GF",
+    "aliases": [
+      "MuratAbiGF",
+      "Murat Abi"
+    ],
+    "hints": [
+      "Türk YouTuber'ım.",
+      "Oyun videoları çekerim.",
+      "Korku oyunlarındaki tepkilerimle tanındım.",
+      "Outlast serisi videolarımla büyük üne kavuştum.",
+      "Kanal adım 'abi' ile biter, sonunda iki harf var: GF."
+    ]
+  },
+  {
+    "name": "Enes Batur",
+    "hints": [
+      "Türk YouTuber'ım.",
+      "Türkiye'nin en çok abonesi olan bireysel kanallarından birine sahibim.",
+      "Oyun videolarıyla başladım, sonra eğlence ve meydan okuma videolarına geçtim.",
+      "Başrolünde kendimi oynadığım sinema filmleri çektim.",
+      "'Hayal mi Gerçek mi?' filminin başrolüydüm."
+    ]
+  },
+  {
+    "name": "Reynmen",
+    "aliases": [
+      "Yusuf Aktaş"
+    ],
+    "hints": [
+      "Sosyal medyada ünlendim.",
+      "YouTube ve Instagram videolarıyla tanındım.",
+      "Sonra müziğe geçip şarkıcı oldum.",
+      "'Ela' ve 'Derdim Olsun' şarkılarım çok dinlendi.",
+      "Gerçek adım Yusuf Aktaş; sahne adım R ile başlar."
+    ]
+  },
+  {
+    "name": "Danla Bilic",
+    "hints": [
+      "Türk sosyal medya fenomeniyim.",
+      "1994'te Kütahya'da doğdum.",
+      "YouTube'daki makyaj videolarımla ünlendim.",
+      "Takma adımın ikinci kısmı Beşiktaş'ın eski teknik direktörü Slaven Bilić'ten gelir.",
+      "Takma adım Danla ile başlar."
+    ]
+  },
+  {
+    "name": "Jahrein",
+    "aliases": [
+      "Ahmet Sonuç"
+    ],
+    "hints": [
+      "Türk canlı yayıncısıyım.",
+      "Türkiye'nin ilk ve en tanınan Twitch yayıncılarındanım.",
+      "Oyunun yanında gündem ve siyaset yorumlarımla sık sık tartışma yaratırım.",
+      "Gerçek adım Ahmet Sonuç.",
+      "Takma adım J ile başlar."
+    ]
+  },
+  {
+    "name": "Elraenn",
+    "aliases": [
+      "Tuğkan Gönültaş",
+      "Tuğkan"
+    ],
+    "hints": [
+      "Türk canlı yayıncısıyım.",
+      "Twitch'te Türkiye'nin en çok izlenen yayıncılarındanım.",
+      "Video izleyip tepki verdiğim yayınlarla tanınırım.",
+      "Gerçek adım Tuğkan Gönültaş.",
+      "Takma adım E ile başlar, 'raenn' ile biter."
+    ]
+  },
+  {
+    "name": "wtcN",
+    "aliases": [
+      "Ferit Karakaya",
+      "Ferit"
+    ],
+    "hints": [
+      "Türk canlı yayıncısıyım.",
+      "Twitch'te oyun ve sohbet yayınlarıyla tanınırım.",
+      "Türkiye'nin en çok takip edilen Twitch kanallarından birine sahibim.",
+      "Gerçek adım Ferit Karakaya.",
+      "Takma adım dört harflidir ve w ile başlar."
+    ]
+  },
+  {
+    "name": "Pqueen",
+    "aliases": [
+      "Pelin Baynazoğlu"
+    ],
+    "hints": [
+      "Türk canlı yayıncısıyım.",
+      "Twitch'te Türkiye'nin en çok izlenen kadın yayıncılarındanım.",
+      "Oyun ve sohbet yayınları yaparım.",
+      "Gerçek adım Pelin Baynazoğlu.",
+      "Takma adımda İngilizce 'kraliçe' kelimesi geçer."
+    ]
+  },
+  {
+    "name": "Barış Özcan",
+    "hints": [
+      "Türk YouTuber'ım.",
+      "Teknoloji, bilim ve tasarım konularını anlatırım.",
+      "Sakin anlatımım ve sade çekimlerimle tanınırım.",
+      "Videolarımda genellikle tek başıma kameraya konuşurum.",
+      "Kanalım kendi adımı taşır; adım bir efsane müzisyenle aynıdır."
+    ]
+  },
+  {
+    "name": "Ruhi Çenet",
+    "hints": [
+      "Türk YouTuber'ım.",
+      "Belgesel tarzı videolar çekerim.",
+      "Dünyayı gezip ilginç ve az bilinen yerleri anlatırım.",
+      "Videolarım uzun ve araştırmaya dayalıdır.",
+      "Kanalım kendi adımı taşır; adım R ile başlar."
+    ]
+  },
+  {
+    "name": "CZN Burak",
+    "aliases": [
+      "Burak Özdemir",
+      "CZN"
+    ],
+    "hints": [
+      "Türk sosyal medya fenomeni ve aşçıyım.",
+      "Dev porsiyon yemek videolarıyla dünyaca ünlendim.",
+      "Yemek yaparken kameraya hiç konuşmadan gülümsememle tanınırım.",
+      "Gerçek adım Burak Özdemir.",
+      "Takma adım üç harfle başlar, sonra adım gelir."
+    ]
+  },
+  {
+    "name": "HasanAbi",
+    "aliases": [
+      "Hasan Piker",
+      "Hasan Abi"
+    ],
+    "hints": [
+      "Canlı yayıncıyım.",
+      "ABD'de yaşayan Türk asıllı bir yayıncıyım.",
+      "Twitch'te siyaset yorumlarımla dünya çapında tanındım.",
+      "Dayım The Young Turks'ün kurucusu Cenk Uygur'dur.",
+      "Gerçek adım Hasan Piker; takma adımda 'abi' geçer."
+    ]
+  },
+  {
+    "name": "Doğukan Manço",
+    "hints": [
+      "Türk YouTuber ve DJ'im.",
+      "Vlog ve eğlence videoları çekerim.",
+      "Müzisyen bir aileden geliyorum.",
+      "Babam Türk rock müziğinin efsane ismidir.",
+      "Babam Barış Manço'dur."
+    ]
+  },
+  {
+    "name": "MrBeast",
+    "aliases": [
+      "Mr Beast",
+      "Jimmy Donaldson"
+    ],
+    "hints": [
+      "Amerikalı YouTuber'ım.",
+      "Dünyanın en çok abonesi olan YouTube kanalına sahibim.",
+      "Videolarımda büyük para ödülleri ve devasa meydan okumalar olur.",
+      "Feastables adında bir çikolata markam var; Amazon'da Beast Games yarışmasını yaptım.",
+      "Gerçek adım Jimmy Donaldson; takma adımda 'canavar' geçer."
+    ]
+  },
+  {
+    "name": "Logan Paul",
+    "hints": [
+      "Amerikalı YouTuber'ım.",
+      "Kariyerime kısa videolar paylaşılan Vine uygulamasında başladım.",
+      "Floyd Mayweather ile gösteri boks maçı yaptım.",
+      "WWE'de profesyonel güreşçiyim; KSI ile Prime içecek markasını kurdum.",
+      "Kardeşim de YouTuber ve boksör Jake Paul'dur."
+    ]
+  },
+  {
+    "name": "IShowSpeed",
+    "aliases": [
+      "Speed",
+      "iShow Speed",
+      "Darren Watkins"
+    ],
+    "hints": [
+      "Amerikalı canlı yayıncı ve YouTuber'ım.",
+      "Çılgın tepkilerim ve enerjimle tanınırım.",
+      "Cristiano Ronaldo'nun büyük hayranıyım; sevinç hareketini sürekli yaparım.",
+      "Dünya turuna çıkıp ülke ülke gezerek canlı yayın yaptım.",
+      "Gerçek adım Darren Watkins Jr.; takma adımda 'hız' kelimesi geçer."
+    ]
+  },
+  {
+    "name": "PewDiePie",
+    "aliases": [
+      "Felix Kjellberg",
+      "Pewdiepie"
+    ],
+    "hints": [
+      "YouTuber'ım.",
+      "İsveçliyim.",
+      "Uzun yıllar dünyanın en çok abonesi olan bireysel YouTube kanalına sahiptim.",
+      "Hindistanlı müzik şirketi T-Series ile abone yarışım dünya gündemine oturdu.",
+      "Gerçek adım Felix Kjellberg."
+    ]
+  },
+  {
+    "name": "KSI",
+    "aliases": [
+      "Olajide Olatunji",
+      "JJ"
+    ],
+    "hints": [
+      "İngiliz YouTuber ve rapçiyim.",
+      "Sidemen grubunun üyesiyim.",
+      "Logan Paul ile boks maçı yaptım, sonra onunla Prime içecek markasını kurdum.",
+      "Gerçek adım Olajide Olatunji.",
+      "Takma adım üç harftir."
+    ]
+  },
+  {
+    "name": "Khaby Lame",
+    "aliases": [
+      "Khaby"
+    ],
+    "hints": [
+      "Sosyal medya fenomeniyim.",
+      "Senegal'de doğdum, İtalya'da büyüdüm.",
+      "Videolarımda hiç konuşmam.",
+      "Gereksiz karmaşık 'hayat hilelerini' ellerimi açıp basit hâlini göstererek tiye alırım.",
+      "Bir dönem TikTok'ta dünyanın en çok takip edilen kişisiydim."
+    ]
   }
 ]
