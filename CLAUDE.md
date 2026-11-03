@@ -661,6 +661,9 @@ testte dışarıdan verilir), üç komutun ortak akışı `kumarOyna()`'dadır.
 ### Faz 16 — `.xpver`
 
 `.xpver <grup id> <numara> <miktar>`: `ownerOnly` **ve yalnızca özel sohbet**.
+`hidden: true` taşır: `.help` onu sahibe bile listelemez, `.help xpver` "böyle
+bir komut yok" der (sahip `.help`'i grupta yazınca liste herkese görünür).
+Kullanımı yalnızca README'dedir.
 Grupta yazılırsa sahip için bile sessizce düşer (yalnızca loglanır) — kimin XP
 bastığı grupta görünmesin. Eksi miktar XP alır, `lib/stats.js:xpAyarla()` sıfırın
 altına indirmez.

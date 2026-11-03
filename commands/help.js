@@ -21,14 +21,16 @@ export default {
     const prefix = process.env.PREFIX || '.'
     const botName = process.env.BOT_NAME || 'wp-bot'
 
-    // ownerOnly komutlar, sahibi olmayana hiç gösterilmez.
-    const visible = [...new Set(commands.values())].filter((c) => !c.ownerOnly || isOwner)
+    // ownerOnly komutlar, sahibi olmayana hiç gösterilmez. `hidden` komutlar
+    // sahibe bile gösterilmez: sahip .help'i grupta yazınca herkes görür.
+    const gizli = (c) => c.hidden || (c.ownerOnly && !isOwner)
+    const visible = [...new Set(commands.values())].filter((c) => !gizli(c))
 
     if (args[0]) {
       const wanted = args[0].toLowerCase().replace(prefix, '')
       const command = commands.get(wanted)
 
-      if (!command || (command.ownerOnly && !isOwner)) {
+      if (!command || gizli(command)) {
         await sock.sendMessage(
           from,
           { text: `\`${wanted}\` diye bir komut yok. Listeyi görmek için \`${prefix}help\`.` },

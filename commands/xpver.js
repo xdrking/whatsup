@@ -20,15 +20,11 @@ export function grupIdCoz(arg) {
 export default {
   name: 'xpver',
   aliases: ['xpekle'],
-  description: 'Bot sahibi: bir gruptaki kişiye XP verir ya da alır (yalnızca özelden)',
+  description: 'Bot sahibi: gruptaki kişiye özelden XP verir/alır',
   usage: '.xpver <grup id> <numara> <miktar>',
-  details: [
-    'Yalnızca bot sahibi, yalnızca botla özel sohbette çalışır; grupta yazılırsa sessizce yok sayılır.',
-    'Örnek: `.xpver 120363012345678901@g.us 905551234567 100`',
-    'Eksi miktar XP alır (`-50`); XP sıfırın altına inmez.',
-    'Grup id\'si grupta `.id` yazılarak öğrenilir.',
-  ],
   category: 'istatistik',
+  // .help'te hiç görünmez (sahibe de); kullanımı yalnızca README'de.
+  hidden: true,
   ownerOnly: true,
   cooldown: 0,
 
