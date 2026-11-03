@@ -54,5 +54,9 @@ test('games/quiz.json: cevap her zaman şıklardan biri', async () => {
   for (const s of veri) {
     assert.ok(s.options.includes(s.answer), s.question)
     assert.equal(new Set(s.options).size, s.options.length, `${s.question}: aynı şık iki kez`)
+    // "3" yazan oyuncu şık metnini değil C şıkkını seçmiş sayılır (secenekIndeksi).
+    for (const o of s.options) {
+      assert.doesNotMatch(o.trim(), /^[a-dA-D1-4]$/, `${s.question}: "${o}" şık harfi/numarasıyla karışır`)
+    }
   }
 })
