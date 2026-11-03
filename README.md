@@ -190,6 +190,17 @@ kelimeyi bulmak +5, doğru kimim tahmini +10,
 | `.adamasmaca` | Grupça adam asmaca: harf ya da kelimenin tamamı yazılır, 6 yanlışta adam asılır |
 | `.oyunbitir` | Aktif oyunu kapatır (başlatan kişi, grup admini veya owner) |
 
+### Kumar (XP ile)
+
+Gerçek para yok; basılan ve kazanılan yalnızca XP'dir. Kaybeden seviye de kaybedebilir.
+Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn beklemelidir.
+
+| Komut | Yapar |
+|---|---|
+| `.bahis 100 tura` | Yazı-tura; bilirsen bahis ikiye katlanır |
+| `.slot 50` | Üç makaralı slot; üçlü 3x-50x (💎 50x), ikili 1.5x |
+| `.rulet 100 kırmızı` | Avrupa ruleti; renk ve tek/çift 2x, sayı (`.rulet 20 17`) 36x |
+
 Oyun cevapları prefix taşımaz: botun **en son** oyun mesajını **yanıtlayarak**
 yazılır. Başka bir mesaja verilen yanıtlar ya da yanıtsız mesajlar yok sayılır.
 Bir grupta aynı anda tek oyun çalışır; oyunlar 1 saat (quiz ve emoji 10 dk, adam asmaca son

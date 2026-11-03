@@ -255,7 +255,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 13 (tamam):** `.help` kategorileri, otomatik testler, `.foto`, `.yaz`,
   `.deprem`, `.döviz`, `.namaz`, `.8top`, `.burç`, `.rozet`. Ayrıntı aşağıda.
 - **Faz 14 (tamam):** `.kimim` alternatif cevapları, `.emoji` ve `.adamasmaca`. Ayrıntı aşağıda.
-- **Faz 15+:** yeni komutlar, her biri ayrı adım
+- **Faz 15 (tamam):** XP kumar komutları: `.bahis`, `.slot`, `.rulet`. Ayrıntı aşağıda.
+- **Faz 16+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -640,6 +641,22 @@ Değerlendirme (`tahminEt`) senkron olduğu için eşzamanlı iki tahmin sırayl
 işlenir. Süre her tahminde sıfırlanır (`touchGame`), 10 dk tahmin gelmezse
 kapanır. Kelimeyi tamamlayan ya da bilen +5 XP.
 
+### Faz 15 — XP kumarı (`.bahis`, `.slot`, `.rulet`)
+
+Para birimi `stats.xp`'dir; ayrı bakiye tablosu yok. Oyun mantığı saf
+fonksiyonlar olarak `lib/kumar.js`'tedir (rastgelelik `crypto.randomInt`,
+testte dışarıdan verilir), üç komutun ortak akışı `kumarOyna()`'dadır.
+
+- Bakiye kontrolü + çekiliş + XP yazımı tek transaction'dadır
+  (`lib/stats.js:bahisOyna()`): çekiliş ancak XP yetiyorsa yapılır, aynı XP iki
+  bahse basılamaz. Net fark `floor(miktar × çarpan) − miktar` olarak eklenir.
+- XP hiçbir zaman negatife düşmez (bahis ≤ bakiye). Kaybeden seviye de düşer.
+- En az 10 XP; `hepsi` / `yarısı` kabul edilir. Komut bekleme süresi 5 sn.
+- Yazı-tura adildir (2x). Rulet Avrupa ruletidir (tek sıfır, renk/tek-çift 2x,
+  sayı 36x). Slot'un beklenen dönüşü ~%96'dır; sembol ağırlığı ya da çarpanı
+  değişirse `test/kumar.test.js` beklenen dönüşü %90-100 aralığında tutar.
+- Grup komutudur; kasa her grupta ayrıdır (XP gibi).
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -680,3 +697,4 @@ kapanır. Kelimeyi tamamlayan ya da bilen +5 XP.
 25. `.yaz merhaba` → yazı sticker'ı; `.deprem`, `.döviz`, `.namaz Ankara` → veri gelir
 26. `.emoji` → 3 yanlışta harf kalıbı gelir; doğru cevap (ya da İngilizce adı) oyunu bitirir
 27. `.adamasmaca` → harf yanıtı tahtayı günceller, aynı harf tekrar ceza almaz; 6 yanlışta adam asılır
+28. `.bahis 100 tura` → sonuç ve yeni XP; bakiyeden fazla bahis → "o kadar XP'n yok"; `.profil` aynı XP'yi göstermeli
