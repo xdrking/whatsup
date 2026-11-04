@@ -17,7 +17,7 @@ export default {
     '`.market` ürünleri ve XP\'ni gösterir, `.market al 1` satın alır.',
     'Unvan `.profil`\'de görünür; yeni unvan eskisinin yerine geçer.',
     'Kalkan süresi üst üste eklenir. Bonus varken yenisi alınırsa güçlü olan kalır, süre 1 saate döner.',
-    'Random key içinden rastgele XP, bonus, kalkan, çark ya da soygun hakkı, özel unvan çıkar; boş da çıkabilir.',
+    'Random key içinden rastgele XP, bonus, kalkan, çark ya da soygun hakkı, `.kart`, özel unvan çıkar; boş da çıkabilir.',
     'Key\'den unvan çıktığında zaten unvanın varsa unvanın korunur, yerine XP verilir.',
     'Satın alınan XP geri gelmez. Market her grupta ayrıdır.',
   ],

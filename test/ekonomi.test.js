@@ -8,12 +8,13 @@ process.env.STATS_DB = ':memory:'
 const { GOREVLER, gununGorevleri } = await import('../lib/gorev.js')
 const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
+const { kartBul, kartCek, setCekisi, SETLER } = await import('../lib/kart.js')
 const { faizHesapla, gunFarki, vergiHesapla } = await import('../lib/banka.js')
 const { haftaAnahtari, haftaBitisi, SEZON_ODULLERI } = await import('../lib/sezon.js')
 const { fiyatAdimi, hisseBul, HISSELER, SAAT_MS } = await import('../lib/borsa.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
+  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, kartlariOku, kartVer, setTamamla, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -144,11 +145,21 @@ test('key tabloları: fiyatlar, toplam 100, beklenen XP fiyatın altında', () =
   assert.deepEqual(KASALAR.map((k) => k.fiyat), [50, 100, 250, 500, 750, 1000])
   for (const kasa of KASALAR) {
     assert.equal(kasa.oduller.reduce((t, o) => t + o.agirlik, 0), 100, kasa.ad)
-    const ev = kasa.oduller.reduce((t, o) => t + (o.agirlik / 100) * ((o.xp || 0) + (o.yedekXp || 0)), 0)
+    const kartDegeri = (o) => {
+      const set = SETLER[o.kartSet]
+      return set ? set.odul / setCekisi(set) : 0
+    }
+    const ev = kasa.oduller.reduce(
+      (t, o) => t + (o.agirlik / 100) * ((o.xp || 0) + (o.yedekXp || 0) + kartDegeri(o)),
+      0,
+    )
     assert.ok(ev < kasa.fiyat, `${kasa.ad} beklenen XP ${ev}`)
 
     const gorulen = new Set()
-    for (let r = 0; r < 100; r++) gorulen.add(kasaCek(kasa, () => r))
+    for (let r = 0; r < 100; r++) {
+      const o = kasaCek(kasa, (n) => r % n)
+      gorulen.add(o.kartSet ?? o.etiket)
+    }
     assert.equal(gorulen.size, kasa.oduller.length, kasa.ad)
   }
 })
@@ -361,4 +372,39 @@ test('borsa: fiyat saatte bir ilerler, birikim sınırlı, batan hisse sıfırla
   const batik = borsaDurumu({ ...k, now: T + 200 * SAAT_MS, rnd: dusus })
   assert.deepEqual(batik.portfoy, [])
   assert.ok(fiyat(batik).fiyat >= 5)
+})
+
+test('kartlar: numaralar benzersiz, her kart çekilebilir, nadir olan az çıkar', () => {
+  const hepsi = SETLER.flatMap((s) => s.kartlar)
+  assert.deepEqual(hepsi.map((k) => k.no), hepsi.map((_, i) => i + 1))
+  assert.equal(kartBul(1).ad, 'Simit')
+  assert.equal(kartBul(99), null)
+
+  for (const set of SETLER) {
+    const gorulen = {}
+    for (let r = 0; r < setCekisi(set); r++) {
+      const k = kartCek(set, () => r)
+      gorulen[k.no] = (gorulen[k.no] || 0) + 1
+    }
+    assert.equal(Object.keys(gorulen).length, set.kartlar.length)
+    assert.equal(gorulen[set.kartlar.at(-1).no], 1)
+  }
+})
+
+test('kart: key verir, takas edilir, set ödülü kartları harcar', () => {
+  const k = kisi(500)
+  const set = SETLER[0]
+  for (const kart of set.kartlar) ac(k, { kart: kart.no })
+  ac(k, { kart: 1 })
+  assert.equal(kartlariOku(k.chatJid, k.userJid).find((x) => x.no === 1).adet, 2)
+
+  assert.deepEqual(kartVer({ chatJid: k.chatJid, kaynak: 'a', hedef: 'b', no: 1 }), { verildi: true })
+  assert.deepEqual(kartVer({ chatJid: k.chatJid, kaynak: 'b', hedef: 'a', no: 2 }), { yok: true })
+  assert.deepEqual(kartlariOku(k.chatJid, 'b'), [{ no: 1, adet: 1 }])
+
+  assert.deepEqual(setTamamla({ ...k, set: SETLER[1] }).eksik, SETLER[1].kartlar)
+  const once = getStats(k.chatJid, k.userJid).xp
+  assert.equal(setTamamla({ ...k, set }).xp, once + set.odul)
+  assert.deepEqual(kartlariOku(k.chatJid, k.userJid), [])
+  assert.equal(setTamamla({ ...k, set }).eksik.length, set.kartlar.length)
 })

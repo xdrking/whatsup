@@ -273,7 +273,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 25 (tamam):** `.banka` ve servet vergisi. Ayrıntı aşağıda.
 - **Faz 26 (tamam):** `.sezon`. Ayrıntı aşağıda.
 - **Faz 27 (tamam):** `.borsa`. Ayrıntı aşağıda.
-- **Faz 28+:** yeni komutlar, her biri ayrı adım
+- **Faz 28 (tamam):** `.kart`. Ayrıntı aşağıda.
+- **Faz 29+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -841,6 +842,17 @@ Hisseler `lib/borsa.js:HISSELER`'dedir. Fiyat, her grupta ayrı, simetrik rastge
 bir fiyat yazılmamalı:** ikisinde de "düşükte al, yüksekte sat" XP basar. Bu yüzden hisse tabanda
 durmaz, batar ve paylar silinir. Kumar karnesine yazılmaz.
 
+### Faz 28 — `.kart`
+
+```
+kart(chat_jid, user_jid, no, adet)   PK(chat_jid,user_jid,no)
+```
+
+Kartlar `lib/kart.js`'tedir, `no` veritabanına yazılır: **sıra değiştirilmez**, yeni set sona eklenir.
+Key'den çıkar (`kasaCek()` kartı çözer, `kasaAc()` yazar). Nadir kart darboğaz olduğu için kartın
+değeri `set ödülü / setCekisi` sayılır ve key beklenti testine girer; set ödülü artırılırsa test uyarır.
+Takasta bot XP'ye dokunmaz, aynı `.açıkartırma` gibi karşılık `.devret` ile verilir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -901,3 +913,4 @@ durmaz, batar ve paylar silinir. Kumar karnesine yazılmaz.
 42. `.banka yatır 100` → cüzdan düşer; `.banka çek 100` → 95 XP geri gelir; ertesi gün `.banka` faizi gösterir
 43. `.sezon` → sıralama ve kalan gün gelir; oyun kazanınca puan artar, kumar kazanınca artmaz
 44. `.borsa al muz 100` → XP düşer, `.borsa` portföyü gösterir; hemen `.borsa sat muz hepsi` → komisyon kadar zarar
+45. `.kart` → koleksiyon; `.kart ver @kişi 1` → kart geçer, elinde yoksa reddedilir; eksikle `.kart tamamla 1` → eksikler yazılır

@@ -235,14 +235,14 @@ Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül 
 
 | Key | Fiyat | Boş | XP | Diğer ödüller |
 |---|---|---|---|---|
-| 🥉 Bronz | 50 | %30 | 20-250 | çark hakkı, soygun hakkı, 6 saat kalkan |
-| 🥈 Gümüş | 100 | %25 | 50-500 | çark hakkı, soygun hakkı, 6 saat kalkan |
-| 🥇 Altın | 250 | %20 | 100-1.000 | 3 kat XP, çark hakkı, soygun hakkı, 12 saat kalkan |
-| 💠 Platin | 500 | %15 | 250-2.500 | 3 ve 5 kat XP, 24 saat kalkan, 🍀 Şanslı unvanı |
-| 💎 Elmas | 750 | %12 | 250-2.500 | 5 ve 10 kat XP, 48 saat kalkan, 🗝️ Key Avcısı unvanı |
-| 🐉 Efsane | 1.000 | %10 | 500-10.000 | 5 ve 10 kat XP, 48 saat kalkan, 🐉 Efsane unvanı |
+| 🥉 Bronz | 50 | %20 | 20-250 | çark hakkı, soygun hakkı, 6 saat kalkan |
+| 🥈 Gümüş | 100 | %13 | 50-500 | çark hakkı, soygun hakkı, 6 saat kalkan |
+| 🥇 Altın | 250 | %12 | 100-1.000 | 3 kat XP, çark hakkı, soygun hakkı, 12 saat kalkan |
+| 💠 Platin | 500 | %7 | 250-2.500 | 3 ve 5 kat XP, 24 saat kalkan, 🍀 Şanslı unvanı |
+| 💎 Elmas | 750 | %6 | 250-2.500 | 5 ve 10 kat XP, 48 saat kalkan, 🗝️ Key Avcısı unvanı |
+| 🐉 Efsane | 1.000 | %5 | 500-10.000 | 5 ve 10 kat XP, 48 saat kalkan, 🐉 Efsane unvanı |
 
-Unvan çıktığında zaten unvanın varsa unvanın değişmez, yerine key fiyatı kadar XP gelir.
+Hepsinden `.kart` da çıkar. Unvan çıktığında zaten unvanın varsa unvanın değişmez, yerine key fiyatı kadar XP gelir.
 Soygun hakkı o gün için geçerlidir; çark hakkı 24 saatlik pencereye eklenir.
 
 ### Ödül avı
@@ -277,6 +277,18 @@ Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajı
 
 Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Fiyatlar saatte bir rastgele oynar, sağa gittikçe sertleşir (saatte en çok %2'den %12'ye).
 Alışta ve satışta %2 komisyon kesilir. Fiyatı 5 XP'nin altına düşen hisse batar: elindeki paylar silinir, hisse 100 XP'den açılır.
+
+### Kart koleksiyonu
+
+Kartlar random key'lerden çıkar: Bronz ve Gümüş 1. seti, Altın ve Platin 2. seti, Elmas ve Efsane 3. seti verir. ⭐ kartlar nadirdir.
+
+| Komut | Yapar |
+|---|---|
+| `.kart` | Koleksiyonunu gösterir; `.kart @kişi` başkasınınkini |
+| `.kart ver @kişi 7` | 7 numaralı kartı verir; karşılığı `.devret` ile alınır, bot arada durmaz |
+| `.kart tamamla 1` | Setin her kartından birini harcar, ödülü verir |
+
+Set ödülleri: 🍢 Sokak Lezzetleri 1.500 XP, 🏛️ Antik Şehirler 7.500 XP, 🐉 Efsaneler 25.000 XP. Set tekrar toplanabilir.
 
 ### Açık artırma
 
