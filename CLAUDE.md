@@ -259,7 +259,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 14 (tamam):** `.kimim` alternatif cevapları, `.emoji` ve `.adamasmaca`. Ayrıntı aşağıda.
 - **Faz 15 (tamam):** XP kumar komutları: `.bahis`, `.slot`, `.rulet`. Ayrıntı aşağıda.
 - **Faz 16 (tamam):** `.xpver` — sahibin özelden elle XP vermesi. Ayrıntı aşağıda.
-- **Faz 17+:** yeni komutlar, her biri ayrı adım
+- **Faz 17 (tamam):** `.devret` — kullanıcılar arası XP devri. Ayrıntı aşağıda.
+- **Faz 18+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -676,6 +677,20 @@ numarayı (`id` ya da `jid` alanı) arar ve üyenin `id`'sini döner. WhatsApp
 numarayı vermiyorsa üye bulunamaz ve hiçbir şey yazılmaz; bu durumda `.id @kişi`
 çıktısındaki "...@lid" kimliği numara yerine verilebilir (üyelik yine doğrulanır).
 
+### Faz 17 — `.devret`
+
+`.devret @kişi <miktar>` (ya da mesaja yanıtla `.devret <miktar>`): gönderenin
+XP'si hedefe geçer. `.devret @a @b <miktar>` yalnızca sahip içindir (`isOwner`,
+yani `.env`'deki sahip; grup kurucusu ya da admini değil), iki etiketli kullanımı
+sıradan üye yazarsa reddedilir. Sözdizimi bilerek `details`'te yok, README'dedir.
+
+- Toplam XP değişmez: `lib/stats.js:xpDevret()` bakiye kontrolü ve iki yazmayı tek
+  transaction'da yapar. Sahip de kaynağın bakiyesini aşamaz; XP basmak `.xpver`'in işi.
+- `last_seen` değişmez (`xpAktar`): devir alan kişi mesaj yazmış görünmesin.
+- Hedef `uyeKimligiBul()` ile gruptaki üye kimliğine çevrilir; üye değilse devir yapılmaz.
+- `mentionedJid` sırasına güvenilmez: XP'nin yönü `etiketSirasi()` ile metindeki
+  sıradan çıkar.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -719,3 +734,5 @@ numarayı vermiyorsa üye bulunamaz ve hiçbir şey yazılmaz; bu durumda `.id @
 28. `.bahis 100 tura` → sonuç ve yeni XP; bakiyeden fazla bahis → "o kadar XP'n yok"; `.profil` aynı XP'yi göstermeli
 29. Sahip özelden `.xpver <grup id> <numara> 100` → onay gelir, kişi grupta `.profil`'de XP'yi görür;
     aynı komut grupta → hiç tepki yok; başkası özelden yazarsa → hiç tepki yok
+30. `.devret @kişi 10` → iki bakiye de değişir; bakiyeden fazlası → "o kadar XP'n yok"; sıradan üye
+    `.devret @a @b 10` → reddedilir, sahip yazınca a'dan b'ye geçer (yön metindeki sırayla aynı olmalı)
