@@ -71,6 +71,7 @@ test('games/quiz.json: cevap her zaman şıklardan biri', async () => {
     // "3" yazan oyuncu şık metnini değil C şıkkını seçmiş sayılır (secenekIndeksi).
     for (const o of s.options) {
       assert.doesNotMatch(o.trim(), /^[a-dA-D1-4]$/, `${s.question}: "${o}" şık harfi/numarasıyla karışır`)
+      assert.doesNotMatch(o.trim(), /^(bir|iki|üç|dört|birinci|ikinci|üçüncü|dördüncü)$/i, `${s.question}: "${o}" yerine rakam yazan yanlış şıkkı seçer`)
     }
   }
 })
