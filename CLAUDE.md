@@ -271,7 +271,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 23 (tamam):** `.market` random key'leri. Ayrıntı aşağıda.
 - **Faz 24 (tamam):** `.ödül`. Ayrıntı aşağıda.
 - **Faz 25 (tamam):** `.banka` ve servet vergisi. Ayrıntı aşağıda.
-- **Faz 26+:** yeni komutlar, her biri ayrı adım
+- **Faz 26 (tamam):** `.sezon`. Ayrıntı aşağıda.
+- **Faz 27+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -815,6 +816,18 @@ Vergi `recordMessage()` içinde kişinin günün ilk mesajında kesilir: komutla
 kaçılabilirdi. Bot kendiliğinden yazmadığı için vergiyi `.banka` gösterir. Mesaj başına DB'ye
 gidilmesin diye denetim bellektedir, yeniden başlatmada `vergi_day` çift kesintiyi önler.
 
+### Faz 26 — `.sezon`
+
+```
+sezon(chat_jid, user_jid, hafta, puan)           PK(chat_jid,user_jid,hafta)
+sampiyon(chat_jid, user_jid, kez, son_hafta)     PK(chat_jid,user_jid)
+```
+
+Puan `sezonPuani()` ile yazılır: `recordMessage`, `addXp`, `claimDaily`, `gorevTopla`. Kumar ve
+soygun bilerek girmez, yoksa zengin hep kazanırdı. Hafta `haftaAnahtari()` ile pazartesi başlar.
+Kapanış `sezonDurumu()` içindedir ve yeni haftadaki ilk `.sezon`'da olur; ödül ve silme aynı
+transaction'da olduğu için çift ödeme olmaz. Şampiyonluk unvan değildir, satın alınan unvanı ezmez.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -873,3 +886,4 @@ gidilmesin diye denetim bellektedir, yeniden başlatmada `vergi_day` çift kesin
 40. `.market` → key'ler ayrı başlıkta listelenir; `.market al 7` → 50 XP düşer, ödül yazılır; XP yetmezse ödül çıkmaz
 41. `.ödül @kişi 100` → 100 XP düşer, listede 90 XP görünür; o kişi soyulunca hırsız ödülü alır, liste boşalır
 42. `.banka yatır 100` → cüzdan düşer; `.banka çek 100` → 95 XP geri gelir; ertesi gün `.banka` faizi gösterir
+43. `.sezon` → sıralama ve kalan gün gelir; oyun kazanınca puan artar, kumar kazanınca artmaz

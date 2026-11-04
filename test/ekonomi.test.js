@@ -9,9 +9,10 @@ const { GOREVLER, gununGorevleri } = await import('../lib/gorev.js')
 const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
 const { faizHesapla, gunFarki, vergiHesapla } = await import('../lib/banka.js')
+const { haftaAnahtari, haftaBitisi, SEZON_ODULLERI } = await import('../lib/sezon.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, bankaBakiyesi, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, soygunYap,
+  addXp, bahisOyna, bankaBakiyesi, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -273,4 +274,36 @@ test('vergi: günün ilk mesajında bir kez kesilir, banka muaf, altında kesilm
   const sonra = getStats(k.chatJid, k.userJid).xp
   mesaj(T + GUN)
   assert.equal(getStats(k.chatJid, k.userJid).xp, sonra + 1)
+})
+
+test('hafta: pazartesi başlar, Türkiye saatine göre döner', () => {
+  assert.equal(haftaAnahtari(new Date('2026-11-04T12:00:00+03:00')), '2026-11-02')
+  assert.equal(haftaAnahtari(new Date('2026-11-02T00:30:00+03:00')), '2026-11-02')
+  assert.equal(haftaAnahtari(new Date('2026-11-01T23:30:00+03:00')), '2026-10-26')
+  assert.equal(haftaBitisi('2026-11-02'), Date.parse('2026-11-09T00:00:00+03:00'))
+})
+
+test('sezon: kumar sayılmaz, hafta kapanınca ödül bir kez dağıtılır', () => {
+  const k = kisi(0)
+  const c = k.chatJid
+  addXp({ chatJid: c, userJid: 'a', amount: 30, at: T })
+  addXp({ chatJid: c, userJid: 'b', amount: 20, at: T })
+  addXp({ chatJid: c, userJid: 'c', amount: 10, at: T })
+  addXp({ chatJid: c, userJid: 'd', amount: 5, at: T })
+  bahisOyna({ chatJid: c, userJid: 'd', miktar: 5, cevir: () => ({ carpan: 100 }), at: T })
+
+  const s = sezonDurumu({ chatJid: c, now: T })
+  assert.deepEqual(s.kapanan, [])
+  assert.deepEqual(s.siralama.map((x) => x.puan), [30, 20, 10, 5])
+
+  const sonra = T + 7 * GUN
+  const kapanis = sezonDurumu({ chatJid: c, now: sonra })
+  assert.deepEqual(kapanis.kapanan[0].kazananlar.map((x) => x.user_jid), ['a', 'b', 'c'])
+  assert.equal(getStats(c, 'a').xp, 30 + SEZON_ODULLERI[0])
+  assert.equal(getStats(c, 'c').xp, 10 + SEZON_ODULLERI[2])
+  assert.equal(sampiyonlukSayisi(c, 'a'), 1)
+  assert.equal(kapanis.sonSampiyon.user_jid, 'a')
+
+  assert.deepEqual(sezonDurumu({ chatJid: c, now: sonra }).kapanan, [])
+  assert.equal(getStats(c, 'a').xp, 30 + SEZON_ODULLERI[0])
 })

@@ -262,6 +262,11 @@ Bankadaki XP soyulamaz, vergilenmez, günlük %1 faiz alır (ilk 10.000 XP için
 Bankadaki XP seviyeye ve `.top`'a sayılmaz, `.profil`'de ayrı görünür.
 Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve yanar. `.banka` son vergiyi gösterir.
 
+### Sezon
+
+`.sezon` bu haftanın en çok XP kazananlarını gösterir. Her pazartesi sıfırlanır, yalnızca mesaj, oyun, `.günlük` ve `.görev` XP'si sayılır.
+İlk üç 1.000 / 500 / 250 XP alır, birincinin şampiyonluk sayısı `.profil`'de görünür. Bot kendiliğinden yazmadığı için ödüller yeni haftada `.sezon` ilk yazıldığında dağıtılır.
+
 ### Açık artırma
 
 `.açıkartırma 500 60` kendi 500 XP'ni 60 saniyeliğine artırmaya çıkarır, bot herkesi etiketler.
