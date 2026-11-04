@@ -250,6 +250,18 @@ Soygun hakkı o gün için geçerlidir; çark hakkı 24 saatlik pencereye ekleni
 `.ödül @kişi 500` birinin başına XP koyar, onu ilk başarıyla soyan ödülü de alır. Yalnız `.ödül` aranan listesini gösterir.
 En az 50 XP, koyarken %10'u kesilir. Aynı kişiye koyulan ödüller birikir.
 
+### Banka ve servet vergisi
+
+| Komut | Yapar |
+|---|---|
+| `.banka` | Hesabı ve cüzdanı gösterir, biriken faizi işler |
+| `.banka yatır 500` | XP'yi hesaba koyar; `hepsi` ve `yarısı` da olur |
+| `.banka çek 500` | Hesaptan çeker, %5'i kesilir |
+
+Bankadaki XP soyulamaz, vergilenmez, günlük %1 faiz alır (ilk 10.000 XP için, en çok 7 günlük birikir).
+Bankadaki XP seviyeye ve `.top`'a sayılmaz, `.profil`'de ayrı görünür.
+Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve yanar. `.banka` son vergiyi gösterir.
+
 ### Açık artırma
 
 `.açıkartırma 500 60` kendi 500 XP'ni 60 saniyeliğine artırmaya çıkarır, bot herkesi etiketler.

@@ -1,4 +1,4 @@
-import { getStats, marketDurumu, seviyeIlerlemesi } from '../lib/stats.js'
+import { bankaBakiyesi, getStats, marketDurumu, seviyeIlerlemesi } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -32,12 +32,15 @@ export default {
 
     const { unvan } = marketDurumu(from, jid)
 
+    const banka = bankaBakiyesi(from, jid)
+
     const lines = [
       `👤 *${ad}*  ${mentionOf(jid)}`,
       ...(unvan ? [unvan] : []),
       `🏅 Seviye ${level}  •  ${sayi.format(veri.xp)} XP`,
       `${cubuk(kazanilan, gereken)}  ${sayi.format(kazanilan)}/${sayi.format(gereken)}`,
       `⬆️ Sonraki seviye: ${sayi.format(Math.max(0, sonraki - veri.xp))} XP kaldı`,
+      ...(banka ? [`🏦 Bankada: ${sayi.format(banka)} XP`] : []),
       '',
       `💬 ${sayi.format(veri.messages)} mesaj  •  😂 ${sayi.format(veri.stickers)} sticker` +
         `  •  🎤 ${sayi.format(veri.voices)} ses`,

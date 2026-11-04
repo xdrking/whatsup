@@ -270,7 +270,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 22 (tamam):** `.açıkartırma`. Ayrıntı aşağıda.
 - **Faz 23 (tamam):** `.market` random key'leri. Ayrıntı aşağıda.
 - **Faz 24 (tamam):** `.ödül`. Ayrıntı aşağıda.
-- **Faz 25+:** yeni komutlar, her biri ayrı adım
+- **Faz 25 (tamam):** `.banka` ve servet vergisi. Ayrıntı aşağıda.
+- **Faz 26+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -801,6 +802,19 @@ odul(chat_jid, user_jid, xp)   PK(chat_jid,user_jid)
 olan kişiye `MIN_KURBAN_XP` uygulanmaz, yoksa fakir birinin ödülü sonsuza dek kalırdı.
 `ödül` önceden `.günlük`'ün alias'ıydı, oradan kaldırıldı.
 
+### Faz 25 — `.banka` ve servet vergisi
+
+```
+banka(chat_jid, user_jid, bakiye, faiz_day, vergi_day, son_vergi)   PK(chat_jid,user_jid)
+```
+
+Kurallar `lib/banka.js`'te saftır. Faiz XP basar, bu yüzden hem tavanı (10.000 XP) hem gün
+sınırı (7) vardır ve `.banka` yazılınca işlenir. Çekimdeki %5 ile vergi yanar.
+
+Vergi `recordMessage()` içinde kişinin günün ilk mesajında kesilir: komutla kesilseydi
+kaçılabilirdi. Bot kendiliğinden yazmadığı için vergiyi `.banka` gösterir. Mesaj başına DB'ye
+gidilmesin diye denetim bellektedir, yeniden başlatmada `vergi_day` çift kesintiyi önler.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -858,3 +872,4 @@ olan kişiye `MIN_KURBAN_XP` uygulanmaz, yoksa fakir birinin ödülü sonsuza de
 39. `.açıkartırma 10 30` → herkes etiketlenir; ilk mesaja yanıt teklif olur, düşük teklif reddedilir; süre bitince kazanan yazılır, XP değişmez
 40. `.market` → key'ler ayrı başlıkta listelenir; `.market al 7` → 50 XP düşer, ödül yazılır; XP yetmezse ödül çıkmaz
 41. `.ödül @kişi 100` → 100 XP düşer, listede 90 XP görünür; o kişi soyulunca hırsız ödülü alır, liste boşalır
+42. `.banka yatır 100` → cüzdan düşer; `.banka çek 100` → 95 XP geri gelir; ertesi gün `.banka` faizi gösterir

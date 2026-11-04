@@ -8,9 +8,10 @@ process.env.STATS_DB = ':memory:'
 const { GOREVLER, gununGorevleri } = await import('../lib/gorev.js')
 const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
+const { faizHesapla, gunFarki, vergiHesapla } = await import('../lib/banka.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, soygunYap,
+  addXp, bankaBakiyesi, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -233,4 +234,43 @@ test('ödül: kesinti yanar, birikir, başarılı soygunda alınır', () => {
   assert.equal(basarili.odul, 180)
   assert.equal(getStats(k.chatJid, 'c').xp, basarili.hirsizXp)
   assert.deepEqual(odulListesi(k.chatJid), [])
+})
+
+test('banka hesapları: faiz tavanı ve gün sınırı, vergi yalnız eşiğin üstünden', () => {
+  assert.equal(gunFarki('2026-10-30', '2026-11-02'), 3)
+  assert.equal(faizHesapla(1000, 1), 10)
+  assert.equal(faizHesapla(50_000, 1), 100)
+  assert.equal(faizHesapla(1000, 30), 70)
+  assert.equal(vergiHesapla(10_000), 0)
+  assert.equal(vergiHesapla(20_000), 100)
+})
+
+test('banka: yatır, faiz işler, çekerken kesinti yanar', () => {
+  const k = kisi(1000)
+  assert.deepEqual(bankaYatir({ ...k, miktar: 1001, now: T }), { yetersiz: true, xp: 1000 })
+  assert.deepEqual(bankaYatir({ ...k, miktar: 1000, now: T }), { bakiye: 1000, xp: 0 })
+
+  assert.equal(bankaDurumu({ ...k, now: T }).faiz, 0)
+  assert.equal(bankaDurumu({ ...k, now: T + 2 * GUN }).faiz, 20)
+  assert.equal(bankaDurumu({ ...k, now: T + 2 * GUN }).faiz, 0)
+  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 1020)
+
+  assert.deepEqual(bankaCek({ ...k, miktar: 2000, now: T + 2 * GUN }), { yetersiz: true, bakiye: 1020 })
+  assert.deepEqual(bankaCek({ ...k, miktar: 1000, now: T + 2 * GUN }), { bakiye: 20, xp: 950, kesinti: 50 })
+})
+
+test('vergi: günün ilk mesajında bir kez kesilir, banka muaf, altında kesilmez', () => {
+  const k = kisi(20_000)
+  const mesaj = (at) => recordMessage({ ...k, type: 'conversation', at })
+  mesaj(T)
+  const xp = getStats(k.chatJid, k.userJid).xp
+  assert.equal(xp, 19_901)
+  mesaj(T + 60_000)
+  assert.equal(getStats(k.chatJid, k.userJid).xp, xp + 1)
+  assert.equal(bankaDurumu({ ...k, now: T }).sonVergi, 100)
+
+  bankaYatir({ ...k, miktar: 15_000, now: T })
+  const sonra = getStats(k.chatJid, k.userJid).xp
+  mesaj(T + GUN)
+  assert.equal(getStats(k.chatJid, k.userJid).xp, sonra + 1)
 })
