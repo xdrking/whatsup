@@ -799,6 +799,7 @@ odul(chat_jid, user_jid, xp)   PK(chat_jid,user_jid)
 
 Ödül `soygunYap()` içinde başarılı soygunda hırsıza geçer. %10 kesinti yanar. Başında ödül
 olan kişiye `MIN_KURBAN_XP` uygulanmaz, yoksa fakir birinin ödülü sonsuza dek kalırdı.
+`ödül` önceden `.günlük`'ün alias'ıydı, oradan kaldırıldı.
 
 ## Elle Doğrulama
 

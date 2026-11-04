@@ -2,7 +2,7 @@ import { claimDaily, getStats, gunlukOdul, seviye } from '../lib/stats.js'
 
 export default {
   name: 'günlük',
-  aliases: ['gunluk', 'daily', 'ödül', 'odul'],
+  aliases: ['gunluk', 'daily'],
   description: 'Günde bir kez XP ödülü — her gün üst üste alırsan büyür',
   usage: '.günlük',
   details: [

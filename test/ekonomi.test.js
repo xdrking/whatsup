@@ -94,7 +94,7 @@ function soygunKur(hirsizXp = 200, kurbanXp = 1000) {
 test('soygun başarılı: XP geçer, kurban korunur, toplam değişmez', () => {
   const s = soygunKur()
   assert.deepEqual(soygunYap({ ...s, sans: () => true, now: T }), {
-    basarili: true, miktar: 100, hirsizXp: 300, kurbanXp: 900,
+    basarili: true, miktar: 100, odul: 0, hirsizXp: 300, kurbanXp: 900,
   })
   assert.deepEqual(soygunYap({ ...s, sans: () => true, now: T + 1 }), { engel: 'korunma', bitis: T + KORUNMA_MS })
   assert.equal(soygunYap({ ...s, sans: () => true, now: T + KORUNMA_MS }).basarili, true)
@@ -103,7 +103,7 @@ test('soygun başarılı: XP geçer, kurban korunur, toplam değişmez', () => {
 test('soygun yakalanma: hırsız kendi payını kurbana öder', () => {
   const s = soygunKur()
   assert.deepEqual(soygunYap({ ...s, sans: () => false, now: T }), {
-    basarili: false, miktar: 20, hirsizXp: 180, kurbanXp: 1020,
+    basarili: false, miktar: 20, odul: 0, hirsizXp: 180, kurbanXp: 1020,
   })
 })
 
