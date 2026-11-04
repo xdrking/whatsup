@@ -6,7 +6,7 @@ import { start } from '../games/duello.js'
 
 export default {
   name: 'düello',
-  aliases: ['duello', 'kapışma', 'kapisma', 'vs'],
+  aliases: ['duello', 'kapışma', 'kapisma'],
   description: 'Biriyle hızlı matematik düellosu — ilk doğru cevap kazanır',
   usage: '.düello @kişi  —  ya da bir mesajı yanıtlayarak .düello',
   details: [

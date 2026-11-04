@@ -133,10 +133,11 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
-| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`) | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.vs`…) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -262,7 +263,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 16 (tamam):** `.xpver` — sahibin özelden elle XP vermesi. Ayrıntı aşağıda.
 - **Faz 17 (tamam):** `.devret` — kullanıcılar arası XP devri. Ayrıntı aşağıda.
 - **Faz 18 (tamam):** `.çark` — günlük haklı şans çarkı ve oyun XP bonusu. Ayrıntı aşağıda.
-- **Faz 19+:** yeni komutlar, her biri ayrı adım
+- **Faz 19 (tamam):** yeni kumar: `.kazı`, `.blackjack`, `.mayın`, `.vs`, `.piyango`, `.çekiliş`, `.kumartop`. Ayrıntı aşağıda.
+- **Faz 20+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -713,6 +715,27 @@ cark(chat_jid, user_jid, window_start ms, spins, bonus_percent, bonus_until ms) 
   yalnızca +1 XP ediyordu. `bonus_percent` yine yüzde tutar (200 = 3 kat). Yeni bonus
   gelince güçlü olan kalır, süre 1 saate döner.
 
+### Faz 19 — Yeni kumar komutları
+
+```
+kumar(chat_jid, user_jid, won, lost, games)   PK(chat_jid,user_jid)
+piyango(chat_jid, user_jid, xp)               PK(chat_jid,user_jid)
+```
+
+- **Karne:** bütün kumar sonuçları `kumarKaydet()` ile `kumar` tablosuna düşer,
+  `.kumartop` buradan okur. Yeni kumar oyunu bu yoldan geçmelidir.
+- **`.kazı`:** tek adımlı, `kumarOyna()` kullanır. Önce ödül çekilir, kart sonra ona
+  göre dizilir; beklenen dönüş %95.
+- **`.blackjack`, `.mayın`:** oyun katmanındadır (`games/`), gruptaki tek oyun yuvasını
+  3 dk tutar, yalnızca başlatan kişi oynar. Bahis `xpCek()` ile baştan alınır,
+  `kumarOde()` ile kapanır. Bot yeniden başlarsa yarım oyundaki bahis yanar.
+- **Elle bitirme iade değildir:** `.oyunbitir` ve zaman aşımı eli `dur`, mayını `çek`
+  sayar. İade olsaydı kötü eli gören başlatan kişi `.oyunbitir` ile kaçardı.
+- **`.vs`:** XP'ye yalnızca kabulde dokunulur; bakiyeler `vsOyna()` transaction'ında
+  yeniden denetlenir. `vs` önceden `.düello`'nun alias'ıydı, oradan kaldırıldı.
+- **`.piyango`:** şans yatırılan XP oranındadır. Biletler gerçek XP olduğu için
+  kalıcıdır. `.çekiliş` yalnızca admin ve sahip içindir, en az 2 kişi gerekir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -760,3 +783,7 @@ cark(chat_jid, user_jid, window_start ms, spins, bonus_percent, bonus_until ms) 
     `.devret @a @b 10` → reddedilir, sahip yazınca a'dan b'ye geçer (yön metindeki sırayla aynı olmalı)
 31. `.çark` iki kez → hak 0'a iner, üçüncüsü "hakkın bitti"; `.çark ekstra` → 100 XP düşer; `.çark durum` → kalan
     süre ve bonus; bonus varken oyun kazanılınca mesajdaki XP ile `.profil` artışı tutmalı
+32. `.blackjack 10` → `kart`/`dur` yanıtları çalışır, başkasının yanıtı yok sayılır; `.oyunbitir` iade etmez
+33. `.mayın 10` → kutu yanıtı çarpanı artırır, `çek` kazancı verir; mayında bahis yanar
+34. `.vs @kişi 10` → yalnızca rakibin `kabul`ü sayılır; cevapsız kalırsa XP değişmez
+35. `.piyango 10` iki kişiden → sıradan üye `.çekiliş` reddedilir, admin çekince havuz kazananın olur; `.kumartop` sonucu gösterir

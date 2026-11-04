@@ -209,6 +209,13 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.bahis 100 tura` | Yazı-tura; bilirsen bahis ikiye katlanır |
 | `.slot 50` | Üç makaralı slot; üçlü 3x-50x (💎 50x), ikili 1.5x |
 | `.rulet 100 kırmızı` | Avrupa ruleti; renk ve tek/çift 2x, sayı (`.rulet 20 17`) 36x |
+| `.kazı 50` | Kazı kazan; 3 aynı sembol 1x-50x |
+| `.blackjack 100` | Krupiyeye karşı 21; mesaja `kart` ya da `dur`. Kazanç 2x, blackjack 2.5x |
+| `.mayın 100` | 12 kutuda 3 mayın; her kutu çarpanı artırır, `çek` ile kazancı alırsın |
+| `.vs @kişi 100` | İki kişilik bahis; rakip `kabul` yazarsa yazı-tura, kazanan rakibinkini alır |
+| `.piyango 50` | Ortak havuza XP yatırır, şans yatırılan XP oranındadır. Yalnız `.piyango` havuzu gösterir |
+| `.çekiliş` | Piyangoyu çeker, havuzun tamamı kazananın olur (grup admini veya owner) |
+| `.kumartop` | Kumarda en çok kazananlar ve kaybedenler |
 
 ### Çark
 
