@@ -274,7 +274,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 26 (tamam):** `.sezon`. Ayrıntı aşağıda.
 - **Faz 27 (tamam):** `.borsa`. Ayrıntı aşağıda.
 - **Faz 28 (tamam):** `.kart`. Ayrıntı aşağıda.
-- **Faz 29+:** yeni komutlar, her biri ayrı adım
+- **Faz 29 (tamam):** `.market` vitrini. Ayrıntı aşağıda.
+- **Faz 30+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -853,6 +854,17 @@ Key'den çıkar (`kasaCek()` kartı çözer, `kasaAc()` yazar). Nadir kart darbo
 değeri `set ödülü / setCekisi` sayılır ve key beklenti testine girer; set ödülü artırılırsa test uyarır.
 Takasta bot XP'ye dokunmaz, aynı `.açıkartırma` gibi karşılık `.devret` ile verilir.
 
+### Faz 29 — Haftalık vitrin
+
+```
+vitrin(chat_jid, hafta, user_jid)   PK(chat_jid,hafta,user_jid)
+```
+
+Ürünler `lib/vitrin.js:VITRIN`'dedir, `vitrinUrunu()` hafta hash'iyle seçer. Satış `kasaAc()`
+üzerinden `vitrinHafta` ile yapılır, ödül key ödülleriyle aynı biçimdedir. Satır sayısı satılan
+stoktur, eski haftalar satışta silinir. Liste numarası `URUNLER`'in hemen sonrasıdır, `URUNLER`'e
+girmez: yeni ürün eklenince numarası kayar.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -914,3 +926,4 @@ Takasta bot XP'ye dokunmaz, aynı `.açıkartırma` gibi karşılık `.devret` i
 43. `.sezon` → sıralama ve kalan gün gelir; oyun kazanınca puan artar, kumar kazanınca artmaz
 44. `.borsa al muz 100` → XP düşer, `.borsa` portföyü gösterir; hemen `.borsa sat muz hepsi` → komisyon kadar zarar
 45. `.kart` → koleksiyon; `.kart ver @kişi 1` → kart geçer, elinde yoksa reddedilir; eksikle `.kart tamamla 1` → eksikler yazılır
+46. `.market` → vitrin stoğu görünür; `.market al 13` iki kez → ikincisi "zaten aldın"

@@ -242,6 +242,9 @@ Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül 
 | 💎 Elmas | 750 | %6 | 250-2.500 | 5 ve 10 kat XP, 48 saat kalkan, 🗝️ Key Avcısı unvanı |
 | 🐉 Efsane | 1.000 | %5 | 500-10.000 | 5 ve 10 kat XP, 48 saat kalkan, 🐉 Efsane unvanı |
 
+Marketin son satırı haftanın vitrinidir: ürün her pazartesi değişir, stoğu sınırlıdır, kişi başı haftada bir alınır.
+10 kat XP, 7 gün kalkan, 3 çark hakkı, 3 soygun hakkı ya da nadir kart çıkabilir.
+
 Hepsinden `.kart` da çıkar. Unvan çıktığında zaten unvanın varsa unvanın değişmez, yerine key fiyatı kadar XP gelir.
 Soygun hakkı o gün için geçerlidir; çark hakkı 24 saatlik pencereye eklenir.
 

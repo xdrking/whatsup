@@ -2,8 +2,10 @@ import { sureYaz } from './cark.js'
 import { requireGroup } from '../lib/group.js'
 import { KASALAR, kasaCek } from '../lib/kasa.js'
 import { URUNLER } from '../lib/market.js'
-import { getStats, kasaAc, marketAl, marketDurumu } from '../lib/stats.js'
+import { haftaAnahtari } from '../lib/sezon.js'
+import { getStats, kasaAc, marketAl, marketDurumu, vitrinKalan } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
+import { vitrinUrunu } from '../lib/vitrin.js'
 import logger from '../lib/logger.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -19,6 +21,7 @@ export default {
     'Kalkan süresi üst üste eklenir. Bonus varken yenisi alınırsa güçlü olan kalır, süre 1 saate döner.',
     'Random key içinden rastgele XP, bonus, kalkan, çark ya da soygun hakkı, `.kart`, özel unvan çıkar; boş da çıkabilir.',
     'Key\'den unvan çıktığında zaten unvanın varsa unvanın korunur, yerine XP verilir.',
+    'Vitrin ürünü her hafta değişir, stoğu sınırlıdır, kişi başı haftada bir alınır.',
     'Satın alınan XP geri gelmez. Market her grupta ayrıdır.',
   ],
   category: 'oyun',
@@ -31,9 +34,22 @@ export default {
     try {
       if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
+      const hafta = haftaAnahtari()
+      const vitrin = vitrinUrunu(hafta)
+      const liste = [...URUNLER, vitrin]
+
       if (['al', 'satınal', 'satinal', 'buy'].includes(trLower(args[0] || ''))) {
-        const urun = URUNLER[Number(args[1]) - 1]
-        if (!urun) return await yaz(`🛒 Ürün numarası yaz: \`.market al 1\` (1-${URUNLER.length})`)
+        const urun = liste[Number(args[1]) - 1]
+        if (!urun) return await yaz(`🛒 Ürün numarası yaz: \`.market al 1\` (1-${liste.length})`)
+
+        if (urun === vitrin) {
+          const v = kasaAc({ chatJid: from, userJid: sender, kasa: urun, cek: () => urun.odul, vitrinHafta: hafta })
+          if (!v) return await yaz('🛒 Market şu an kapalı, sonra dene.')
+          if (v.zatenAldin) return await yaz('🛒 Vitrinden bu hafta zaten aldın.')
+          if (v.tukendi) return await yaz('🛒 Vitrin tükendi, pazartesi yenilenir.')
+          if (v.yetersiz) return await yaz(`🛒 ${sayi.format(urun.fiyat)} XP gerekiyor. Senin XP'n: ${sayi.format(v.xp)}`)
+          return await yaz(`✨ *${urun.ad}* senin!\n💰 Kalan XP: ${sayi.format(v.xp)}`)
+        }
 
         if (urun.tur === 'kasa') {
           const k = kasaAc({ chatJid: from, userJid: sender, kasa: urun, cek: () => kasaCek(urun) })
@@ -62,6 +78,9 @@ export default {
           ...(u === KASALAR[0] ? ['', '🗝️ *Random Key* (içinden rastgele ödül çıkar)'] : []),
           `${i + 1}. ${u.ad} — ${sayi.format(u.fiyat)} XP`,
         ]),
+        '',
+        '✨ *Haftanın vitrini*',
+        `${liste.length}. ${vitrin.ad} — ${sayi.format(vitrin.fiyat)} XP (${vitrinKalan(from, hafta, vitrin.stok)}/${vitrin.stok} kaldı)`,
         '',
         `💰 XP'n: ${sayi.format(getStats(from, sender).xp)}`,
       ]

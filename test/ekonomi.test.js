@@ -12,9 +12,10 @@ const { kartBul, kartCek, setCekisi, SETLER } = await import('../lib/kart.js')
 const { faizHesapla, gunFarki, vergiHesapla } = await import('../lib/banka.js')
 const { haftaAnahtari, haftaBitisi, SEZON_ODULLERI } = await import('../lib/sezon.js')
 const { fiyatAdimi, hisseBul, HISSELER, SAAT_MS } = await import('../lib/borsa.js')
+const { VITRIN, vitrinUrunu } = await import('../lib/vitrin.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, kartlariOku, kartVer, setTamamla, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
+  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, kartlariOku, kartVer, setTamamla, vitrinKalan, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -407,4 +408,33 @@ test('kart: key verir, takas edilir, set ödülü kartları harcar', () => {
   assert.equal(setTamamla({ ...k, set }).xp, once + set.odul)
   assert.deepEqual(kartlariOku(k.chatJid, k.userJid), [])
   assert.equal(setTamamla({ ...k, set }).eksik.length, set.kartlar.length)
+})
+
+test('vitrin: ürün haftaya bağlı, kartları gerçek nadir kart', () => {
+  assert.equal(vitrinUrunu('2026-11-02'), vitrinUrunu('2026-11-02'))
+  for (const u of VITRIN.filter((v) => v.odul.kart)) {
+    assert.ok(u.ad.endsWith(kartBul(u.odul.kart).ad), u.ad)
+    assert.equal(kartBul(u.odul.kart).agirlik, 1, u.ad)
+  }
+})
+
+test('vitrin: stok tükenir, kişi başı bir, XP yetmeyen stok yakmaz, hafta değişince yenilenir', () => {
+  const c = yeniGrup()
+  const urun = { ad: 'x', fiyat: 100, stok: 2, odul: { etiket: 'x' } }
+  const al = (userJid, vitrinHafta = 'h1') =>
+    kasaAc({ chatJid: c, userJid, kasa: urun, cek: () => urun.odul, vitrinHafta, now: T })
+  for (const u of ['a', 'b', 'c']) addXp({ chatJid: c, userJid: u, amount: 300, at: T })
+
+  assert.deepEqual(al('z'), { yetersiz: true, xp: 0 })
+  assert.equal(vitrinKalan(c, 'h1', 2), 2)
+
+  assert.equal(al('a').xp, 200)
+  assert.deepEqual(al('a'), { zatenAldin: true })
+  assert.equal(al('b').xp, 200)
+  assert.deepEqual(al('c'), { tukendi: true })
+  assert.equal(vitrinKalan(c, 'h1', 2), 0)
+  assert.equal(getStats(c, 'c').xp, 300)
+
+  assert.equal(al('c', 'h2').xp, 200)
+  assert.equal(vitrinKalan(c, 'h2', 2), 1)
 })
