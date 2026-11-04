@@ -138,6 +138,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -265,7 +266,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 18 (tamam):** `.çark` — günlük haklı şans çarkı ve oyun XP bonusu. Ayrıntı aşağıda.
 - **Faz 19 (tamam):** yeni kumar: `.kazı`, `.blackjack`, `.mayın`, `.vs`, `.piyango`, `.çekiliş`, `.kumartop`. Ayrıntı aşağıda.
 - **Faz 20 (tamam):** XP oyunları: `.tahmin`, `.karışık`, `.sayıoyunu`. Ayrıntı aşağıda.
-- **Faz 21+:** yeni komutlar, her biri ayrı adım
+- **Faz 21 (tamam):** XP ekonomisi: `.görev`, `.market`, `.soygun`. Ayrıntı aşağıda.
+- **Faz 22+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -746,6 +748,23 @@ piyango(chat_jid, user_jid, xp)               PK(chat_jid,user_jid)
   vardır. İşlem `islemDenetle()` ile denetlenir, hesabı `lib/calc.js` yapar; `eval` yok.
   `^`, `%` ve ondalık kabul edilmez.
 
+### Faz 21 — `.görev`, `.market`, `.soygun`
+
+```
+gorev(chat_jid, user_jid, anahtar, day, sayac, alindi)    PK(chat_jid,user_jid,anahtar)
+market(chat_jid, user_jid, unvan, kalkan_until ms)        PK(chat_jid,user_jid)
+soygun(chat_jid, user_jid, day, deneme, korunma_until ms) PK(chat_jid,user_jid)
+```
+
+- **`.görev`:** tanımlar `lib/gorev.js`'tedir, gün hash'ine göre 5 görevden 3'ü çıkar.
+  Sayaçlar `gorevIlerlet()` ile stats yazma yollarında artar (`recordMessage`, `addXp`,
+  `kumarKaydet`, `carkOyna`, `soygunYap`). Bot kendiliğinden mesaj atmadığı için ödül
+  `.görev` yazılınca verilir. Satır gün değişince sıfırlanır, tablo büyümez.
+- **`.market`:** yeni ürün `lib/market.js:URUNLER`'e bir satır. XP'nin ekonomiden çıktığı
+  ana yerdir. Bonus ürünü `.çark` bonusuyla aynı alanı yazar, çark hakkına dokunmaz.
+- **`.soygun`:** kurallar `lib/soygun.js`'tedir. Toplam XP değişmez. Engeller (kalkan,
+  korunma, bakiye) deneme hakkı yakmaz. Başarıyla soyulan kişi 6 saat korunur.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -798,3 +817,5 @@ piyango(chat_jid, user_jid, xp)               PK(chat_jid,user_jid)
 34. `.vs @kişi 10` → yalnızca rakibin `kabul`ü sayılır; cevapsız kalırsa XP değişmez
 35. `.piyango 10` iki kişiden → sıradan üye `.çekiliş` reddedilir, admin çekince havuz kazananın olur; `.kumartop` sonucu gösterir
 36. `.tahmin`, `.karışık`, `.sayıoyunu` → son mesaja yanıt işlenir, doğru cevap XP verir; `.sayıoyunu`'nda verilmeyen sayı reddedilir
+37. `.görev` → görevler listelenir; biten görevin XP'si bir kez verilir
+38. `.market al 1` → XP düşer; kalkanlı kişiye `.soygun` → engellenir, hak yanmaz; `.soygun` üçüncü kez → "hakkın bitti"

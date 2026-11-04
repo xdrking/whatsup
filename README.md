@@ -220,6 +220,17 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.çekiliş` | Piyangoyu çeker, havuzun tamamı kazananın olur (grup admini veya owner) |
 | `.kumartop` | Kumarda en çok kazananlar ve kaybedenler |
 
+### Görev, market, soygun
+
+| Komut | Yapar |
+|---|---|
+| `.görev` | Günün 3 görevini gösterir, bitenlerin XP'sini verir (ödül bu komutla alınır) |
+| `.market` | Ürünleri listeler; `.market al 1` satın alır |
+| `.soygun @kişi` | %40 şansla kurbanın XP'sinin %10'unu çalar (en çok 500); yakalanan kendi %10'unu kurbana öder |
+
+Market: soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
+Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
+
 ### Çark
 
 24 saatte 2 ücretsiz çevirme hakkı vardır; süre o turdaki ilk çevirmeyle başlar. Hak ve bonus her grupta ayrıdır.
