@@ -1,7 +1,8 @@
 import { sureYaz } from './cark.js'
 import { requireGroup } from '../lib/group.js'
+import { KASALAR, kasaCek } from '../lib/kasa.js'
 import { URUNLER } from '../lib/market.js'
-import { getStats, marketAl, marketDurumu } from '../lib/stats.js'
+import { getStats, kasaAc, marketAl, marketDurumu } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
@@ -10,12 +11,14 @@ const sayi = new Intl.NumberFormat('tr-TR')
 export default {
   name: 'market',
   aliases: ['mağaza', 'magaza', 'shop'],
-  description: 'XP ile kalkan, bonus ve unvan satın al',
+  description: 'XP ile kalkan, bonus, unvan ve random key satın al',
   usage: '.market  —  .market al <numara>',
   details: [
     '`.market` ürünleri ve XP\'ni gösterir, `.market al 1` satın alır.',
     'Unvan `.profil`\'de görünür; yeni unvan eskisinin yerine geçer.',
     'Kalkan süresi üst üste eklenir. Bonus varken yenisi alınırsa güçlü olan kalır, süre 1 saate döner.',
+    'Random key içinden rastgele XP, bonus, kalkan, çark ya da soygun hakkı, özel unvan çıkar; boş da çıkabilir.',
+    'Key\'den unvan çıktığında zaten unvanın varsa unvanın korunur, yerine XP verilir.',
     'Satın alınan XP geri gelmez. Market her grupta ayrıdır.',
   ],
   category: 'oyun',
@@ -32,6 +35,17 @@ export default {
         const urun = URUNLER[Number(args[1]) - 1]
         if (!urun) return await yaz(`🛒 Ürün numarası yaz: \`.market al 1\` (1-${URUNLER.length})`)
 
+        if (urun.tur === 'kasa') {
+          const k = kasaAc({ chatJid: from, userJid: sender, kasa: urun, cek: () => kasaCek(urun) })
+          if (!k) return await yaz('🛒 Market şu an kapalı, sonra dene.')
+          if (k.yetersiz) return await yaz(`🛒 ${sayi.format(urun.fiyat)} XP gerekiyor. Senin XP'n: ${sayi.format(k.xp)}`)
+
+          const satirlar = [`🗝️ *${urun.ad}* açıldı!`, `🎁 ${k.odul.etiket}`]
+          if (k.yedekXp) satirlar.push(`🏷️ Unvanın olduğu için yerine +${sayi.format(k.yedekXp)} XP`)
+          satirlar.push(`💰 XP'n: ${sayi.format(k.xp)}`)
+          return await yaz(satirlar.join('\n'))
+        }
+
         const s = marketAl({ chatJid: from, userJid: sender, urun })
         if (!s) return await yaz('🛒 Market şu an kapalı, sonra dene.')
         if (s.zatenVar) return await yaz('🛒 Bu unvan zaten sende.')
@@ -44,7 +58,10 @@ export default {
       const lines = [
         '🛒 *Market*',
         '',
-        ...URUNLER.map((u, i) => `${i + 1}. ${u.ad} — ${sayi.format(u.fiyat)} XP`),
+        ...URUNLER.flatMap((u, i) => [
+          ...(u === KASALAR[0] ? ['', '🗝️ *Random Key* (içinden rastgele ödül çıkar)'] : []),
+          `${i + 1}. ${u.ad} — ${sayi.format(u.fiyat)} XP`,
+        ]),
         '',
         `💰 XP'n: ${sayi.format(getStats(from, sender).xp)}`,
       ]

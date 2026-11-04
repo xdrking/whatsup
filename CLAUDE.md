@@ -268,7 +268,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 20 (tamam):** XP oyunları: `.tahmin`, `.karışık`, `.sayıoyunu`. Ayrıntı aşağıda.
 - **Faz 21 (tamam):** XP ekonomisi: `.görev`, `.market`, `.soygun`. Ayrıntı aşağıda.
 - **Faz 22 (tamam):** `.açıkartırma`. Ayrıntı aşağıda.
-- **Faz 23+:** yeni komutlar, her biri ayrı adım
+- **Faz 23 (tamam):** `.market` random key'leri. Ayrıntı aşağıda.
+- **Faz 24+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -777,6 +778,18 @@ etmez**, süre bitince kazananı yazar, satıcı `.devret` ile kendisi gönderir
   çağrılmaz: herkes baştaki mesaja yanıt verir, yoksa aynı anda yazanların teklifi düşerdi.
 - Her çağrı tüm gruba bildirim düşürdüğü için bekleme süresi 60 sn.
 
+### Faz 23 — Random key'ler
+
+`lib/kasa.js:KASALAR`, `URUNLER`'in sonuna eklenir: `.market al <numara>` ile açılır, açma
+`lib/stats.js:kasaAc()`'ta tek transaction'dır. Yeni ödül = `oduller`'e bir satır.
+
+- Satın alma sınırsızdır: her key'in beklenen XP'si fiyatının altında kalmalı,
+  `test/ekonomi.test.js` denetler. Ağırlıkların toplamı 100'dür.
+- Çıkan unvan var olan unvanı ezmez, yerine `yedekXp` verilir: pahalı unvan şansla silinmesin.
+- Fazladan çark/soygun hakkı, harcanan hak sayısını eksiye indirir. Çark penceresi kapalıysa
+  açılır, yoksa `hakDurumu()` eski sayıyı yok sayardı.
+- Kumar karnesine ve `.görev` kumar sayacına yazılmaz: ödül XP olmayabilir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -832,3 +845,4 @@ etmez**, süre bitince kazananı yazar, satıcı `.devret` ile kendisi gönderir
 37. `.görev` → görevler listelenir; biten görevin XP'si bir kez verilir
 38. `.market al 1` → XP düşer; kalkanlı kişiye `.soygun` → engellenir, hak yanmaz; `.soygun` üçüncü kez → "hakkın bitti"
 39. `.açıkartırma 10 30` → herkes etiketlenir; ilk mesaja yanıt teklif olur, düşük teklif reddedilir; süre bitince kazanan yazılır, XP değişmez
+40. `.market` → key'ler ayrı başlıkta listelenir; `.market al 7` → 50 XP düşer, ödül yazılır; XP yetmezse ödül çıkmaz

@@ -231,6 +231,20 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 Market: soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
 Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
 
+Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül çıkar:
+
+| Key | Fiyat | Boş | XP | Diğer ödüller |
+|---|---|---|---|---|
+| 🥉 Bronz | 50 | %30 | 20-250 | çark hakkı, soygun hakkı, 6 saat kalkan |
+| 🥈 Gümüş | 100 | %25 | 50-500 | çark hakkı, soygun hakkı, 6 saat kalkan |
+| 🥇 Altın | 250 | %20 | 100-1.000 | 3 kat XP, çark hakkı, soygun hakkı, 12 saat kalkan |
+| 💠 Platin | 500 | %15 | 250-2.500 | 3 ve 5 kat XP, 24 saat kalkan, 🍀 Şanslı unvanı |
+| 💎 Elmas | 750 | %12 | 250-2.500 | 5 ve 10 kat XP, 48 saat kalkan, 🗝️ Key Avcısı unvanı |
+| 🐉 Efsane | 1.000 | %10 | 500-10.000 | 5 ve 10 kat XP, 48 saat kalkan, 🐉 Efsane unvanı |
+
+Unvan çıktığında zaten unvanın varsa unvanın değişmez, yerine key fiyatı kadar XP gelir.
+Soygun hakkı o gün için geçerlidir; çark hakkı 24 saatlik pencereye eklenir.
+
 ### Açık artırma
 
 `.açıkartırma 500 60` kendi 500 XP'ni 60 saniyeliğine artırmaya çıkarır, bot herkesi etiketler.

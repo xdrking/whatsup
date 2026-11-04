@@ -19,7 +19,7 @@ function bonusSatiri(bonus, now) {
 }
 
 function hakSatiri({ kalan, yenilenme }, now) {
-  const satir = `🎟️ Kalan hak: ${kalan}/${UCRETSIZ_HAK}`
+  const satir = `🎟️ Kalan hak: ${kalan}`
   return yenilenme ? `${satir} (yenilenmesine ${sureYaz(yenilenme - now)})` : satir
 }
 

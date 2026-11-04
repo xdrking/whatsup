@@ -7,9 +7,10 @@ process.env.STATS_DB = ':memory:'
 
 const { GOREVLER, gununGorevleri } = await import('../lib/gorev.js')
 const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
+const { KASALAR, kasaCek } = await import('../lib/kasa.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, carkDurumu, getStats, gorevTopla, marketAl, marketDurumu, recordMessage, soygunYap,
+  addXp, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, recordMessage, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -127,4 +128,90 @@ test('soygun: kalkan ve hırsızın bakiyesi engeller', () => {
   const kalkan = urun('kalkan')
   marketAl({ chatJid: s.chatJid, userJid: 'k', urun: kalkan, now: T })
   assert.equal(soygunYap({ ...s, sans: () => true, now: T }).engel, 'kalkan')
+})
+
+const kisi = (xp) => {
+  const k = { chatJid: yeniGrup(), userJid: 'a' }
+  if (xp) addXp({ ...k, amount: xp, at: T })
+  return k
+}
+const ac = (k, odul, kasa = KASALAR[0]) => kasaAc({ ...k, kasa, cek: () => odul, now: T })
+
+test('key tabloları: fiyatlar, toplam 100, beklenen XP fiyatın altında', () => {
+  assert.deepEqual(KASALAR.map((k) => k.fiyat), [50, 100, 250, 500, 750, 1000])
+  for (const kasa of KASALAR) {
+    assert.equal(kasa.oduller.reduce((t, o) => t + o.agirlik, 0), 100, kasa.ad)
+    const ev = kasa.oduller.reduce((t, o) => t + (o.agirlik / 100) * ((o.xp || 0) + (o.yedekXp || 0)), 0)
+    assert.ok(ev < kasa.fiyat, `${kasa.ad} beklenen XP ${ev}`)
+
+    const gorulen = new Set()
+    for (let r = 0; r < 100; r++) gorulen.add(kasaCek(kasa, () => r))
+    assert.equal(gorulen.size, kasa.oduller.length, kasa.ad)
+  }
+})
+
+test('key: XP yetmezse ödül çekilmez, yeterse ücret düşer ve ödül eklenir', () => {
+  const k = kisi(49)
+  let cekildi = false
+  const s = kasaAc({ ...k, kasa: KASALAR[0], cek: () => { cekildi = true; return {} }, now: T })
+  assert.deepEqual(s, { yetersiz: true, xp: 49 })
+  assert.equal(cekildi, false)
+
+  addXp({ ...k, amount: 51, at: T })
+  assert.equal(ac(k, { xp: 20 }).xp, 70)
+  assert.equal(ac(k, {}).xp, 20)
+  assert.equal(getStats(k.chatJid, k.userJid).xp, 20)
+})
+
+test('key: unvan boşsa yazılır, varsa korunur ve yerine XP gelir', () => {
+  const k = kisi(100)
+  const odul = { unvan: '🍀 Şanslı', yedekXp: 500 }
+  assert.equal(ac(k, odul).yedekXp, 0)
+  assert.equal(marketDurumu(k.chatJid, k.userJid, T).unvan, odul.unvan)
+
+  const s = ac(k, { unvan: '🐉 Efsane', yedekXp: 1000 })
+  assert.equal(s.yedekXp, 1000)
+  assert.equal(s.xp, 1000)
+  assert.equal(marketDurumu(k.chatJid, k.userJid, T).unvan, odul.unvan)
+})
+
+test('key: kalkan eklenir, unvana dokunmaz; bonus çark hakkına dokunmaz', () => {
+  const k = kisi(200)
+  ac(k, { unvan: '🍀 Şanslı', yedekXp: 500 })
+  ac(k, { kalkanMs: 1000 })
+  ac(k, { kalkanMs: 1000 })
+  assert.deepEqual(marketDurumu(k.chatJid, k.userJid, T), { unvan: '🍀 Şanslı', kalkan: T + 2000 })
+
+  ac(k, { bonus: 200 })
+  const d = carkDurumu({ ...k, now: T })
+  assert.equal(d.kalan, 2)
+  assert.equal(d.bonus.yuzde, 200)
+})
+
+test('key: çark hakkı açık da kapalı pencerede de fazladan çevirme verir', () => {
+  const bos = () => ({})
+  const kapali = kisi(50)
+  ac(kapali, { carkHakki: 1 })
+  assert.equal(carkDurumu({ ...kapali, now: T }).kalan, 3)
+  for (const kalan of [2, 1, 0]) assert.equal(carkOyna({ ...kapali, cevir: bos, now: T }).kalan, kalan)
+  assert.ok(carkOyna({ ...kapali, cevir: bos, now: T }).hakYok)
+
+  const acik = kisi(50)
+  carkOyna({ ...acik, cevir: () => ({ bonus: 200 }), now: T })
+  carkOyna({ ...acik, cevir: bos, now: T })
+  ac(acik, { carkHakki: 1 })
+  const d = carkDurumu({ ...acik, now: T })
+  assert.equal(d.kalan, 1)
+  assert.equal(d.bonus.yuzde, 200)
+})
+
+test('key: soygun hakkı o gün üçüncü denemeyi açar, ertesi gün sıfırlanır', () => {
+  const k = kisi(5000)
+  const kurban = (i) => { addXp({ chatJid: k.chatJid, userJid: `v${i}`, amount: 5000, at: T }); return `v${i}` }
+  const soy = (i, now = T) => soygunYap({ chatJid: k.chatJid, hirsiz: 'a', kurban: kurban(i), sans: () => false, now })
+
+  ac(k, { soygunHakki: 1 })
+  for (let i = 0; i < 3; i++) assert.equal(soy(i).basarili, false)
+  assert.equal(soy(3).engel, 'hak')
+  assert.equal(soy(4, T + GUN).basarili, false)
 })
