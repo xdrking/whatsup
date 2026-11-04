@@ -267,6 +267,17 @@ Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajı
 `.sezon` bu haftanın en çok XP kazananlarını gösterir. Her pazartesi sıfırlanır, yalnızca mesaj, oyun, `.günlük` ve `.görev` XP'si sayılır.
 İlk üç 1.000 / 500 / 250 XP alır, birincinin şampiyonluk sayısı `.profil`'de görünür. Bot kendiliğinden yazmadığı için ödüller yeni haftada `.sezon` ilk yazıldığında dağıtılır.
 
+### Borsa
+
+| Komut | Yapar |
+|---|---|
+| `.borsa` | Fiyatları ve portföyünü gösterir |
+| `.borsa al kedi 500` | 500 XP'lik hisse alır; `hepsi` ve `yarısı` da olur |
+| `.borsa sat kedi hepsi` | Payını satar; XP miktarı da yazılabilir |
+
+Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Fiyatlar saatte bir rastgele oynar, sağa gittikçe sertleşir (saatte en çok %2'den %12'ye).
+Alışta ve satışta %2 komisyon kesilir. Fiyatı 5 XP'nin altına düşen hisse batar: elindeki paylar silinir, hisse 100 XP'den açılır.
+
 ### Açık artırma
 
 `.açıkartırma 500 60` kendi 500 XP'ni 60 saniyeliğine artırmaya çıkarır, bot herkesi etiketler.

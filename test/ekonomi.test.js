@@ -10,9 +10,10 @@ const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
 const { faizHesapla, gunFarki, vergiHesapla } = await import('../lib/banka.js')
 const { haftaAnahtari, haftaBitisi, SEZON_ODULLERI } = await import('../lib/sezon.js')
+const { fiyatAdimi, hisseBul, HISSELER, SAAT_MS } = await import('../lib/borsa.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, bahisOyna, bankaBakiyesi, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
+  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -306,4 +307,58 @@ test('sezon: kumar sayılmaz, hafta kapanınca ödül bir kez dağıtılır', ()
 
   assert.deepEqual(sezonDurumu({ chatJid: c, now: sonra }).kapanan, [])
   assert.equal(getStats(c, 'a').xp, 30 + SEZON_ODULLERI[0])
+})
+
+test('borsa adımı: beklenen fiyat değişmez, hisse adları çözülür', () => {
+  for (const h of HISSELER) {
+    let toplam = 0
+    const n = 2 * h.oynaklik + 1
+    for (let r = 0; r < n; r++) toplam += fiyatAdimi(100, h.oynaklik, () => r)
+    assert.ok(Math.abs(toplam / n - 100) < 1e-9, h.kod)
+  }
+  assert.equal(hisseBul('ÇAY').kod, 'cay')
+  assert.equal(hisseBul('yok'), null)
+})
+
+test('borsa: alım satımda komisyon kesilir, fiyat aynıysa zarar edilir', () => {
+  const k = kisi(1000)
+  const hisse = hisseBul('muz')
+  const sabit = (n) => (n - 1) / 2
+  const s = { ...k, hisse, now: T, rnd: sabit }
+
+  assert.deepEqual(borsaAl({ ...s, miktar: 1001 }), { yetersiz: true, xp: 1000 })
+  assert.deepEqual(borsaAl({ ...s, miktar: 1000 }), { fiyat: 100, komisyon: 20, xp: 0 })
+
+  const p = borsaDurumu({ ...s }).portfoy[0]
+  assert.equal(p.deger, 980)
+  assert.equal(p.maliyet, 1000)
+
+  assert.equal(borsaSat({ ...s, miktar: 981 }).yetersiz, true)
+  const yarim = borsaSat({ ...s, miktar: 490 })
+  assert.equal(yarim.xp, 480)
+  assert.equal(borsaDurumu({ ...s }).portfoy[0].maliyet, 500)
+
+  const son = borsaSat({ ...s })
+  assert.equal(son.satilan, 490)
+  assert.deepEqual(borsaDurumu({ ...s }).portfoy, [])
+  assert.equal(getStats(k.chatJid, k.userJid).xp, 960)
+  assert.deepEqual(borsaSat({ ...s }), { yok: true })
+})
+
+test('borsa: fiyat saatte bir ilerler, birikim sınırlı, batan hisse sıfırlar', () => {
+  const k = kisi(1000)
+  const hisse = hisseBul('roket')
+  const dusus = () => 0
+  borsaDurumu({ ...k, now: T, rnd: dusus })
+  borsaAl({ ...k, hisse, miktar: 100, now: T, rnd: dusus })
+
+  const fiyat = (d) => d.hisseler.find((h) => h.kod === 'roket')
+  const birSaat = borsaDurumu({ ...k, now: T + SAAT_MS, rnd: dusus })
+  assert.equal(Math.round(fiyat(birSaat).fiyat), 88)
+  assert.equal(birSaat.portfoy.length, 1)
+
+  // Roket saatte %12 düşerse 48 saatte batar: pay silinir, hisse 100'den açılır.
+  const batik = borsaDurumu({ ...k, now: T + 200 * SAAT_MS, rnd: dusus })
+  assert.deepEqual(batik.portfoy, [])
+  assert.ok(fiyat(batik).fiyat >= 5)
 })

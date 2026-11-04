@@ -272,7 +272,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 24 (tamam):** `.ödül`. Ayrıntı aşağıda.
 - **Faz 25 (tamam):** `.banka` ve servet vergisi. Ayrıntı aşağıda.
 - **Faz 26 (tamam):** `.sezon`. Ayrıntı aşağıda.
-- **Faz 27+:** yeni komutlar, her biri ayrı adım
+- **Faz 27 (tamam):** `.borsa`. Ayrıntı aşağıda.
+- **Faz 28+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -828,6 +829,18 @@ soygun bilerek girmez, yoksa zengin hep kazanırdı. Hafta `haftaAnahtari()` ile
 Kapanış `sezonDurumu()` içindedir ve yeni haftadaki ilk `.sezon`'da olur; ödül ve silme aynı
 transaction'da olduğu için çift ödeme olmaz. Şampiyonluk unvan değildir, satın alınan unvanı ezmez.
 
+### Faz 27 — `.borsa`
+
+```
+borsa(chat_jid, hisse, fiyat, onceki, saat)                  PK(chat_jid,hisse)
+portfoy(chat_jid, user_jid, hisse, adet, maliyet)            PK(chat_jid,user_jid,hisse)
+```
+
+Hisseler `lib/borsa.js:HISSELER`'dedir. Fiyat, her grupta ayrı, simetrik rastgele yürüyüştür ve
+`.borsa` çağrılınca geçen saatler kadar ilerler (en çok 48). **Ortalamaya dönen ya da tabanı olan
+bir fiyat yazılmamalı:** ikisinde de "düşükte al, yüksekte sat" XP basar. Bu yüzden hisse tabanda
+durmaz, batar ve paylar silinir. Kumar karnesine yazılmaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -887,3 +900,4 @@ transaction'da olduğu için çift ödeme olmaz. Şampiyonluk unvan değildir, s
 41. `.ödül @kişi 100` → 100 XP düşer, listede 90 XP görünür; o kişi soyulunca hırsız ödülü alır, liste boşalır
 42. `.banka yatır 100` → cüzdan düşer; `.banka çek 100` → 95 XP geri gelir; ertesi gün `.banka` faizi gösterir
 43. `.sezon` → sıralama ve kalan gün gelir; oyun kazanınca puan artar, kumar kazanınca artmaz
+44. `.borsa al muz 100` → XP düşer, `.borsa` portföyü gösterir; hemen `.borsa sat muz hepsi` → komisyon kadar zarar
