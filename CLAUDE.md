@@ -136,6 +136,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -260,7 +261,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 15 (tamam):** XP kumar komutları: `.bahis`, `.slot`, `.rulet`. Ayrıntı aşağıda.
 - **Faz 16 (tamam):** `.xpver` — sahibin özelden elle XP vermesi. Ayrıntı aşağıda.
 - **Faz 17 (tamam):** `.devret` — kullanıcılar arası XP devri. Ayrıntı aşağıda.
-- **Faz 18+:** yeni komutlar, her biri ayrı adım
+- **Faz 18 (tamam):** `.çark` — günlük haklı şans çarkı ve oyun XP bonusu. Ayrıntı aşağıda.
+- **Faz 19+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -691,6 +693,25 @@ sıradan üye yazarsa reddedilir. Sözdizimi bilerek `details`'te yok, README'de
 - `mentionedJid` sırasına güvenilmez: XP'nin yönü `etiketSirasi()` ile metindeki
   sıradan çıkar.
 
+### Faz 18 — `.çark`
+
+Ödül tablosu ve hak hesabı saf fonksiyonlar olarak `lib/cark.js`'tedir; yazma
+`lib/stats.js:carkOyna()`'da tek transaction'dır. Grup komutudur.
+
+```
+cark(chat_jid, user_jid, window_start ms, spins, bonus_percent, bonus_until ms)   PK(chat_jid,user_jid)
+```
+
+- **Hak:** 24 saatte 2 ücretsiz çevirme. Pencere ilk ücretsiz çevirmeyle başlar;
+  takvim günü kullanılmaz, yoksa gece yarısının iki yanında 4 hak kullanılabilirdi.
+- **Ekstra:** `.çark ekstra` 30 XP, sınırsız. Ücretsiz hak varken ekstra istense de
+  XP alınmaz. Sınır olmadığı için tek çevirmenin beklenen XP'si ücretin altında
+  kalmalı (şu an 15 XP); `test/cark.test.js` bunu denetler.
+- **Bonus:** `addXp()` aktif bonusu uygular ve kazanılan miktarı döner, oyunlar mesajda
+  bunu gösterir. `addXp` yalnızca oyun ödülü içindir; başka XP yolu bonus almaz.
+  Yukarı yuvarlanır (`bonusluXp`), böylece 3 XP'lik kelimede %20 de işler. Yeni bonus
+  gelince güçlü yüzde kalır, süre 1 saate döner.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -736,3 +757,5 @@ sıradan üye yazarsa reddedilir. Sözdizimi bilerek `details`'te yok, README'de
     aynı komut grupta → hiç tepki yok; başkası özelden yazarsa → hiç tepki yok
 30. `.devret @kişi 10` → iki bakiye de değişir; bakiyeden fazlası → "o kadar XP'n yok"; sıradan üye
     `.devret @a @b 10` → reddedilir, sahip yazınca a'dan b'ye geçer (yön metindeki sırayla aynı olmalı)
+31. `.çark` iki kez → hak 0'a iner, üçüncüsü "hakkın bitti"; `.çark ekstra` → 30 XP düşer; `.çark durum` → kalan
+    süre ve bonus; bonus varken oyun kazanılınca mesajdaki XP ile `.profil` artışı tutmalı

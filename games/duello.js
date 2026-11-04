@@ -71,7 +71,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     endGame(from)
 
     const rakip = state.oyuncular.find((j) => j !== parsed.sender)
-    addXp({ chatJid: from, userJid: parsed.sender, amount: XP_DUELLO })
+    const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_DUELLO })
 
     await cevapla(sock, msg, from, {
       text: [
@@ -80,7 +80,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
         `🏆 ${mentionOf(parsed.sender)} kazandı!`,
         `😵 ${mentionOf(rakip)} kaybetti.`,
         `✅ ${state.soru.metin} = ${state.soru.cevap}`,
-        `⭐ +${XP_DUELLO} XP`,
+        `⭐ +${kazanc} XP`,
       ].join('\n'),
       mentions: state.oyuncular,
     })

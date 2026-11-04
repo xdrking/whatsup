@@ -210,6 +210,31 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.slot 50` | Üç makaralı slot; üçlü 3x-50x (💎 50x), ikili 1.5x |
 | `.rulet 100 kırmızı` | Avrupa ruleti; renk ve tek/çift 2x, sayı (`.rulet 20 17`) 36x |
 
+### Çark
+
+24 saatte 2 ücretsiz çevirme hakkı vardır; süre o turdaki ilk çevirmeyle başlar. Hak ve bonus her grupta ayrıdır.
+
+| Komut | Yapar |
+|---|---|
+| `.çark` | Ücretsiz hakla çarkı çevirir |
+| `.çark ekstra` | Hak bitince 30 XP karşılığında çevirir |
+| `.çark durum` | Kalan hak ve aktif bonus |
+
+| Ödül | Olasılık |
+|---|---|
+| Boş | %20 |
+| +10 XP | %25 |
+| +25 XP | %20 |
+| +50 XP | %9 |
+| +100 XP | %3 |
+| 1 saat oyunlardan %20 fazla XP | %10 |
+| 1 saat oyunlardan %30 fazla XP | %7 |
+| 1 saat oyunlardan %50 fazla XP | %4 |
+| 1 saat oyunlardan 2 kat XP | %2 |
+
+Bonus `.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji` ve `.adamasmaca` XP'sine işler; mesaj, `.günlük` ve kumar etkilenmez.
+Bonus varken yenisi çıkarsa güçlü olan kalır, süre 1 saate döner.
+
 Oyun cevapları prefix taşımaz: botun **en son** oyun mesajını **yanıtlayarak**
 yazılır. Başka bir mesaja verilen yanıtlar ya da yanıtsız mesajlar yok sayılır.
 Bir grupta aynı anda tek oyun çalışır; oyunlar 1 saat (quiz ve emoji 10 dk, adam asmaca son

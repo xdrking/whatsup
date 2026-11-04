@@ -120,7 +120,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     // Bayrak await'ten önce: aynı anda gelen ikinci doğru cevap boşa düşsün.
     state.finished = true
     endGame(from)
-    addXp({ chatJid: from, userJid: parsed.sender, amount: XP_EMOJI })
+    const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_EMOJI })
 
     await cevapla(sock, msg, from, {
       text: [
@@ -128,7 +128,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
         '',
         `🏆 ${mentionOf(parsed.sender)} bildi!`,
         `${state.bulmaca.emoji} → *${state.bulmaca.answer}*`,
-        `⭐ +${XP_EMOJI} XP`,
+        `⭐ +${kazanc} XP`,
       ].join('\n'),
       mentions: [parsed.sender],
     })

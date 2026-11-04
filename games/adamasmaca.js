@@ -121,13 +121,13 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     endGame(from)
 
     if (sonuc === 'kazandi') {
-      addXp({ chatJid: from, userJid: parsed.sender, amount: XP_ADAMASMACA })
+      const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_ADAMASMACA })
       await cevapla(sock, msg, from, {
         text: [
           '🎉 *KURTARILDI!*',
           '',
           `🏆 ${mentionOf(parsed.sender)} kelimeyi buldu: *${trUpper(state.kelime)}*`,
-          `⭐ +${XP_ADAMASMACA} XP`,
+          `⭐ +${kazanc} XP`,
         ].join('\n'),
         mentions: [parsed.sender],
       })
