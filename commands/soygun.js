@@ -60,6 +60,7 @@ export default {
           ? [
               `🥷 *SOYGUN BAŞARILI*`,
               `${mentionOf(sender)}, ${mentionOf(kurban)} kişisinden *${s.miktar} XP* çaldı!`,
+              ...(s.odul ? [`🎯 Başındaki *${s.odul} XP* ödülü de aldı!`] : []),
               `💰 ${s.hirsizXp} XP  •  😭 ${s.kurbanXp} XP`,
             ].join('\n')
           : [

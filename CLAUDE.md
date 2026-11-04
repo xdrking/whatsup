@@ -138,7 +138,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
-| `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -269,7 +269,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 21 (tamam):** XP ekonomisi: `.görev`, `.market`, `.soygun`. Ayrıntı aşağıda.
 - **Faz 22 (tamam):** `.açıkartırma`. Ayrıntı aşağıda.
 - **Faz 23 (tamam):** `.market` random key'leri. Ayrıntı aşağıda.
-- **Faz 24+:** yeni komutlar, her biri ayrı adım
+- **Faz 24 (tamam):** `.ödül`. Ayrıntı aşağıda.
+- **Faz 25+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -790,6 +791,15 @@ etmez**, süre bitince kazananı yazar, satıcı `.devret` ile kendisi gönderir
   açılır, yoksa `hakDurumu()` eski sayıyı yok sayardı.
 - Kumar karnesine ve `.görev` kumar sayacına yazılmaz: ödül XP olmayabilir.
 
+### Faz 24 — `.ödül`
+
+```
+odul(chat_jid, user_jid, xp)   PK(chat_jid,user_jid)
+```
+
+Ödül `soygunYap()` içinde başarılı soygunda hırsıza geçer. %10 kesinti yanar. Başında ödül
+olan kişiye `MIN_KURBAN_XP` uygulanmaz, yoksa fakir birinin ödülü sonsuza dek kalırdı.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -846,3 +856,4 @@ etmez**, süre bitince kazananı yazar, satıcı `.devret` ile kendisi gönderir
 38. `.market al 1` → XP düşer; kalkanlı kişiye `.soygun` → engellenir, hak yanmaz; `.soygun` üçüncü kez → "hakkın bitti"
 39. `.açıkartırma 10 30` → herkes etiketlenir; ilk mesaja yanıt teklif olur, düşük teklif reddedilir; süre bitince kazanan yazılır, XP değişmez
 40. `.market` → key'ler ayrı başlıkta listelenir; `.market al 7` → 50 XP düşer, ödül yazılır; XP yetmezse ödül çıkmaz
+41. `.ödül @kişi 100` → 100 XP düşer, listede 90 XP görünür; o kişi soyulunca hırsız ödülü alır, liste boşalır

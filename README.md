@@ -245,6 +245,11 @@ Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül 
 Unvan çıktığında zaten unvanın varsa unvanın değişmez, yerine key fiyatı kadar XP gelir.
 Soygun hakkı o gün için geçerlidir; çark hakkı 24 saatlik pencereye eklenir.
 
+### Ödül avı
+
+`.ödül @kişi 500` birinin başına XP koyar, onu ilk başarıyla soyan ödülü de alır. Yalnız `.ödül` aranan listesini gösterir.
+En az 50 XP, koyarken %10'u kesilir. Aynı kişiye koyulan ödüller birikir.
+
 ### Açık artırma
 
 `.açıkartırma 500 60` kendi 500 XP'ni 60 saniyeliğine artırmaya çıkarır, bot herkesi etiketler.

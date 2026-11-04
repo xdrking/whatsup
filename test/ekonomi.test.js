@@ -10,7 +10,7 @@ const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, recordMessage, soygunYap,
+  addXp, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -214,4 +214,23 @@ test('key: soygun hakkı o gün üçüncü denemeyi açar, ertesi gün sıfırla
   for (let i = 0; i < 3; i++) assert.equal(soy(i).basarili, false)
   assert.equal(soy(3).engel, 'hak')
   assert.equal(soy(4, T + GUN).basarili, false)
+})
+
+test('ödül: kesinti yanar, birikir, başarılı soygunda alınır', () => {
+  const k = kisi(1000)
+  const s = { chatJid: k.chatJid, koyan: 'a', hedef: 'b', miktar: 100 }
+  assert.deepEqual(odulKoy({ ...s, miktar: 1001 }), { yetersiz: true, xp: 1000 })
+  assert.deepEqual(odulKoy(s), { havuz: 90, kesinti: 10, xp: 900 })
+  assert.equal(odulKoy(s).havuz, 180)
+
+  // Hedefin XP'si yok: ödül varken yine de soyulabilmeli.
+  const soy = (sans, hirsiz = 'c') => soygunYap({ chatJid: k.chatJid, hirsiz, kurban: 'b', sans: () => sans, now: T })
+  addXp({ chatJid: k.chatJid, userJid: 'c', amount: 100, at: T })
+  assert.equal(soy(false).odul, 0)
+  assert.deepEqual(odulListesi(k.chatJid), [{ user_jid: 'b', xp: 180 }])
+
+  const basarili = soy(true)
+  assert.equal(basarili.odul, 180)
+  assert.equal(getStats(k.chatJid, 'c').xp, basarili.hirsizXp)
+  assert.deepEqual(odulListesi(k.chatJid), [])
 })
