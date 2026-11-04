@@ -264,7 +264,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 17 (tamam):** `.devret` — kullanıcılar arası XP devri. Ayrıntı aşağıda.
 - **Faz 18 (tamam):** `.çark` — günlük haklı şans çarkı ve oyun XP bonusu. Ayrıntı aşağıda.
 - **Faz 19 (tamam):** yeni kumar: `.kazı`, `.blackjack`, `.mayın`, `.vs`, `.piyango`, `.çekiliş`, `.kumartop`. Ayrıntı aşağıda.
-- **Faz 20+:** yeni komutlar, her biri ayrı adım
+- **Faz 20 (tamam):** XP oyunları: `.tahmin`, `.karışık`, `.sayıoyunu`. Ayrıntı aşağıda.
+- **Faz 21+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -736,6 +737,15 @@ piyango(chat_jid, user_jid, xp)               PK(chat_jid,user_jid)
 - **`.piyango`:** şans yatırılan XP oranındadır. Biletler gerçek XP olduğu için
   kalıcıdır. `.çekiliş` yalnızca admin ve sahip içindir, en az 2 kişi gerekir.
 
+### Faz 20 — `.tahmin`, `.karışık`, `.sayıoyunu`
+
+Üçü de `games/` altındadır, XP'yi `addXp()` ile verir (`.çark` bonusu işler).
+
+- **`.karışık`:** havuz `games/kelimeler.json`, en az 4 harf. Her 3 yanlışta baştan bir harf açılır.
+- **`.sayıoyunu`:** hedef sayılardan gerçekten hesaplandığı için her bulmacanın çözümü
+  vardır. İşlem `islemDenetle()` ile denetlenir, hesabı `lib/calc.js` yapar; `eval` yok.
+  `^`, `%` ve ondalık kabul edilmez.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -787,3 +797,4 @@ piyango(chat_jid, user_jid, xp)               PK(chat_jid,user_jid)
 33. `.mayın 10` → kutu yanıtı çarpanı artırır, `çek` kazancı verir; mayında bahis yanar
 34. `.vs @kişi 10` → yalnızca rakibin `kabul`ü sayılır; cevapsız kalırsa XP değişmez
 35. `.piyango 10` iki kişiden → sıradan üye `.çekiliş` reddedilir, admin çekince havuz kazananın olur; `.kumartop` sonucu gösterir
+36. `.tahmin`, `.karışık`, `.sayıoyunu` → son mesaja yanıt işlenir, doğru cevap XP verir; `.sayıoyunu`'nda verilmeyen sayı reddedilir

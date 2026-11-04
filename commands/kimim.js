@@ -4,7 +4,7 @@ import { start } from '../games/kimim.js'
 
 export default {
   name: 'kimim',
-  aliases: ['kimimben', 'tahmin'],
+  aliases: ['kimimben'],
   description: 'Karakter tahmin oyunu başlatır',
   usage: '.kimim',
   details: [

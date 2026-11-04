@@ -197,6 +197,9 @@ kelimeyi bulmak +5, doğru kimim tahmini +10,
 | `.düello @kişi` | İki kişilik hızlı matematik düellosu; ilk doğru cevap kazanır (2 dk) |
 | `.emoji` | Emojilerden film/dizi/şarkı tahmini; her 3 yanlışta ipucu, ilk bilen kazanır (10 dk) |
 | `.adamasmaca` | Grupça adam asmaca: harf ya da kelimenin tamamı yazılır, 6 yanlışta adam asılır |
+| `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul; ilk bilen +5 XP (son tahminden 10 dk) |
+| `.karışık` | Harfleri karışmış kelimeyi bul; ilk bilen +5 XP (5 dk) |
+| `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz; ilk bulan +10 XP (5 dk) |
 | `.oyunbitir` | Aktif oyunu kapatır (başlatan kişi, grup admini veya owner) |
 
 ### Kumar (XP ile)

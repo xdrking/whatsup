@@ -90,3 +90,32 @@ test('adam asmaca: Türkçe büyük İ küçük i sayılır, 6 yanlışta oyun b
   for (const h of ['a', 'b', 'd', 'e', 'f']) assert.equal(tahminEt(s, h), 'yanlis')
   assert.equal(tahminEt(s, 'g'), 'kaybetti')
 })
+
+test('karışık: harfler korunur, kelimenin kendisi çıkmaz', async () => {
+  const { harfleriKaristir } = await import('../games/karisik.js')
+  for (let i = 0; i < 50; i += 1) {
+    const k = harfleriKaristir('kalem')
+    assert.notEqual(k, 'kalem')
+    assert.equal([...k].sort().join(''), [...'kalem'].sort().join(''))
+  }
+})
+
+test('sayı oyunu: hedef aralıkta, verilmeyen ya da fazla sayı reddedilir', async () => {
+  const { bulmacaUret, islemDenetle } = await import('../games/sayioyunu.js')
+
+  for (let i = 0; i < 200; i += 1) {
+    const { sayilar, hedef } = bulmacaUret()
+    assert.equal(sayilar.length, 5)
+    assert.ok(hedef >= 50 && hedef <= 999)
+  }
+
+  const sayilar = [25, 5, 3, 3, 1]
+  assert.deepEqual(islemDenetle('(25 + 5) * 3', sayilar), { gecerli: true, sonuc: 90 })
+  assert.deepEqual(islemDenetle('3 x 3 + 1', sayilar), { gecerli: true, sonuc: 10 })
+  assert.equal(islemDenetle('25 * 5 * 5', sayilar).gecerli, false)
+  assert.equal(islemDenetle('7 + 1', sayilar).gecerli, false)
+  assert.equal(islemDenetle('25', sayilar).gecerli, false)
+  assert.equal(islemDenetle('5 ^ 3', sayilar).gecerli, false)
+  assert.equal(islemDenetle('5 / (3 - 3)', sayilar).gecerli, false)
+  assert.equal(islemDenetle('merhaba', sayilar).gecerli, false)
+})
