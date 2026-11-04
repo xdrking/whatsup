@@ -267,7 +267,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 19 (tamam):** yeni kumar: `.kazı`, `.blackjack`, `.mayın`, `.vs`, `.piyango`, `.çekiliş`, `.kumartop`. Ayrıntı aşağıda.
 - **Faz 20 (tamam):** XP oyunları: `.tahmin`, `.karışık`, `.sayıoyunu`. Ayrıntı aşağıda.
 - **Faz 21 (tamam):** XP ekonomisi: `.görev`, `.market`, `.soygun`. Ayrıntı aşağıda.
-- **Faz 22+:** yeni komutlar, her biri ayrı adım
+- **Faz 22 (tamam):** `.açıkartırma`. Ayrıntı aşağıda.
+- **Faz 23+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -765,6 +766,17 @@ soygun(chat_jid, user_jid, day, deneme, korunma_until ms) PK(chat_jid,user_jid)
 - **`.soygun`:** kurallar `lib/soygun.js`'tedir. Toplam XP değişmez. Engeller (kalkan,
   korunma, bakiye) deneme hakkı yakmaz. Başarıyla soyulan kişi 6 saat korunur.
 
+### Faz 22 — `.açıkartırma`
+
+`games/acikartirma.js`. Teklif yalnızca sayıdır; **bot XP aktarmaz ve teklifi tahsil
+etmez**, süre bitince kazananı yazar, satıcı `.devret` ile kendisi gönderir. Bu bilinçli:
+"otomatik aktarım" eklenmemeli.
+
+- Satıcı yalnızca sahip olduğu XP'yi çıkarabilir; sahip muaftır, sonradan `.xpver` kullanabilir.
+- Oyun yuvasını süre boyunca tutar. Diğer oyunların aksine `setLastMessage` teklifte
+  çağrılmaz: herkes baştaki mesaja yanıt verir, yoksa aynı anda yazanların teklifi düşerdi.
+- Her çağrı tüm gruba bildirim düşürdüğü için bekleme süresi 60 sn.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -819,3 +831,4 @@ soygun(chat_jid, user_jid, day, deneme, korunma_until ms) PK(chat_jid,user_jid)
 36. `.tahmin`, `.karışık`, `.sayıoyunu` → son mesaja yanıt işlenir, doğru cevap XP verir; `.sayıoyunu`'nda verilmeyen sayı reddedilir
 37. `.görev` → görevler listelenir; biten görevin XP'si bir kez verilir
 38. `.market al 1` → XP düşer; kalkanlı kişiye `.soygun` → engellenir, hak yanmaz; `.soygun` üçüncü kez → "hakkın bitti"
+39. `.açıkartırma 10 30` → herkes etiketlenir; ilk mesaja yanıt teklif olur, düşük teklif reddedilir; süre bitince kazanan yazılır, XP değişmez

@@ -231,6 +231,14 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 Market: soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
 Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
 
+### Açık artırma
+
+`.açıkartırma 500 60` kendi 500 XP'ni 60 saniyeliğine artırmaya çıkarır, bot herkesi etiketler.
+Teklifler botun ilk mesajına sayıyla yanıt olarak yazılır, süre bitince en yüksek sayıyı veren kazanır.
+Bot XP aktarmaz ve teklifi tahsil etmez: satıcı `.devret` ile kendisi gönderir.
+Kullanıcılar yalnızca sahip oldukları XP'yi satabilir; owner bakiyesiz başlatıp sonra `.xpver` kullanabilir.
+Süre 10-600 sn, komut 60 sn'de bir kullanılabilir.
+
 ### Çark
 
 24 saatte 2 ücretsiz çevirme hakkı vardır; süre o turdaki ilk çevirmeyle başlar. Hak ve bonus her grupta ayrıdır.
