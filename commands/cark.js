@@ -15,7 +15,7 @@ export function sureYaz(ms) {
 }
 
 function bonusSatiri(bonus, now) {
-  return `🚀 Aktif bonus: oyunlardan %${bonus.yuzde} fazla XP (${sureYaz(bonus.bitis - now)} kaldı)`
+  return `🚀 Aktif bonus: oyunlardan ${(100 + bonus.yuzde) / 100} kat XP (${sureYaz(bonus.bitis - now)} kaldı)`
 }
 
 function hakSatiri({ kalan, yenilenme }, now) {

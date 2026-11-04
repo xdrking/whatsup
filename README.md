@@ -217,20 +217,20 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | Komut | Yapar |
 |---|---|
 | `.çark` | Ücretsiz hakla çarkı çevirir |
-| `.çark ekstra` | Hak bitince 30 XP karşılığında çevirir |
+| `.çark ekstra` | Hak bitince 100 XP karşılığında çevirir |
 | `.çark durum` | Kalan hak ve aktif bonus |
 
 | Ödül | Olasılık |
 |---|---|
-| Boş | %20 |
-| +10 XP | %25 |
-| +25 XP | %20 |
-| +50 XP | %9 |
-| +100 XP | %3 |
-| 1 saat oyunlardan %20 fazla XP | %10 |
-| 1 saat oyunlardan %30 fazla XP | %7 |
-| 1 saat oyunlardan %50 fazla XP | %4 |
-| 1 saat oyunlardan 2 kat XP | %2 |
+| Boş | %25 |
+| +25 XP | %36 |
+| +100 XP | %12 |
+| +300 XP | %4 |
+| +1000 XP | %1 |
+| +2500 XP | %2 |
+| 1 saat oyunlardan 3 kat XP | %10 |
+| 1 saat oyunlardan 5 kat XP | %7 |
+| 1 saat oyunlardan 10 kat XP | %3 |
 
 Bonus `.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji` ve `.adamasmaca` XP'sine işler; mesaj, `.günlük` ve kumar etkilenmez.
 Bonus varken yenisi çıkarsa güçlü olan kalır, süre 1 saate döner.

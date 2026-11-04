@@ -704,13 +704,14 @@ cark(chat_jid, user_jid, window_start ms, spins, bonus_percent, bonus_until ms) 
 
 - **Hak:** 24 saatte 2 ücretsiz çevirme. Pencere ilk ücretsiz çevirmeyle başlar;
   takvim günü kullanılmaz, yoksa gece yarısının iki yanında 4 hak kullanılabilirdi.
-- **Ekstra:** `.çark ekstra` 30 XP, sınırsız. Ücretsiz hak varken ekstra istense de
+- **Ekstra:** `.çark ekstra` 100 XP, sınırsız. Ücretsiz hak varken ekstra istense de
   XP alınmaz. Sınır olmadığı için tek çevirmenin beklenen XP'si ücretin altında
-  kalmalı (şu an 15 XP); `test/cark.test.js` bunu denetler.
+  kalmalı (şu an 93 XP); `test/cark.test.js` bunu denetler.
 - **Bonus:** `addXp()` aktif bonusu uygular ve kazanılan miktarı döner, oyunlar mesajda
   bunu gösterir. `addXp` yalnızca oyun ödülü içindir; başka XP yolu bonus almaz.
-  Yukarı yuvarlanır (`bonusluXp`), böylece 3 XP'lik kelimede %20 de işler. Yeni bonus
-  gelince güçlü yüzde kalır, süre 1 saate döner.
+  Ödüller katlıdır (3/5/10 kat): oyunlar 3-10 XP verdiği için %20 gibi yüzdeler
+  yalnızca +1 XP ediyordu. `bonus_percent` yine yüzde tutar (200 = 3 kat). Yeni bonus
+  gelince güçlü olan kalır, süre 1 saate döner.
 
 ## Elle Doğrulama
 
@@ -757,5 +758,5 @@ cark(chat_jid, user_jid, window_start ms, spins, bonus_percent, bonus_until ms) 
     aynı komut grupta → hiç tepki yok; başkası özelden yazarsa → hiç tepki yok
 30. `.devret @kişi 10` → iki bakiye de değişir; bakiyeden fazlası → "o kadar XP'n yok"; sıradan üye
     `.devret @a @b 10` → reddedilir, sahip yazınca a'dan b'ye geçer (yön metindeki sırayla aynı olmalı)
-31. `.çark` iki kez → hak 0'a iner, üçüncüsü "hakkın bitti"; `.çark ekstra` → 30 XP düşer; `.çark durum` → kalan
+31. `.çark` iki kez → hak 0'a iner, üçüncüsü "hakkın bitti"; `.çark ekstra` → 100 XP düşer; `.çark durum` → kalan
     süre ve bonus; bonus varken oyun kazanılınca mesajdaki XP ile `.profil` artışı tutmalı
