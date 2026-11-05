@@ -121,7 +121,7 @@ Geçmiş senkronu upsert'ten gelmez, `messaging-history.set` olayından gelir. E
 
 Baileys, yanıtlanan mesajın **yazarının adını vermez** — `contextInfo` yalnızca JID taşır. Bu yüzden `lib/handler.js`, prefix kontrolünden önce her gelen mesajın `pushName`'ini `rememberName()` ile not eder; `.sticker` alıntı kartı adı oradan okur.
 
-Bilerek yalnızca bellekte tutulur, diske yazılmaz: grup üyelerinin adlarını bir dosyada biriktirmek istenmiyor. Süreç yeniden başlarsa harita boşalır ve çağıran taraf numaraya düşer — bu bir hata değil, beklenen davranış.
+Adlar `isimler` tablosunda da kalıcıdır: grup ya da numara giderse kimin kim olduğu bilinsin diye bot sahibinin kararıyla eklendi. Her mesajda veritabanına gidilmesin diye bellekteki harita önde durur, tabloya yalnızca ad değişince yazılır. Hiç mesajı görülmemiş kişinin adı yoktur, çağıran taraf numaraya düşer.
 
 ### Durum (state) nerede tutulur
 
@@ -129,7 +129,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 
 | Yer | İçerik | Kalıcılık |
 |---|---|---|
-| `lib/contacts.js` | JID → pushName | bellek (süreçle ölür) |
+| `lib/contacts.js` | JID → pushName | bellek + `data/stats.db` (kalıcı) |
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
@@ -210,7 +210,7 @@ JID karşılaştırırken `jidNormalizedUser()` kullan. Baileys yeni sürümlerd
 
 **`.env` commit edilmez.** Paylaşılan şablon `.env.example`'dır ve içinde gerçek değer bulunmaz.
 
-**`data/stats.db` commit edilmez.** İçinde grup üyelerinin JID'leri ve aktivite sayaçları vardır. Mesaj içeriği tutulmaz, ama JID listesi de paylaşılacak bir şey değildir. `data/*.json` havuzları commit edilir.
+**`data/stats.db` commit edilmez.** İçinde grup üyelerinin JID'leri, WhatsApp adları ve aktivite sayaçları vardır. Mesaj içeriği tutulmaz, ama JID listesi de paylaşılacak bir şey değildir. `data/*.json` havuzları commit edilir.
 
 Oturum dosyalarının içeriği (creds, keys) hiçbir koşulda loglanmaz. `pino` logger'ı Baileys'e verilirken seviye `silent`/`warn` tutulur; `level: 'debug'` protokol mesajlarını ham haliyle konsola döker.
 

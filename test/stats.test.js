@@ -5,6 +5,8 @@ import assert from 'node:assert/strict'
 process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
+const { lookupName, rememberName } = await import('../lib/contacts.js')
+const { getDb } = await import('../lib/db.js')
 const { seviye, gunlukOdul, claimDaily, getDailyStreak, addXp, getStats, recordMessage } =
   await import('../lib/stats.js')
 
@@ -60,4 +62,20 @@ test('mesaj XP cooldown: 30 sn içinde ikinci mesaj sayılır ama XP vermez', ()
 
   addXp({ chatJid: 'g', userJid: 'u3', amount: 10 })
   assert.equal(getStats('g', 'u3').xp, 13)
+})
+
+test('adlar: veritabanına yazılır, değişince güncellenir, bilinmeyen boş döner', () => {
+  const ad = () => getDb().prepare('SELECT ad FROM isimler WHERE user_jid = ?').get('111@lid')?.ad
+
+  rememberName('111@lid', ' Ayşe ')
+  assert.equal(ad(), 'Ayşe')
+  rememberName('111@lid', 'Ayşe K.')
+  assert.equal(ad(), 'Ayşe K.')
+  rememberName('111@lid', '')
+  assert.equal(ad(), 'Ayşe K.')
+
+  // Bellekte olmayan ad, yeniden başlatma sonrası gibi tablodan okunur.
+  getDb().prepare("INSERT INTO isimler VALUES ('222@lid', 'Mehmet', 1)").run()
+  assert.equal(lookupName('222@lid'), 'Mehmet')
+  assert.equal(lookupName('333@lid'), '')
 })
