@@ -9,9 +9,9 @@ const { GOREVLER, gununGorevleri } = await import('../lib/gorev.js')
 const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
 const { kartBul, kartCek, setCekisi, SETLER } = await import('../lib/kart.js')
-const { faizHesapla, gunFarki, vergiHesapla } = await import('../lib/banka.js')
+const { faizHesapla, vergiHesapla } = await import('../lib/banka.js')
 const { haftaAnahtari, haftaBitisi, SEZON_ODULLERI } = await import('../lib/sezon.js')
-const { fiyatAdimi, hisseBul, HISSELER, SAAT_MS } = await import('../lib/borsa.js')
+const { ADIM_MS, fiyatAdimi, HAVALAR, hisseBul, HISSELER, piyasaHavasi, SAAT_MS } = await import('../lib/borsa.js')
 const { VITRIN, vitrinUrunu } = await import('../lib/vitrin.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
@@ -250,11 +250,14 @@ test('ödül: kesinti yanar, birikir, başarılı soygunda alınır', () => {
   assert.deepEqual(odulListesi(k.chatJid), [])
 })
 
-test('banka hesapları: faiz tavanı ve gün sınırı, vergi yalnız eşiğin üstünden', () => {
-  assert.equal(gunFarki('2026-10-30', '2026-11-02'), 3)
-  assert.equal(faizHesapla(1000, 1), 10)
-  assert.equal(faizHesapla(50_000, 1), 100)
-  assert.equal(faizHesapla(1000, 30), 70)
+test('banka hesapları: faiz bileşik, tavansız, saat sınırlı; vergi yalnız eşiğin üstünden', () => {
+  assert.equal(faizHesapla(1000, 1).faiz, 1)
+  assert.equal(faizHesapla(1_000_000, 1).faiz, 1000)
+  assert.equal(faizHesapla(10_000, 24).faiz, 242)
+  assert.equal(faizHesapla(10_000, 1000).faiz, faizHesapla(10_000, 168).faiz)
+  assert.equal(faizHesapla(500, 1).faiz, 0)
+  assert.ok(Math.abs(faizHesapla(500, 1).artik - 0.5) < 1e-9)
+  assert.equal(faizHesapla(500, 1, 0.5).faiz, 1)
   assert.equal(vergiHesapla(10_000), 0)
   assert.equal(vergiHesapla(20_000), 100)
 })
@@ -265,12 +268,26 @@ test('banka: yatır, faiz işler, çekerken kesinti yanar', () => {
   assert.deepEqual(bankaYatir({ ...k, miktar: 1000, now: T }), { bakiye: 1000, xp: 0 })
 
   assert.equal(bankaDurumu({ ...k, now: T }).faiz, 0)
-  assert.equal(bankaDurumu({ ...k, now: T + 2 * GUN }).faiz, 20)
-  assert.equal(bankaDurumu({ ...k, now: T + 2 * GUN }).faiz, 0)
-  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 1020)
+  assert.equal(bankaDurumu({ ...k, now: T + SAAT_MS - 1 }).faiz, 0)
+  assert.equal(bankaDurumu({ ...k, now: T + GUN }).faiz, 24)
+  assert.equal(bankaDurumu({ ...k, now: T + GUN }).faiz, 0)
+  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 1024)
 
-  assert.deepEqual(bankaCek({ ...k, miktar: 2000, now: T + 2 * GUN }), { yetersiz: true, bakiye: 1020 })
-  assert.deepEqual(bankaCek({ ...k, miktar: 1000, now: T + 2 * GUN }), { bakiye: 20, xp: 950, kesinti: 50 })
+  assert.deepEqual(bankaCek({ ...k, miktar: 2000, now: T + GUN }), { yetersiz: true, bakiye: 1024 })
+  assert.deepEqual(bankaCek({ ...k, miktar: 1000, now: T + GUN }), { bakiye: 24, xp: 950, kesinti: 50 })
+})
+
+test('banka: küçük bakiye saat saat bakılsa da faiz alır, yeni yatırım geçmiş faiz almaz', () => {
+  const k = kisi(100_500)
+  bankaYatir({ ...k, miktar: 500, now: T })
+
+  let toplam = 0
+  for (let saat = 1; saat <= 4; saat++) toplam += bankaDurumu({ ...k, now: T + saat * SAAT_MS }).faiz
+  assert.equal(toplam, 2)
+
+  const sonra = T + 100 * SAAT_MS
+  bankaYatir({ ...k, miktar: 100_000, now: sonra })
+  assert.equal(bankaDurumu({ ...k, now: sonra }).faiz, 0)
 })
 
 test('vergi: günün ilk mesajında bir kez kesilir, banka muaf, altında kesilmez', () => {
@@ -323,10 +340,25 @@ test('sezon: kumar sayılmaz, hafta kapanınca ödül bir kez dağıtılır', ()
 
 test('borsa adımı: beklenen fiyat değişmez, hisse adları çözülür', () => {
   for (const h of HISSELER) {
-    let toplam = 0
-    const n = 2 * h.oynaklik + 1
-    for (let r = 0; r < n; r++) toplam += fiyatAdimi(100, h.oynaklik, () => r)
-    assert.ok(Math.abs(toplam / n - 100) < 1e-9, h.kod)
+    for (const { carpan } of HAVALAR) {
+      for (const piyasa of [-1, 1]) {
+        // Salınım simetrik: bütün sonuçların ortalaması piyasa payını bırakır,
+        // o pay da -1 ve 1'in toplamında sıfırlanır.
+        let toplam = 0
+        for (let r = 0; r <= 2000; r++) {
+          for (const p of [piyasa, -piyasa]) {
+            toplam += fiyatAdimi(100, h, { carpan, piyasa: p }, (n) => (n === 2001 ? r : 1)).fiyat
+          }
+        }
+        assert.ok(Math.abs(toplam / 4002 - 100) < 1e-9, h.kod)
+      }
+    }
+
+    // Haber yönsüz: iyi ve kötü haberin ortalaması fiyatı değiştirmez.
+    const haberli = (yon) => fiyatAdimi(100, h, { carpan: 1, piyasa: 0 }, (n) => (n === 2 ? yon : n === 2001 ? 1000 : 0))
+    assert.equal(haberli(1).haber, h.iyi)
+    assert.equal(haberli(0).haber, h.kotu)
+    assert.ok(Math.abs((haberli(1).fiyat + haberli(0).fiyat) / 2 - 100) < 1e-9, h.kod)
   }
   assert.equal(hisseBul('ÇAY').kod, 'cay')
   assert.equal(hisseBul('yok'), null)
@@ -357,7 +389,15 @@ test('borsa: alım satımda komisyon kesilir, fiyat aynıysa zarar edilir', () =
   assert.deepEqual(borsaSat({ ...s }), { yok: true })
 })
 
-test('borsa: fiyat saatte bir ilerler, birikim sınırlı, batan hisse sıfırlar', () => {
+test('borsa havası: aynı adımda aynı, altı saat içinde değişmez', () => {
+  const ilk = 24 * 1000
+  assert.equal(piyasaHavasi('g@g.us', ilk), piyasaHavasi('g@g.us', ilk + 23))
+  const gorulen = new Set()
+  for (let i = 0; i < 200; i++) gorulen.add(piyasaHavasi('g@g.us', i * 24))
+  assert.equal(gorulen.size, HAVALAR.length)
+})
+
+test('borsa: fiyat adım adım ilerler, birikim sınırlı, batan hisse sıfırlar, haber görünür', () => {
   const k = kisi(1000)
   const hisse = hisseBul('roket')
   const dusus = () => 0
@@ -365,11 +405,15 @@ test('borsa: fiyat saatte bir ilerler, birikim sınırlı, batan hisse sıfırla
   borsaAl({ ...k, hisse, miktar: 100, now: T, rnd: dusus })
 
   const fiyat = (d) => d.hisseler.find((h) => h.kod === 'roket')
-  const birSaat = borsaDurumu({ ...k, now: T + SAAT_MS, rnd: dusus })
-  assert.equal(Math.round(fiyat(birSaat).fiyat), 88)
-  assert.equal(birSaat.portfoy.length, 1)
+  const baslangic = fiyat(borsaDurumu({ ...k, now: T, rnd: dusus })).fiyat
+  const birAdim = borsaDurumu({ ...k, now: T + ADIM_MS, rnd: dusus })
+  assert.ok(fiyat(birAdim).fiyat < baslangic)
+  assert.equal(birAdim.portfoy.length, 1)
+  // Hepsi aynı adımda haber aldı: liste üç haberle sınırlı.
+  assert.equal(birAdim.haberler.length, 3)
+  assert.ok(birAdim.haberler.includes(hisseBul('muz').kotu))
 
-  // Roket saatte %12 düşerse 48 saatte batar: pay silinir, hisse 100'den açılır.
+  // Sürekli düşüşte 48 saat içinde batar: pay silinir, hisse 100'den açılır.
   const batik = borsaDurumu({ ...k, now: T + 200 * SAAT_MS, rnd: dusus })
   assert.deepEqual(batik.portfoy, [])
   assert.ok(fiyat(batik).fiyat >= 5)

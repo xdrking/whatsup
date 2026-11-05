@@ -1,5 +1,5 @@
 import {
-  CEKIM_KESINTI_YUZDESI, FAIZ_TAVANI, FAIZ_YUZDESI, VERGI_ESIGI, VERGI_YUZDESI,
+  CEKIM_KESINTI_YUZDESI, FAIZ_YUZDESI, VERGI_ESIGI, VERGI_YUZDESI,
 } from '../lib/banka.js'
 import { requireGroup } from '../lib/group.js'
 import { miktarCoz } from '../lib/kumar.js'
@@ -8,14 +8,15 @@ import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
+const ondalik = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 })
 
 export default {
   name: 'banka',
   aliases: ['bank'],
-  description: 'XP\'ni soygun ve vergiden koru, günlük faiz al',
+  description: 'XP\'ni soygun ve vergiden koru, saatlik faiz al',
   usage: '.banka  —  .banka yatır <miktar|hepsi|yarısı>  —  .banka çek <miktar|hepsi|yarısı>',
   details: [
-    `Bankadaki XP soyulamaz ve günlük %${FAIZ_YUZDESI} faiz alır (ilk ${sayi.format(FAIZ_TAVANI)} XP için).`,
+    `Bankadaki XP soyulamaz ve her saat tüm bakiyeye %${ondalik.format(FAIZ_YUZDESI)} faiz alır. Faiz \`.banka\` yazınca işlenir, en çok 7 günlük birikir.`,
     `Çekerken %${CEKIM_KESINTI_YUZDESI} kesilir. Bankadaki XP'yle kumar oynanmaz, seviyeye ve \`.top\`'a sayılmaz.`,
     `Cüzdanda ${sayi.format(VERGI_ESIGI)} XP'nin üstü, o günkü ilk mesajında %${VERGI_YUZDESI} vergilenir. Banka vergiden muaftır.`,
   ],

@@ -22,7 +22,8 @@ export default {
   description: 'Uydurma hisselerde XP ile al sat yap',
   usage: '.borsa  —  .borsa al <hisse> <miktar|hepsi|yarısı>  —  .borsa sat <hisse> <miktar|hepsi|yarısı>',
   details: [
-    `Hisseler: ${KODLAR}. Fiyatlar saatte bir rastgele oynar, sağdakiler daha sert oynar.`,
+    `Hisseler: ${KODLAR}. Fiyatlar 15 dakikada bir oynar, sağdakiler daha sert oynar.`,
+    'Piyasa sakin ya da fırtınalı olabilir, hisseler çoğu zaman birlikte hareket eder, haberler fiyatı sıçratır. Hiçbiri yönü önceden söylemez.',
     'Örnek: `.borsa al kedi 500` 500 XP\'lik alır, `.borsa sat kedi hepsi` tamamını satar.',
     `Alışta ve satışta %${KOMISYON_YUZDESI} komisyon kesilir.`,
     `Fiyatı ${IFLAS_FIYATI} XP'nin altına düşen hisse batar: elindekiler silinir, hisse 100 XP'den yeniden açılır.`,
@@ -85,11 +86,15 @@ export default {
 
       const lines = [
         '📈 *Borsa*',
+        `Piyasa: ${durum.hava}`,
         '',
         ...durum.hisseler.map((h) =>
           `${h.ad} (\`${h.kod}\`) — ${ondalik.format(h.fiyat)} XP ${degisim(h)}`,
         ),
       ]
+      if (durum.haberler.length) {
+        lines.push('', '📰 *Haberler*', ...durum.haberler.map((h) => `• ${h}`))
+      }
       if (durum.portfoy.length) {
         lines.push('', '💼 *Portföyün*')
         for (const p of durum.portfoy) {

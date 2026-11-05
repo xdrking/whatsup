@@ -275,7 +275,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 27 (tamam):** `.borsa`. Ayrıntı aşağıda.
 - **Faz 28 (tamam):** `.kart`. Ayrıntı aşağıda.
 - **Faz 29 (tamam):** `.market` vitrini. Ayrıntı aşağıda.
-- **Faz 30+:** yeni komutlar, her biri ayrı adım
+- **Faz 30 (tamam):** saatlik banka faizi, gerçekçi `.borsa`. Faz 25 ve Faz 27 bölümlerine işlendi.
+- **Faz 31+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -809,11 +810,14 @@ olan kişiye `MIN_KURBAN_XP` uygulanmaz, yoksa fakir birinin ödülü sonsuza de
 ### Faz 25 — `.banka` ve servet vergisi
 
 ```
-banka(chat_jid, user_jid, bakiye, faiz_day, vergi_day, son_vergi)   PK(chat_jid,user_jid)
+banka(chat_jid, user_jid, bakiye, faiz_saat, faiz_artik, vergi_day, son_vergi)   PK(chat_jid,user_jid)
 ```
 
-Kurallar `lib/banka.js`'te saftır. Faiz XP basar, bu yüzden hem tavanı (10.000 XP) hem gün
-sınırı (7) vardır ve `.banka` yazılınca işlenir. Çekimdeki %5 ile vergi yanar.
+Kurallar `lib/banka.js`'te saftır. Faiz saatliktir (%0,1), bileşiktir ve bakiyenin tamamına
+işler, tavan yoktur. XP bastığı için boşta en çok 7 günlük (168 saat) birikir ve `.banka`
+yazılınca işlenir. 1 XP'yi bulmayan küsurat `faiz_artik`'te devreder, yoksa küçük bakiye her
+saat bakınca hiç faiz alamazdı. Yatırımda saat dilimi yenilenir: yeni para geçmiş faiz almaz.
+Çekimdeki %5 ile vergi yanar.
 
 Vergi `recordMessage()` içinde kişinin günün ilk mesajında kesilir: komutla kesilseydi
 kaçılabilirdi. Bot kendiliğinden yazmadığı için vergiyi `.banka` gösterir. Mesaj başına DB'ye
@@ -834,14 +838,17 @@ transaction'da olduğu için çift ödeme olmaz. Şampiyonluk unvan değildir, s
 ### Faz 27 — `.borsa`
 
 ```
-borsa(chat_jid, hisse, fiyat, onceki, saat)                  PK(chat_jid,hisse)
+borsa(chat_jid, hisse, fiyat, onceki, adim, haber, haber_adim)   PK(chat_jid,hisse)
 portfoy(chat_jid, user_jid, hisse, adet, maliyet)            PK(chat_jid,user_jid,hisse)
 ```
 
 Hisseler `lib/borsa.js:HISSELER`'dedir. Fiyat, her grupta ayrı, simetrik rastgele yürüyüştür ve
-`.borsa` çağrılınca geçen saatler kadar ilerler (en çok 48). **Ortalamaya dönen ya da tabanı olan
-bir fiyat yazılmamalı:** ikisinde de "düşükte al, yüksekte sat" XP basar. Bu yüzden hisse tabanda
-durmaz, batar ve paylar silinir. Kumar karnesine yazılmaz.
+`.borsa` çağrılınca geçen 15 dakikalık adımlar kadar ilerler (en çok 48 saat). Gerçekçiliği üç
+yönsüz parça verir: 6 saatte bir değişen piyasa havası (`piyasaHavasi()`, sertliği belirler,
+hash'le çıkar, saklanmaz), bütün hisseleri birlikte iten ortak hareket ve fiyatı sıçratan haberler.
+**Ortalamaya dönen, trendi süren ya da tabanı olan bir fiyat yazılmamalı:** üçünde de "düşükte al,
+yüksekte sat" XP basar. Bu yüzden hisse tabanda durmaz, batar ve paylar silinir. Kumar karnesine
+yazılmaz.
 
 ### Faz 28 — `.kart`
 
@@ -922,8 +929,9 @@ girmez: yeni ürün eklenince numarası kayar.
 39. `.açıkartırma 10 30` → herkes etiketlenir; ilk mesaja yanıt teklif olur, düşük teklif reddedilir; süre bitince kazanan yazılır, XP değişmez
 40. `.market` → key'ler ayrı başlıkta listelenir; `.market al 7` → 50 XP düşer, ödül yazılır; XP yetmezse ödül çıkmaz
 41. `.ödül @kişi 100` → 100 XP düşer, listede 90 XP görünür; o kişi soyulunca hırsız ödülü alır, liste boşalır
-42. `.banka yatır 100` → cüzdan düşer; `.banka çek 100` → 95 XP geri gelir; ertesi gün `.banka` faizi gösterir
+42. `.banka yatır 100` → cüzdan düşer; `.banka çek 100` → 95 XP geri gelir; bir saat sonra `.banka` faizi gösterir
 43. `.sezon` → sıralama ve kalan gün gelir; oyun kazanınca puan artar, kumar kazanınca artmaz
 44. `.borsa al muz 100` → XP düşer, `.borsa` portföyü gösterir; hemen `.borsa sat muz hepsi` → komisyon kadar zarar
 45. `.kart` → koleksiyon; `.kart ver @kişi 1` → kart geçer, elinde yoksa reddedilir; eksikle `.kart tamamla 1` → eksikler yazılır
 46. `.market` → vitrin stoğu görünür; `.market al 13` iki kez → ikincisi "zaten aldın"
+47. `.borsa` 15 dakika arayla iki kez → fiyatlar değişmiş, başta piyasa havası yazıyor

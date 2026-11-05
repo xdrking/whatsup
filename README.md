@@ -261,7 +261,7 @@ En az 50 XP, koyarken %10'u kesilir. Aynı kişiye koyulan ödüller birikir.
 | `.banka yatır 500` | XP'yi hesaba koyar; `hepsi` ve `yarısı` da olur |
 | `.banka çek 500` | Hesaptan çeker, %5'i kesilir |
 
-Bankadaki XP soyulamaz, vergilenmez, günlük %1 faiz alır (ilk 10.000 XP için, en çok 7 günlük birikir).
+Bankadaki XP soyulamaz, vergilenmez, her saat tüm bakiyeye %0,1 bileşik faiz alır (günde yaklaşık %2,4). Faiz `.banka` yazınca işlenir, en çok 7 günlük birikir.
 Bankadaki XP seviyeye ve `.top`'a sayılmaz, `.profil`'de ayrı görünür.
 Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve yanar. `.banka` son vergiyi gösterir.
 
@@ -278,7 +278,7 @@ Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajı
 | `.borsa al kedi 500` | 500 XP'lik hisse alır; `hepsi` ve `yarısı` da olur |
 | `.borsa sat kedi hepsi` | Payını satar; XP miktarı da yazılabilir |
 
-Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Fiyatlar saatte bir rastgele oynar, sağa gittikçe sertleşir (saatte en çok %2'den %12'ye).
+Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Fiyatlar 15 dakikada bir oynar, sağa gittikçe sertleşir. Piyasa 6 saatte bir sakin, normal ya da fırtınalı olur, hisseler çoğu zaman birlikte hareket eder, haberler fiyatı sıçratır. Hiçbiri yönü önceden söylemez.
 Alışta ve satışta %2 komisyon kesilir. Fiyatı 5 XP'nin altına düşen hisse batar: elindeki paylar silinir, hisse 100 XP'den açılır.
 
 ### Kart koleksiyonu
