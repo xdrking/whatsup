@@ -1003,5 +1003,5 @@ etnik hedef, Cumhurbaşkanı. Hatay yemekle anılır, deprem şakası yapılmaz.
 46. `.market` → vitrin stoğu görünür; `.market al 13` iki kez → ikincisi "zaten aldın"
 47. `.borsa` 15 dakika arayla iki kez → fiyatlar değişmiş, başta piyasa havası yazıyor
 48. Panel adresi telefonda → HTTPS, şifre ekranı; yanlış şifre 6 kez → kilit mesajı; `curl http://sunucu-ip:8787` → bağlanamaz
-50. `.haber` → büyük harf kalın başlık, altında küçük "parodihaber"; `.news` aynı
 49. `.bahis 10 tura` kaybedilince `.top`'ta bot numarasının XP'si 10 artar, yeni satır açılmaz; kazanınca değişmez; sıradan üye `.profil @bot` → "gizli"; `.soygun @bot` → reddedilir
+50. `.haber` → büyük harf kalın başlık, altında küçük "parodihaber"; `.news` aynı
