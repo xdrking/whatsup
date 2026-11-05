@@ -75,3 +75,8 @@ test('games/quiz.json: cevap her zaman şıklardan biri', async () => {
     }
   }
 })
+
+test('.haber: başlık Türkçe büyük harf ve kalın, parodi etiketi hep var', async () => {
+  const { haberMetni } = await import('../commands/haber.js')
+  assert.equal(haberMetni('izmir\'de simit'), '*İZMİR\'DE SİMİT*\n\nᵖᵃʳᵒᵈⁱʰᵃᵇᵉʳ')
+})

@@ -127,6 +127,7 @@ Aşağıdaki liste `.help` çıktısının özetidir; her komutun alias'ları da
 |---|---|
 | `.saka` | Rastgele şaka |
 | `.fal` | Rastgele fal |
+| `.haber` | Rastgele parodi haber. `.news` |
 | `.kader` | Rastgele kader mesajı |
 | `.kim` | "Bu grupta en çok kim..." sorusu |
 | `.gününsözü` | Günün sözü — gün boyunca değişmez |

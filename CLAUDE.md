@@ -283,7 +283,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 30 (tamam):** saatlik banka faizi, gerçekçi `.borsa`. Faz 25 ve Faz 27 bölümlerine işlendi.
 - **Faz 31 (tamam):** web paneli ve günlük yedek. Ayrıntı aşağıda.
 - **Faz 32 (tamam):** kumar kayıpları bot numarasının XP'sine gider. Ayrıntı aşağıda.
-- **Faz 33+:** yeni komutlar, her biri ayrı adım
+- **Faz 33 (tamam):** `.haber` parodi haberleri. Ayrıntı aşağıda.
+- **Faz 34+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -308,6 +309,7 @@ Komutlar:
 | `.saka` | `sakalar.json` | — |
 | `.kader` | `kader.json` | — |
 | `.fal` | `fallar.json` | — |
+| `.haber` | `haberler.json` | büyük harf kalın, altında "parodihaber" etiketi |
 | `.kim` | `sorular.json` | — |
 | `.gününsözü` | `sozler.json` | **rastgele değil**: tarih seed'li, gün boyu aynı |
 | `.iltifat` | `iltifatlar.json` | `{user}` → hedefin mention'ı |
@@ -929,6 +931,14 @@ oyunun yanan bahsi de yazılmaz. `lib/handler.js` her mesajda `botHesabiniTani()
 Bakiye gruba yalnızca `.top`'ta görünür: `.profil` ve `.stats` başkasına "gizli" der, `.soygun` ve
 `.devret` botu hedef alamaz, çünkü sonuç mesajları bakiye yazar. Sahip `.profil @bot` ile görebilir.
 
+### Faz 33 — `.haber`
+
+`data/haberler.json` elle yazılmış parodi başlıklarıdır, komut biçimi `commands/haber.js`'te verir. "parodihaber"
+etiketi her mesajda olmalıdır: gerçek haber sanılmasın diye bot sahibinin şartıdır, kaldırılmaz.
+
+Havuza yazılmayanlar: inandırıcı yalan haber, afet, ölüm, saldırı, gerçek kişiye uydurma suç isnadı, din ve
+etnik hedef, Cumhurbaşkanı. Hatay yemekle anılır, deprem şakası yapılmaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -993,4 +1003,5 @@ Bakiye gruba yalnızca `.top`'ta görünür: `.profil` ve `.stats` başkasına "
 46. `.market` → vitrin stoğu görünür; `.market al 13` iki kez → ikincisi "zaten aldın"
 47. `.borsa` 15 dakika arayla iki kez → fiyatlar değişmiş, başta piyasa havası yazıyor
 48. Panel adresi telefonda → HTTPS, şifre ekranı; yanlış şifre 6 kez → kilit mesajı; `curl http://sunucu-ip:8787` → bağlanamaz
+50. `.haber` → büyük harf kalın başlık, altında küçük "parodihaber"; `.news` aynı
 49. `.bahis 10 tura` kaybedilince `.top`'ta bot numarasının XP'si 10 artar, yeni satır açılmaz; kazanınca değişmez; sıradan üye `.profil @bot` → "gizli"; `.soygun @bot` → reddedilir
