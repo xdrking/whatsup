@@ -936,8 +936,8 @@ Bakiye gruba yalnızca `.top`'ta görünür: `.profil` ve `.stats` başkasına "
 `data/haberler.json` elle yazılmış parodi başlıklarıdır, komut biçimi `commands/haber.js`'te verir. "parodihaber"
 etiketi her mesajda olmalıdır: gerçek haber sanılmasın diye bot sahibinin şartıdır, kaldırılmaz.
 
-Havuza yazılmayanlar: inandırıcı yalan haber, afet, ölüm, saldırı, gerçek kişiye uydurma suç isnadı, din ve
-etnik hedef, Cumhurbaşkanı. Hatay yemekle anılır, deprem şakası yapılmaz.
+Gerçek kişiler saçma ve zararsız şakayla yazılabilir. Havuza yazılmayanlar: inandırıcı yalan haber, afet, ölüm,
+saldırı, gerçek kişiye uydurma suç isnadı, din ve etnik hedef, Erdoğan. Hatay yemekle anılır, deprem şakası yapılmaz.
 
 ## Elle Doğrulama
 
