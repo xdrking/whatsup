@@ -1,5 +1,5 @@
 import { formatAgo } from '../lib/activity.js'
-import { getBusiestHour, getStats, seviye } from '../lib/stats.js'
+import { botHesabiMi, getBusiestHour, getStats, seviye } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -24,8 +24,13 @@ export default {
   category: 'istatistik',
   ownerOnly: false,
 
-  async execute({ sock, msg, from, args, parsed }) {
+  async execute({ sock, msg, from, args, parsed, isOwner }) {
     const [jid] = resolveTargets(parsed, { args, limit: 1, includeSender: true })
+
+    if (botHesabiMi(jid) && jid !== parsed.sender && !isOwner) {
+      await sock.sendMessage(from, { text: '🤖 Botun hesabı gizli.' }, { quoted: msg })
+      return
+    }
 
     const veri = getStats(from, jid)
     const enAktif = getBusiestHour(from, jid)

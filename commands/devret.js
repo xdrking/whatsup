@@ -1,5 +1,5 @@
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
-import { xpDevret } from '../lib/stats.js'
+import { botHesabiMi, xpDevret } from '../lib/stats.js'
 import { digitsOf, mentionOf, resolveTargets } from '../lib/target.js'
 import logger from '../lib/logger.js'
 
@@ -66,6 +66,12 @@ export default {
 
       if (kaynak === hedef) {
         await yaz('❌ Aynı kişiye devir yapılamaz.')
+        return
+      }
+
+      // Sonuç mesajı iki bakiyeyi de yazar, botunki yalnızca .top'ta görünür.
+      if (botHesabiMi(hedef) && !isOwner) {
+        await yaz('🤖 Bota XP gönderilemez.')
         return
       }
 

@@ -142,7 +142,6 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
-| `lib/db.js` + `lib/stats.js` | kumardan biriken bot hesabı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -283,7 +282,7 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 29 (tamam):** `.market` vitrini. Ayrıntı aşağıda.
 - **Faz 30 (tamam):** saatlik banka faizi, gerçekçi `.borsa`. Faz 25 ve Faz 27 bölümlerine işlendi.
 - **Faz 31 (tamam):** web paneli ve günlük yedek. Ayrıntı aşağıda.
-- **Faz 32 (tamam):** kumar kayıplarının biriktiği bot hesabı. Ayrıntı aşağıda.
+- **Faz 32 (tamam):** kumar kayıpları bot numarasının XP'sine gider. Ayrıntı aşağıda.
 - **Faz 33+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
@@ -914,14 +913,15 @@ panel/yedek.js     günlük yedek
 
 ### Faz 32 — Bot hesabı
 
-```
-bot_kasa(chat_jid PK, xp)
-```
+Bot hesabı, QR ile bağlı numaranın `stats` satırıdır: `jidNormalizedUser(sock.user.id)`, yani
+`parseMessage`'ın bot numarasından yazılan mesaja verdiği kimlik. Ayrı tablo yoktur.
 
-Bota karşı oynanan kumarda (`bahisOyna`, `kumarOde`) kaybedilen XP gruba ait bot hesabına yazılır.
-`stats`'a girmez, yoksa soyulur, devredilir, panele ve seviyeye karışırdı. Tutar yalnızca `.top`'un
-sonunda görünür, başka komuta eklenmez. Hesap yalnızca artar: oyuncu kazancı buradan ödenmez.
-`.vs` ve `.piyango` yazmaz, orada kayıp başka oyuncuya gider. Yarım kalan oyunun yanan bahsi de yazılmaz.
+Bota karşı oynanan kumarda (`bahisOyna`, `kumarOde`) kaybedilen XP `botaYaz()` ile o satıra eklenir.
+Oyuncu kazancı bottan düşmez. `.vs` ve `.piyango` yazmaz, orada kayıp başka oyuncuya gider. Yarım kalan
+oyunun yanan bahsi de yazılmaz. `lib/handler.js` her mesajda `botHesabiniTani()` çağırır.
+
+Bakiye gruba yalnızca `.top`'ta görünür: `.profil` ve `.stats` başkasına "gizli" der, `.soygun` ve
+`.devret` botu hedef alamaz, çünkü sonuç mesajları bakiye yazar. Sahip `.profil @bot` ile görebilir.
 
 ## Elle Doğrulama
 
@@ -987,4 +987,4 @@ sonunda görünür, başka komuta eklenmez. Hesap yalnızca artar: oyuncu kazanc
 46. `.market` → vitrin stoğu görünür; `.market al 13` iki kez → ikincisi "zaten aldın"
 47. `.borsa` 15 dakika arayla iki kez → fiyatlar değişmiş, başta piyasa havası yazıyor
 48. Panel adresi telefonda → HTTPS, şifre ekranı; yanlış şifre 6 kez → kilit mesajı; `curl http://sunucu-ip:8787` → bağlanamaz
-49. `.bahis 10 tura` kaybedilince `.top` sonundaki bot hesabı 10 artar; kazanınca değişmez; `.profil`, `.kumartop` bot hesabını göstermez
+49. `.bahis 10 tura` kaybedilince `.top`'ta bot numarasının XP'si 10 artar, yeni satır açılmaz; kazanınca değişmez; sıradan üye `.profil @bot` → "gizli"; `.soygun @bot` → reddedilir

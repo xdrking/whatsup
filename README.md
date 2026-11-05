@@ -172,7 +172,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 |---|---|
 | `.stats` | Mesaj/sticker/ses sayıları ve en aktif saat |
 | `.profil` | Ad, level, XP |
-| `.top` | Sohbetteki XP sıralaması ve bot hesabı. `.top 5` |
+| `.top` | Sohbetteki XP sıralaması. `.top 5` |
 | `.günlük` | Günde bir kez XP ödülü; üst üste gelirsen seri büyür |
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |
@@ -219,6 +219,8 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.piyango 50` | Ortak havuza XP yatırır, şans yatırılan XP oranındadır. Yalnız `.piyango` havuzu gösterir |
 | `.çekiliş` | Piyangoyu çeker, havuzun tamamı kazananın olur (grup admini veya owner) |
 | `.kumartop` | Kumarda en çok kazananlar ve kaybedenler |
+
+Bota karşı oynanan kumarda kaybedilen XP, QR ile bağlı numaranın hesabına gider. `.vs` ve `.piyango` hariçtir, oradaki kayıp diğer oyuncuya geçer. Bakiye yalnızca `.top`'ta görünür.
 
 ### Görev, market, soygun
 

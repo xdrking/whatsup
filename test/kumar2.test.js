@@ -10,7 +10,7 @@ const { elDegeri, odemeCarpani, desteKur } = await import('../games/blackjack.js
 const { KUTU, MAYIN, mayinCarpani, mayinKur } = await import('../games/mayin.js')
 const { agirlikliSec } = await import('../commands/piyango.js')
 const {
-  addXp, bahisOyna, botKasasi, getStats, kumarOde, kumarSiralama, piyangoBilet, piyangoCek, vsOyna, xpCek,
+  addXp, bahisOyna, botHesabiMi, botHesabiniTani, getStats, kumarOde, kumarSiralama, piyangoBilet, piyangoCek, vsOyna, xpCek,
 } = await import('../lib/stats.js')
 
 const el = (...d) => d.map((deger) => ({ deger, renk: '♠' }))
@@ -116,36 +116,39 @@ test('piyango seçimi yatırılan XP oranındadır', () => {
   assert.equal(agirlikliSec(biletler, () => 30), 'b')
 })
 
-test('bot hesabı: bota karşı kaybedilen XP birikir, kazanç hesaptan düşmez', () => {
-  const chatJid = 'bot-kasa@g.us'
+test('bot hesabı: bota karşı kaybedilen XP bot numarasının satırına gider', () => {
+  const chatJid = 'bot-hesabi@g.us'
+  const bot = '905550000000@s.whatsapp.net'
+  botHesabiniTani({ id: '905550000000:12@s.whatsapp.net', lid: '777:12@lid' })
+  assert.equal(botHesabiMi(bot), true)
+  assert.equal(botHesabiMi('777@lid'), true)
+
+  addXp({ chatJid, userJid: bot, amount: 5 })
   addXp({ chatJid, userJid: 'a', amount: 1000 })
 
   bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 0 }) })
-  assert.equal(botKasasi(chatJid), 100)
+  assert.equal(getStats(chatJid, bot).xp, 105)
 
   bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 2 }) })
-  assert.equal(botKasasi(chatJid), 100)
+  assert.equal(getStats(chatJid, bot).xp, 105)
 
   xpCek({ chatJid, userJid: 'a', miktar: 50 })
   kumarOde({ chatJid, userJid: 'a', bahis: 50, odeme: 0 })
-  assert.equal(botKasasi(chatJid), 150)
+  assert.equal(getStats(chatJid, bot).xp, 155)
 
   xpCek({ chatJid, userJid: 'a', miktar: 50 })
   kumarOde({ chatJid, userJid: 'a', bahis: 50, odeme: 50 })
-  assert.equal(botKasasi(chatJid), 150)
+  assert.equal(getStats(chatJid, bot).xp, 155)
 
-  assert.equal(botKasasi('baska-grup@g.us'), 0)
-})
+  bahisOyna({ chatJid, userJid: bot, miktar: 55, cevir: () => ({ carpan: 0 }) })
+  assert.equal(getStats(chatJid, bot).xp, 100)
 
-test('bot hesabı: .vs ve .piyango kaybı oyuncuya gider, bota yazılmaz', () => {
-  const chatJid = 'bot-kasa-oyuncular@g.us'
-  addXp({ chatJid, userJid: 'a', amount: 100 })
   addXp({ chatJid, userJid: 'b', amount: 100 })
-
   vsOyna({ chatJid, a: 'a', b: 'b', miktar: 10, sec: () => 'a' })
   piyangoBilet({ chatJid, userJid: 'a', miktar: 10 })
   piyangoBilet({ chatJid, userJid: 'b', miktar: 10 })
   piyangoCek({ chatJid, sec: () => 'b' })
+  assert.equal(getStats(chatJid, bot).xp, 100)
 
-  assert.equal(botKasasi(chatJid), 0)
+  botHesabiniTani(null)
 })

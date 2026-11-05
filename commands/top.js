@@ -1,5 +1,5 @@
 import { requireGroup } from '../lib/group.js'
-import { botKasasi, getLeaderboard, seviye } from '../lib/stats.js'
+import { getLeaderboard, seviye } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -43,9 +43,6 @@ export default {
       return `${isaret} ${mentionOf(row.user_jid)} — ${sayi.format(row.xp)} XP ` +
         `(Sv ${seviye(row.xp)})`
     })
-
-    const kasa = botKasasi(from)
-    if (kasa > 0) lines.push('', `🤖 Bot hesabı — ${sayi.format(kasa)} XP`)
 
     await sock.sendMessage(
       from,

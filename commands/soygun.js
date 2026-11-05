@@ -4,7 +4,7 @@ import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import {
   BASARI_YUZDESI, GUNLUK_DENEME, MIN_HIRSIZ_XP, MIN_KURBAN_XP,
 } from '../lib/soygun.js'
-import { soygunYap } from '../lib/stats.js'
+import { botHesabiMi, soygunYap } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import logger from '../lib/logger.js'
 
@@ -44,6 +44,8 @@ export default {
       const kurban = uyeKimligiBul(metadata, hedef)
       if (!kurban) return await yaz('❌ Bu kişi grupta bulunamadı.')
       if (kurban === sender) return await yaz('Kendini soyamazsın 🙃')
+      // Sonuç mesajı kurbanın bakiyesini yazar, botunki yalnızca .top'ta görünür.
+      if (botHesabiMi(kurban)) return await yaz('🤖 Botun hesabı soyulamaz.')
 
       const s = soygunYap({
         chatJid: from,
