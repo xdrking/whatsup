@@ -5,7 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import logger from '../lib/logger.js'
 import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru } from './guvenlik.js'
-import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, kisiSayfasi } from './sayfalar.js'
+import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisiSayfasi } from './sayfalar.js'
 import { sonYedek } from './yedek.js'
 
 const CEREZ = '__Host-panel'
@@ -130,6 +130,13 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru }) {
       const k = veri.kisi(chat, url.searchParams.get('id') ?? '')
       if (!k) return gonder(res, 404, hataSayfasi('Böyle bir kişi yok.'))
       return gonder(res, 200, kisiSayfasi(chat, k))
+    }
+
+    if (url.pathname === '/hisse') {
+      const chat = url.searchParams.get('grup') ?? ''
+      const v = veri.hisse(chat, url.searchParams.get('kod') ?? '', url.searchParams.get('aralik'))
+      if (!v) return gonder(res, 404, hataSayfasi('Böyle bir hisse yok.'))
+      return gonder(res, 200, hisseSayfasi(chat, v, url.searchParams.get('tur')))
     }
 
     if (url.pathname === '/yedek') return yedekGonder(res)

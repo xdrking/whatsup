@@ -14,6 +14,15 @@ export const DATA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 
 
 const GUN_MS = 86_400_000
 const GRAFIK_GUNU = 30
+const KUCUK_GRAFIK_SAATI = 7 * 24
+
+// `mum`: bir mumun kaç saat olduğu, `etiket`: zaman ekseni kaç saatte bir yazılır.
+export const ARALIKLAR = {
+  '1g': { ad: '1 Gün', saat: 24, mum: 1, etiket: 6 },
+  '3g': { ad: '3 Gün', saat: 72, mum: 3, etiket: 12 },
+  '7g': { ad: '7 Gün', saat: 168, mum: 6, etiket: 24 },
+  '30g': { ad: '30 Gün', saat: 720, mum: 24, etiket: 120 },
+}
 
 export const SIRALAMALAR = {
   xp: 'XP',
@@ -107,7 +116,11 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
       const adlar = new Map(liste.map((u) => [u.user_jid, u]))
       const fiyatlar = new Map(db.prepare('SELECT hisse, fiyat, onceki FROM borsa WHERE chat_jid = ?')
         .all(chatJid).map((r) => [r.hisse, r]))
-      const fiyatGecmisi = db.prepare('SELECT fiyat FROM borsa_gecmis WHERE chat_jid = ? AND hisse = ? ORDER BY saat')
+      const fiyatGecmisi = db.prepare(`
+        SELECT fiyat FROM (
+          SELECT saat, fiyat FROM borsa_gecmis WHERE chat_jid = ? AND hisse = ? ORDER BY saat DESC LIMIT ${KUCUK_GRAFIK_SAATI}
+        ) ORDER BY saat
+      `)
       const bugun = db.prepare('SELECT COUNT(*) AS kisi, COALESCE(SUM(mesaj), 0) AS mesaj FROM gecmis WHERE chat_jid = ? AND gun = ?')
         .get(chatJid, istanbulDay(new Date(now)))
 
@@ -124,10 +137,32 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
           return uye[r.alan] > 0 ? [{ ...r, uye, deger: uye[r.alan] }] : []
         }),
         borsa: HISSELER.flatMap((h) => (fiyatlar.has(h.kod)
-          ? [{ ad: h.ad, ...fiyatlar.get(h.kod), gecmis: fiyatGecmisi.all(chatJid, h.kod).map((r) => r.fiyat) }]
+          ? [{ ad: h.ad, kod: h.kod, ...fiyatlar.get(h.kod), gecmis: fiyatGecmisi.all(chatJid, h.kod).map((r) => r.fiyat) }]
           : [])),
         sezon: db.prepare('SELECT user_jid, puan FROM sezon WHERE chat_jid = ? AND hafta = ? ORDER BY puan DESC LIMIT 3')
           .all(chatJid, haftaAnahtari(new Date(now))).map((s) => ({ ...s, uye: adlar.get(s.user_jid) ?? null })),
+      }
+    },
+
+    /** @returns {object | null} hisse o grupta hiç işlem görmediyse null */
+    hisse(chatJid, kod, aralikAdi) {
+      const hisse = HISSELER.find((h) => h.kod === kod)
+      const kayit = hisse && db.prepare('SELECT fiyat, onceki FROM borsa WHERE chat_jid = ? AND hisse = ?').get(chatJid, kod)
+      if (!kayit) return null
+
+      const aralik = ARALIKLAR[aralikAdi] ? aralikAdi : '7g'
+      const son = db.prepare('SELECT MAX(saat) AS saat FROM borsa_gecmis WHERE chat_jid = ? AND hisse = ?').get(chatJid, kod).saat ?? 0
+      const islemGorenler = new Set(db.prepare('SELECT hisse FROM borsa WHERE chat_jid = ?').all(chatJid).map((r) => r.hisse))
+
+      return {
+        ...kayit,
+        kod,
+        ad: hisse.ad,
+        aralik,
+        grupAdi: db.prepare('SELECT ad FROM gruplar WHERE chat_jid = ?').get(chatJid)?.ad ?? '',
+        noktalar: db.prepare('SELECT saat, fiyat FROM borsa_gecmis WHERE chat_jid = ? AND hisse = ? AND saat >= ? ORDER BY saat')
+          .all(chatJid, kod, son - ARALIKLAR[aralik].saat),
+        hisseler: HISSELER.filter((h) => islemGorenler.has(h.kod)).map((h) => ({ kod: h.kod, ad: h.ad })),
       }
     },
 

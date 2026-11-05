@@ -11,7 +11,7 @@ process.env.STATS_DB = path.join(klasor, 'test.db')
 
 const { getDb } = await import('../lib/db.js')
 const { denemeSiniri, oturumlar, sifreDogru, sifreHashle, sifreUret } = await import('../panel/guvenlik.js')
-const { h } = await import('../panel/sayfalar.js')
+const { h, mumlar } = await import('../panel/sayfalar.js')
 const { addXp, borsaDurumu, recordMessage } = await import('../lib/stats.js')
 const { ADIM_MS, SAAT_MS, GECMIS_SAATI } = await import('../lib/borsa.js')
 const { groupMetadata } = await import('../lib/group.js')
@@ -196,7 +196,7 @@ test('geçmiş: mesaj günlük sayılır, XP son değerde kalır, kişi sayfası
   assert.equal(kisi.sira, 1)
 })
 
-test('borsa geçmişi: saat başı yazılır, 7 günden eskisi silinir, grup sayfasına düşer', () => {
+test('borsa geçmişi: saat başı yazılır, 30 günden eskisi silinir, grup sayfasına düşer', () => {
   const T = 1_800_000_000_000 - (1_800_000_000_000 % SAAT_MS)
   const k = { chatJid: GRUP, userJid: 'a@lid' }
   const say = () => db.prepare("SELECT COUNT(*) AS n FROM borsa_gecmis WHERE chat_jid = ? AND hisse = 'muz'").get(GRUP).n
@@ -206,9 +206,36 @@ test('borsa geçmişi: saat başı yazılır, 7 günden eskisi silinir, grup say
   assert.equal(say(), 3)
   assert.equal(veri.grup(GRUP).borsa[0].gecmis.length, 3)
 
-  for (let g = 1; g <= 10; g++) borsaDurumu({ ...k, now: T + g * 24 * SAAT_MS })
+  for (let g = 1; g <= 35; g++) borsaDurumu({ ...k, now: T + g * 24 * SAAT_MS })
   assert.ok(say() <= GECMIS_SAATI + 1)
   assert.ok(ADIM_MS < SAAT_MS)
+  assert.ok(veri.grup(GRUP).borsa[0].gecmis.length <= 7 * 24)
+})
+
+test('hisse sayfası: grafik çizilir, aralık daralır, bilinmeyen değerler güvenli', async () => {
+  const Cookie = await cerezAl('6.6.6.6')
+  const al = (sorgu) => fetch(`${adres}/hisse?grup=${encodeURIComponent(GRUP)}&${sorgu}`, { headers: { Cookie } })
+
+  assert.ok(veri.hisse(GRUP, 'muz', '1g').noktalar.length < veri.hisse(GRUP, 'muz', '30g').noktalar.length)
+  assert.equal(veri.hisse(GRUP, 'muz', 'uydurma').aralik, '7g')
+  assert.equal(veri.hisse(GRUP, 'uydurma', '7g'), null)
+
+  const mum = await (await al('kod=muz&aralik=7g&tur=mum')).text()
+  assert.ok(mum.includes('class="mum '))
+  const cizgi = await (await al('kod=muz&aralik=1g&tur=cizgi')).text()
+  assert.ok(cizgi.includes('class="hat"'))
+  assert.ok((await (await al('kod=muz&tur=%3Cscript%3E')).text()).includes('class="mum '))
+  assert.equal((await al('kod=uydurma')).status, 404)
+})
+
+test('mumlar: açılış önceki kapanıştır, yüksek ve düşük dilimden çıkar', () => {
+  const mums = mumlar([
+    { saat: 21, fiyat: 100 }, { saat: 22, fiyat: 110 }, { saat: 23, fiyat: 90 }, { saat: 27, fiyat: 95 },
+  ], 6)
+  assert.deepEqual(mums, [
+    { saat: 21, acilis: 100, yuksek: 110, dusuk: 90, kapanis: 90 },
+    { saat: 27, acilis: 90, yuksek: 95, dusuk: 90, kapanis: 95 },
+  ])
 })
 
 test('grup adı: bilgi gelince yazılır, kaçırılarak gösterilir', async () => {

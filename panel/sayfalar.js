@@ -1,7 +1,7 @@
 // Panelin HTML'i. `h` değerleri kaçırır: WhatsApp adını üyeler kendisi yazdığı için
 // bir ad asla ham HTML olarak sayfaya düşmemeli.
 import { fnv1a } from '../lib/hash.js'
-import { SIRALAMALAR } from './veri.js'
+import { ARALIKLAR, SIRALAMALAR } from './veri.js'
 
 class Ham {
   constructor(metin) {
@@ -31,6 +31,8 @@ const yuzde = new Intl.NumberFormat('tr-TR', { style: 'percent', maximumFraction
 const adi = (u) => u.ad || `Adı bilinmiyor · ${u.user_jid.split('@')[0].slice(-4)}`
 const grupLink = (chat) => `/grup?id=${encodeURIComponent(chat)}`
 const kisiLink = (chat, jid) => `/kisi?grup=${encodeURIComponent(chat)}&id=${encodeURIComponent(jid)}`
+const hisseLink = (chat, kod, aralik = '7g', tur = 'mum') =>
+  `/hisse?grup=${encodeURIComponent(chat)}&kod=${encodeURIComponent(kod)}&aralik=${aralik}&tur=${tur}`
 
 function avatar(u, boyut = '') {
   const harf = [...(u.ad || '?')][0].toLocaleUpperCase('tr')
@@ -197,17 +199,183 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
     </a>`)}</section>` : ''}
 
   ${g.borsa.length ? h`<section class="kart liste"><h2>Borsa</h2>${g.borsa.map((b) => h`
-    <div class="satir">
+    <a class="satir" href="${hisseLink(chatJid, b.kod)}">
       <span class="ad"><strong>${b.ad}</strong></span>
       ${cizgi(b.gecmis, b.gecmis.at(-1) >= b.gecmis[0] ? 'artis' : 'dusus')}
       <span class="deger">${ondalik.format(b.fiyat)}${degisim(b)}</span>
-    </div>`)}</section>` : ''}
+    </a>`)}</section>` : ''}
 
   <section class="kart"><h2>Saatlere göre aktivite</h2>${saatGrafigi(g.saatler)}</section>
 
   ${yedekVar ? h`<a class="dugme" href="/yedek">⬇ Son yedeği indir</a>` : ''}
 </div>
 </div>`, { geri: tekGrup ? null : '/', ust: 'Panel' })
+}
+
+const GRAFIK_TURLERI = { mum: 'Mum', cizgi: 'Çizgi' }
+const SAAT_FARKI = 3 // Türkiye UTC+3, yaz saati yok: saat dilimleri İstanbul gününe hizalanır.
+const SAAT_MS = 3_600_000
+const iki = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const saatBicimi = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit' })
+const gunBicimi = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'short' })
+const tamBicim = (saat) => `${gunBicimi.format(saat * SAAT_MS)} ${saatBicimi.format(saat * SAAT_MS)}`
+
+/** Saatlik kapanışları mumlara böler. Açılış, bir önceki mumun kapanışıdır. */
+export function mumlar(noktalar, mumSaati) {
+  const sonuc = []
+  let onceki = noktalar[0]?.fiyat
+  for (const { saat, fiyat } of noktalar) {
+    const dilim = Math.floor((saat + SAAT_FARKI) / mumSaati) * mumSaati - SAAT_FARKI
+    let mum = sonuc.at(-1)
+    if (mum?.saat !== dilim) {
+      mum = { saat: dilim, acilis: onceki, yuksek: onceki, dusuk: onceki, kapanis: onceki }
+      sonuc.push(mum)
+    }
+    mum.yuksek = Math.max(mum.yuksek, fiyat)
+    mum.dusuk = Math.min(mum.dusuk, fiyat)
+    mum.kapanis = fiyat
+    onceki = fiyat
+  }
+  return sonuc
+}
+
+function guzelAdim(aralik, adet) {
+  const kaba = aralik / adet
+  const us = 10 ** Math.floor(Math.log10(kaba))
+  const oran = kaba / us
+  return Math.max((oran <= 1 ? 1 : oran <= 2 ? 2 : oran <= 5 ? 5 : 10) * us, 0.1)
+}
+
+// Kesintide çizgi birleşmez: kimse .borsa yazmadığı için veri yoktur, düz hareket gibi görünmesin.
+function kesintisizParcalar(noktalar) {
+  const parcalar = [[]]
+  for (const n of noktalar) {
+    const son = parcalar.at(-1).at(-1)
+    if (son && n.saat - son.saat > 1) parcalar.push([])
+    parcalar.at(-1).push(n)
+  }
+  return parcalar.filter((p) => p.length > 1)
+}
+
+function fiyatGrafigi(noktalar, tur, aralik, { sinif, genislik, yukseklik }) {
+  const sol = 6
+  const sag = genislik - 56
+  const ust = 10
+  const alt = yukseklik - 26
+  const dilimler = mumlar(noktalar, aralik.mum)
+
+  const t0 = tur === 'mum' ? dilimler[0].saat : noktalar[0].saat
+  const t1 = tur === 'mum' ? dilimler.at(-1).saat + aralik.mum : noktalar.at(-1).saat
+  const x = (t) => sol + ((t - t0) / (t1 - t0 || 1)) * (sag - sol)
+
+  const enAz = Math.min(...dilimler.map((m) => m.dusuk))
+  const enCok = Math.max(...dilimler.map((m) => m.yuksek))
+  const adim = guzelAdim(enCok - enAz || enCok * 0.02 || 1, 4)
+  const taban = Math.floor(enAz / adim) * adim
+  const tavan = Math.ceil(enCok / adim) * adim || adim
+  const y = (f) => alt - ((f - taban) / (tavan - taban || 1)) * (alt - ust)
+
+  const fiyatCizgileri = []
+  for (let f = taban; f <= tavan + adim / 2; f += adim) fiyatCizgileri.push(f)
+
+  const zamanlar = []
+  for (let t = Math.ceil(t0); t <= t1; t += 1) {
+    const yerel = t + SAAT_FARKI
+    const px = x(t)
+    if (yerel % aralik.etiket === 0 && px > sol + 18 && px < sag - 18) {
+      zamanlar.push({ px, yazi: yerel % 24 === 0 ? gunBicimi.format(t * SAAT_MS) : saatBicimi.format(t * SAAT_MS) })
+    }
+  }
+
+  const son = noktalar.at(-1).fiyat
+  const yon = son >= noktalar[0].fiyat ? 'artis' : 'dusus'
+  const mumGenisligi = ((sag - sol) / ((t1 - t0) / aralik.mum)) * 0.68
+  const noktaYazi = (parca) => parca.map((n) => `${x(n.saat).toFixed(1)},${y(n.fiyat).toFixed(1)}`).join(' ')
+  const gradyan = `dolgu-${sinif}`
+
+  const ozet = `${noktalar.length} saatlik fiyat. En düşük ${iki.format(enAz)}, en yüksek ${iki.format(enCok)}, son ${iki.format(son)}.`
+  return h`<svg class="fiyat-grafik ${sinif} ${yon}" viewBox="0 0 ${genislik} ${yukseklik}" role="img" aria-label="${ozet}">
+    <defs><linearGradient id="${gradyan}" x1="0" y1="0" x2="0" y2="1"><stop class="dolgu-ust" offset="0"/><stop class="dolgu-alt" offset="1"/></linearGradient></defs>
+    ${fiyatCizgileri.map((f) => h`<line class="izgara" x1="${sol}" x2="${sag}" y1="${y(f).toFixed(1)}" y2="${y(f).toFixed(1)}"/>
+      <text class="eksen" x="${sag + 8}" y="${(y(f) + 4).toFixed(1)}">${ondalik.format(f)}</text>`)}
+    ${zamanlar.map((z) => h`<line class="izgara" x1="${z.px.toFixed(1)}" x2="${z.px.toFixed(1)}" y1="${ust}" y2="${alt}"/>
+      <text class="eksen orta" x="${z.px.toFixed(1)}" y="${yukseklik - 8}">${z.yazi}</text>`)}
+    ${tur === 'mum'
+    ? dilimler.map((m) => {
+      const merkez = x(m.saat + aralik.mum / 2)
+      const ustKenar = y(Math.max(m.acilis, m.kapanis))
+      const boy = Math.max(Math.abs(y(m.acilis) - y(m.kapanis)), 1.5)
+      return h`<g class="mum ${m.kapanis >= m.acilis ? 'artis' : 'dusus'}">
+        <line x1="${merkez.toFixed(1)}" x2="${merkez.toFixed(1)}" y1="${y(m.yuksek).toFixed(1)}" y2="${y(m.dusuk).toFixed(1)}"/>
+        <rect x="${(merkez - mumGenisligi / 2).toFixed(1)}" y="${ustKenar.toFixed(1)}" width="${mumGenisligi.toFixed(1)}" height="${boy.toFixed(1)}" rx="1.5"/>
+      </g>`
+    })
+    : kesintisizParcalar(noktalar).map((p) => h`
+      <polygon class="alan" fill="url(#${gradyan})" points="${x(p[0].saat).toFixed(1)},${alt} ${noktaYazi(p)} ${x(p.at(-1).saat).toFixed(1)},${alt}"/>
+      <polyline class="hat" points="${noktaYazi(p)}"/>`)}
+    <line class="son-cizgi" x1="${sol}" x2="${sag}" y1="${y(son).toFixed(1)}" y2="${y(son).toFixed(1)}"/>
+    <rect class="son-kutu" x="${sag + 2}" y="${(y(son) - 10).toFixed(1)}" width="52" height="20" rx="4"/>
+    <text class="son-yazi" x="${sag + 8}" y="${(y(son) + 4).toFixed(1)}">${ondalik.format(son)}</text>
+    ${dilimler.map((m, i) => {
+    const bas = x(Math.max(m.saat, t0))
+    const bit = i + 1 < dilimler.length ? x(dilimler[i + 1].saat) : sag
+    return h`<rect class="vuru" x="${bas.toFixed(1)}" y="${ust}" width="${Math.max(bit - bas, 1).toFixed(1)}" height="${alt - ust}"><title>${tamBicim(m.saat)} · Açılış ${iki.format(m.acilis)} · Yüksek ${iki.format(m.yuksek)} · Düşük ${iki.format(m.dusuk)} · Kapanış ${iki.format(m.kapanis)}</title></rect>`
+  })}
+  </svg>`
+}
+
+export function hisseSayfasi(chatJid, v, turIstegi) {
+  const tur = GRAFIK_TURLERI[turIstegi] ? turIstegi : 'mum'
+  const aralik = ARALIKLAR[v.aralik]
+  const { noktalar } = v
+  const yeterli = noktalar.length >= 2
+  const dilimler = mumlar(noktalar, aralik.mum)
+  const ilk = noktalar[0]?.fiyat ?? v.fiyat
+  const fark = v.fiyat - ilk
+  const oran = ilk ? (fark / ilk) * 100 : 0
+  const yon = fark >= 0 ? 'artis' : 'dusus'
+  const secili = (kosul) => (kosul ? 'secili' : '')
+
+  return kabuk(v.ad, h`
+<section class="kart hisse-ust">
+  <h2>${v.ad}</h2>
+  <div class="hisse-fiyat">
+    <strong>${iki.format(v.fiyat)} <small>XP</small></strong>
+    <span class="${yon}">${fark >= 0 ? '▲' : '▼'} ${iki.format(Math.abs(fark))} (%${iki.format(Math.abs(oran))})</span>
+    <small>${aralik.ad.toLocaleLowerCase('tr')} içinde</small>
+  </div>
+</section>
+
+<nav class="sekmeler hisse-sekme">${v.hisseler.map((s) => h`<a class="${secili(s.kod === v.kod)}" href="${hisseLink(chatJid, s.kod, v.aralik, tur)}">${s.ad}</a>`)}</nav>
+
+<section class="kart grafik-kart">
+  <div class="grafik-arac">
+    <nav class="sekmeler">${Object.entries(ARALIKLAR).map(([ad, a]) => h`<a class="${secili(ad === v.aralik)}" href="${hisseLink(chatJid, v.kod, ad, tur)}">${a.ad}</a>`)}</nav>
+    <nav class="sekmeler">${Object.entries(GRAFIK_TURLERI).map(([ad, yazi]) => h`<a class="${secili(ad === tur)}" href="${hisseLink(chatJid, v.kod, v.aralik, ad)}">${yazi}</a>`)}</nav>
+  </div>
+  ${yeterli ? h`
+    ${fiyatGrafigi(noktalar, tur, aralik, { sinif: 'dar', genislik: 380, yukseklik: 280 })}
+    ${fiyatGrafigi(noktalar, tur, aralik, { sinif: 'genis', genislik: 860, yukseklik: 400 })}
+    ${tur === 'mum' ? h`<div class="anahtar mum-anahtar"><span class="artis">Boş mum: yükseliş</span><span class="dusus">Dolu mum: düşüş</span></div>` : ''}
+  ` : h`<p class="birikiyor">Veri birikiyor. Grafik için en az iki saatlik fiyat gerekir.</p>`}
+</section>
+
+${yeterli ? h`<section class="kutular">
+  ${kutu('Dönem başı', iki.format(ilk), 'XP')}
+  ${kutu('En yüksek', iki.format(Math.max(...dilimler.map((m) => m.yuksek))), 'XP')}
+  ${kutu('En düşük', iki.format(Math.min(...dilimler.map((m) => m.dusuk))), 'XP')}
+  ${kutu('Son veri', tamBicim(noktalar.at(-1).saat))}
+</section>
+
+<details class="kart tablo">
+  <summary>Fiyat tablosu</summary>
+  <table>
+    <thead><tr><th>Zaman</th><th>Açılış</th><th>Yüksek</th><th>Düşük</th><th>Kapanış</th></tr></thead>
+    <tbody>${dilimler.toReversed().map((m) => h`<tr><td>${tamBicim(m.saat)}</td><td>${iki.format(m.acilis)}</td><td>${iki.format(m.yuksek)}</td><td>${iki.format(m.dusuk)}</td><td>${iki.format(m.kapanis)}</td></tr>`)}</tbody>
+  </table>
+</details>` : ''}
+
+<p class="birikiyor">Fiyatlar grupta <code>.borsa</code> kullanıldıkça güncellenir, panel fiyatı kendisi ilerletmez.</p>`, { geri: grupLink(chatJid), ust: v.grupAdi || 'Borsa' })
 }
 
 function servetCubugu(k) {
