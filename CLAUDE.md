@@ -824,7 +824,7 @@ Kurallar `lib/banka.js`'te saftır. Faiz saatliktir (%0,1), bileşiktir ve bakiy
 işler, tavan yoktur. XP bastığı için boşta en çok 7 günlük (168 saat) birikir ve `.banka`
 yazılınca işlenir. 1 XP'yi bulmayan küsurat `faiz_artik`'te devreder, yoksa küçük bakiye her
 saat bakınca hiç faiz alamazdı. Yatırımda saat dilimi yenilenir: yeni para geçmiş faiz almaz.
-Çekimdeki %5 ile vergi yanar.
+Çekimdeki %5 ile vergi bot hesabına gider (Faz 32).
 
 Vergi `recordMessage()` içinde kişinin günün ilk mesajında kesilir: komutla kesilseydi
 kaçılabilirdi. Bot kendiliğinden yazmadığı için vergiyi `.banka` gösterir. Mesaj başına DB'ye
@@ -916,7 +916,9 @@ panel/yedek.js     günlük yedek
 Bot hesabı, QR ile bağlı numaranın `stats` satırıdır: `jidNormalizedUser(sock.user.id)`, yani
 `parseMessage`'ın bot numarasından yazılan mesaja verdiği kimlik. Ayrı tablo yoktur.
 
-Bota karşı oynanan kumarda (`bahisOyna`, `kumarOde`) kaybedilen XP `botaYaz()` ile o satıra eklenir.
+Bota karşı oynanan kumarda (`bahisOyna`, `kumarOde`) kaybedilen XP, banka çekim kesintisi, servet
+vergisi ve borsa komisyonu `botaYaz()` ile o satıra eklenir. Bu kesintiler üyelerin elinden XP almaya
+devam eder, bot harcamadığı sürece ekonomi dengesi değişmez. Kaynak ayrı tutulmaz.
 Oyuncu kazancı bottan düşmez. `.vs` ve `.piyango` yazmaz, orada kayıp başka oyuncuya gider. Yarım kalan
 oyunun yanan bahsi de yazılmaz. `lib/handler.js` her mesajda `botHesabiniTani()` çağırır.
 

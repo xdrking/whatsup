@@ -220,7 +220,7 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.çekiliş` | Piyangoyu çeker, havuzun tamamı kazananın olur (grup admini veya owner) |
 | `.kumartop` | Kumarda en çok kazananlar ve kaybedenler |
 
-Bota karşı oynanan kumarda kaybedilen XP, QR ile bağlı numaranın hesabına gider. `.vs` ve `.piyango` hariçtir, oradaki kayıp diğer oyuncuya geçer. Bakiye yalnızca `.top`'ta görünür.
+Bota karşı oynanan kumarda kaybedilen XP, banka kesintisi, servet vergisi ve borsa komisyonu QR ile bağlı numaranın hesabına gider. `.vs` ve `.piyango` hariçtir, oradaki kayıp diğer oyuncuya geçer. Bakiye yalnızca `.top`'ta görünür.
 
 ### Görev, market, soygun
 
@@ -265,7 +265,7 @@ En az 50 XP, koyarken %10'u kesilir. Aynı kişiye koyulan ödüller birikir.
 
 Bankadaki XP soyulamaz, vergilenmez, her saat tüm bakiyeye %0,1 bileşik faiz alır (günde yaklaşık %2,4). Faiz `.banka` yazınca işlenir, en çok 7 günlük birikir.
 Bankadaki XP seviyeye ve `.top`'a sayılmaz, `.profil`'de ayrı görünür.
-Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve yanar. `.banka` son vergiyi gösterir.
+Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve vergi bot hesabına gider. `.banka` son vergiyi gösterir.
 
 ### Sezon
 
