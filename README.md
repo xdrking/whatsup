@@ -293,6 +293,8 @@ Sunucuda bir kez:
 4. `nginx-panel.conf.example` içeriğini kendi alan adınla `/etc/nginx/sites-available/panel` dosyasına yaz, `sites-enabled` altına bağla, `sudo nginx -t` ve `sudo systemctl reload nginx` çalıştır.
 5. `sudo certbot --nginx -d panel.alanadin.com --redirect` ile HTTPS sertifikasını al. Giriş ancak HTTPS'te çalışır.
 
+Panelde sıralama, grup rekorları, son 30 günün grafiği, borsa fiyat çizgileri, kişi sayfasında seviye, rozet, servet dağılımı ve XP gelişimi var. Grafikler güncellemeden sonra birikmeye başlar; borsa çizgileri `.borsa` kullanıldıkça dolar.
+
 Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
 
 ### Kart koleksiyonu

@@ -12,6 +12,9 @@ process.env.STATS_DB = path.join(klasor, 'test.db')
 const { getDb } = await import('../lib/db.js')
 const { denemeSiniri, oturumlar, sifreDogru, sifreHashle, sifreUret } = await import('../panel/guvenlik.js')
 const { h } = await import('../panel/sayfalar.js')
+const { addXp, borsaDurumu, recordMessage } = await import('../lib/stats.js')
+const { ADIM_MS, SAAT_MS, GECMIS_SAATI } = await import('../lib/borsa.js')
+const { groupMetadata } = await import('../lib/group.js')
 const { sunucuKur } = await import('../panel/sunucu.js')
 const { veriAc } = await import('../panel/veri.js')
 const { yedekAl, sonYedek } = await import('../panel/yedek.js')
@@ -172,4 +175,56 @@ test('yedek: günde bir alınır, 14 tane kalır, panelden iner', async () => {
   assert.equal(yanit.status, 200)
   assert.ok(yanit.headers.get('content-disposition').includes('stats-2026-06-11.db'))
   assert.ok((await yanit.arrayBuffer()).byteLength > 0)
+})
+
+test('geçmiş: mesaj günlük sayılır, XP son değerde kalır, kişi sayfasına düşer', () => {
+  const at = new Date('2026-06-10T12:00:00+03:00').getTime()
+  const k = { chatJid: 'g2@g.us', userJid: 'c@lid', type: 'conversation' }
+  recordMessage({ ...k, at })
+  recordMessage({ ...k, at: at + 1000 })
+  addXp({ chatJid: k.chatJid, userJid: k.userJid, amount: 50 })
+  recordMessage({ ...k, at: at + 86_400_000 })
+
+  const gunler = db.prepare('SELECT gun, xp, mesaj FROM gecmis WHERE chat_jid = ? ORDER BY gun').all(k.chatJid)
+  assert.deepEqual(gunler.map((g) => g.mesaj), [2, 1])
+  assert.ok(gunler[1].xp > gunler[0].xp)
+
+  const kisi = veri.kisi(k.chatJid, k.userJid, at + 86_400_000)
+  assert.equal(kisi.xpGecmisi.length, 2)
+  assert.equal(kisi.gunlukMesaj.at(-1).n, 1)
+  assert.equal(kisi.gunlukMesaj.length, 30)
+  assert.equal(kisi.sira, 1)
+})
+
+test('borsa geçmişi: saat başı yazılır, 7 günden eskisi silinir, grup sayfasına düşer', () => {
+  const T = 1_800_000_000_000 - (1_800_000_000_000 % SAAT_MS)
+  const k = { chatJid: GRUP, userJid: 'a@lid' }
+  const say = () => db.prepare("SELECT COUNT(*) AS n FROM borsa_gecmis WHERE chat_jid = ? AND hisse = 'muz'").get(GRUP).n
+
+  borsaDurumu({ ...k, now: T })
+  borsaDurumu({ ...k, now: T + 3 * SAAT_MS })
+  assert.equal(say(), 3)
+  assert.equal(veri.grup(GRUP).borsa[0].gecmis.length, 3)
+
+  for (let g = 1; g <= 10; g++) borsaDurumu({ ...k, now: T + g * 24 * SAAT_MS })
+  assert.ok(say() <= GECMIS_SAATI + 1)
+  assert.ok(ADIM_MS < SAAT_MS)
+})
+
+test('grup adı: bilgi gelince yazılır, kaçırılarak gösterilir', async () => {
+  await groupMetadata({ groupMetadata: async () => ({ subject: '<b>Kanka</b>', participants: [] }) }, GRUP)
+  assert.equal(veri.grup(GRUP).ad, '<b>Kanka</b>')
+
+  const Cookie = await cerezAl('5.5.5.5')
+  const html = await (await fetch(`${adres}/grup?id=${encodeURIComponent(GRUP)}`, { headers: { Cookie } })).text()
+  assert.ok(html.includes('&lt;b&gt;Kanka'))
+  assert.ok(!html.includes('<b>Kanka'))
+})
+
+test('rekorlar ve rozetler: en yüksek kişi çıkar, sıfır rekor gösterilmez', () => {
+  const g = veri.grup(GRUP)
+  const rekor = (etiket) => g.rekorlar.find((r) => r.etiket.includes(etiket))
+  assert.equal(rekor('En geveze').uye.user_jid, 'b@lid')
+  assert.equal(rekor('En şanslı'), undefined)
+  assert.ok(veri.kisi(GRUP, 'a@lid').rozetler.length > 0)
 })

@@ -903,8 +903,12 @@ panel/yedek.js     günlük yedek
 - Oturumlar bellektedir, panel yeniden başlarsa herkes yeniden girer. Süre 7 gün.
 - **Yedek:** panel açıkken günde bir `data/yedek/`'e alınır, 14 tane kalır. Aynı sunucuda durduğu için
   sunucu ölürse gider; bu yüzden panelde indirme düğmesi vardır.
-- Grup adı veritabanında yoktur, panel "Grup 1" yazar. Banka ve portföy son işlenen değerdir: panel
-  faiz işlemez, borsayı ilerletmez.
+- Banka ve portföy son işlenen değerdir: panel faiz işlemez, borsayı ilerletmez.
+- Panel yazamadığı için grafik verisini bot yazar: `gecmis` (`recordMessage`, kişinin günlük mesajı ve
+  XP'si), `borsa_gecmis` (`borsaGuncelle`, saat başı fiyat, 7 gün; yalnızca `.borsa` kullanılınca dolar),
+  `gruplar` (`groupMetadata`, grup adı; `lib/handler.js` süreç başına bir kez sorar).
+- Rozetler `lib/rozet.js`'tedir, `.rozet` ve panel ortak kullanır. Rekorlar `panel/veri.js:REKORLAR`'dadır.
+- CSP satır içi `style` kabul etmez: yüzdeler SVG öznitelikleri ya da `<progress>` ile çizilir.
 
 ## Elle Doğrulama
 
