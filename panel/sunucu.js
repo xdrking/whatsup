@@ -139,7 +139,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru }) {
 
   async function isle(req, res) {
     const url = new URL(req.url, 'http://panel')
-    const yol = `${req.method} ${url.pathname}`
+    // HEAD, GET'in gövdesiz halidir; gövdeyi Node kendisi atar.
+    const yontem = req.method === 'HEAD' ? 'GET' : req.method
+    const yol = `${yontem} ${url.pathname}`
 
     if (yol === 'GET /stil.css') {
       return gonder(res, 200, STIL, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
@@ -157,7 +159,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru }) {
       oturum.kapat(jeton)
       return yonlendir(res, '/giris', { 'Set-Cookie': cerez('', 0) })
     }
-    if (req.method !== 'GET') return gonder(res, 405, hataSayfasi('Bu işlem yapılamaz.'))
+    if (yontem !== 'GET') return gonder(res, 405, hataSayfasi('Bu işlem yapılamaz.'))
 
     return sayfa(res, url)
   }

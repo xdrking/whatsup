@@ -111,6 +111,11 @@ test('panel: girişsiz hiçbir veri sayfası açılmaz', async () => {
   assert.equal(uydurma.status, 303)
 })
 
+test('panel: HEAD isteği GET gibi yanıtlanır', async () => {
+  assert.equal((await fetch(`${adres}/giris`, { method: 'HEAD', redirect: 'manual' })).status, 200)
+  assert.equal((await fetch(`${adres}/`, { method: 'HEAD', redirect: 'manual' })).status, 303)
+})
+
 test('panel: yanlış şifre reddedilir, beşinciden sonra doğrusu bile şifreye bakılmadan döner', async () => {
   const ip = '9.9.9.9'
   for (let i = 0; i < 5; i++) assert.equal((await giris('yanlis', ip)).status, 401)
