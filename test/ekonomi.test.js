@@ -9,7 +9,7 @@ const { GOREVLER, gununGorevleri } = await import('../lib/gorev.js')
 const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
 const { kartBul, kartCek, setCekisi, SETLER } = await import('../lib/kart.js')
-const { faizHesapla, vergiHesapla } = await import('../lib/banka.js')
+const { BANKA_TAVANI, faizHesapla, vergiHesapla } = await import('../lib/banka.js')
 const { haftaAnahtari, haftaBitisi, SEZON_ODULLERI } = await import('../lib/sezon.js')
 const { ADIM_MS, fiyatAdimi, HAVALAR, hisseBul, HISSELER, piyasaHavasi, SAAT_MS } = await import('../lib/borsa.js')
 const { VITRIN, vitrinUrunu } = await import('../lib/vitrin.js')
@@ -251,39 +251,40 @@ test('ödül: kesinti yanar, birikir, başarılı soygunda alınır', () => {
 })
 
 test('banka hesapları: faiz bileşik, tavansız, saat sınırlı; vergi yalnız eşiğin üstünden', () => {
-  assert.equal(faizHesapla(1000, 1).faiz, 1)
-  assert.equal(faizHesapla(1_000_000, 1).faiz, 1000)
-  assert.equal(faizHesapla(10_000, 24).faiz, 242)
+  assert.equal(faizHesapla(1000, 1).faiz, 150)
+  assert.equal(faizHesapla(10_000, 2).faiz, 3225)
   assert.equal(faizHesapla(10_000, 1000).faiz, faizHesapla(10_000, 168).faiz)
-  assert.equal(faizHesapla(500, 1).faiz, 0)
-  assert.ok(Math.abs(faizHesapla(500, 1).artik - 0.5) < 1e-9)
-  assert.equal(faizHesapla(500, 1, 0.5).faiz, 1)
+  assert.equal(faizHesapla(5, 1).faiz, 0)
+  assert.ok(Math.abs(faizHesapla(5, 1).artik - 0.75) < 1e-9)
+  assert.equal(faizHesapla(5, 1, 0.5).faiz, 1)
+  assert.deepEqual(faizHesapla(BANKA_TAVANI - 10, 168), { faiz: 10, artik: 0 })
+  assert.deepEqual(faizHesapla(BANKA_TAVANI, 168), { faiz: 0, artik: 0 })
   assert.equal(vergiHesapla(10_000), 0)
   assert.equal(vergiHesapla(20_000), 100)
 })
 
-test('banka: yatır, faiz işler, çekerken kesinti yanar', () => {
+test('banka: yatır, faiz işler, çekerken kesinti alınır', () => {
   const k = kisi(1000)
   assert.deepEqual(bankaYatir({ ...k, miktar: 1001, now: T }), { yetersiz: true, xp: 1000 })
   assert.deepEqual(bankaYatir({ ...k, miktar: 1000, now: T }), { bakiye: 1000, xp: 0 })
 
   assert.equal(bankaDurumu({ ...k, now: T }).faiz, 0)
   assert.equal(bankaDurumu({ ...k, now: T + SAAT_MS - 1 }).faiz, 0)
-  assert.equal(bankaDurumu({ ...k, now: T + GUN }).faiz, 24)
+  assert.equal(bankaDurumu({ ...k, now: T + GUN }).faiz, 27625)
   assert.equal(bankaDurumu({ ...k, now: T + GUN }).faiz, 0)
-  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 1024)
+  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 28625)
 
-  assert.deepEqual(bankaCek({ ...k, miktar: 2000, now: T + GUN }), { yetersiz: true, bakiye: 1024 })
-  assert.deepEqual(bankaCek({ ...k, miktar: 1000, now: T + GUN }), { bakiye: 24, xp: 950, kesinti: 50 })
+  assert.deepEqual(bankaCek({ ...k, miktar: 30000, now: T + GUN }), { yetersiz: true, bakiye: 28625 })
+  assert.deepEqual(bankaCek({ ...k, miktar: 1000, now: T + GUN }), { bakiye: 27625, xp: 950, kesinti: 50 })
 })
 
 test('banka: küçük bakiye saat saat bakılsa da faiz alır, yeni yatırım geçmiş faiz almaz', () => {
   const k = kisi(100_500)
-  bankaYatir({ ...k, miktar: 500, now: T })
+  bankaYatir({ ...k, miktar: 5, now: T })
 
   let toplam = 0
   for (let saat = 1; saat <= 4; saat++) toplam += bankaDurumu({ ...k, now: T + saat * SAAT_MS }).faiz
-  assert.equal(toplam, 2)
+  assert.equal(toplam, 3)
 
   const sonra = T + 100 * SAAT_MS
   bankaYatir({ ...k, miktar: 100_000, now: sonra })
