@@ -172,7 +172,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 |---|---|
 | `.stats` | Mesaj/sticker/ses sayıları ve en aktif saat |
 | `.profil` | Ad, level, XP |
-| `.top` | Sohbetteki XP sıralaması. `.top 5` |
+| `.top` | Sohbetteki XP sıralaması ve bot hesabı. `.top 5` |
 | `.günlük` | Günde bir kez XP ödülü; üst üste gelirsen seri büyür |
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |

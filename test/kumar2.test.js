@@ -10,7 +10,7 @@ const { elDegeri, odemeCarpani, desteKur } = await import('../games/blackjack.js
 const { KUTU, MAYIN, mayinCarpani, mayinKur } = await import('../games/mayin.js')
 const { agirlikliSec } = await import('../commands/piyango.js')
 const {
-  addXp, bahisOyna, getStats, kumarOde, kumarSiralama, piyangoBilet, piyangoCek, vsOyna, xpCek,
+  addXp, bahisOyna, botKasasi, getStats, kumarOde, kumarSiralama, piyangoBilet, piyangoCek, vsOyna, xpCek,
 } = await import('../lib/stats.js')
 
 const el = (...d) => d.map((deger) => ({ deger, renk: '♠' }))
@@ -114,4 +114,38 @@ test('piyango seçimi yatırılan XP oranındadır', () => {
   const biletler = [{ user_jid: 'a', xp: 30 }, { user_jid: 'b', xp: 70 }]
   assert.equal(agirlikliSec(biletler, () => 29), 'a')
   assert.equal(agirlikliSec(biletler, () => 30), 'b')
+})
+
+test('bot hesabı: bota karşı kaybedilen XP birikir, kazanç hesaptan düşmez', () => {
+  const chatJid = 'bot-kasa@g.us'
+  addXp({ chatJid, userJid: 'a', amount: 1000 })
+
+  bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 0 }) })
+  assert.equal(botKasasi(chatJid), 100)
+
+  bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 2 }) })
+  assert.equal(botKasasi(chatJid), 100)
+
+  xpCek({ chatJid, userJid: 'a', miktar: 50 })
+  kumarOde({ chatJid, userJid: 'a', bahis: 50, odeme: 0 })
+  assert.equal(botKasasi(chatJid), 150)
+
+  xpCek({ chatJid, userJid: 'a', miktar: 50 })
+  kumarOde({ chatJid, userJid: 'a', bahis: 50, odeme: 50 })
+  assert.equal(botKasasi(chatJid), 150)
+
+  assert.equal(botKasasi('baska-grup@g.us'), 0)
+})
+
+test('bot hesabı: .vs ve .piyango kaybı oyuncuya gider, bota yazılmaz', () => {
+  const chatJid = 'bot-kasa-oyuncular@g.us'
+  addXp({ chatJid, userJid: 'a', amount: 100 })
+  addXp({ chatJid, userJid: 'b', amount: 100 })
+
+  vsOyna({ chatJid, a: 'a', b: 'b', miktar: 10, sec: () => 'a' })
+  piyangoBilet({ chatJid, userJid: 'a', miktar: 10 })
+  piyangoBilet({ chatJid, userJid: 'b', miktar: 10 })
+  piyangoCek({ chatJid, sec: () => 'b' })
+
+  assert.equal(botKasasi(chatJid), 0)
 })

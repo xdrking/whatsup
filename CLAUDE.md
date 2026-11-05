@@ -142,6 +142,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | kumardan biriken bot hesabı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -282,7 +283,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 29 (tamam):** `.market` vitrini. Ayrıntı aşağıda.
 - **Faz 30 (tamam):** saatlik banka faizi, gerçekçi `.borsa`. Faz 25 ve Faz 27 bölümlerine işlendi.
 - **Faz 31 (tamam):** web paneli ve günlük yedek. Ayrıntı aşağıda.
-- **Faz 32+:** yeni komutlar, her biri ayrı adım
+- **Faz 32 (tamam):** kumar kayıplarının biriktiği bot hesabı. Ayrıntı aşağıda.
+- **Faz 33+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -910,6 +912,17 @@ panel/yedek.js     günlük yedek
 - Rozetler `lib/rozet.js`'tedir, `.rozet` ve panel ortak kullanır. Rekorlar `panel/veri.js:REKORLAR`'dadır.
 - CSP satır içi `style` kabul etmez: yüzdeler SVG öznitelikleri ya da `<progress>` ile çizilir.
 
+### Faz 32 — Bot hesabı
+
+```
+bot_kasa(chat_jid PK, xp)
+```
+
+Bota karşı oynanan kumarda (`bahisOyna`, `kumarOde`) kaybedilen XP gruba ait bot hesabına yazılır.
+`stats`'a girmez, yoksa soyulur, devredilir, panele ve seviyeye karışırdı. Tutar yalnızca `.top`'un
+sonunda görünür, başka komuta eklenmez. Hesap yalnızca artar: oyuncu kazancı buradan ödenmez.
+`.vs` ve `.piyango` yazmaz, orada kayıp başka oyuncuya gider. Yarım kalan oyunun yanan bahsi de yazılmaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -974,3 +987,4 @@ panel/yedek.js     günlük yedek
 46. `.market` → vitrin stoğu görünür; `.market al 13` iki kez → ikincisi "zaten aldın"
 47. `.borsa` 15 dakika arayla iki kez → fiyatlar değişmiş, başta piyasa havası yazıyor
 48. Panel adresi telefonda → HTTPS, şifre ekranı; yanlış şifre 6 kez → kilit mesajı; `curl http://sunucu-ip:8787` → bağlanamaz
+49. `.bahis 10 tura` kaybedilince `.top` sonundaki bot hesabı 10 artar; kazanınca değişmez; `.profil`, `.kumartop` bot hesabını göstermez
