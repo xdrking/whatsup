@@ -263,7 +263,7 @@ En az 50 XP, koyarken %10'u kesilir. Aynı kişiye koyulan ödüller birikir.
 | `.banka yatır 500` | XP'yi hesaba koyar; `hepsi` ve `yarısı` da olur |
 | `.banka çek 500` | Hesaptan çeker, %5'i kesilir |
 
-Bankadaki XP soyulamaz, vergilenmez, her saat tüm bakiyeye %15 bileşik faiz alır (günde yaklaşık 28 kat). Bakiye en çok 1 katrilyon XP olabilir. Faiz `.banka` yazınca işlenir, en çok 7 günlük birikir.
+Bankadaki XP soyulamaz, vergilenmez, her saat tüm bakiyeye %15 bileşik faiz alır (günde yaklaşık 28 kat). Faiz saat başlarında işler, yeni yatırılan para tam bir saat durmadan faiz almaz. Bakiye en çok 1 katrilyon XP olabilir. Faiz `.banka` yazınca işlenir, en çok 7 günlük birikir.
 Bankadaki XP seviyeye ve `.top`'a sayılmaz, `.profil`'de ayrı görünür.
 Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve vergi bot hesabına gider. `.banka` son vergiyi gösterir.
 

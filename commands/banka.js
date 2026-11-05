@@ -16,7 +16,7 @@ export default {
   description: 'XP\'ni soygun ve vergiden koru, saatlik faiz al',
   usage: '.banka  —  .banka yatır <miktar|hepsi|yarısı>  —  .banka çek <miktar|hepsi|yarısı>',
   details: [
-    `Bankadaki XP soyulamaz ve her saat tüm bakiyeye %${ondalik.format(FAIZ_YUZDESI)} faiz alır. Faiz \`.banka\` yazınca işlenir, en çok 7 günlük birikir.`,
+    `Bankadaki XP soyulamaz ve her saat tüm bakiyeye %${ondalik.format(FAIZ_YUZDESI)} faiz alır. Yeni yatırılan para tam bir saat durmadan faiz almaz. Faiz \`.banka\` yazınca işlenir, en çok 7 günlük birikir.`,
     `Çekerken %${CEKIM_KESINTI_YUZDESI} kesilir. Bankadaki XP'yle kumar oynanmaz, seviyeye ve \`.top\`'a sayılmaz.`,
     `Cüzdanda ${sayi.format(VERGI_ESIGI)} XP'nin üstü, o günkü ilk mesajında %${VERGI_YUZDESI} vergilenir. Banka vergiden muaftır.`,
   ],

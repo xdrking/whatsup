@@ -817,13 +817,14 @@ olan kişiye `MIN_KURBAN_XP` uygulanmaz, yoksa fakir birinin ödülü sonsuza de
 ### Faz 25 — `.banka` ve servet vergisi
 
 ```
-banka(chat_jid, user_jid, bakiye, faiz_saat, faiz_artik, vergi_day, son_vergi)   PK(chat_jid,user_jid)
+banka(chat_jid, user_jid, bakiye, faiz_saat, faiz_artik, bekleyen, vergi_day, son_vergi)   PK(chat_jid,user_jid)
 ```
 
 Kurallar `lib/banka.js`'te saftır. Faiz saatliktir (%15, bot sahibinin kararı), bileşiktir ve bakiyenin tamamına
 işler, tavan yoktur. XP bastığı için boşta en çok 7 günlük (168 saat) birikir ve `.banka`
 yazılınca işlenir. 1 XP'yi bulmayan küsurat `faiz_artik`'te devreder, yoksa küçük bakiye her
-saat bakınca hiç faiz alamazdı. Yatırımda saat dilimi yenilenir: yeni para geçmiş faiz almaz.
+saat bakınca hiç faiz alamazdı. Faiz saat başlarında işler. O saat diliminde yatırılan para `bekleyen`'dedir, ilk saat başında faiz almaz: yoksa
+saat başına bir dakika kala yatıran tam saatin faizini alırdı. Her işlem önce faizi işlediği için `bekleyen` hep `faiz_saat` dilimine aittir. Çekimde önce o düşer.
 `BANKA_TAVANI` (1 katrilyon) kaldırılmaz: faiz bu oranda bakiyeyi günler içinde tam sayı sınırının üstüne çıkarır.
 Çekimdeki %5 ile vergi bot hesabına gider (Faz 32).
 
