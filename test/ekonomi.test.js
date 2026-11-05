@@ -84,9 +84,9 @@ test('market bonusu oyun XP\'sini katlar, çark hakkına dokunmaz', () => {
   assert.equal(carkDurumu({ ...k, now: T }).kalan, 2)
 })
 
-test('soygun payı %10, en çok 500', () => {
+test('soygun payı %10, üst sınır yok', () => {
   assert.equal(soygunPayi(100), 10)
-  assert.equal(soygunPayi(99_999), 500)
+  assert.equal(soygunPayi(99_999), 9999)
 })
 
 function soygunKur(hirsizXp = 200, kurbanXp = 1000) {

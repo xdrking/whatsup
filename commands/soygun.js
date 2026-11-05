@@ -23,8 +23,8 @@ export default {
   description: 'Birinin XP\'sini çalmayı dene — yakalanırsan sen ödersin',
   usage: '.soygun @kişi  —  bir mesajı yanıtlayarak .soygun',
   details: [
-    `Başarı şansı %${BASARI_YUZDESI}. Başarılıysan kurbanın XP'sinin %10'unu alırsın (en çok 500).`,
-    'Yakalanırsan kendi XP\'nin %10\'unu kurbana ödersin (en çok 500).',
+    `Başarı şansı %${BASARI_YUZDESI}. Başarılıysan kurbanın XP'sinin %10'unu alırsın.`,
+    'Yakalanırsan kendi XP\'nin %10\'unu kurbana ödersin.',
     `Günde ${GUNLUK_DENEME} deneme. Soyulan kişiye 6 saat dokunulamaz. Kalkan \`.market\`'te satılır.`,
   ],
   category: 'oyun',

@@ -228,7 +228,7 @@ Bota karşı oynanan kumarda kaybedilen XP, banka kesintisi, servet vergisi ve b
 |---|---|
 | `.görev` | Günün 3 görevini gösterir, bitenlerin XP'sini verir (ödül bu komutla alınır) |
 | `.market` | Ürünleri listeler; `.market al 1` satın alır |
-| `.soygun @kişi` | %40 şansla kurbanın XP'sinin %10'unu çalar (en çok 500); yakalanan kendi %10'unu kurbana öder |
+| `.soygun @kişi` | %40 şansla kurbanın XP'sinin %10'unu çalar; yakalanan kendi %10'unu kurbana öder |
 
 Market: soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
 Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
