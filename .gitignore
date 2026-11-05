@@ -16,6 +16,7 @@ temp/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+data/yedek/
 
 *.log
 npm-debug.log*

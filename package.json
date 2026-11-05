@@ -8,6 +8,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
+    "panel": "node panel/index.js",
+    "panel:sifre": "node panel/sifre.js",
     "test": "node --test"
   },
   "engines": {

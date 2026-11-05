@@ -52,6 +52,8 @@ npm install        # bağımlılıklar
 npm start          # botu başlat (node index.js)
 npm run dev        # otomatik yeniden başlatmalı geliştirme (node --watch index.js)
 npm test           # node --test: test/*.test.js
+npm run panel      # web panelini başlat (bottan ayrı süreç)
+npm run panel:sifre  # panel şifresi üret, .env satırını yazar
 ```
 
 Otomatik testler (`test/`) WhatsApp bağlantısı gerektirmeyen kısmı kapsar: hesap
@@ -70,6 +72,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event ka
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
 games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca)
+panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
 auth/           Baileys oturum dosyaları — GİT'E ASLA GİRMEZ
@@ -210,6 +213,8 @@ JID karşılaştırırken `jidNormalizedUser()` kullan. Baileys yeni sürümlerd
 
 **`.env` commit edilmez.** Paylaşılan şablon `.env.example`'dır ve içinde gerçek değer bulunmaz.
 
+**`data/yedek/` commit edilmez**, `stats.db` ile aynı veriyi taşır.
+
 **`data/stats.db` commit edilmez.** İçinde grup üyelerinin JID'leri, WhatsApp adları ve aktivite sayaçları vardır. Mesaj içeriği tutulmaz, ama JID listesi de paylaşılacak bir şey değildir. `data/*.json` havuzları commit edilir.
 
 Oturum dosyalarının içeriği (creds, keys) hiçbir koşulda loglanmaz. `pino` logger'ı Baileys'e verilirken seviye `silent`/`warn` tutulur; `level: 'debug'` protokol mesajlarını ham haliyle konsola döker.
@@ -276,7 +281,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 28 (tamam):** `.kart`. Ayrıntı aşağıda.
 - **Faz 29 (tamam):** `.market` vitrini. Ayrıntı aşağıda.
 - **Faz 30 (tamam):** saatlik banka faizi, gerçekçi `.borsa`. Faz 25 ve Faz 27 bölümlerine işlendi.
-- **Faz 31+:** yeni komutlar, her biri ayrı adım
+- **Faz 31 (tamam):** web paneli ve günlük yedek. Ayrıntı aşağıda.
+- **Faz 32+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -872,6 +878,34 @@ vitrin(chat_jid, hafta, user_jid)   PK(chat_jid,hafta,user_jid)
 stoktur, eski haftalar satışta silinir. Liste numarası `URUNLER`'in hemen sonrasıdır, `URUNLER`'e
 girmez: yeni ürün eklenince numarası kayar.
 
+### Faz 31 — Web paneli
+
+Numara ban yese ya da grup dağılsa da veriler görülsün diye vardır. Bottan ayrı süreçtir, WhatsApp'a
+hiç bağlanmaz, `data/stats.db`'yi **salt okunur** açar. Veri değiştiren bir panel özelliği eklenmez.
+Yeni npm paketi yoktur: Node `http` + sunucuda üretilen HTML + `panel/stil.css`.
+
+```
+panel/index.js     başlatma, saatlik yedek denetimi
+panel/sunucu.js    HTTP, giriş, çerez
+panel/guvenlik.js  scrypt, deneme sınırı, oturumlar
+panel/veri.js      bütün sorgular
+panel/sayfalar.js  HTML
+panel/yedek.js     günlük yedek
+```
+
+- **HTML yalnızca `h` şablonuyla üretilir.** Değerleri o kaçırır. WhatsApp adını üye kendisi yazar,
+  elle birleştirilen HTML XSS açar. CSP de `script`'e kapalıdır: panelde JavaScript yoktur.
+- **Panel yalnızca 127.0.0.1'i dinler**, dışarıya Caddy açar. `0.0.0.0` yapılmaz: gerçek IP
+  `X-Forwarded-For`'dan okunduğu için doğrudan erişim deneme sınırını atlatırdı.
+- **Şifre elle seçilmez**, `npm run panel:sifre` 24 karakter üretir. `.env`'e yalnızca scrypt özeti girer.
+- **Deneme sayacı şifreye bakılmadan önce artar:** IP başına 5 hak, sonra 15 dk kilit, her kilit iki
+  katına çıkar (en çok 24 saat). Genel sınır 10 dakikada 30 deneme. Sınır dolunca açık oturumlar etkilenmez.
+- Oturumlar bellektedir, panel yeniden başlarsa herkes yeniden girer. Süre 7 gün.
+- **Yedek:** panel açıkken günde bir `data/yedek/`'e alınır, 14 tane kalır. Aynı sunucuda durduğu için
+  sunucu ölürse gider; bu yüzden panelde indirme düğmesi vardır.
+- Grup adı veritabanında yoktur, panel "Grup 1" yazar. Banka ve portföy son işlenen değerdir: panel
+  faiz işlemez, borsayı ilerletmez.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -935,3 +969,4 @@ girmez: yeni ürün eklenince numarası kayar.
 45. `.kart` → koleksiyon; `.kart ver @kişi 1` → kart geçer, elinde yoksa reddedilir; eksikle `.kart tamamla 1` → eksikler yazılır
 46. `.market` → vitrin stoğu görünür; `.market al 13` iki kez → ikincisi "zaten aldın"
 47. `.borsa` 15 dakika arayla iki kez → fiyatlar değişmiş, başta piyasa havası yazıyor
+48. Panel adresi telefonda → HTTPS, şifre ekranı; yanlış şifre 6 kez → kilit mesajı; `curl http://sunucu-ip:8787` → bağlanamaz

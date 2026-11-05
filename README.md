@@ -281,6 +281,19 @@ Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajı
 Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Fiyatlar 15 dakikada bir oynar, sağa gittikçe sertleşir. Piyasa 6 saatte bir sakin, normal ya da fırtınalı olur, hisseler çoğu zaman birlikte hareket eder, haberler fiyatı sıçratır. Hiçbiri yönü önceden söylemez.
 Alışta ve satışta %2 komisyon kesilir. Fiyatı 5 XP'nin altına düşen hisse batar: elindeki paylar silinir, hisse 100 XP'den açılır.
 
+### Web paneli
+
+Herkesin adını ve istatistiğini gösteren şifreli panel. Bottan ayrı çalışır, numara ban yese de açılır, veriye yalnızca bakar.
+
+Sunucuda bir kez:
+
+1. Alan adını sunucunun IP'sine yönlendir, 80 ve 443 portlarını aç.
+2. `npm run panel:sifre` çalıştır. Çıkan şifreyi sakla, `PANEL_SIFRE_HASH=...` satırını `.env` dosyasına ekle.
+3. Önce botu yeniden başlat (veritabanı yeni yapıya geçer), sonra `npm run panel` ile paneli açık tut.
+4. [Caddy](https://caddyserver.com/docs/install) kur, `Caddyfile.example` içeriğini kendi alan adınla `/etc/caddy/Caddyfile` dosyasına yaz, `sudo systemctl reload caddy` çalıştır. HTTPS sertifikasını Caddy kendi alır.
+
+Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
+
 ### Kart koleksiyonu
 
 Kartlar random key'lerden çıkar: Bronz ve Gümüş 1. seti, Altın ve Platin 2. seti, Elmas ve Efsane 3. seti verir. ⭐ kartlar nadirdir.
