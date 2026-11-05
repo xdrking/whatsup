@@ -1,7 +1,0 @@
-# panel.ornek.com yerine kendi alan adın. Caddy HTTPS sertifikasını kendi alır
-# ve yeniler; alan adının sunucuya yönlenmiş, 80 ve 443 portlarının açık olması gerekir.
-panel.ornek.com {
-	encode gzip
-	header Strict-Transport-Security "max-age=31536000"
-	reverse_proxy 127.0.0.1:8787
-}

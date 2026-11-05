@@ -287,10 +287,11 @@ Herkesin adını ve istatistiğini gösteren şifreli panel. Bottan ayrı çalı
 
 Sunucuda bir kez:
 
-1. Alan adını sunucunun IP'sine yönlendir, 80 ve 443 portlarını aç.
+1. Alan adını sunucunun IP'sine yönlendir. Cloudflare kullanılıyorsa kayıt **DNS only** olmalı: turuncu bulutta panel gerçek IP'yi göremez, deneme sınırı bozulur.
 2. `npm run panel:sifre` çalıştır. Çıkan şifreyi sakla, `PANEL_SIFRE_HASH=...` satırını `.env` dosyasına ekle.
 3. Önce botu yeniden başlat (veritabanı yeni yapıya geçer), sonra `npm run panel` ile paneli açık tut.
-4. [Caddy](https://caddyserver.com/docs/install) kur, `Caddyfile.example` içeriğini kendi alan adınla `/etc/caddy/Caddyfile` dosyasına yaz, `sudo systemctl reload caddy` çalıştır. HTTPS sertifikasını Caddy kendi alır.
+4. `nginx-panel.conf.example` içeriğini kendi alan adınla `/etc/nginx/sites-available/panel` dosyasına yaz, `sites-enabled` altına bağla, `sudo nginx -t` ve `sudo systemctl reload nginx` çalıştır.
+5. `sudo certbot --nginx -d panel.alanadin.com --redirect` ile HTTPS sertifikasını al. Giriş ancak HTTPS'te çalışır.
 
 Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
 

@@ -1,4 +1,4 @@
-// Panelin HTTP tarafı. Yalnızca 127.0.0.1'i dinler, dışarıya Caddy açar.
+// Panelin HTTP tarafı. Yalnızca 127.0.0.1'i dinler, dışarıya nginx açar.
 import { createReadStream, readFileSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
@@ -19,8 +19,8 @@ const GUVENLIK_BASLIKLARI = {
   'X-Robots-Tag': 'noindex',
 }
 
-// Caddy gerçek adresi X-Forwarded-For'un sonuna yazar; öndeki değerleri istemci
-// uydurabilir. Panel 127.0.0.1'i dinlediği için bu başlığı Caddy'den başkası veremez.
+// nginx gerçek adresi X-Forwarded-For'a yazar; zincir olursa öndeki değerleri istemci
+// uydurabilir. Panel 127.0.0.1'i dinlediği için bu başlığı nginx'ten başkası veremez.
 function istemciIp(req) {
   const zincir = String(req.headers['x-forwarded-for'] ?? '').split(',').map((s) => s.trim()).filter(Boolean)
   return zincir.at(-1) ?? req.socket.remoteAddress ?? ''

@@ -895,7 +895,7 @@ panel/yedek.js     günlük yedek
 
 - **HTML yalnızca `h` şablonuyla üretilir.** Değerleri o kaçırır. WhatsApp adını üye kendisi yazar,
   elle birleştirilen HTML XSS açar. CSP de `script`'e kapalıdır: panelde JavaScript yoktur.
-- **Panel yalnızca 127.0.0.1'i dinler**, dışarıya Caddy açar. `0.0.0.0` yapılmaz: gerçek IP
+- **Panel yalnızca 127.0.0.1'i dinler**, dışarıya sunucudaki nginx açar, HTTPS'i certbot verir (`nginx-panel.conf.example`). `0.0.0.0` yapılmaz: gerçek IP
   `X-Forwarded-For`'dan okunduğu için doğrudan erişim deneme sınırını atlatırdı.
 - **Şifre elle seçilmez**, `npm run panel:sifre` 24 karakter üretir. `.env`'e yalnızca scrypt özeti girer.
 - **Deneme sayacı şifreye bakılmadan önce artar:** IP başına 5 hak, sonra 15 dk kilit, her kilit iki
