@@ -144,6 +144,7 @@ button.sessiz { width: auto; min-height: 36px; padding: .3rem .75rem; background
 .cizgi polygon { fill: currentColor; opacity: .14; }
 
 .birikiyor { color: var(--soluk); font-size: .88rem; }
+.birikiyor.not { margin: .75rem .25rem 0; }
 
 .hisse-ust h2 { margin: 0 0 .3rem; padding: 0; }
 .hisse-fiyat { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; }

@@ -912,6 +912,7 @@ panel/yedek.js     günlük yedek
   `gruplar` (`groupMetadata`, grup adı; `lib/handler.js` süreç başına bir kez sorar).
 - Rozetler `lib/rozet.js`'tedir, `.rozet` ve panel ortak kullanır. Rekorlar `panel/veri.js:REKORLAR`'dadır.
 - `/hisse` mum ve çizgi grafiğini sunucuda SVG olarak çizer. Yalnızca saat başı kapanış saklandığı için mumlar bu kapanışlardan türetilir. JavaScript olmadığı için ayrıntı SVG `<title>` ve fiyat tablosundadır. SVG'deki yazı küçülmesin diye grafik dar ve geniş iki boyutta üretilir, CSS seçer.
+- `stil.css` tarayıcıda 1 saat önbelleklenir, bu yüzden adresi içerik özetiyle sürümlüdür (`STIL_SURUMU`). Sürüm kaldırılırsa güncellemeden sonra yeni HTML eski stille açılır. Panel denenirken CSS sayfaya gömülmez, gerçek sunucudan yüklenir.
 - CSP satır içi `style` kabul etmez: yüzdeler SVG öznitelikleri ya da `<progress>` ile çizilir.
 
 ### Faz 32 — Bot hesabı

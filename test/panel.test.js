@@ -226,6 +226,11 @@ test('hisse sayfası: grafik çizilir, aralık daralır, bilinmeyen değerler g�
   assert.ok(cizgi.includes('class="hat"'))
   assert.ok((await (await al('kod=muz&tur=%3Cscript%3E')).text()).includes('class="mum '))
   assert.equal((await al('kod=uydurma')).status, 404)
+
+  // Stil önbelleklenir: adres sürümsüz olursa yeni sayfa eski stille açılır, SVG simsiyah görünür.
+  const stilAdresi = mum.match(/href="(\/stil\.css\?v=\d+)"/)?.[1]
+  assert.ok(stilAdresi)
+  assert.ok((await (await fetch(adres + stilAdresi)).text()).includes('.fiyat-grafik'))
 })
 
 test('mumlar: açılış önceki kapanıştır, yüksek ve düşük dilimden çıkar', () => {

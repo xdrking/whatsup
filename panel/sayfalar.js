@@ -1,7 +1,11 @@
 // Panelin HTML'i. `h` değerleri kaçırır: WhatsApp adını üyeler kendisi yazdığı için
 // bir ad asla ham HTML olarak sayfaya düşmemeli.
+import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
 import { ARALIKLAR, SIRALAMALAR } from './veri.js'
+
+// Stil tarayıcıda önbelleklenir: adres içerikle değişmezse yeni HTML eski stille açılır.
+const STIL_SURUMU = fnv1a(readFileSync(new URL('./stil.css', import.meta.url), 'utf8'))
 
 class Ham {
   constructor(metin) {
@@ -48,7 +52,7 @@ function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik } = {})
 <meta name="theme-color" content="#0f1417">
 <meta name="robots" content="noindex">
 <title>${baslik}</title>
-<link rel="stylesheet" href="/stil.css">
+<link rel="stylesheet" href="/stil.css?v=${STIL_SURUMU}">
 </head>
 <body>
 <header class="ust">
@@ -289,7 +293,8 @@ function fiyatGrafigi(noktalar, tur, aralik, { sinif, genislik, yukseklik }) {
 
   const son = noktalar.at(-1).fiyat
   const yon = son >= noktalar[0].fiyat ? 'artis' : 'dusus'
-  const mumGenisligi = ((sag - sol) / ((t1 - t0) / aralik.mum)) * 0.68
+  // Az veride tek mum grafiği kaplamasın.
+  const mumGenisligi = Math.min(((sag - sol) / ((t1 - t0) / aralik.mum)) * 0.68, 22)
   const noktaYazi = (parca) => parca.map((n) => `${x(n.saat).toFixed(1)},${y(n.fiyat).toFixed(1)}`).join(' ')
   const gradyan = `dolgu-${sinif}`
 
@@ -315,7 +320,7 @@ function fiyatGrafigi(noktalar, tur, aralik, { sinif, genislik, yukseklik }) {
       <polyline class="hat" points="${noktaYazi(p)}"/>`)}
     <line class="son-cizgi" x1="${sol}" x2="${sag}" y1="${y(son).toFixed(1)}" y2="${y(son).toFixed(1)}"/>
     <rect class="son-kutu" x="${sag + 2}" y="${(y(son) - 10).toFixed(1)}" width="52" height="20" rx="4"/>
-    <text class="son-yazi" x="${sag + 8}" y="${(y(son) + 4).toFixed(1)}">${ondalik.format(son)}</text>
+    <text class="son-yazi" x="${sag + 6}" y="${(y(son) + 4).toFixed(1)}">${iki.format(son)}</text>
     ${dilimler.map((m, i) => {
     const bas = x(Math.max(m.saat, t0))
     const bit = i + 1 < dilimler.length ? x(dilimler[i + 1].saat) : sag
@@ -375,7 +380,7 @@ ${yeterli ? h`<section class="kutular">
   </table>
 </details>` : ''}
 
-<p class="birikiyor">Fiyatlar grupta <code>.borsa</code> kullanıldıkça güncellenir, panel fiyatı kendisi ilerletmez.</p>`, { geri: grupLink(chatJid), ust: v.grupAdi || 'Borsa' })
+<p class="birikiyor not">Fiyatlar grupta <code>.borsa</code> kullanıldıkça güncellenir, panel fiyatı kendisi ilerletmez.</p>`, { geri: grupLink(chatJid), ust: v.grupAdi || 'Borsa' })
 }
 
 function servetCubugu(k) {
