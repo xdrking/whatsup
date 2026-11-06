@@ -11,7 +11,7 @@ const { azamiKredi, borcIslet, IFLAS_KREDI_YASAK_SAATI, IFLAS_YASAK_SAATI, KREDI
 const { hisseBul } = await import('../lib/borsa.js')
 const { kumarEngeli } = await import('../lib/kumar.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, borsaAl, borsaSat, botHesabiniTani, getStats, iflasEt, krediCek, krediDurumu, krediOde,
+  addXp, bankaBakiyesi, bankaYatir, hacizEt, borsaAl, borsaSat, botHesabiniTani, getStats, iflasEt, krediCek, krediDurumu, krediOde,
   kumarYasagi, odulKoy, recordMessage, seviyeIlerlemesi, soygunYap, xpAyarla, xpDevret,
 } = await import('../lib/stats.js')
 
@@ -158,6 +158,21 @@ test('borçlu XP devredemez, eksideki kişi ödülü olsa da soyulamaz', () => {
   odulKoy({ chatJid: e.chatJid, koyan: hirsiz, hedef: e.userJid, miktar: 100 })
   const s = soygunYap({ chatJid: e.chatJid, hirsiz, kurban: e.userJid, sans: () => true, now: VADE })
   assert.deepEqual(s, { engel: 'kurban-fakir' })
+})
+
+test('haciz: hesaptan botun bankasına geçer, cüzdan ve borç değişmez, bakiye aşılamaz', () => {
+  const k = kur()
+  addXp({ ...k, amount: 3000, at: T })
+  bankaYatir({ ...k, miktar: 2000, now: T })
+  krediCek({ ...k, miktar: 500, now: T })
+
+  assert.deepEqual(hacizEt({ ...k, miktar: 2001, now: T }), { yetersiz: true, bakiye: 2000 })
+  assert.deepEqual(hacizEt({ ...k, miktar: 1500, now: T }), { bakiye: 500 })
+
+  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 500)
+  assert.equal(bankaBakiyesi(k.chatJid, BOT), 1500)
+  assert.equal(getStats(k.chatJid, k.userJid).xp, 1500)
+  assert.equal(krediDurumu({ ...k, now: T }).borc, 500)
 })
 
 test('.xpver eksi bakiyeyi yanlışlıkla sıfırlamaz', () => {

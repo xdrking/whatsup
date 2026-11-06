@@ -186,6 +186,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |
 | `.devret @a @b 50` | **Yalnızca owner.** a'nın XP'sinden b'ye aktarır; owner'ın kendi XP'si değişmez. `.help`'te görünmez |
+| `.haciz @kişi 2000` | **Yalnızca owner.** Kişinin banka hesabından botun bankasına aktarır; `hepsi` ve `yarısı` da olur. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
 | `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.

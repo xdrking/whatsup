@@ -958,6 +958,7 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 - **`.banka yatır`** borçluyken önce borcu keser. `.devret` borçluyken kapalıdır, para arkadaşa aktarılıp borçtan kaçılmasın. Sahibin başkası adına yaptığı devir (`sahipDevri`) muaftır, grup adminleri değil.
 - **Kumar şartı:** `kumarEngeli()` komut katmanındadır, `lib/stats.js` şart bilmez. Yeni kumar komutu bunu çağırmalı. Borsa kumar sayılmaz.
 - **`.iflas`:** eksi cüzdanı sıfırlar, 12 saat kumar ve 24 saat kredi yasağı getirir (`iflas(chat_jid, user_jid, yasak_bitis)`; kumar bitişi saklanır, kredi bitişi ondan hesaplanır), silinen XP kimseye gitmez. Açık kredi silinmez, yoksa kredi çekip harcamak bedava olurdu. Hisse varken reddedilir, yoksa krediyle alınan hisse iflastan sonra borçsuz paraya dönerdi. Yasak `kumarEngeli()`'nin ikinci argümanıdır, yeni kumar komutu `kumarYasagi()` ile birlikte çağırmalı.
+- **`.haciz`:** `ownerOnly`. Kişinin banka hesabından botun bankasına aktarır (`hacizEt`), kesinti yoktur, kredi borcundan düşmez.
 - Eksi XP `xpAyarla`'da eksiltilmez, `soygunYap`'ta soyulmaz. Panelde **Borçlular** kartı açık kredileri ve eksi cüzdanları listeler. Kredi tutarı orada yalnızca gösterim için hesaplanır, veritabanına yazılmaz. Servet çubuğu eksiyi atlar.
 
 ## Elle Doğrulama
@@ -1030,3 +1031,4 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 52. Borçluyken `.banka yatır 100` → borç 100 azalır, hesap değişmez; `.kredi öde hepsi` → borç biter
 53. Cüzdanda 500 XP yokken `.bahis`, `.blackjack`, `.piyango`, `.vs` → "en az 500 XP" mesajı
 54. Eksi cüzdanla `.iflas` → cüzdan 0, `.bahis` "kumar yasağın var" der; artı cüzdanla `.iflas` → reddedilir; hisse varken → "önce sat"
+55. Sahip `.haciz @kişi 100` → kişinin hesabı 100 azalır; sıradan üye yazarsa hiç tepki yok
