@@ -467,7 +467,7 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 100.000 X
 | `.dava @kişi 1000 sebep` | Grup 5 dakika `haklı` ya da `haksız` oylar, kaybeden öder |
 | `.özet` | Son 7 günün mesajları, tüm zamanların gece kuşu ve kumarcıları |
 
-**Hapis:** `.soygun`'da yakalanan 2 saat hapse girer, bu sürede soygun, kumar ve `.çalış` kapalıdır. Kefalet yakalanma anındaki cüzdanın %20'sidir, en az 100 XP, ödenen XP yanar.
+**Hapis:** `.soygun`'da yakalanan 2 saat hapse girer, bu sürede soygun, kumar ve `.çalış` kapalıdır. Kefalet yakalanma anındaki cüzdan ve banka toplamının %20'sidir, en az 100 XP. Ödeyenin cüzdanından alınır, botun bankasına gider.
 
 **Evlilik:** evliler `.çalış`'ta %20 fazla maaş alır, eşinin kefaletini yarı fiyata öder. Boşanan, cüzdan ve bankasının %20'sini eşine öder. Borçluyken boşanılamaz.
 

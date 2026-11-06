@@ -1016,7 +1016,7 @@ cete_uye(chat_jid, user_jid, anahtar, katilma)               PK(chat_jid,user_ji
 Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib/cete.js`, `lib/dava.js`'te saftır, yazma `lib/stats.js`'tedir.
 
 - **`.hapis`:** `.soygun`'da yakalanan 2 saat girer. Toplu soygunda yakalanma olmadığı için hapis de yoktur. `kumarYasagi()` iflas ve hapsin geç biteni döner, kumar komutları ayrıca bir şey çağırmaz. `.soygun` ve `.çalış` kendisi denetler.
-- **`.kefalet`:** tutar yakalanırken cüzdanın %20'sidir ve saklanır, sonradan bankaya yatırmak düşürmez. XP yanar, enflasyonu frenler. Eş yarı fiyata öder.
+- **`.kefalet`:** tutar yakalanırken cüzdan ve banka toplamının %20'sidir (bot sahibinin kararı) ve saklanır, sonradan harcamak düşürmez. Ödeyenin cüzdanından alınır, botun bankasına gider (`kasayaYatir`). Eş yarı fiyata öder.
 - **`.seçim` askıdadır (bot sahibinin kararı):** komut `commands/askida/secim.js`'tedir, alt klasör taranmadığı için yüklenmez. `lib/stats.js` ve `lib/secim.js` tarafı durur, testleri çalışır. Açmak için dosya `commands/`'a taşınır, importları `../lib/` olur, `.faizkararı`'na başkan yetkisi geri eklenir (`baskanMi`, `faizKarari({ baskan: true })`, `ownerOnly: false`).
 - **`.seçim` kuralları:** bu haftanın kazananı gelecek hafta başkandır. Kapanış `.sezon` gibi yeni haftadaki ilk okumadadır (`secimKapat`), `baskanMi` da çağırır. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Tek kişi tek oy, oy satın alınamaz, yoksa zengin hep kazanırdı.
 - **Başkan:** açılınca günde bir faiz kararı verir (`karar_gun`), sahip sınırsızdır. `.teşvik` ve `.haciz` yalnızca sahibindir.

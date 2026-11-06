@@ -10,7 +10,8 @@ export default {
   description: 'Kendini ya da bir arkadaşını hapisten çıkarır',
   usage: '.kefalet  —  .kefalet @kişi',
   details: [
-    'Tutar yakalanma anındaki cüzdanın %20\'sidir, en az 100 XP. Ödenen XP yanar.',
+    'Tutar, hapse girenin yakalanma anındaki cüzdan ve banka toplamının %20\'sidir, en az 100 XP.',
+    'Ödeyenin cüzdanından alınır, botun bankasına gider.',
     'Eşin kefaletini yarı fiyata ödersin.',
   ],
   category: 'toplum',

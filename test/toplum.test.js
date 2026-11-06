@@ -60,7 +60,7 @@ test('başarılı soygun hapse sokmaz', () => {
   assert.equal(hapisDurumu(chatJid, 'h', T), null)
 })
 
-test('kefalet: XP yanar, başkası öder, eş yarı fiyata öder', () => {
+test('kefalet: bota gider, başkası öder, eş yarı fiyata öder', () => {
   const chatJid = ayarla({ h: 10_000, k: 1000, a: 5000, e: 5000 })
   const { hapis } = soygunYap({ chatJid, hirsiz: 'h', kurban: 'k', sans: () => false, now: T })
   assert.equal(hapis.kefalet, 1800)
@@ -70,9 +70,20 @@ test('kefalet: XP yanar, başkası öder, eş yarı fiyata öder', () => {
   assert.deepEqual(kefaletOde({ chatJid, odeyen: 'a', mahkum: 'h', now: T }), { yetersiz: true, xp: 1000, ucret: 1800 })
 
   evlen({ chatJid, a: 'h', b: 'e', now: T })
+  const kasa = bankaBakiyesi(chatJid, BOT)
   assert.deepEqual(kefaletOde({ chatJid, odeyen: 'e', mahkum: 'h', now: T }), { ucret: 900, es: true, xp: 4100 })
+  assert.equal(bankaBakiyesi(chatJid, BOT), kasa + 900)
   assert.equal(hapisDurumu(chatJid, 'h', T), null)
   assert.equal(kumarYasagi(chatJid, 'h'), 0)
+})
+
+test('kefalet: cüzdan ve banka toplamından hesaplanır', () => {
+  const chatJid = ayarla({ h: 11_000, k: 1000 })
+  bankaYatir({ chatJid, userJid: 'h', miktar: 10_000, now: T })
+
+  // Cüzdan 1.000, ceza 100: kalan 900 + banka 10.000.
+  const { hapis } = soygunYap({ chatJid, hirsiz: 'h', kurban: 'k', sans: () => false, now: T })
+  assert.equal(hapis.kefalet, 2180)
 })
 
 test('seçim: kazanan ertesi hafta başkan olur, oy tektir, ücretler yanar', () => {
