@@ -402,16 +402,18 @@ XP TL ise coin altındır. 1 coin **1.000.000 XP**'dir, fiyat sabittir.
 | 1 | 3 fazladan soygun hakkı | 1 coin |
 | 2 | Toplu soygun (`.soygun herkes`, tek kullanımlık) | 2 coin |
 | 3 | 7 günlük soygun kalkanı | 3 coin |
-| 4 | 1 saat oyunlardan 10 kat XP | 5 coin |
+| 4 | 1 saat oyunlardan 30 kat XP | 5 coin |
 | 5 | Unvan: Altın Babası | 10 coin |
 | 6 | Unvan: Merkez Bankası Başkanı | 25 coin |
-| 7 | Unvan: Ekonominin Efendisi | 50 coin |
+| 7 | Toplu haciz (tek seferlik, satın alınca işler) | 30 coin |
+| 8 | Unvan: Ekonominin Efendisi | 50 coin |
 
 - Ödenen XP yanar, coin XP'ye geri dönmez.
 - Coin devredilmez, soyulmaz, hacizle alınmaz.
 - Açık kredin varken coin alamazsın.
 - Toplu soygunda her üye için ayrı zar atılır: %40 şansla XP'sinin %10'u senin olur, başındaki ödül de gelir. Yakalanma cezası yoktur, günlük soygun hakkın harcanmaz.
 - Kalkanlı, yeni soyulmuş ve fakir üyeler atlanır. Soyulacak kimse yoksa hak yanmaz.
+- Toplu haciz herkesin bankasının %45'ini ve cüzdanının %50'sini alıcının cüzdanına geçirir. Kalkan korumaz, bot etkilenmez, eksi cüzdandan bir şey alınmaz. Alınacak para yoksa coin harcanmaz.
 
 ### Sezon
 

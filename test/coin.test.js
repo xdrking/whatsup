@@ -5,12 +5,12 @@ import assert from 'node:assert/strict'
 process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
-const { COIN_FIYATI, COIN_URUNLERI } = await import('../lib/coin.js')
+const { COIN_FIYATI, COIN_URUNLERI, hacizPayi } = await import('../lib/coin.js')
 const { binlik } = await import('../lib/sayi.js')
 const { sonucSatirlari } = await import('../lib/kumar.js')
 const { KORUNMA_MS } = await import('../lib/soygun.js')
 const {
-  addXp, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, getStats, krediCek, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluSoygun,
+  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, getStats, krediCek, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
 } = await import('../lib/stats.js')
 const { URUNLER } = await import('../lib/market.js')
 
@@ -67,7 +67,7 @@ test('coin market: ürün etkisi yazılır, coin düşer', () => {
   assert.equal(marketDurumu(chatJid, userJid, T).kalkan, T + urun('kalkanMs').kalkanMs)
 
   coinMarketAl({ chatJid, userJid, urun: urun('bonus'), now: T })
-  assert.equal(carkDurumu({ chatJid, userJid, now: T }).bonus.yuzde, 900)
+  assert.equal(carkDurumu({ chatJid, userJid, now: T }).bonus.yuzde, 2900)
 
   const unvan = urun('unvan')
   coinMarketAl({ chatJid, userJid, urun: unvan, now: T })
@@ -78,6 +78,46 @@ test('coin market: ürün etkisi yazılır, coin düşer', () => {
     coinMarketAl({ chatJid, userJid, urun: COIN_URUNLERI.at(-1), now: T }),
     { yetersiz: true, bakiye: 2 },
   )
+})
+
+test('30 kat bonus oyun XP\'sini 30 ile çarpar', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  xpVer(chatJid, userJid, COIN_FIYATI * 5)
+  coinAl({ chatJid, userJid, adet: 5 })
+  coinMarketAl({ chatJid, userJid, urun: urun('bonus'), now: T })
+  assert.equal(addXp({ chatJid, userJid, amount: 50, at: T + 1 }), 1500)
+})
+
+test('toplu haciz: banka %45, cüzdan %50 alıcıya geçer, kalkan korumaz', () => {
+  const chatJid = yeniGrup()
+  const alici = 'h@s'
+  const haciz = urun('topluHaciz')
+  const uygula = (kurbanlar) => topluHaciz({ chatJid, userJid: alici, kurbanlar, urun: haciz, now: T })
+
+  assert.equal(haciz.fiyat, 30)
+  assert.deepEqual(uygula(['a@s']), { yetersiz: true, bakiye: 0 })
+
+  xpVer(chatJid, alici, COIN_FIYATI * 30)
+  coinAl({ chatJid, userJid: alici, adet: 30 })
+
+  assert.deepEqual(uygula(['bos@s']), { hedefYok: true })
+  assert.equal(coinDurumu(chatJid, alici).bakiye, 30)
+
+  xpVer(chatJid, 'a@s', 3000)
+  bankaYatir({ chatJid, userJid: 'a@s', miktar: 1000, now: T })
+  xpVer(chatJid, 'kalkanli@s', 1000)
+  marketAl({ chatJid, userJid: 'kalkanli@s', urun: URUNLER.find((u) => u.tur === 'kalkan'), now: T })
+
+  const s = uygula(['a@s', 'kalkanli@s'])
+
+  assert.deepEqual(s.kurbanlar, [{ jid: 'a@s', miktar: 1450 }, { jid: 'kalkanli@s', miktar: 350 }])
+  assert.equal(s.toplam, 1800)
+  assert.equal(getStats(chatJid, alici).xp, 1800)
+  assert.equal(getStats(chatJid, 'a@s').xp, 1000)
+  assert.equal(bankaBakiyesi(chatJid, 'a@s'), 550)
+  assert.equal(coinDurumu(chatJid, alici).bakiye, 0)
+  assert.deepEqual(hacizPayi(1000, -500), { banka: 450, cuzdan: 0 })
 })
 
 test('fazladan soygun hakkı günlük sınırı aşar', () => {

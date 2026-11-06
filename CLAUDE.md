@@ -975,6 +975,7 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 - **Kredi:** açık kredisi olan coin alamaz (`coinAl`), yoksa kredi parası tahsilatın dokunmadığı coine çevrilirdi.
 - **Ürün fiyatları** 1-50 coin arasındadır. Etki alanları key ödülleriyle aynıdır (`soygunHakki`, `kalkanMs`, `bonus`, `unvan`).
 - **`.soygun herkes`:** `topluSoygun()` her üyeye ayrı zar atar (%40, kurbanın %10'u). Hak coinle alındığı için yakalanma cezası yoktur, günlük hak harcanmaz. Kalkan, korunma ve fakir kuralı normal soygunla aynıdır (`kurbanEngeli`). Soyulacak kimse yoksa hak yanmaz.
+- **Toplu haciz:** satın alınca işler, saklanan hak yoktur (`topluHaciz`). Bankanın %45'i ve cüzdanın %50'si alıcının cüzdanına geçer. Sahibin `.haciz`'inden farkı budur, o bota gider. Kalkan korumaz, bot hariçtir. Alınacak para yoksa coin düşmez.
 - Mesajlardaki XP tutarları `lib/sayi.js:binlik()` ile yazılır. Kopyalanacak komut metninde (`.devret @kişi 1000`) ham sayı kalır, yoksa `.devret` okuyamaz.
 - Panel coin göstermez.
 
@@ -1052,3 +1053,4 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 56. Kumarda büyük kazanç → mesajda `2.000.000` biçimi; `.açıkartırma` sonundaki `.devret` örneği noktasız kalır
 57. `.coinmarket coin 1` → 1.000.000 XP düşer, `.profil` coini gösterir; açık krediyle → reddedilir; `.coin` yazı-tura atmaya devam eder
 58. `.coinmarket al 2` sonra `.soygun herkes` → kalkanlı üye listede yok, bot soyulmaz, hak biter; hakkı olmayan → "hakkın yok"
+59. `.coinmarket al 7` → herkesin hesabı ve cüzdanı düşer, para alıcının cüzdanına geçer; 30 coin yoksa hiçbir şey değişmez

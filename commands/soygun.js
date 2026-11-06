@@ -1,14 +1,13 @@
 import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import { sureYaz } from './cark.js'
-import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
+import { digerUyeler, requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import {
   BASARI_YUZDESI, GUNLUK_DENEME, MIN_HIRSIZ_XP, MIN_KURBAN_XP,
 } from '../lib/soygun.js'
 import { botHesabiMi, soygunYap, topluSoygun } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
-import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import logger from '../lib/logger.js'
 
 function engelMetni({ engel, bitis }, kurban) {
@@ -21,10 +20,7 @@ function engelMetni({ engel, bitis }, kurban) {
 }
 
 async function herkesiSoy({ yaz, from, sender, metadata }) {
-  const kurbanlar = metadata.participants
-    .filter((u) => ![u.id, u.jid, u.lid].some((j) => j && jidNormalizedUser(j) === sender))
-    .map((u) => jidNormalizedUser(u.id))
-    .filter((jid) => !botHesabiMi(jid))
+  const kurbanlar = digerUyeler(metadata, sender).filter((jid) => !botHesabiMi(jid))
 
   const s = topluSoygun({
     chatJid: from,
