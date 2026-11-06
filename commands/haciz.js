@@ -10,7 +10,7 @@ const KAPALI = '⚖️ Haciz şu an yapılamıyor.'
 export default {
   name: 'haciz',
   aliases: [],
-  description: 'Kişinin banka hesabından botun bankasına XP aktarır',
+  description: 'Kişinin parasını botun bankasına aktarır, yetmezse eksiye düşürür',
   usage: '.haciz @kişi <miktar|hepsi|yarısı>',
   category: 'oyun',
   ownerOnly: true,
@@ -34,16 +34,21 @@ export default {
       const durum = bankaDurumu({ chatJid: from, userJid: hedef })
       if (!durum) return await yaz(KAPALI)
 
-      const c = miktarCoz(miktarArg, durum.bakiye)
+      // Sayı yazılırsa bakiyeyle sınırlanmaz, eksiğini `hacizEt` eksi yazar.
+      // `hepsi` ve `yarısı` banka hesabına göredir.
+      const c = miktarCoz(miktarArg, /^\d+$/.test(miktarArg) ? Number(miktarArg) : durum.bakiye)
       if (c.hata) return await yaz(`⚖️ ${c.hata.replace('Senin XP\'n', 'Hesabı')}`)
 
       const s = hacizEt({ chatJid: from, userJid: hedef, miktar: c.miktar })
       if (!s || s.kapali) return await yaz(KAPALI)
-      if (s.yetersiz) return await yaz(`⚖️ Hesabında o kadar yok: ${sayi.format(s.bakiye)} XP`)
 
       await yaz(
-        `⚖️ *Haciz* — ${mentionOf(hedef)} hesabından ${sayi.format(c.miktar)} XP botun bankasına geçti.\n` +
-          `💰 Kalan hesap: ${sayi.format(s.bakiye)} XP`,
+        [
+          `⚖️ *Haciz* — ${mentionOf(hedef)}: ${sayi.format(c.miktar)} XP`,
+          `🏦 Kasaya giren: ${sayi.format(s.kasaya)} XP`,
+          ...(s.eksi ? [`📉 Eksi yazılan: ${sayi.format(s.eksi)} XP`] : []),
+          `💰 Kalan hesap: ${sayi.format(s.bakiye)} XP  •  Cüzdan: ${sayi.format(s.xp)} XP`,
+        ].join('\n'),
         [hedef],
       )
     } catch (err) {

@@ -186,7 +186,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |
 | `.devret @a @b 50` | **Yalnızca owner.** a'nın XP'sinden b'ye aktarır; owner'ın kendi XP'si değişmez. `.help`'te görünmez |
-| `.haciz @kişi 2000` | **Yalnızca owner.** Kişinin banka hesabından botun bankasına aktarır; `hepsi` ve `yarısı` da olur. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
+| `.haciz @kişi 2000` | **Yalnızca owner.** Önce bankadan, yetmezse cüzdandan alıp botun bankasına aktarır. Onlar da yetmezse kalanı cüzdana eksi yazar, eksi kısım kasaya girmez. `hepsi` ve `yarısı` banka hesabına göredir. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
 | `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
@@ -385,7 +385,7 @@ Eksi bakiye faiz almaz. Oyun ve `.görev` XP'siyle kapanır, hisse satışı ve 
 `.iflas` yalnızca cüzdan ekside iken çalışır: borç silinir, cüzdan 0 olur, kişi 12 saat kumar oynayamaz, 24 saat kredi çekemez.
 Açık kredi iflasla silinmez, vadenin dolması gerekir. Elde hisse varsa önce satılmalıdır.
 
-Owner, `.devret @a @b 50` ile borçlunun XP'sini taşıyabilir, `.haciz` ile banka hesabından kasaya alabilir. Haciz kredi borcundan düşmez.
+Owner, `.devret @a @b 50` ile borçlunun XP'sini taşıyabilir, `.haciz` ile parasını kasaya alabilir, parası yetmezse kişi eksiye düşer. Haciz kredi borcundan düşmez.
 
 ### Coin ve coin market
 

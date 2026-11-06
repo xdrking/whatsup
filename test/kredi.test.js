@@ -166,13 +166,30 @@ test('haciz: hesaptan botun bankasına geçer, cüzdan ve borç değişmez, baki
   bankaYatir({ ...k, miktar: 2000, now: T })
   krediCek({ ...k, miktar: 500, now: T })
 
-  assert.deepEqual(hacizEt({ ...k, miktar: 2001, now: T }), { yetersiz: true, bakiye: 2000 })
-  assert.deepEqual(hacizEt({ ...k, miktar: 1500, now: T }), { bakiye: 500 })
+  assert.deepEqual(hacizEt({ ...k, miktar: 1500, now: T }), { bakiye: 500, xp: 1500, kasaya: 1500, eksi: 0 })
 
   assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 500)
   assert.equal(bankaBakiyesi(k.chatJid, BOT), 1500)
   assert.equal(getStats(k.chatJid, k.userJid).xp, 1500)
   assert.equal(krediDurumu({ ...k, now: T }).borc, 500)
+})
+
+test('haciz: banka yetmezse cüzdandan alır, kalanı eksi yazar, kasaya yalnızca alınan girer', () => {
+  const k = kur(0)
+  addXp({ ...k, amount: 800, at: T })
+  bankaYatir({ ...k, miktar: 500, now: T })
+
+  assert.deepEqual(hacizEt({ ...k, miktar: 2000, now: T }), { bakiye: 0, xp: -1200, kasaya: 800, eksi: 1200 })
+  assert.equal(getStats(k.chatJid, k.userJid).xp, -1200)
+  assert.equal(bankaBakiyesi(k.chatJid, BOT), 800)
+
+  // Zaten eksideki kişiden alınan bir şey yoktur, kasa değişmez.
+  assert.deepEqual(hacizEt({ ...k, miktar: 100, now: T }), { bakiye: 0, xp: -1300, kasaya: 0, eksi: 100 })
+  assert.equal(bankaBakiyesi(k.chatJid, BOT), 800)
+
+  const hic = { chatJid: k.chatJid, userJid: 'hic@s.whatsapp.net' }
+  assert.deepEqual(hacizEt({ ...hic, miktar: 50, now: T }), { bakiye: 0, xp: -50, kasaya: 0, eksi: 50 })
+  assert.equal(getStats(hic.chatJid, hic.userJid).xp, -50)
 })
 
 test('.xpver eksi bakiyeyi yanlışlıkla sıfırlamaz', () => {
