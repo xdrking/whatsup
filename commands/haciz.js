@@ -1,7 +1,8 @@
 import logger from '../lib/logger.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { miktarCoz } from '../lib/kumar.js'
-import { bankaDurumu, botHesabiMi, hacizEt } from '../lib/stats.js'
+import { mulkBul } from '../lib/mulk.js'
+import { bankaDurumu, botHesabiMi, hacizEt, mulkHaciz } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -11,7 +12,7 @@ export default {
   name: 'haciz',
   aliases: [],
   description: 'Kişinin parasını botun bankasına aktarır, yetmezse eksiye düşürür',
-  usage: '.haciz @kişi <miktar|hepsi|yarısı>',
+  usage: '.haciz @kişi <miktar|hepsi|yarısı|mülk>',
   category: 'oyun',
   ownerOnly: true,
 
@@ -25,11 +26,22 @@ export default {
       // `args` verilmez: miktar 8+ haneliyse elle yazılmış numara sanılırdı.
       const [hedefHam] = resolveTargets(parsed)
       const miktarArg = args.find((a) => !a.startsWith('@'))
-      if (!hedefHam || !miktarArg) return await yaz('Kullanım: `.haciz @kişi <miktar|hepsi|yarısı>`')
+      if (!hedefHam || !miktarArg) return await yaz('Kullanım: `.haciz @kişi <miktar|hepsi|yarısı|mülk>`')
 
       const hedef = uyeKimligiBul(metadata, hedefHam)
       if (!hedef) return await yaz('❌ Bu kişi grupta bulunamadı.')
       if (botHesabiMi(hedef)) return await yaz('🤖 Botun hesabına haciz konmaz.')
+
+      const mulk = mulkBul(miktarArg)
+      if (mulk) {
+        const m = mulkHaciz({ chatJid: from, userJid: hedef, mulk })
+        if (!m || m.kapali) return await yaz(KAPALI)
+        if (m.yok) return await yaz(`⚖️ ${mentionOf(hedef)} kişisinde ${mulk.ad} yok.`, [hedef])
+        return await yaz(
+          `⚖️ *Haciz* — ${mentionOf(hedef)}: ${mulk.ad} alındı, ${m.kalan} tane kaldı.\n🏦 Kasaya giren: ${sayi.format(m.kasaya)} XP`,
+          [hedef],
+        )
+      }
 
       const durum = bankaDurumu({ chatJid: from, userJid: hedef })
       if (!durum) return await yaz(KAPALI)

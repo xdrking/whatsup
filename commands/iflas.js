@@ -29,6 +29,8 @@ export default {
       if (s.kredili) return await yaz(`⚖️ Açık kredi iflasla silinmez: ${sayi.format(s.borc)} XP. Öde ya da vadeyi bekle.`)
       if (s.borcYok) return await yaz('⚖️ Cüzdanın ekside değil, iflas edemezsin.')
       if (s.portfoy) return await yaz('⚖️ Önce hisselerini sat: `.borsa sat <hisse> hepsi`')
+      if (s.coin) return await yaz('⚖️ Önce coinlerini boz: `.coinmarket sat <adet>`')
+      if (s.mulk) return await yaz('⚖️ Önce mülklerini sat: `.mülk sat <mülk>`')
 
       await yaz([
         `⚖️ *İflas* — ${sayi.format(s.silinen)} XP borç silindi.`,

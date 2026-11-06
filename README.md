@@ -186,6 +186,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |
 | `.devret @a @b 50` | **Yalnızca owner.** a'nın XP'sinden b'ye aktarır; owner'ın kendi XP'si değişmez. `.help`'te görünmez |
+| `.haciz @kişi ev` | **Yalnızca owner.** Kişinin bir mülkünü alır, değeri kasaya girer |
 | `.haciz @kişi 2000` | **Yalnızca owner.** Önce bankadan, yetmezse cüzdandan alıp botun bankasına aktarır. Onlar da yetmezse kalanı cüzdana eksi yazar, eksi kısım kasaya girmez. `hepsi` ve `yarısı` banka hesabına göredir. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
 | `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
 
@@ -389,13 +390,22 @@ Owner, `.devret @a @b 50` ile borçlunun XP'sini taşıyabilir, `.haciz` ile par
 
 ### Coin ve coin market
 
-XP TL ise coin altındır. 1 coin **1.000.000 XP**'dir, fiyat sabittir.
+XP TL ise coin altındır. Kur her gün piyasadaki paraya göre yenilenir: üyelerin cüzdan ve bankalarındaki toplam XP'nin yüzde biri, en az **1.000.000 XP**. Bot sayılmaz, kur gün içinde değişmez.
+
+| Piyasadaki para | 1 coin |
+|---|---|
+| 100 milyon XP ve altı | 1.000.000 XP |
+| 250 milyon XP | 2.500.000 XP |
+| 1 milyar XP | 10.000.000 XP |
 
 | Komut | Yapar |
 |---|---|
 | `.coinmarket` | Ürünleri, coinini ve XP'ni gösterir (kısa yol `.cm`) |
 | `.coinmarket coin 2` | Cüzdandaki XP ile 2 coin alır |
+| `.coinmarket sat 2` | 2 coini kurun %90'ına bozdurur |
 | `.coinmarket al 1` | Ürünü coinle alır |
+| `.tüik` | Piyasadaki para, enflasyon, coin kuru ve en zenginler (`.enflasyon` da olur) |
+| `.mülk` | Mülkleri ve kiranı gösterir; `.mülk al ev`, `.mülk sat ev`, `.mülk topla` |
 | `.hacizall` | 30 coin karşılığı toplu haciz yapar |
 
 | No | Ürün | Fiyat |
@@ -404,17 +414,30 @@ XP TL ise coin altındır. 1 coin **1.000.000 XP**'dir, fiyat sabittir.
 | 2 | Toplu soygun (`.soygun herkes`, tek kullanımlık) | 2 coin |
 | 3 | 7 günlük soygun kalkanı | 3 coin |
 | 4 | 1 saat oyunlardan 30 kat XP | 5 coin |
-| 5 | Unvan: Altın Babası | 10 coin |
-| 6 | Unvan: Merkez Bankası Başkanı | 25 coin |
-| 7 | Toplu haciz (`.hacizall` yazınca coin düşer ve işler) | 30 coin |
-| 8 | Unvan: Ekonominin Efendisi | 50 coin |
+| 5 | 3 günlük haciz sigortası (`.hacizall` işlemez) | 10 coin |
+| 6 | Unvan: Altın Babası | 10 coin |
+| 7 | Unvan: Merkez Bankası Başkanı | 25 coin |
+| 8 | Toplu haciz (`.hacizall` yazınca coin düşer ve işler) | 30 coin |
+| 9 | Unvan: Ekonominin Efendisi | 50 coin |
 
-- Ödenen XP yanar, coin XP'ye geri dönmez.
+- Ödenen XP yanar. Coin kurun %90'ına geri bozdurulur.
 - Coin devredilmez, soyulmaz, hacizle alınmaz.
+- Coin ya da mülk varken `.iflas` yapılamaz, önce satılır.
 - Açık kredin varken coin alamazsın.
 - Toplu soygunda her üye için ayrı zar atılır: %40 şansla XP'sinin %10'u senin olur, başındaki ödül de gelir. Yakalanma cezası yoktur, günlük soygun hakkın harcanmaz.
 - Kalkanlı, yeni soyulmuş ve fakir üyeler atlanır. Soyulacak kimse yoksa hak yanmaz.
-- `.hacizall` herkesin bankasının %45'ini ve cüzdanının %50'sini alıcının cüzdanına geçirir. Kalkan korumaz, bot etkilenmez, eksi cüzdandan bir şey alınmaz. Alınacak para yoksa coin harcanmaz.
+- `.hacizall` herkesin bankasının %45'ini ve cüzdanının %50'sini alıcının cüzdanına geçirir. Kalkan korumaz, haciz sigortası korur. Bot etkilenmez, eksi cüzdandan bir şey alınmaz. Alınacak para yoksa coin harcanmaz. Sigorta owner'ın `.haciz`'ini durdurmaz.
+
+#### Mülk
+
+| Mülk | Fiyat | Saatlik kira |
+|---|---|---|
+| 🚗 Araba | 3 coin | yok |
+| 🏠 Ev | 5 coin | fiyatın %2'si |
+| 🏪 Dükkan | 15 coin | fiyatın %2,5'i |
+| 🏰 Villa | 40 coin | fiyatın %3'ü |
+
+Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 100.000 XP getirir, kur 2 katına çıkınca kira da iki katına çıkar. Kira saat başı birikir, 24 saatte durur, `.mülk topla` ile alınır. Mülk satılınca kurun %90'ı üstünden XP gelir. Owner `.haciz @kişi ev` ile bir mülke el koyar, değeri botun kasasına girer.
 
 ### Sezon
 

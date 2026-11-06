@@ -5,14 +5,15 @@ import assert from 'node:assert/strict'
 process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
-const { COIN_FIYATI, COIN_URUNLERI, hacizPayi } = await import('../lib/coin.js')
+const { bozdurmaDegeri, COIN_TABAN: COIN_FIYATI, coinKuru, COIN_URUNLERI, hacizPayi } = await import('../lib/coin.js')
 const { binlik } = await import('../lib/sayi.js')
 const { sonucSatirlari } = await import('../lib/kumar.js')
 const { KORUNMA_MS } = await import('../lib/soygun.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, getStats, krediCek, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
+  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, recordMessage, sigortaBitisi, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
 } = await import('../lib/stats.js')
 const { URUNLER } = await import('../lib/market.js')
+const { kiraHesapla, KIRA_AZAMI_SAAT, mulkBul } = await import('../lib/mulk.js')
 
 const T = new Date('2026-06-10T12:00:00+03:00').getTime()
 const BOT = '905550000000@s.whatsapp.net'
@@ -39,10 +40,10 @@ test('coin alımı: XP yanar, yetmezse hiçbir şey değişmez', () => {
   const userJid = 'a@s'
   xpVer(chatJid, userJid, COIN_FIYATI * 2 + 5)
 
-  assert.deepEqual(coinAl({ chatJid, userJid, adet: 3 }), { yetersiz: true, xp: COIN_FIYATI * 2 + 5 })
+  assert.deepEqual(coinAl({ chatJid, userJid, adet: 3 }), { yetersiz: true, xp: COIN_FIYATI * 2 + 5, ucret: COIN_FIYATI * 3 })
   assert.equal(coinDurumu(chatJid, userJid).bakiye, 0)
 
-  assert.deepEqual(coinAl({ chatJid, userJid, adet: 2 }), { bakiye: 2, xp: 5 })
+  assert.deepEqual(coinAl({ chatJid, userJid, adet: 2 }), { bakiye: 2, xp: 5, ucret: COIN_FIYATI * 2 })
   assert.equal(getStats(chatJid, userJid).xp, 5)
 })
 
@@ -175,4 +176,133 @@ test('toplu soygun: hak ister, kalkanlıyı atlar, kaçan ceza ödetmez', () => 
   const korunan = soygunYap({ chatJid, hirsiz, kurban: 'a@s', sans: () => true, now: T + 1 })
   assert.equal(korunan.engel, 'korunma')
   assert.equal(korunan.bitis, T + KORUNMA_MS)
+})
+
+const SAAT = 3_600_000
+const GUN = 24 * SAAT
+const coinVer = (chatJid, userJid, adet, now = T) => {
+  xpVer(chatJid, userJid, COIN_FIYATI * adet)
+  return coinAl({ chatJid, userJid, adet, now })
+}
+
+test('coin kuru parayla artar, tabanın altına inmez', () => {
+  assert.equal(coinKuru(0), 1_000_000)
+  assert.equal(coinKuru(100_000_000), 1_000_000)
+  assert.equal(coinKuru(250_000_000), 2_500_000)
+  assert.equal(coinKuru(250_000_001), 2_600_000)
+  assert.equal(bozdurmaDegeri(2, 1_000_000), 1_800_000)
+})
+
+test('kur gün içinde sabit, ertesi gün paraya göre yenilenir; bot sayılmaz', () => {
+  const chatJid = yeniGrup()
+  xpVer(chatJid, BOT, 900_000_000)
+  xpVer(chatJid, 'a@s', 200_000_000)
+  assert.equal(ekonomiDurumu({ chatJid, now: T }).kur, 2_000_000)
+
+  xpVer(chatJid, 'a@s', 200_000_000)
+  assert.equal(ekonomiDurumu({ chatJid, now: T + SAAT }).kur, 2_000_000)
+
+  const yarin = ekonomiDurumu({ chatJid, now: T + GUN })
+  assert.equal(yarin.kur, 4_000_000)
+  assert.equal(yarin.dun.arz, 200_000_000)
+  assert.equal(coinAl({ chatJid, userJid: 'a@s', adet: 1, now: T + GUN }).ucret, 4_000_000)
+})
+
+test('işlenmemiş banka faizi kura yazılır: .banka yazmak kuru sıçratmaz', () => {
+  const chatJid = yeniGrup()
+  xpVer(chatJid, 'a@s', 200_000_000)
+  bankaYatir({ chatJid, userJid: 'a@s', miktar: 200_000_000, now: T })
+
+  const onceden = ekonomiDurumu({ chatJid, now: T + 3 * GUN })
+  assert.ok(onceden.arz > 200_000_000 * 1.15 ** 70)
+})
+
+test('coin bozdurma %90 öder, fazlası reddedilir', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  coinVer(chatJid, userJid, 3)
+
+  assert.deepEqual(coinSat({ chatJid, userJid, adet: 4, now: T }), { yetersiz: true, bakiye: 3 })
+  assert.deepEqual(coinSat({ chatJid, userJid, adet: 2, now: T }), { bakiye: 1, xp: 1_800_000, kazanc: 1_800_000 })
+})
+
+test('haciz sigortası .hacizall\'ı durdurur, sahibin .haciz\'ini durdurmaz', () => {
+  const chatJid = yeniGrup()
+  const alici = 'h@s'
+  coinVer(chatJid, alici, 30)
+  coinVer(chatJid, 's@s', 10)
+  coinMarketAl({ chatJid, userJid: 's@s', urun: urun('sigortaMs'), now: T })
+  assert.equal(sigortaBitisi(chatJid, 's@s', T), T + urun('sigortaMs').sigortaMs)
+
+  xpVer(chatJid, 's@s', 1000)
+  xpVer(chatJid, 'a@s', 1000)
+  const haciz = urun('topluHaciz')
+  const s = topluHaciz({ chatJid, userJid: alici, kurbanlar: ['s@s', 'a@s'], urun: haciz, now: T })
+
+  assert.deepEqual(s.sigortalilar, ['s@s'])
+  assert.deepEqual(s.kurbanlar, [{ jid: 'a@s', miktar: 500 }])
+  assert.equal(getStats(chatJid, 's@s').xp, 1000)
+  assert.equal(hacizEt({ chatJid, userJid: 's@s', miktar: 100, now: T }).xp, 900)
+
+  // Süresi biten sigorta korumaz.
+  coinVer(chatJid, alici, 30, T)
+  const sonra = topluHaciz({ chatJid, userJid: alici, kurbanlar: ['s@s'], urun: haciz, now: T + 4 * GUN })
+  assert.equal(sonra.kurbanlar.length, 1)
+})
+
+test('mülk: coinle alınır, kira birikir, 24 saatte durur, satınca %90 döner', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  const ev = mulkBul('ev')
+  assert.equal(mulkBul('Dükkan').kod, 'dukkan')
+  assert.equal(kiraHesapla(ev, 1, 1, 1_000_000), 100_000)
+  assert.equal(kiraHesapla(ev, 2, 100, 1_000_000), 200_000 * KIRA_AZAMI_SAAT)
+
+  assert.deepEqual(mulkAl({ chatJid, userJid, mulk: ev, now: T }), { yetersiz: true, bakiye: 0 })
+  coinVer(chatJid, userJid, 5)
+  assert.deepEqual(mulkAl({ chatJid, userJid, mulk: ev, now: T }), { bakiye: 0, adet: 1 })
+
+  assert.equal(mulkDurumu({ chatJid, userJid, now: T + 3 * SAAT })[0].kira, 300_000)
+  assert.deepEqual(kiraTopla({ chatJid, userJid, now: T + 3 * SAAT }), { kira: 300_000, xp: 300_000 })
+  assert.equal(kiraTopla({ chatJid, userJid, now: T + 3 * SAAT }).kira, 0)
+
+  const s = mulkSat({ chatJid, userJid, mulk: ev, now: T + 4 * SAAT })
+  assert.deepEqual(s, { kazanc: 4_500_000, kira: 100_000, xp: 4_900_000 })
+  assert.equal(mulkDurumu({ chatJid, userJid, now: T }).length, 0)
+  assert.deepEqual(mulkSat({ chatJid, userJid, mulk: ev, now: T }), { yok: true })
+})
+
+test('sahip mülke haciz koyar: değer kasaya girer, kira sahibinde kalır', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  const ev = mulkBul('ev')
+  coinVer(chatJid, userJid, 5)
+  mulkAl({ chatJid, userJid, mulk: ev, now: T })
+
+  assert.deepEqual(mulkHaciz({ chatJid, userJid, mulk: ev, now: T + SAAT }), { kasaya: 4_500_000, kalan: 0 })
+  assert.equal(bankaBakiyesi(chatJid, BOT), 4_500_000)
+  assert.equal(getStats(chatJid, userJid).xp, 100_000)
+  assert.deepEqual(mulkHaciz({ chatJid, userJid, mulk: ev, now: T }), { yok: true })
+})
+
+test('coin ya da mülk varken iflas edilemez', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  coinVer(chatJid, userJid, 5)
+  hacizEt({ chatJid, userJid, miktar: 100, now: T })
+  assert.deepEqual(iflasEt({ chatJid, userJid, now: T }), { coin: true })
+
+  mulkAl({ chatJid, userJid, mulk: mulkBul('ev'), now: T })
+  assert.deepEqual(iflasEt({ chatJid, userJid, now: T }), { mulk: true })
+
+  mulkHaciz({ chatJid, userJid, mulk: mulkBul('ev'), now: T })
+  assert.equal(iflasEt({ chatJid, userJid, now: T }).silinen, 100)
+})
+
+test('günün ilk mesajı ekonomi kaydını yazar', () => {
+  const chatJid = yeniGrup()
+  xpVer(chatJid, 'a@s', 299_999_000)
+  recordMessage({ chatJid, userJid: 'a@s', at: T })
+  xpVer(chatJid, 'a@s', 300_000_000)
+  assert.equal(ekonomiDurumu({ chatJid, now: T }).kur, 3_000_000)
 })

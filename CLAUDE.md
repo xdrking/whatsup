@@ -143,7 +143,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
-| `lib/db.js` + `lib/stats.js` | coin bakiyesi ve toplu soygun hakkı | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | coin bakiyesi, toplu soygun hakkı, sigorta, mülkler, günlük kur | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -289,7 +289,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 34 (tamam):** `.kredi`, eksi bakiye ve kumar için 500 XP şartı. Ayrıntı aşağıda.
 - **Faz 35 (tamam):** `.iflas`. Faz 34 bölümüne işlendi.
 - **Faz 36 (tamam):** coin ve `.coinmarket`. Ayrıntı aşağıda.
-- **Faz 37+:** yeni komutlar, her biri ayrı adım
+- **Faz 37 (tamam):** coin kuru, haciz sigortası, `.tüik`, `.mülk`. Faz 36 bölümüne işlendi.
+- **Faz 38+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -966,18 +967,27 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 ### Faz 36 — Coin ve `.coinmarket`
 
 ```
-coin(chat_jid, user_jid, bakiye, toplu_hak)   PK(chat_jid,user_jid)
+coin(chat_jid, user_jid, bakiye, toplu_hak)                  PK(chat_jid,user_jid)
+ekonomi(chat_jid, day, arz, kur)                             PK(chat_jid,day)
+sigorta(chat_jid, user_jid, bitis)                           PK(chat_jid,user_jid)
+mulk(chat_jid, user_jid, kod, adet, kira_saat, bekleyen)     PK(chat_jid,user_jid,kod)
 ```
 
 XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib/coin.js`'tedir, yeni ürün `COIN_URUNLERI`'ne bir satırdır. Komut adı `.coinmarket`'tir: `.coin` yazı-tura komutudur.
 
-- **Fiyat:** 1 coin 1.000.000 XP, sabittir. Ödenen XP yanar, enflasyonu azaltan yer burasıdır. Coin XP'ye dönmez, başkasına devredilmez, soyulmaz, hacizle alınmaz.
+- **Kur:** `coinKuru()` piyasadaki paranın yüzde biridir, en az 1.000.000 XP. Para, üyelerin artı cüzdanı ve bankasıdır (`paraArzi`). Bot sayılmaz: kasa kendi faiziyle büyür. Kur günün ilk mesajında sabitlenir (`gununEkonomisi`), gün içinde değişmez.
+- **İşlenmemiş faiz arza yazılır,** veritabanına yazılmadan hesaplanır. Yazılmazsa faizi birikmiş kişi ucuza coin alır, `.banka` ile kuru sıçratır, bozdururdu.
+- **Alış satış:** ödenen XP yanar. `.coinmarket sat` kurun %90'ını öder, bu fark kaldırılmamalı. Coin başkasına devredilmez, soyulmaz, hacizle alınmaz.
+- **`.iflas`** coin ya da mülk varken reddedilir, yoksa iflastan sonra borçsuz paraya dönerdi.
+- **Sigorta:** yalnızca `.hacizall`'ı durdurur, sahibin `.haciz`'ini durdurmaz.
+- **`.tüik`:** günlük ve haftalık enflasyon `ekonomi` kayıtlarından çıkar. Kayıt `recordMessage`'da günün ilk mesajıyla yazılır, sohbet başına denetim bellektedir. "Resmi" oran şakadır, gerçeğin yarısıdır.
+- **`.mülk`:** tanımlar `lib/mulk.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Fiyat coindir, satış coin gibi kurun %90'ıdır, kira günün kuruna bağlıdır ve saat başı `bekleyen`e işlenir. Toplanmazsa 24 saatte durur. Kira XP basar. Sahip `.haciz @kişi ev` ile bir tane siler, değeri kasaya girer, kira sahibinde kalır.
 - **Kredi:** açık kredisi olan coin alamaz (`coinAl`), yoksa kredi parası tahsilatın dokunmadığı coine çevrilirdi.
 - **Ürün fiyatları** 1-50 coin arasındadır. Etki alanları key ödülleriyle aynıdır (`soygunHakki`, `kalkanMs`, `bonus`, `unvan`).
 - **`.soygun herkes`:** `topluSoygun()` her üyeye ayrı zar atar (%40, kurbanın %10'u). Hak coinle alındığı için yakalanma cezası yoktur, günlük hak harcanmaz. Kalkan, korunma ve fakir kuralı normal soygunla aynıdır (`kurbanEngeli`). Soyulacak kimse yoksa hak yanmaz.
-- **`.hacizall`:** herkese açıktır, 30 coin yazıldığı an düşer, saklanan hak yoktur (`topluHaciz`). Listede görünür ama `.coinmarket al` ile alınmaz. Bankanın %45'i ve cüzdanın %50'si alıcının cüzdanına geçer. Botun kasasına dokunmaz. `.haciz` ayrı komuttur: yalnızca sahip kullanır, para bota gider. Kalkan korumaz, bot hariçtir. Alınacak para yoksa coin düşmez.
+- **`.hacizall`:** herkese açıktır, 30 coin yazıldığı an düşer, saklanan hak yoktur (`topluHaciz`). Listede görünür ama `.coinmarket al` ile alınmaz. Bankanın %45'i ve cüzdanın %50'si alıcının cüzdanına geçer. Botun kasasına dokunmaz. `.haciz` ayrı komuttur: yalnızca sahip kullanır, para bota gider. Kalkan korumaz, sigorta korur, bot hariçtir. Alınacak para yoksa coin düşmez.
 - Mesajlardaki XP tutarları `lib/sayi.js:binlik()` ile yazılır. Kopyalanacak komut metninde (`.devret @kişi 1000`) ham sayı kalır, yoksa `.devret` okuyamaz.
-- Panel coin göstermez.
+- Panel coin ve mülk göstermez.
 
 ## Elle Doğrulama
 
@@ -1053,4 +1063,7 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 56. Kumarda büyük kazanç → mesajda `2.000.000` biçimi; `.açıkartırma` sonundaki `.devret` örneği noktasız kalır
 57. `.coinmarket coin 1` → 1.000.000 XP düşer, `.profil` coini gösterir; açık krediyle → reddedilir; `.coin` yazı-tura atmaya devam eder
 58. `.coinmarket al 2` sonra `.soygun herkes` → kalkanlı üye listede yok, bot soyulmaz, hak biter; hakkı olmayan → "hakkın yok"
-59. `.hacizall` → herkesin hesabı ve cüzdanı düşer, para alıcının cüzdanına geçer; 30 coin yoksa hiçbir şey değişmez
+59. `.hacizall` → herkesin hesabı ve cüzdanı düşer, para alıcının cüzdanına geçer; 30 coin yoksa hiçbir şey değişmez; sigortalı üye "sigortalı" yazar, parası düşmez
+60. `.tüik` → para, kur ve zenginler gelir, bot listede yok; ertesi gün enflasyon yüzdesi görünür; `.coinmarket` aynı kuru yazar
+61. `.coinmarket sat 1` → kurun %90'ı gelir; eksi cüzdan ve coinle `.iflas` → "önce coinlerini boz"
+62. `.mülk al ev` → 5 coin düşer, `.profil`'de görünür; bir saat sonra `.mülk topla` → kira gelir; sahip `.haciz @kişi ev` → ev gider, kasa artar

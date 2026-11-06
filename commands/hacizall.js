@@ -14,7 +14,7 @@ export default {
   usage: '.hacizall',
   details: [
     `Herkesin bankasının %${HACIZ_BANKA_YUZDESI}'i ve cüzdanının %${HACIZ_CUZDAN_YUZDESI}'si senin cüzdanına geçer, ${urun.fiyat} coin düşer.`,
-    'Soygun kalkanı korumaz. Botun kasasına dokunmaz. Alınacak para yoksa coin düşmez.',
+    'Soygun kalkanı korumaz, haciz sigortası korur. Botun kasasına dokunmaz. Alınacak para yoksa coin düşmez.',
   ],
   category: 'oyun',
   cooldown: 30,
@@ -38,11 +38,12 @@ export default {
           `⚖️ *TOPLU HACİZ*  •  ${mentionOf(sender)}`,
           '',
           ...s.kurbanlar.map((k) => `💸 ${mentionOf(k.jid)} — ${binlik(k.miktar)} XP`),
+          ...s.sigortalilar.map((jid) => `☂️ ${mentionOf(jid)} sigortalı`),
           '',
           `💰 Toplam *${binlik(s.toplam)} XP*  •  XP'n: ${binlik(s.xp)}`,
           `🪙 Kalan coin: ${binlik(s.bakiye)}`,
         ].join('\n'),
-        [sender, ...s.kurbanlar.map((k) => k.jid)],
+        [sender, ...s.kurbanlar.map((k) => k.jid), ...s.sigortalilar],
       )
     } catch (err) {
       logger.error({ err, from }, '.hacizall başarısız')
