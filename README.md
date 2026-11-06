@@ -327,7 +327,7 @@ Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler 
 | 400.000 | 476.000 | 1.135.905 | 3.225.697 | 26.012.798 |
 
 - Borç varken `.banka yatır` önce borcu keser, artan XP hesaba girer. Kesilen XP botun bankasına gider.
-- Borç varken `.devret` kapalıdır.
+- Borç varken `.devret` kapalıdır. Owner `.devret @a @b 50` ile borçlunun XP'sini yine taşıyabilir.
 - Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Tahsilat kişinin vadeden sonraki ilk mesajında olur.
 - Eksi bakiye faiz almaz, oyun ve `.görev` XP'siyle kapanır. Hisse satışı ve mesaj XP'si de eksiyi azaltır.
 - `.iflas` eksi bakiyeyi siler, cüzdan 0 olur, kişi 12 saat kumar oynayamaz, 24 saat kredi çekemez. Açık kredi silinmez, önce vade dolmalı. Elde hisse varsa önce satılmalı.

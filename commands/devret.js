@@ -75,7 +75,7 @@ export default {
         return
       }
 
-      const sonuc = xpDevret({ chatJid: from, kaynak, hedef, miktar })
+      const sonuc = xpDevret({ chatJid: from, kaynak, hedef, miktar, sahipDevri: isOwner && kaynak !== sender })
       if (!sonuc) {
         await yaz('❌ XP şu an devredilemiyor.')
         return

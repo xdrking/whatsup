@@ -146,6 +146,7 @@ test('borçlu XP devredemez, eksideki kişi ödülü olsa da soyulamaz', () => {
     xpDevret({ chatJid: k.chatJid, kaynak: k.userJid, hedef: arkadas, miktar: 100 }),
     { kredili: true },
   )
+  assert.equal(xpDevret({ chatJid: k.chatJid, kaynak: k.userJid, hedef: arkadas, miktar: 100, sahipDevri: true }).kaynakXp, 900)
 
   const e = kur()
   const hirsiz = 'hirsiz@s.whatsapp.net'
