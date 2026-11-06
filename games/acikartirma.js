@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import logger from '../lib/logger.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
@@ -9,16 +10,16 @@ function sonucMetni(state, baslik) {
   const { starterJid: satici, miktar, enYuksek } = state
 
   if (!enYuksek) {
-    return { text: [baslik, '', `Teklif gelmedi, ${miktar} XP satılmadı.`].join('\n') }
+    return { text: [baslik, '', `Teklif gelmedi, ${binlik(miktar)} XP satılmadı.`].join('\n') }
   }
 
   return {
     text: [
       baslik,
       '',
-      `🏆 ${mentionOf(enYuksek.jid)} kazandı. Teklif: *${enYuksek.teklif}*`,
+      `🏆 ${mentionOf(enYuksek.jid)} kazandı. Teklif: *${binlik(enYuksek.teklif)}*`,
       '',
-      `➡️ ${mentionOf(satici)}, ${miktar} XP'yi \`.devret @kişi ${miktar}\` ile göndermelisin.`,
+      `➡️ ${mentionOf(satici)}, ${binlik(miktar)} XP'yi \`.devret @kişi ${miktar}\` ile göndermelisin.`,
       'Bot XP aktarmaz, devri satıcı kendisi yapar.',
     ].join('\n'),
     mentions: [enYuksek.jid, satici],
@@ -43,7 +44,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   }
 
   if (state.enYuksek && teklif <= state.enYuksek.teklif) {
-    await yaz({ text: `🔨 En yüksek teklif ${state.enYuksek.teklif}, daha fazlasını yaz.` })
+    await yaz({ text: `🔨 En yüksek teklif ${binlik(state.enYuksek.teklif)}, daha fazlasını yaz.` })
     return
   }
 
@@ -51,7 +52,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   // setLastMessage çağrılmaz: herkes baştaki mesaja yanıt vermeye devam edebilsin,
   // yoksa aynı anda teklif yazanların mesajı eski id'ye gittiği için düşerdi.
   await yaz({
-    text: `🔨 En yüksek teklif: *${teklif}* — ${mentionOf(parsed.sender)}`,
+    text: `🔨 En yüksek teklif: *${binlik(teklif)}* — ${mentionOf(parsed.sender)}`,
     mentions: [parsed.sender],
   })
 }
@@ -86,7 +87,7 @@ export async function start({ sock, msg, from, sender, miktar, sureSn, uyeler })
       text: [
         '🔨 *AÇIK ARTIRMA*',
         '',
-        `💰 Satılık: *${miktar} XP*  •  Satıcı: ${mentionOf(sender)}`,
+        `💰 Satılık: *${binlik(miktar)} XP*  •  Satıcı: ${mentionOf(sender)}`,
         `⏱️ Süre: *${sureSn} sn*`,
         '',
         '↩️ Teklifini sayıyla bu mesaja yanıt olarak yaz. En yüksek sayı kazanır.',

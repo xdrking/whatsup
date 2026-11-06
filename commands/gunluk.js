@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { claimDaily, getStats, gunlukOdul, seviye } from '../lib/stats.js'
 
 export default {
@@ -37,7 +38,7 @@ export default {
     }
 
     const lines = [
-      `🎁 *+${sonuc.miktar} XP*`,
+      `🎁 *+${binlik(sonuc.miktar)} XP*`,
       `🔥 Seri: ${sonuc.seri} gün`,
     ]
 

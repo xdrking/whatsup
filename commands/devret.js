@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { botHesabiMi, xpDevret } from '../lib/stats.js'
 import { digitsOf, mentionOf, resolveTargets } from '../lib/target.js'
@@ -89,8 +90,8 @@ export default {
       if (sonuc.yetersiz) {
         await yaz(
           kaynak === sender
-            ? `❌ O kadar XP'n yok. Senin XP'n: ${sonuc.xp}`
-            : `❌ ${mentionOf(kaynak)} kişisinde o kadar XP yok. XP'si: ${sonuc.xp}`,
+            ? `❌ O kadar XP'n yok. Senin XP'n: ${binlik(sonuc.xp)}`
+            : `❌ ${mentionOf(kaynak)} kişisinde o kadar XP yok. XP'si: ${binlik(sonuc.xp)}`,
           [kaynak],
         )
         return
@@ -98,9 +99,9 @@ export default {
 
       await yaz(
         [
-          `🤝 ${mentionOf(kaynak)} → ${mentionOf(hedef)}: *${miktar} XP*`,
-          `💰 ${mentionOf(kaynak)}: ${sonuc.kaynakXp} XP`,
-          `💰 ${mentionOf(hedef)}: ${sonuc.hedefXp} XP`,
+          `🤝 ${mentionOf(kaynak)} → ${mentionOf(hedef)}: *${binlik(miktar)} XP*`,
+          `💰 ${mentionOf(kaynak)}: ${binlik(sonuc.kaynakXp)} XP`,
+          `💰 ${mentionOf(hedef)}: ${binlik(sonuc.hedefXp)} XP`,
         ].join('\n'),
         [kaynak, hedef],
       )

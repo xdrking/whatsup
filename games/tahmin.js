@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { addXp } from '../lib/stats.js'
@@ -35,7 +36,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
         '',
         `🏆 ${mentionOf(parsed.sender)} bildi: *${state.sayi}*`,
         `🎯 ${state.deneme} tahminde bulundu.`,
-        `⭐ +${kazanc} XP`,
+        `⭐ +${binlik(kazanc)} XP`,
       ].join('\n'),
       mentions: [parsed.sender],
     })

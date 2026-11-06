@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { requireGroupMetadata } from '../lib/group.js'
 import { getStats } from '../lib/stats.js'
 import { getGame } from '../games/gameManager.js'
@@ -39,7 +40,7 @@ export default {
 
     // Sahip XP'yi sonradan `.xpver` ile verebilir; başkaları yalnızca kendi XP'sini satar.
     const xp = getStats(from, sender).xp
-    if (!isOwner && miktar > xp) return yaz(`❌ O kadar XP'n yok. Senin XP'n: ${xp}`)
+    if (!isOwner && miktar > xp) return yaz(`❌ O kadar XP'n yok. Senin XP'n: ${binlik(xp)}`)
 
     if (getGame(from)) return yaz('⚠️ Bu grupta zaten aktif bir oyun var.')
 

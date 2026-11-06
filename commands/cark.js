@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { requireGroup } from '../lib/group.js'
 import { carkCevir, EKSTRA_UCRET, ODULLER, UCRETSIZ_HAK } from '../lib/cark.js'
 import { carkDurumu, carkOyna, seviye } from '../lib/stats.js'
@@ -73,11 +74,11 @@ export default {
           `💸 Beklemek istemezsen \`.çark ekstra\` (${EKSTRA_UCRET} XP).`,
         ].join('\n'))
       }
-      if (s.yetersiz) return await yaz(`🎡 Ekstra çevirme ${EKSTRA_UCRET} XP. Senin XP'n: ${s.xp}`)
+      if (s.yetersiz) return await yaz(`🎡 Ekstra çevirme ${EKSTRA_UCRET} XP. Senin XP'n: ${binlik(s.xp)}`)
 
       const lines = ['🎡 Çark döndü…', `*${s.odul.etiket}*`, '']
-      if (s.ucret) lines.push(`💸 Ücret: ${s.ucret} XP`)
-      if (s.xp !== s.once) lines.push(`💰 XP: ${s.once} → ${s.xp}`)
+      if (s.ucret) lines.push(`💸 Ücret: ${binlik(s.ucret)} XP`)
+      if (s.xp !== s.once) lines.push(`💰 XP: ${binlik(s.once)} → ${binlik(s.xp)}`)
       if (s.bonus) lines.push(bonusSatiri(s.bonus, now))
       lines.push(hakSatiri(s, now))
 

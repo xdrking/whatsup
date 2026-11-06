@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { requireGroup } from '../lib/group.js'
 import { gorevTopla } from '../lib/stats.js'
 
@@ -27,10 +28,10 @@ export default {
       '📋 *Günlük Görevler*',
       '',
       ...s.gorevler.map(
-        (g) => `${g.tamam ? '✅' : '⬜'} ${g.etiket} (${g.sayac}/${g.hedef}) — ${g.odul} XP`,
+        (g) => `${g.tamam ? '✅' : '⬜'} ${g.etiket} (${g.sayac}/${g.hedef}) — ${binlik(g.odul)} XP`,
       ),
     ]
-    if (s.kazanilan) lines.push('', `🎁 *+${s.kazanilan} XP* aldın!`)
+    if (s.kazanilan) lines.push('', `🎁 *+${binlik(s.kazanilan)} XP* aldın!`)
 
     await sock.sendMessage(from, { text: lines.join('\n') }, { quoted: msg })
   },

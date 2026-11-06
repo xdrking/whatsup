@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { kumarEngeli, MIN_KUMAR_BAKIYESI } from '../lib/kumar.js'
@@ -57,7 +58,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
 
   if (s.yetersiz) {
     await yaz({
-      text: `❌ ${mentionOf(s.yetersiz)} kişisinin XP'si yetmiyor (${s.xp}). Bahis iptal.`,
+      text: `❌ ${mentionOf(s.yetersiz)} kişisinin XP'si yetmiyor (${binlik(s.xp)}). Bahis iptal.`,
       mentions: [s.yetersiz],
     })
     return
@@ -67,8 +68,8 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     text: [
       '⚔️ *VS BİTTİ*',
       '',
-      `🏆 ${mentionOf(s.kazanan)} kazandı: *+${state.miktar} XP* (${s.kazananXp})`,
-      `💀 ${mentionOf(s.kaybeden)} kaybetti: *-${state.miktar} XP* (${s.kaybedenXp})`,
+      `🏆 ${mentionOf(s.kazanan)} kazandı: *+${binlik(state.miktar)} XP* (${binlik(s.kazananXp)})`,
+      `💀 ${mentionOf(s.kaybeden)} kaybetti: *-${binlik(state.miktar)} XP* (${binlik(s.kaybedenXp)})`,
     ].join('\n'),
     mentions: oyuncular,
   })
@@ -103,7 +104,7 @@ export async function start({ sock, msg, from, sender, rakip, miktar }) {
         '⚔️ *MEYDAN OKUMA*',
         '',
         `${mentionOf(sender)}  🆚  ${mentionOf(rakip)}`,
-        `💰 Ortaya: *${miktar} XP*, kazanan rakibinkini alır.`,
+        `💰 Ortaya: *${binlik(miktar)} XP*, kazanan rakibinkini alır.`,
         '',
         `↩️ ${mentionOf(rakip)} bu mesaja \`kabul\` ya da \`red\` yaz. ⏱️ 60 sn`,
       ].join('\n'),

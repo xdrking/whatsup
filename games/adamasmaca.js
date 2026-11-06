@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -127,7 +128,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
           '🎉 *KURTARILDI!*',
           '',
           `🏆 ${mentionOf(parsed.sender)} kelimeyi buldu: *${trUpper(state.kelime)}*`,
-          `⭐ +${kazanc} XP`,
+          `⭐ +${binlik(kazanc)} XP`,
         ].join('\n'),
         mentions: [parsed.sender],
       })

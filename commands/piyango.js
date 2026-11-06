@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import { requireGroup } from '../lib/group.js'
 import { kumarEngeli, MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
@@ -45,7 +46,7 @@ export default {
 
         const s = piyangoBilet({ chatJid: from, userJid: sender, miktar: cozum.miktar })
         if (!s) return await yaz('🎫 Piyango şu an kapalı, sonra dene.')
-        if (s.yetersiz) return await yaz(`🎫 O kadar XP'n yok. Senin XP'n: ${s.xp}`)
+        if (s.yetersiz) return await yaz(`🎫 O kadar XP'n yok. Senin XP'n: ${binlik(s.xp)}`)
       }
 
       const biletler = piyangoBiletleri(from)
@@ -55,9 +56,9 @@ export default {
       const yuzde = (xp) => Math.round((xp / havuz) * 100)
       await yaz(
         [
-          `🎫 *PİYANGO*  •  Havuz: *${havuz} XP*`,
+          `🎫 *PİYANGO*  •  Havuz: *${binlik(havuz)} XP*`,
           '',
-          ...biletler.map((b) => `${mentionOf(b.user_jid)} — ${b.xp} XP (%${yuzde(b.xp)})`),
+          ...biletler.map((b) => `${mentionOf(b.user_jid)} — ${binlik(b.xp)} XP (%${yuzde(b.xp)})`),
         ].join('\n'),
         biletler.map((b) => b.user_jid),
       )

@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { groupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { xpAyarla } from '../lib/stats.js'
 import { lookupName } from '../lib/contacts.js'
@@ -79,7 +80,7 @@ export default {
       const fark = sonuc.xp - sonuc.once
       await yaz([
         `✅ *${metadata.subject || grup}*`,
-        `👤 ${lookupName(kimlik) || numara}: ${fark >= 0 ? '+' : ''}${fark} XP`,
+        `👤 ${lookupName(kimlik) || numara}: ${fark >= 0 ? '+' : ''}${binlik(fark)} XP`,
         `💰 XP: ${sonuc.once} → ${sonuc.xp}`,
       ].join('\n'))
     } catch (err) {

@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import logger from '../lib/logger.js'
 import { addXp } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
@@ -80,7 +81,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
         `🏆 ${mentionOf(parsed.sender)} kazandı!`,
         `😵 ${mentionOf(rakip)} kaybetti.`,
         `✅ ${state.soru.metin} = ${state.soru.cevap}`,
-        `⭐ +${kazanc} XP`,
+        `⭐ +${binlik(kazanc)} XP`,
       ].join('\n'),
       mentions: state.oyuncular,
     })

@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { kumarOde, xpCek } from '../lib/stats.js'
@@ -117,7 +118,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
 
   const cekim = xpCek({ chatJid: from, userJid: sender, miktar })
   if (!cekim) return yaz({ text: '🃏 Masa şu an kapalı, sonra dene.' })
-  if (cekim.yetersiz) return yaz({ text: `🃏 O kadar XP'n yok. Senin XP'n: ${cekim.xp}` })
+  if (cekim.yetersiz) return yaz({ text: `🃏 O kadar XP'n yok. Senin XP'n: ${binlik(cekim.xp)}` })
 
   const deste = desteKur()
   const state = startGame(from, {
@@ -150,7 +151,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
   }
 
   const result = await yaz({
-    text: ['🃏 *BLACKJACK*', `💸 Bahis: ${miktar} XP`, '', ...masa(state, true), '', '↩️ Bu mesaja `kart` ya da `dur` yaz. ⏱️ 3 dk'].join('\n'),
+    text: ['🃏 *BLACKJACK*', `💸 Bahis: ${binlik(miktar)} XP`, '', ...masa(state, true), '', '↩️ Bu mesaja `kart` ya da `dur` yaz. ⏱️ 3 dk'].join('\n'),
   })
 
   const id = result?.key?.id

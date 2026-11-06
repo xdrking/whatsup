@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import { calculate, CalcError } from '../lib/calc.js'
 import logger from '../lib/logger.js'
@@ -84,7 +85,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
         '🎉 *DOĞRU!*',
         '',
         `🏆 ${mentionOf(parsed.sender)} buldu: ${body.trim()} = *${state.hedef}*`,
-        `⭐ +${kazanc} XP`,
+        `⭐ +${binlik(kazanc)} XP`,
       ].join('\n'),
       mentions: [parsed.sender],
     })

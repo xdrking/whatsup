@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { kumarEngeli, MIN_BAHIS, MIN_KUMAR_BAKIYESI } from '../lib/kumar.js'
@@ -40,7 +41,7 @@ export default {
     else if (kumarEngeli(xp, kumarYasagi(from, sender))) hata = kumarEngeli(xp, kumarYasagi(from, sender))
     else if (kumarEngeli(getStats(from, rakip).xp, kumarYasagi(from, rakip))) hata = `❌ Rakibin kumar oynayamıyor: cüzdanında ${MIN_KUMAR_BAKIYESI} XP yok ya da kumar yasağı var.`
     else if (miktar < MIN_BAHIS) hata = `En az ${MIN_BAHIS} XP basabilirsin.`
-    else if (miktar > xp) hata = `O kadar XP'n yok. Senin XP'n: ${xp}`
+    else if (miktar > xp) hata = `O kadar XP'n yok. Senin XP'n: ${binlik(xp)}`
     else if (getStats(from, rakip).xp < miktar) hata = '❌ Rakibin o kadar XP\'si yok.'
     else if (getGame(from)) hata = '⚠️ Bu grupta zaten aktif bir oyun var.'
 

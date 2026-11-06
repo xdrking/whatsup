@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import { sureYaz } from './cark.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
@@ -61,14 +62,14 @@ export default {
         s.basarili
           ? [
               `🥷 *SOYGUN BAŞARILI*`,
-              `${mentionOf(sender)}, ${mentionOf(kurban)} kişisinden *${s.miktar} XP* çaldı!`,
-              ...(s.odul ? [`🎯 Başındaki *${s.odul} XP* ödülü de aldı!`] : []),
-              `💰 ${s.hirsizXp} XP  •  😭 ${s.kurbanXp} XP`,
+              `${mentionOf(sender)}, ${mentionOf(kurban)} kişisinden *${binlik(s.miktar)} XP* çaldı!`,
+              ...(s.odul ? [`🎯 Başındaki *${binlik(s.odul)} XP* ödülü de aldı!`] : []),
+              `💰 ${binlik(s.hirsizXp)} XP  •  😭 ${binlik(s.kurbanXp)} XP`,
             ].join('\n')
           : [
               `🚓 *YAKALANDIN*`,
-              `${mentionOf(sender)}, ${mentionOf(kurban)} kişisine *${s.miktar} XP* ceza ödedi.`,
-              `💸 ${s.hirsizXp} XP  •  😎 ${s.kurbanXp} XP`,
+              `${mentionOf(sender)}, ${mentionOf(kurban)} kişisine *${binlik(s.miktar)} XP* ceza ödedi.`,
+              `💸 ${binlik(s.hirsizXp)} XP  •  😎 ${binlik(s.kurbanXp)} XP`,
             ].join('\n'),
         taraflar,
       )

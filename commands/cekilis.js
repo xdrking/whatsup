@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { requireGroup, senderIsAdmin } from '../lib/group.js'
 import { piyangoCek } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
@@ -28,7 +29,7 @@ export default {
       if (s.yetersiz) return await yaz('🎫 Çekiliş için en az 2 kişi bilet almalı.')
 
       await yaz(
-        ['🎉 *ÇEKİLİŞ*', '', `🏆 ${mentionOf(s.kazanan)} kazandı: *+${s.havuz} XP*`, `👥 ${s.kisi} kişi katıldı.`].join('\n'),
+        ['🎉 *ÇEKİLİŞ*', '', `🏆 ${mentionOf(s.kazanan)} kazandı: *+${binlik(s.havuz)} XP*`, `👥 ${s.kisi} kişi katıldı.`].join('\n'),
         [s.kazanan],
       )
     } catch (err) {

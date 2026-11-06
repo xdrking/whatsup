@@ -1,3 +1,4 @@
+import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { kumarOde, xpCek } from '../lib/stats.js'
@@ -97,7 +98,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     text: [
       tahta(state, false),
       '',
-      `✅ Şu an: ${carpan}x = ${Math.floor(state.bahis * carpan)} XP`,
+      `✅ Şu an: ${carpan}x = ${binlik(Math.floor(state.bahis * carpan))} XP`,
       `➡️ Sonraki kutu: ${mayinCarpani(state.acilanlar.size + 1)}x`,
       '↩️ Kutu numarası ya da `çek`',
     ].join('\n'),
@@ -111,7 +112,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
 
   const cekim = xpCek({ chatJid: from, userJid: sender, miktar })
   if (!cekim) return yaz({ text: '💣 Tarla şu an kapalı, sonra dene.' })
-  if (cekim.yetersiz) return yaz({ text: `💣 O kadar XP'n yok. Senin XP'n: ${cekim.xp}` })
+  if (cekim.yetersiz) return yaz({ text: `💣 O kadar XP'n yok. Senin XP'n: ${binlik(cekim.xp)}` })
 
   const state = startGame(from, {
     type: 'mayin',
@@ -137,7 +138,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
   const result = await yaz({
     text: [
       '💣 *MAYIN TARLASI*',
-      `💸 Bahis: ${miktar} XP  •  ${KUTU} kutuda ${MAYIN} mayın`,
+      `💸 Bahis: ${binlik(miktar)} XP  •  ${KUTU} kutuda ${MAYIN} mayın`,
       '',
       tahta(state, false),
       '',
