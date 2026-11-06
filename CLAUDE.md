@@ -143,6 +143,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | coin bakiyesi ve toplu soygun hakkı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -287,7 +288,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 33 (tamam):** `.haber` parodi haberleri. Ayrıntı aşağıda.
 - **Faz 34 (tamam):** `.kredi`, eksi bakiye ve kumar için 500 XP şartı. Ayrıntı aşağıda.
 - **Faz 35 (tamam):** `.iflas`. Faz 34 bölümüne işlendi.
-- **Faz 36+:** yeni komutlar, her biri ayrı adım
+- **Faz 36 (tamam):** coin ve `.coinmarket`. Ayrıntı aşağıda.
+- **Faz 37+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -961,6 +963,21 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 - **`.haciz`:** `ownerOnly`. Kişinin banka hesabından botun bankasına aktarır (`hacizEt`), kesinti yoktur, kredi borcundan düşmez.
 - Eksi XP `xpAyarla`'da eksiltilmez, `soygunYap`'ta soyulmaz. Panelde **Borçlular** kartı açık kredileri ve eksi cüzdanları listeler. Kredi tutarı orada yalnızca gösterim için hesaplanır, veritabanına yazılmaz. Servet çubuğu eksiyi atlar.
 
+### Faz 36 — Coin ve `.coinmarket`
+
+```
+coin(chat_jid, user_jid, bakiye, toplu_hak)   PK(chat_jid,user_jid)
+```
+
+XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib/coin.js`'tedir, yeni ürün `COIN_URUNLERI`'ne bir satırdır. Komut adı `.coinmarket`'tir: `.coin` yazı-tura komutudur.
+
+- **Fiyat:** 1 coin 1.000.000 XP, sabittir. Ödenen XP yanar, enflasyonu azaltan yer burasıdır. Coin XP'ye dönmez, başkasına devredilmez, soyulmaz, hacizle alınmaz.
+- **Kredi:** açık kredisi olan coin alamaz (`coinAl`), yoksa kredi parası tahsilatın dokunmadığı coine çevrilirdi.
+- **Ürün fiyatları** 1-50 coin arasındadır. Etki alanları key ödülleriyle aynıdır (`soygunHakki`, `kalkanMs`, `bonus`, `unvan`).
+- **`.soygun herkes`:** `topluSoygun()` her üyeye ayrı zar atar (%40, kurbanın %10'u). Hak coinle alındığı için yakalanma cezası yoktur, günlük hak harcanmaz. Kalkan, korunma ve fakir kuralı normal soygunla aynıdır (`kurbanEngeli`). Soyulacak kimse yoksa hak yanmaz.
+- Mesajlardaki XP tutarları `lib/sayi.js:binlik()` ile yazılır. Kopyalanacak komut metninde (`.devret @kişi 1000`) ham sayı kalır, yoksa `.devret` okuyamaz.
+- Panel coin göstermez.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1032,3 +1049,6 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 53. Cüzdanda 500 XP yokken `.bahis`, `.blackjack`, `.piyango`, `.vs` → "en az 500 XP" mesajı
 54. Eksi cüzdanla `.iflas` → cüzdan 0, `.bahis` "kumar yasağın var" der; artı cüzdanla `.iflas` → reddedilir; hisse varken → "önce sat"
 55. Sahip `.haciz @kişi 100` → kişinin hesabı 100 azalır; sıradan üye yazarsa hiç tepki yok
+56. Kumarda büyük kazanç → mesajda `2.000.000` biçimi; `.açıkartırma` sonundaki `.devret` örneği noktasız kalır
+57. `.coinmarket coin 1` → 1.000.000 XP düşer, `.profil` coini gösterir; açık krediyle → reddedilir; `.coin` yazı-tura atmaya devam eder
+58. `.coinmarket al 2` sonra `.soygun herkes` → kalkanlı üye listede yok, bot soyulmaz, hak biter; hakkı olmayan → "hakkın yok"

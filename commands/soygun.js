@@ -5,8 +5,10 @@ import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import {
   BASARI_YUZDESI, GUNLUK_DENEME, MIN_HIRSIZ_XP, MIN_KURBAN_XP,
 } from '../lib/soygun.js'
-import { botHesabiMi, soygunYap } from '../lib/stats.js'
+import { botHesabiMi, soygunYap, topluSoygun } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
+import { trLower } from '../lib/turkishWords.js'
+import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import logger from '../lib/logger.js'
 
 function engelMetni({ engel, bitis }, kurban) {
@@ -18,26 +20,58 @@ function engelMetni({ engel, bitis }, kurban) {
   return `🥷 Soygun için en az ${MIN_HIRSIZ_XP} XP'n olmalı, yakalanırsan ceza ödeyeceksin.`
 }
 
+async function herkesiSoy({ yaz, from, sender, metadata }) {
+  const kurbanlar = metadata.participants
+    .filter((u) => ![u.id, u.jid, u.lid].some((j) => j && jidNormalizedUser(j) === sender))
+    .map((u) => jidNormalizedUser(u.id))
+    .filter((jid) => !botHesabiMi(jid))
+
+  const s = topluSoygun({
+    chatJid: from,
+    hirsiz: sender,
+    kurbanlar,
+    sans: () => randomInt(100) < BASARI_YUZDESI,
+  })
+  if (!s) return yaz('🥷 Polis her yerde, sonra dene.')
+  if (s.hakYok) return yaz('💣 Toplu soygun hakkın yok. `.coinmarket`\'ten 2 coine alınır.')
+  if (s.hedefYok) return yaz('💣 Soyulacak kimse yok: herkes kalkanlı, korumada ya da fakir. Hakkın yanmadı.')
+
+  return yaz(
+    [
+      `💣 *TOPLU SOYGUN*  •  ${mentionOf(sender)}`,
+      '',
+      ...s.soyulanlar.map((k) => `💸 ${mentionOf(k.jid)} — ${binlik(k.miktar)} XP${k.odul ? ` + ${binlik(k.odul)} XP ödül` : ''}`),
+      ...s.kacanlar.map((jid) => `🏃 ${mentionOf(jid)} kaçtı`),
+      '',
+      `💰 Toplam *${binlik(s.toplam)} XP*  •  XP'n: ${binlik(s.xp)}`,
+    ].join('\n'),
+    [sender, ...s.soyulanlar.map((k) => k.jid), ...s.kacanlar],
+  )
+}
+
 export default {
   name: 'soygun',
   aliases: ['soy', 'rob'],
   description: 'Birinin XP\'sini çalmayı dene — yakalanırsan sen ödersin',
-  usage: '.soygun @kişi  —  bir mesajı yanıtlayarak .soygun',
+  usage: '.soygun @kişi  —  bir mesajı yanıtlayarak .soygun  —  .soygun herkes',
   details: [
     `Başarı şansı %${BASARI_YUZDESI}. Başarılıysan kurbanın XP'sinin %10'unu alırsın.`,
     'Yakalanırsan kendi XP\'nin %10\'unu kurbana ödersin.',
     `Günde ${GUNLUK_DENEME} deneme. Soyulan kişiye 6 saat dokunulamaz. Kalkan \`.market\`'te satılır.`,
+    '`.soygun herkes` gruptaki herkese ayrı ayrı dener, `.coinmarket`\'ten alınan hakla çalışır. Yakalanma cezası yoktur, kalkan yine korur.',
   ],
   category: 'oyun',
   cooldown: 30,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, parsed }) {
+  async execute({ sock, msg, args, from, sender, parsed }) {
     const yaz = (text, mentions = []) => sock.sendMessage(from, { text, mentions }, { quoted: msg })
 
     try {
       const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
       if (!metadata) return
+
+      if (trLower(args[0] || '') === 'herkes') return await herkesiSoy({ yaz, from, sender, metadata })
 
       const [hedef] = resolveTargets(parsed)
       if (!hedef) return await yaz('Kullanım: `.soygun @kişi`')

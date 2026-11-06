@@ -245,6 +245,7 @@ Bota karşı oynanan kumarda kaybedilen XP, banka kesintisi, servet vergisi ve b
 | `.görev` | Günün 3 görevini gösterir, bitenlerin XP'sini verir (ödül bu komutla alınır) |
 | `.market` | Ürünleri listeler; `.market al 1` satın alır |
 | `.soygun @kişi` | %40 şansla kurbanın XP'sinin %10'unu çalar; yakalanan kendi %10'unu kurbana öder |
+| `.soygun herkes` | Coinle alınan hakla gruptaki herkesi tek tek soymayı dener |
 
 Her gün aşağıdaki görevlerden 3'ü çıkar, gruptaki herkese aynıdır. Günde 1.200-1.850 XP eder:
 
@@ -385,6 +386,32 @@ Eksi bakiye faiz almaz. Oyun ve `.görev` XP'siyle kapanır, hisse satışı ve 
 Açık kredi iflasla silinmez, vadenin dolması gerekir. Elde hisse varsa önce satılmalıdır.
 
 Owner, `.devret @a @b 50` ile borçlunun XP'sini taşıyabilir, `.haciz` ile banka hesabından kasaya alabilir. Haciz kredi borcundan düşmez.
+
+### Coin ve coin market
+
+XP TL ise coin altındır. 1 coin **1.000.000 XP**'dir, fiyat sabittir.
+
+| Komut | Yapar |
+|---|---|
+| `.coinmarket` | Ürünleri, coinini ve XP'ni gösterir (kısa yol `.cm`) |
+| `.coinmarket coin 2` | Cüzdandaki XP ile 2 coin alır |
+| `.coinmarket al 1` | Ürünü coinle alır |
+
+| No | Ürün | Fiyat |
+|---|---|---|
+| 1 | 3 fazladan soygun hakkı | 1 coin |
+| 2 | Toplu soygun (`.soygun herkes`, tek kullanımlık) | 2 coin |
+| 3 | 7 günlük soygun kalkanı | 3 coin |
+| 4 | 1 saat oyunlardan 10 kat XP | 5 coin |
+| 5 | Unvan: Altın Babası | 10 coin |
+| 6 | Unvan: Merkez Bankası Başkanı | 25 coin |
+| 7 | Unvan: Ekonominin Efendisi | 50 coin |
+
+- Ödenen XP yanar, coin XP'ye geri dönmez.
+- Coin devredilmez, soyulmaz, hacizle alınmaz.
+- Açık kredin varken coin alamazsın.
+- Toplu soygunda her üye için ayrı zar atılır: %40 şansla XP'sinin %10'u senin olur, başındaki ödül de gelir. Yakalanma cezası yoktur, günlük soygun hakkın harcanmaz.
+- Kalkanlı, yeni soyulmuş ve fakir üyeler atlanır. Soyulacak kimse yoksa hak yanmaz.
 
 ### Sezon
 

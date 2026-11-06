@@ -1,4 +1,4 @@
-import { bankaBakiyesi, botHesabiMi, getStats, marketDurumu, sampiyonlukSayisi, seviyeIlerlemesi } from '../lib/stats.js'
+import { bankaBakiyesi, botHesabiMi, coinDurumu, getStats, marketDurumu, sampiyonlukSayisi, seviyeIlerlemesi } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -39,6 +39,7 @@ export default {
 
     const banka = bankaBakiyesi(from, jid)
     const sampiyonluk = sampiyonlukSayisi(from, jid)
+    const coin = coinDurumu(from, jid).bakiye
 
     const lines = [
       `👤 *${ad}*  ${mentionOf(jid)}`,
@@ -48,6 +49,7 @@ export default {
       `${cubuk(kazanilan, gereken)}  ${sayi.format(kazanilan)}/${sayi.format(gereken)}`,
       `⬆️ Sonraki seviye: ${sayi.format(Math.max(0, sonraki - veri.xp))} XP kaldı`,
       ...(banka ? [`🏦 Bankada: ${sayi.format(banka)} XP`] : []),
+      ...(coin ? [`🪙 Coin: ${sayi.format(coin)}`] : []),
       '',
       `💬 ${sayi.format(veri.messages)} mesaj  •  😂 ${sayi.format(veri.stickers)} sticker` +
         `  •  🎤 ${sayi.format(veri.voices)} ses`,
