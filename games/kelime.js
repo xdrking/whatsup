@@ -16,7 +16,7 @@ import { endGame, getGame, setLastMessage, startGame, touchGame } from './gameMa
 const GAMES_DIR = path.dirname(fileURLToPath(import.meta.url))
 const HAVUZ_DOSYASI = path.join(GAMES_DIR, 'kelimeler.json')
 
-const XP_KELIME = 3
+const XP_KELIME = 30
 
 // Türkçe harfler + düzeltme işaretli ünlüler (rüzgâr, hikâye). Rakam, boşluk
 // ve noktalama kabul edilmez: cevap tek bir kelime olmalı.

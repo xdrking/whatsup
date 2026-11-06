@@ -497,8 +497,8 @@ kısaltılabilir). `.kelime`'de sayaç her geçerli kelimede sıfırlanır
 mesajı gönderilemese bile oyun mutlaka temizlenir, yoksa grup kalıcı olarak
 "zaten aktif bir oyun var" durumunda kilitlenir.
 
-XP mevcut sistemden verilir: `lib/stats.js:addXp()` — geçerli kelime +3, doğru
-tahmin +10. `recordMessage`'ın 30 sn'lik cooldown'u burada uygulanmaz (oyun XP'si
+XP mevcut sistemden verilir: `lib/stats.js:addXp()` — geçerli kelime +30, doğru
+tahmin +100. `recordMessage`'ın 30 sn'lik cooldown'u burada uygulanmaz (oyun XP'si
 kazanılmış XP'dir) ve `hours` tablosuna yazılmaz. `.stats`, `.profil` ve `.top`
 aynı `stats.xp` sütununu okuduğu için ek iş yoktur.
 
@@ -571,7 +571,7 @@ sırası her oyunda karışır.
   şıkları sırayla deneyerek kazanılmasın.
 - Süre 10 dk: `startGame` state'inde `timeoutMs` verilirse `gameManager` onu
   kullanır; `OYUN_TIMEOUT_MS` daha kısaysa o kazanır. Diğer oyunlar 1 saatte.
-- Doğru cevap +5 XP (`addXp`).
+- Doğru cevap +50 XP (`addXp`).
 
 ### Faz 12 — LID sahip, susturma, `.dc`, `.efekt`, `.hava`, `.düello`, `.seç`, `.hesap`
 
@@ -613,7 +613,7 @@ büyük** olan seçilir.
 
 `games/duello.js`. İki oyuncu aynı tam sayılı işlemi görür (+, −, ×). Yalnızca
 iki oyuncunun yanıtı sayılır, seyirci yanıtı yok sayılır. Kişi başı tek hak;
-ikisi de yanarsa berabere biter. Galibe +5 XP, süre 2 dk (`timeoutMs`).
+ikisi de yanarsa berabere biter. Galibe +50 XP, süre 2 dk (`timeoutMs`).
 
 #### `.hesap` ve `lib/calc.js`
 
@@ -658,7 +658,7 @@ girdi asla kod olarak çalışmamalı. Sıfıra bölme / sonsuz sonuç `CalcErro
 `katla()`'sını kullanır ama **yalnızca tam eşleşme** kabul eder — soyad kuralı
 yok, "Kurtlar Vadisi" için "vadisi" geçmez. Yabancı yapımlar Türkçe adıyla
 sorulur, bilinen özgün adı `aliases`'a yazılır. Her 3 yanlışta ipucu: önce harf
-kalıbı (`_ _ _ _   _ _ _`), sonra baş harfler. Süre 10 dk (`timeoutMs`), +5 XP.
+kalıbı (`_ _ _ _   _ _ _`), sonra baş harfler. Süre 10 dk (`timeoutMs`), +50 XP.
 
 #### `.adamasmaca`
 
@@ -668,7 +668,7 @@ kısa bir hatırlatma yazılır ve ceza verilmez. Tekrar edilen harf ceza almaz;
 yanlış harf ve yanlış kelime tahmini 1 yanlış sayılır, 6'da oyun biter.
 Değerlendirme (`tahminEt`) senkron olduğu için eşzamanlı iki tahmin sırayla
 işlenir. Süre her tahminde sıfırlanır (`touchGame`), 10 dk tahmin gelmezse
-kapanır. Kelimeyi tamamlayan ya da bilen +5 XP.
+kapanır. Kelimeyi tamamlayan ya da bilen +50 XP.
 
 ### Faz 15 — XP kumarı (`.bahis`, `.slot`, `.rulet`)
 
@@ -732,7 +732,7 @@ cark(chat_jid, user_jid, window_start ms, spins, bonus_percent, bonus_until ms) 
   kalmalı (şu an 93 XP); `test/cark.test.js` bunu denetler.
 - **Bonus:** `addXp()` aktif bonusu uygular ve kazanılan miktarı döner, oyunlar mesajda
   bunu gösterir. `addXp` yalnızca oyun ödülü içindir; başka XP yolu bonus almaz.
-  Ödüller katlıdır (3/5/10 kat): oyunlar 3-10 XP verdiği için %20 gibi yüzdeler
+  Ödüller katlıdır (3/5/10 kat): oyunlar o zaman 3-10 XP verdiği için %20 gibi yüzdeler
   yalnızca +1 XP ediyordu. `bonus_percent` yine yüzde tutar (200 = 3 kat). Yeni bonus
   gelince güçlü olan kalır, süre 1 saate döner.
 
@@ -966,7 +966,7 @@ saldırı, gerçek kişiye uydurma suç isnadı, din ve etnik hedef, Erdoğan. H
 15. `.anket Soru | a | b` → yerel anket; tek seçenekle → kullanım metni
 16. `.günlük` iki kez → ikincisi "zaten aldın"; `.profil` XP'yi göstermeli
 17. `.quiz` → yanlış cevap veren aynı soruda tekrar deneyemez; doğru cevapta
-    oyun kapanır, +5 XP
+    oyun kapanır, +50 XP
 18. Sahip LID'li bir grupta `ownerOnly` komut yazar → çalışmalı
 19. Admin `.sus` → `.zar` sessiz, sıradan üye `.konuş` → reddedilir; admin
     `.konuş` → bot döner. Bot yeniden başlatılırsa susturma korunur

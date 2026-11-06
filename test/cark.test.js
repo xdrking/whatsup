@@ -88,6 +88,12 @@ test('bonus yalnızca süresi içinde oyun XP\'sini artırır ve miktarı döner
   assert.equal(getStats(k.chatJid, k.userJid).xp, 13)
 })
 
+test('10 kat bonus 50 XP\'lik oyun ödülünü 500 yapar', () => {
+  const k = yeniKisi()
+  carkOyna({ ...k, cevir: () => ({ bonus: 900 }), now: T })
+  assert.equal(addXp({ ...k, amount: 50, at: T + 1 }), 500)
+})
+
 test('bonus başka kişiye ya da gruba geçmez', () => {
   const k = yeniKisi()
   carkOyna({ ...k, cevir: () => ({ bonus: 100 }), now: T })

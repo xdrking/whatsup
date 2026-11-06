@@ -9,7 +9,7 @@ export default {
   usage: '.karışık',
   details: [
     'Doğru kelimeyi botun son mesajına yanıt olarak yaz.',
-    'Her 3 yanlışta baştan bir harf açılır. İlk bilen +5 XP alır. Süre 5 dk.',
+    'Her 3 yanlışta baştan bir harf açılır. İlk bilen +50 XP alır. Süre 5 dk.',
   ],
   category: 'oyun',
   ownerOnly: false,

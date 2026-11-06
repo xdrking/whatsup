@@ -11,7 +11,7 @@ const GAMES_DIR = path.dirname(fileURLToPath(import.meta.url))
 // Ayrı havuz yok: .kelime'nin başlangıç kelimeleri kullanılır.
 const VERI_DOSYASI = path.join(GAMES_DIR, 'kelimeler.json')
 
-const XP_ADAMASMACA = 5
+const XP_ADAMASMACA = 50
 const MAX_YANLIS = 6
 // Her tahminde sayaç sıfırlanır (touchGame): süre son tahminden itibaren işler.
 const SURE_MS = 10 * 60_000

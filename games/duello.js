@@ -3,7 +3,7 @@ import { addXp } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
 
-const XP_DUELLO = 5
+const XP_DUELLO = 50
 
 // Hız oyunu: iki kişi bekletilmez.
 const DUELLO_TIMEOUT_MS = 120_000

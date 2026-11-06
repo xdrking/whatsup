@@ -10,7 +10,7 @@ import { katla } from './kimim.js'
 const GAMES_DIR = path.dirname(fileURLToPath(import.meta.url))
 const VERI_DOSYASI = path.join(GAMES_DIR, 'emoji.json')
 
-const XP_EMOJI = 5
+const XP_EMOJI = 50
 const SURE_MS = 10 * 60_000
 
 // Kaç yanlış tahminde bir yeni ipucu açılır: önce harf kalıbı, sonra baş harfler.

@@ -182,8 +182,8 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
 XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu),
-geçerli oyun kelimesi +3, doğru quiz cevabı, düello galibiyeti, emoji tahmini ve adam asmacada
-kelimeyi bulmak +5, doğru kimim tahmini +10,
+geçerli oyun kelimesi +30, doğru quiz cevabı, düello galibiyeti, emoji tahmini ve adam asmacada
+kelimeyi bulmak +50, doğru kimim tahmini +100,
 `.günlük` 20-50 (seri 7. günde tavana ulaşır). Level = `floor(sqrt(xp / 50))`.
 
 **Mesaj içeriği hiçbir yerde saklanmaz** — yalnızca sayaçlar.
@@ -198,9 +198,9 @@ kelimeyi bulmak +5, doğru kimim tahmini +10,
 | `.düello @kişi` | İki kişilik hızlı matematik düellosu; ilk doğru cevap kazanır (2 dk) |
 | `.emoji` | Emojilerden film/dizi/şarkı tahmini; her 3 yanlışta ipucu, ilk bilen kazanır (10 dk) |
 | `.adamasmaca` | Grupça adam asmaca: harf ya da kelimenin tamamı yazılır, 6 yanlışta adam asılır |
-| `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul; ilk bilen +5 XP (son tahminden 10 dk) |
-| `.karışık` | Harfleri karışmış kelimeyi bul; ilk bilen +5 XP (5 dk) |
-| `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz; ilk bulan +10 XP (5 dk) |
+| `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul; ilk bilen +50 XP (son tahminden 10 dk) |
+| `.karışık` | Harfleri karışmış kelimeyi bul; ilk bilen +50 XP (5 dk) |
+| `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz; ilk bulan +100 XP (5 dk) |
 | `.oyunbitir` | Aktif oyunu kapatır (başlatan kişi, grup admini veya owner) |
 
 ### Kumar (XP ile)

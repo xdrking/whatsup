@@ -12,7 +12,7 @@ export default {
   details: [
     'İkinize aynı işlem sorulur (toplama, çıkarma ya da çarpma).',
     'Cevabı botun düello mesajını yanıtlayarak sayıyla yazın.',
-    'İlk doğru cevap kazanır (+5 XP). Herkesin tek hakkı var; ikiniz de yanlış derseniz berabere.',
+    'İlk doğru cevap kazanır (+50 XP). Herkesin tek hakkı var; ikiniz de yanlış derseniz berabere.',
     '2 dakikada cevap gelmezse düello kapanır. Seyircilerin cevabı sayılmaz.',
   ],
   category: 'oyun',

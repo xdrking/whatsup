@@ -9,7 +9,7 @@ import { endGame, setLastMessage, startGame } from './gameManager.js'
 const GAMES_DIR = path.dirname(fileURLToPath(import.meta.url))
 const VERI_DOSYASI = path.join(GAMES_DIR, 'kimim.json')
 
-const XP_KIMIM = 10
+const XP_KIMIM = 100
 
 // Kaç yanlış tahminde bir yeni ipucu açılır.
 const IPUCU_ARALIGI = 3

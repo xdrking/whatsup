@@ -4,7 +4,7 @@ import { addXp } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame, touchGame } from './gameManager.js'
 
-const XP_TAHMIN = 5
+const XP_TAHMIN = 50
 const SURE_MS = 10 * 60_000
 const UST_SINIR = 100
 

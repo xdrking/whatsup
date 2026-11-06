@@ -7,7 +7,7 @@ import { trUpper } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
 import { katla } from './kimim.js'
 
-const XP_KARISIK = 5
+const XP_KARISIK = 50
 const SURE_MS = 5 * 60_000
 const IPUCU_ARALIGI = 3
 const MIN_HARF = 4

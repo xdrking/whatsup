@@ -9,7 +9,7 @@ import { endGame, setLastMessage, startGame } from './gameManager.js'
 const GAMES_DIR = path.dirname(fileURLToPath(import.meta.url))
 const VERI_DOSYASI = path.join(GAMES_DIR, 'quiz.json')
 
-const XP_QUIZ = 5
+const XP_QUIZ = 50
 
 // Tek soruluk oyun: 1 saat bekletmenin anlamı yok.
 const QUIZ_TIMEOUT_MS = 600_000

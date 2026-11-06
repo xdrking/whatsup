@@ -5,7 +5,7 @@ import { addXp } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
 
-const XP_SAYI = 10
+const XP_SAYI = 100
 const SURE_MS = 5 * 60_000
 const KUCUKLER = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const BUYUKLER = [25, 50, 75, 100]
