@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
-import { vsOyna } from '../lib/stats.js'
+import { MIN_KUMAR_BAKIYESI } from '../lib/kumar.js'
+import { getStats, vsOyna } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
@@ -31,6 +32,15 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
 
   state.finished = true
   endGame(from)
+
+  const fakir = oyuncular.find((jid) => getStats(from, jid).xp < MIN_KUMAR_BAKIYESI)
+  if (fakir) {
+    await yaz({
+      text: `❌ ${mentionOf(fakir)} kişisinin cüzdanında ${MIN_KUMAR_BAKIYESI} XP yok. Bahis iptal.`,
+      mentions: [fakir],
+    })
+    return
+  }
 
   const s = vsOyna({
     chatJid: from,

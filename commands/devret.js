@@ -81,6 +81,11 @@ export default {
         return
       }
 
+      if (sonuc.kredili) {
+        await yaz('💳 Kredi borcu varken XP devredilemez.')
+        return
+      }
+
       if (sonuc.yetersiz) {
         await yaz(
           kaynak === sender

@@ -1,5 +1,5 @@
 import { requireGroup } from '../lib/group.js'
-import { MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
+import { kumarEngeli, MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
 import { getStats } from '../lib/stats.js'
 import { getGame } from '../games/gameManager.js'
 import { KUTU, MAYIN, mayinCarpani, start } from '../games/mayin.js'
@@ -25,7 +25,11 @@ export default {
     const yaz = (text) => sock.sendMessage(from, { text }, { quoted: msg })
     if (getGame(from)) return yaz('⚠️ Bu grupta zaten aktif bir oyun var.')
 
-    const cozum = miktarCoz(args[0], getStats(from, sender).xp)
+    const { xp } = getStats(from, sender)
+    const engel = kumarEngeli(xp)
+    if (engel) return yaz(`💣 ${engel}`)
+
+    const cozum = miktarCoz(args[0], xp)
     if (cozum.hata) return yaz(`💣 ${cozum.hata}`)
 
     await start({ sock, msg, from, sender, miktar: cozum.miktar })

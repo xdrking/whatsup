@@ -384,18 +384,21 @@ ${yeterli ? h`<section class="kutular">
 }
 
 function servetCubugu(k) {
+  // Eksi cüzdan çubukta çizilemez, oranlar artı kısımlardan hesaplanır.
   const parcalar = [['cuzdan', 'Cüzdan', k.xp], ['banka', 'Banka', k.bakiye], ['portfoy', 'Portföy', k.portfoy]]
-  if (!k.servet) return ''
+    .filter(([, , n]) => n > 0)
+  const toplam = parcalar.reduce((t, [, , n]) => t + n, 0)
+  if (!toplam) return ''
 
   let x = 0
   const dilimler = parcalar.map(([sinif, ad, n]) => {
-    const en = (n / k.servet) * 100
+    const en = (n / toplam) * 100
     const dilim = h`<rect class="${sinif}" x="${x}" y="0" width="${en}" height="6"><title>${ad}: ${sayi.format(n)}</title></rect>`
     x += en
     return dilim
   })
   return h`<svg class="servet" viewBox="0 0 100 6" preserveAspectRatio="none" role="img" aria-label="Servet dağılımı">${dilimler}</svg>
-  <div class="anahtar">${parcalar.map(([sinif, ad, n]) => h`<span class="${sinif}">${ad} ${yuzde.format(n / k.servet)}</span>`)}</div>`
+  <div class="anahtar">${parcalar.map(([sinif, ad, n]) => h`<span class="${sinif}">${ad} ${yuzde.format(n / toplam)}</span>`)}</div>`
 }
 
 export function kisiSayfasi(chatJid, k) {

@@ -266,7 +266,7 @@ test('banka hesapları: faiz bileşik, tavansız, saat sınırlı; vergi yalnız
 test('banka: yatır, faiz işler, çekerken kesinti alınır', () => {
   const k = kisi(1000)
   assert.deepEqual(bankaYatir({ ...k, miktar: 1001, now: T }), { yetersiz: true, xp: 1000 })
-  assert.deepEqual(bankaYatir({ ...k, miktar: 1000, now: T }), { bakiye: 1000, xp: 0 })
+  assert.deepEqual(bankaYatir({ ...k, miktar: 1000, now: T }), { bakiye: 1000, xp: 0, krediOdeme: 0, kalanBorc: 0 })
 
   assert.equal(bankaDurumu({ ...k, now: T }).faiz, 0)
   assert.equal(bankaDurumu({ ...k, now: T + SAAT_MS - 1 }).faiz, 0)

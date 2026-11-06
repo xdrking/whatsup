@@ -87,11 +87,11 @@ test('blackjack: bahis baştan düşer, başkası oynayamaz, .oyunbitir iade etm
   let t
   do {
     t = kur()
-    addXp({ chatJid: t.from, userJid: A, amount: 100 })
+    addXp({ chatJid: t.from, userJid: A, amount: 600 })
     await t.komut(blackjack, A, ['100'])
   } while (!getGame(t.from))
 
-  assert.equal(getStats(t.from, A).xp, 0)
+  assert.equal(getStats(t.from, A).xp, 500)
 
   const gidenSayi = t.giden.length
   await t.yanitla(B, 'dur')
@@ -101,42 +101,51 @@ test('blackjack: bahis baştan düşer, başkası oynayamaz, .oyunbitir iade etm
   await t.komut(oyunbitir, A, [])
   assert.equal(getGame(t.from), null)
   assert.match(t.son(), /BLACKJACK/)
-  assert.ok([0, 100, 200].includes(getStats(t.from, A).xp))
+  assert.ok([500, 600, 700].includes(getStats(t.from, A).xp))
 })
 
 test('mayın: güvenli kutu çarpanı artırır, çek öder; mayın bahsi yakar', async () => {
   const t = kur()
-  addXp({ chatJid: t.from, userJid: A, amount: 100 })
+  addXp({ chatJid: t.from, userJid: A, amount: 600 })
   await t.komut(mayin, A, ['100'])
-  assert.equal(getStats(t.from, A).xp, 0)
+  assert.equal(getStats(t.from, A).xp, 500)
 
   const { mayinlar } = getGame(t.from)
   const guvenli = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].find((n) => !mayinlar.has(n))
   await t.yanitla(A, String(guvenli))
   await t.yanitla(A, 'çek')
   assert.equal(getGame(t.from), null)
-  assert.equal(getStats(t.from, A).xp, 128)
+  assert.equal(getStats(t.from, A).xp, 628)
 
   await t.komut(mayin, A, ['28'])
   const [mayinNo] = getGame(t.from).mayinlar
   await t.yanitla(A, String(mayinNo))
   assert.equal(getGame(t.from), null)
-  assert.equal(getStats(t.from, A).xp, 100)
+  assert.equal(getStats(t.from, A).xp, 600)
+})
+
+test('kumar: cüzdanda 500 XP yoksa oyun başlamaz', async () => {
+  const t = kur()
+  addXp({ chatJid: t.from, userJid: A, amount: 499 })
+  await t.komut(mayin, A, ['100'])
+  assert.equal(getGame(t.from), null)
+  assert.equal(getStats(t.from, A).xp, 499)
+  assert.match(t.son(), /en az 500 XP/)
 })
 
 test('vs: yalnızca rakip karar verir, red XP\'ye dokunmaz, kabul aktarır', async () => {
   const t = kur()
-  addXp({ chatJid: t.from, userJid: A, amount: 100 })
-  addXp({ chatJid: t.from, userJid: B, amount: 100 })
+  addXp({ chatJid: t.from, userJid: A, amount: 600 })
+  addXp({ chatJid: t.from, userJid: B, amount: 600 })
 
   await t.komut(vs, A, ['@222', '50'], { mentions: [B] })
   await t.yanitla(C, 'kabul')
   assert.ok(getGame(t.from))
   await t.yanitla(B, 'red')
   assert.equal(getGame(t.from), null)
-  assert.equal(getStats(t.from, A).xp, 100)
+  assert.equal(getStats(t.from, A).xp, 600)
 
   await t.komut(vs, A, ['@222', '50'], { mentions: [B] })
   await t.yanitla(B, 'kabul')
-  assert.deepEqual([getStats(t.from, A).xp, getStats(t.from, B).xp].sort((x, y) => x - y), [50, 150])
+  assert.deepEqual([getStats(t.from, A).xp, getStats(t.from, B).xp].sort((x, y) => x - y), [550, 650])
 })

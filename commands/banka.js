@@ -43,7 +43,13 @@ export default {
         if (!s) return await yaz('🏦 Banka şu an kapalı, sonra dene.')
         if (s.yetersiz) return await yaz(`🏦 O kadar XP'n yok. Senin XP'n: ${sayi.format(s.xp)}`)
 
-        return await yaz(`🏦 ${sayi.format(c.miktar)} XP yatırıldı.\n💰 Hesap: ${sayi.format(s.bakiye)} XP  •  👛 Cüzdan: ${sayi.format(s.xp)} XP`)
+        return await yaz([
+          ...(s.krediOdeme
+            ? [`💳 ${sayi.format(s.krediOdeme)} XP kredi borcuna kesildi, kalan borç ${sayi.format(Math.max(0, s.kalanBorc))} XP.`]
+            : []),
+          ...(c.miktar > s.krediOdeme ? [`🏦 ${sayi.format(c.miktar - s.krediOdeme)} XP yatırıldı.`] : []),
+          `💰 Hesap: ${sayi.format(s.bakiye)} XP  •  👛 Cüzdan: ${sayi.format(s.xp)} XP`,
+        ].join('\n'))
       }
 
       if (['çek', 'cek', 'al'].includes(islem)) {
@@ -68,6 +74,7 @@ export default {
       ]
       if (durum.faiz) lines.push(`📈 Yeni faiz: +${sayi.format(durum.faiz)} XP`)
       if (durum.sonVergi) lines.push(`💸 Son vergi: ${sayi.format(durum.sonVergi)} XP`)
+      if (durum.borc) lines.push(`💳 Kredi borcu: ${sayi.format(durum.borc)} XP`)
       lines.push('', '`.banka yatır 500`  •  `.banka çek 500`')
 
       await yaz(lines.join('\n'))

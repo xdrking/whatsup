@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto'
 import { requireGroup } from '../lib/group.js'
-import { MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
+import { kumarEngeli, MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
 import { getStats, piyangoBilet, piyangoBiletleri } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import logger from '../lib/logger.js'
@@ -36,7 +36,11 @@ export default {
       if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
       if (args[0]) {
-        const cozum = miktarCoz(args[0], getStats(from, sender).xp)
+        const { xp } = getStats(from, sender)
+        const engel = kumarEngeli(xp)
+        if (engel) return await yaz(`🎫 ${engel}`)
+
+        const cozum = miktarCoz(args[0], xp)
         if (cozum.hata) return await yaz(`🎫 ${cozum.hata}`)
 
         const s = piyangoBilet({ chatJid: from, userJid: sender, miktar: cozum.miktar })

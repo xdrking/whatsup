@@ -219,6 +219,7 @@ Bir grupta aynı anda tek oyun çalışır. Durum yalnızca bellektedir: bot yen
 ### Kumar (XP ile)
 
 Gerçek para yok; basılan ve kazanılan yalnızca XP'dir. Kaybeden seviye de kaybedebilir.
+Kumar için cüzdanda en az 500 XP olmalıdır, `.vs`'te iki oyuncuda da. Bankadaki XP sayılmaz.
 Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn beklemelidir.
 
 | Komut | Yapar |
@@ -306,6 +307,29 @@ Süre, faiz alınan saat başı sayısıdır. Yatırdıktan sonraki ilk saat ba�
 `.banka çek hepsi` yazılırsa 1.432 XP kesilir, cüzdana 27.193 XP gelir.
 
 `.banka` en az haftada bir yazılmalı: 7 günden uzun süren boşlukta fazla günler faiz almaz.
+
+### Kredi ve eksi bakiye
+
+| Komut | Yapar |
+|---|---|
+| `.kredi` | Borcu, vadeyi ve limiti gösterir |
+| `.kredi çek 1000` | Botun bankasından kredi çeker, en az 100 XP |
+| `.kredi öde 500` | Cüzdandan borç öder; `hepsi` ve `yarısı` da olur |
+
+Faiz saatlik %19 bileşiktir ve saat başlarında işler. Vade 24 saattir, aynı anda tek kredi alınır. Limit seviye × 1.000 XP'dir, seviyeye bankadaki XP sayılmaz.
+Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler botun bankasına gider. Kasada para yoksa kredi verilmez.
+
+| Çekilen | 1 saat | 6 saat | 12 saat | 24 saat (vade) |
+|---|---|---|---|---|
+| 1.000 | 1.190 | 2.840 | 8.065 | 65.032 |
+| 5.000 | 5.950 | 14.199 | 40.322 | 325.160 |
+| 10.000 | 11.900 | 28.398 | 80.643 | 650.320 |
+
+- Borç varken `.banka yatır` önce borcu keser, artan XP hesaba girer. Kesilen XP botun bankasına gider.
+- Borç varken `.devret` kapalıdır.
+- Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Tahsilat kişinin vadeden sonraki ilk mesajında olur.
+- Eksi bakiye faiz almaz, oyun ve `.görev` XP'siyle kapanır. Hisse satışı ve mesaj XP'si de eksiyi azaltır.
+- Eksideki kişi kumar oynayamaz, harcama yapamaz, kredi çekemez ve soyulamaz. Tekrar kumar için cüzdanın +500 XP'ye gelmesi gerekir.
 
 ### Sezon
 

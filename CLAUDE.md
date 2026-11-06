@@ -142,6 +142,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -284,7 +285,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 31 (tamam):** web paneli ve günlük yedek. Ayrıntı aşağıda.
 - **Faz 32 (tamam):** kumar kayıpları bot numarasının XP'sine gider. Ayrıntı aşağıda.
 - **Faz 33 (tamam):** `.haber` parodi haberleri. Ayrıntı aşağıda.
-- **Faz 34+:** yeni komutlar, her biri ayrı adım
+- **Faz 34 (tamam):** `.kredi`, eksi bakiye ve kumar için 500 XP şartı. Ayrıntı aşağıda.
+- **Faz 35+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -940,6 +942,22 @@ etiketi her mesajda olmalıdır: gerçek haber sanılmasın diye bot sahibinin �
 Gerçek kişiler saçma ve zararsız şakayla yazılabilir. Havuza yazılmayanlar: inandırıcı yalan haber, afet, ölüm,
 saldırı, gerçek kişiye uydurma suç isnadı, din ve etnik hedef, Erdoğan. Hatay yemekle anılır, deprem şakası yapılmaz.
 
+### Faz 34 — `.kredi` ve eksi bakiye
+
+```
+kredi(chat_jid, user_jid, borc, faiz_saat, vade ms)   PK(chat_jid,user_jid)
+```
+
+Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para, sonra enflasyondur: banka %15 kalır, kredi saatlik %19'dur.
+**Kredi faizi banka faizinin üstünde kalmalı**, yoksa kredi çekip bankaya yatıran XP basar; `test/kredi.test.js` denetler.
+
+- **Kasa:** botun banka hesabıdır. Kumar kayıpları bot cüzdanına düştüğü için kredi banka yetmezse cüzdandan da çıkar, ödemeler hep bankaya girer (`kasadanCek`, `kasayaYatir`).
+- **Vade:** `krediGuncelle()` faizi işler, vade geçtiyse tahsil eder. `recordMessage` her mesajda çağırır, çünkü bot kendiliğinden yazmaz. Tahsilat sırası cüzdan, banka, eksi. Satır silinir.
+- **Eksi bakiye** `stats.xp`'nin eksi olmasıdır, ayrı alan yoktur. Faiz vadede durur, yoksa borç hiç kapanmazdı. Eksiyi kapatan XP bota gitmez, yanar.
+- **`.banka yatır`** borçluyken önce borcu keser. `.devret` borçluyken kapalıdır, para arkadaşa aktarılıp borçtan kaçılmasın.
+- **Kumar şartı:** `kumarEngeli()` komut katmanındadır, `lib/stats.js` şart bilmez. Yeni kumar komutu bunu çağırmalı. Borsa kumar sayılmaz.
+- Eksi XP `xpAyarla`'da eksiltilmez, `soygunYap`'ta soyulmaz. Panel kredi tablosunu göstermez, servet çubuğu eksiyi atlar.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1006,3 +1024,6 @@ saldırı, gerçek kişiye uydurma suç isnadı, din ve etnik hedef, Erdoğan. H
 48. Panel adresi telefonda → HTTPS, şifre ekranı; yanlış şifre 6 kez → kilit mesajı; `curl http://sunucu-ip:8787` → bağlanamaz
 49. `.bahis 10 tura` kaybedilince `.top`'ta bot numarasının XP'si 10 artar, yeni satır açılmaz; kazanınca değişmez; sıradan üye `.profil @bot` → "gizli"; `.soygun @bot` → reddedilir
 50. `.haber` → büyük harf kalın başlık, altında küçük "parodihaber"; `.news` aynı
+51. `.kredi çek 500` → cüzdan artar, `.kredi` borcu gösterir; ikinci kredi reddedilir; `.devret` reddedilir
+52. Borçluyken `.banka yatır 100` → borç 100 azalır, hesap değişmez; `.kredi öde hepsi` → borç biter
+53. Cüzdanda 500 XP yokken `.bahis`, `.blackjack`, `.piyango`, `.vs` → "en az 500 XP" mesajı
