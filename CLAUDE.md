@@ -935,6 +935,8 @@ devam eder, bot harcamadığı sürece ekonomi dengesi değişmez. Kaynak ayrı 
 Oyuncu kazancı bottan düşmez. `.vs` ve `.piyango` yazmaz, orada kayıp başka oyuncuya gider. Yarım kalan
 oyunun yanan bahsi de yazılmaz. `lib/handler.js` her mesajda `botHesabiniTani()` çağırır.
 
+LID'li grupta bot üye listesinde "...@lid" görünür. `xpDevret`, `xpAyarla` ve `getStats` bu kimliği `hesapKimligi()` ile ana hesaba çevirir. Eski devirlerin açtığı LID satırı `botHesabiniTani()` kimliği öğrenince ana hesaba taşınır ve silinir.
+
 Bakiye gruba yalnızca `.top`'ta görünür: `.profil` ve `.stats` başkasına "gizli" der, `.soygun` ve
 `.devret` botu hedef alamaz, çünkü sonuç mesajları bakiye yazar. Sahip `.profil @bot` ile görebilir.
 
@@ -1067,3 +1069,4 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 60. `.tüik` → para, kur ve zenginler gelir, bot listede yok; ertesi gün enflasyon yüzdesi görünür; `.coinmarket` aynı kuru yazar
 61. `.coinmarket sat 1` → kurun %90'ı gelir; eksi cüzdan ve coinle `.iflas` → "önce coinlerini boz"
 62. `.mülk al ev` → 5 coin düşer, `.profil`'de görünür; bir saat sonra `.mülk topla` → kira gelir; sahip `.haciz @kişi ev` → ev gider, kasa artar
+63. `.top` → bot tek satır; sahip `.devret @bot 10` → botun satırı artar, ikinci satır açılmaz

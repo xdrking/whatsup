@@ -10,7 +10,7 @@ const { binlik } = await import('../lib/sayi.js')
 const { sonucSatirlari } = await import('../lib/kumar.js')
 const { KORUNMA_MS } = await import('../lib/soygun.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, recordMessage, sigortaBitisi, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
+  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, recordMessage, sigortaBitisi, xpDevret, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
 } = await import('../lib/stats.js')
 const { URUNLER } = await import('../lib/market.js')
 const { kiraHesapla, KIRA_AZAMI_SAAT, mulkBul } = await import('../lib/mulk.js')
@@ -305,4 +305,25 @@ test('günün ilk mesajı ekonomi kaydını yazar', () => {
   recordMessage({ chatJid, userJid: 'a@s', at: T })
   xpVer(chatJid, 'a@s', 300_000_000)
   assert.equal(ekonomiDurumu({ chatJid, now: T }).kur, 3_000_000)
+})
+
+test('botun LID satırı ana hesaba taşınır, devir de oraya gider', () => {
+  const chatJid = yeniGrup()
+  const lid = '277455759773729@lid'
+  xpVer(chatJid, BOT, 1000)
+  xpVer(chatJid, lid, 150_000)
+  xpVer(chatJid, 'a@s', 500)
+
+  botHesabiniTani({ id: BOT, lid })
+
+  assert.deepEqual(getLeaderboard(chatJid, 10).map((r) => [r.user_jid, r.xp]), [[BOT, 151_000], ['a@s', 500]])
+  assert.equal(getStats(chatJid, lid).xp, 151_000)
+
+  xpDevret({ chatJid, kaynak: 'a@s', hedef: lid, miktar: 100 })
+  assert.equal(getStats(chatJid, BOT).xp, 151_100)
+  xpDevret({ chatJid, kaynak: lid, hedef: 'a@s', miktar: 100, sahipDevri: true })
+  assert.equal(getStats(chatJid, BOT).xp, 151_000)
+  assert.equal(getLeaderboard(chatJid, 10).length, 2)
+
+  botHesabiniTani({ id: BOT })
 })
