@@ -60,6 +60,12 @@ OYUN_TIMEOUT_MS=
 
 # trace | debug | info | warn | error | silent
 LOG_LEVEL=info
+
+# Web paneli şifresinin özeti; elle yazılmaz, `npm run panel:sifre` üretir
+PANEL_SIFRE_HASH=
+
+# Panelin dinlediği yerel port. Boş bırakılırsa 8787
+PANEL_PORT=
 ```
 
 `OWNER_NUMBER` bot sahibini tanımlar: `ownerOnly` komutlarını yalnızca o çalıştırır,
@@ -78,6 +84,8 @@ kalır ve log'a `Yetkisiz komut denemesi` + `sender: "...@lid"` düşer. O değe
 npm start      # botu başlat
 npm run dev    # dosya değişince otomatik yeniden başlat (node --watch)
 npm test       # otomatik testler (WhatsApp bağlantısı gerekmez)
+npm run panel        # web panelini başlat (bottan ayrı süreç)
+npm run panel:sifre  # panel şifresi üret
 ```
 
 İlk çalıştırmada terminale bir QR kodu basılır:
@@ -181,27 +189,32 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
-XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu),
-geçerli oyun kelimesi +30, doğru quiz cevabı, düello galibiyeti, emoji tahmini ve adam asmacada
-kelimeyi bulmak +50, doğru kimim tahmini +100,
-`.günlük` 20-50 (seri 7. günde tavana ulaşır). Level = `floor(sqrt(xp / 50))`.
+XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu), `.günlük` 20-50 (seri 7. günde
+tavana ulaşır). Oyun ve görev ödülleri kendi başlıklarındadır. Level = `floor(sqrt(xp / 50))`.
 
 **Mesaj içeriği hiçbir yerde saklanmaz** — yalnızca sayaçlar.
 
 ### Oyunlar
 
-| Komut | Yapar |
-|---|---|
-| `.kelime` | Türkçe kelime zinciri. Kelimeler TDK'de doğrulanır |
-| `.kimim` | Karakter tahmini; her 3 yanlışta yeni ipucu |
-| `.quiz` | 4 şıklı bilgi sorusu; herkesin tek hakkı var, ilk bilen kazanır (10 dk) |
-| `.düello @kişi` | İki kişilik hızlı matematik düellosu; ilk doğru cevap kazanır (2 dk) |
-| `.emoji` | Emojilerden film/dizi/şarkı tahmini; her 3 yanlışta ipucu, ilk bilen kazanır (10 dk) |
-| `.adamasmaca` | Grupça adam asmaca: harf ya da kelimenin tamamı yazılır, 6 yanlışta adam asılır |
-| `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul; ilk bilen +50 XP (son tahminden 10 dk) |
-| `.karışık` | Harfleri karışmış kelimeyi bul; ilk bilen +50 XP (5 dk) |
-| `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz; ilk bulan +100 XP (5 dk) |
-| `.oyunbitir` | Aktif oyunu kapatır (başlatan kişi, grup admini veya owner) |
+| Komut | Yapar | XP | Süre |
+|---|---|---|---|
+| `.kelime` | Türkçe kelime zinciri. Kelimeler TDK'de doğrulanır | kelime başına +30 | son kelimeden 1 saat |
+| `.kimim` | Karakter tahmini; her 3 yanlışta yeni ipucu | +100 | 1 saat |
+| `.quiz` | 4 şıklı bilgi sorusu; herkesin tek hakkı var, ilk bilen kazanır | +50 | 10 dk |
+| `.düello @kişi` | İki kişilik hızlı matematik düellosu; ilk doğru cevap kazanır | +50 | 2 dk |
+| `.emoji` | Emojilerden film/dizi/şarkı tahmini; her 3 yanlışta ipucu | +50 | 10 dk |
+| `.adamasmaca` | Grupça adam asmaca: harf ya da kelimenin tamamı yazılır, 6 yanlışta adam asılır | +50 | son tahminden 10 dk |
+| `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul | +50 | son tahminden 10 dk |
+| `.karışık` | Harfleri karışmış kelimeyi bul | +50 | 5 dk |
+| `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz | +100 | 5 dk |
+
+`.oyunbitir` aktif oyunu kapatır (başlatan kişi, grup admini veya owner).
+
+Çark ve market bonusları bu ödüllerin üstüne işler: 10 kat bonusu olan kişi `.quiz`'den 500 XP, `.kimim`'den 1.000 XP alır.
+
+Oyun cevapları prefix taşımaz: botun **en son** oyun mesajını **yanıtlayarak**
+yazılır. Başka bir mesaja verilen yanıtlar ya da yanıtsız mesajlar yok sayılır.
+Bir grupta aynı anda tek oyun çalışır. Durum yalnızca bellektedir: bot yeniden başlarsa yarım oyunlar düşer.
 
 ### Kumar (XP ile)
 
@@ -231,7 +244,17 @@ Bota karşı oynanan kumarda kaybedilen XP, banka kesintisi, servet vergisi ve b
 | `.market` | Ürünleri listeler; `.market al 1` satın alır |
 | `.soygun @kişi` | %40 şansla kurbanın XP'sinin %10'unu çalar; yakalanan kendi %10'unu kurbana öder |
 
-Market: soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
+Her gün aşağıdaki görevlerden 3'ü çıkar, gruptaki herkese aynıdır. Günde 1.200-1.850 XP eder:
+
+| Görev | Ödül |
+|---|---|
+| 20 mesaj yaz | 400 XP |
+| Oyunlardan 3 kez XP kazan | 750 XP |
+| 5 kez kumar oyna | 600 XP |
+| Çarkı çevir | 300 XP |
+| 1 soygun dene | 500 XP |
+
+Market: 24 saatlik soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
 Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
 
 Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül çıkar:
@@ -268,6 +291,22 @@ Bankadaki XP soyulamaz, vergilenmez, her saat tüm bakiyeye %15 bileşik faiz al
 Bankadaki XP seviyeye ve `.top`'a sayılmaz, `.profil`'de ayrı görünür.
 Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve vergi bot hesabına gider. `.banka` son vergiyi gösterir.
 
+Yatırılan paranın hiç dokunulmazsa ne kadar olacağı (çekim kesintisi öncesi, XP):
+
+| Yatırılan | 1 saat | 6 saat | 12 saat | 1 gün | 2 gün | 3 gün | 7 gün |
+|---|---|---|---|---|---|---|---|
+| 100 | 115 | 231 | 535 | 2.862 | 81.940 | 2,3 milyon | 1,6 trilyon |
+| 1.000 | 1.150 | 2.313 | 5.350 | 28.625 | 819.400 | 23,5 milyon | 15,7 trilyon |
+| 10.000 | 11.500 | 23.130 | 53.502 | 286.251 | 8,2 milyon | 234,6 milyon | 157,5 trilyon |
+| 100.000 | 115.000 | 231.306 | 535.025 | 2,9 milyon | 81,9 milyon | 2,3 milyar | 1 katrilyon (tavan) |
+
+Süre, faiz alınan saat başı sayısıdır. Yatırdıktan sonraki ilk saat başı sayılmaz.
+
+Örnek: 14:20'de 1.000 XP yatırılır. 15:00'te faiz işlemez, 16:00'da hesap 1.150 olur, ertesi gün 15:00'te 28.625 olur.
+`.banka çek hepsi` yazılırsa 1.432 XP kesilir, cüzdana 27.193 XP gelir.
+
+`.banka` en az haftada bir yazılmalı: 7 günden uzun süren boşlukta fazla günler faiz almaz.
+
 ### Sezon
 
 `.sezon` bu haftanın en çok XP kazananlarını gösterir. Her pazartesi sıfırlanır, yalnızca mesaj, oyun, `.günlük` ve `.görev` XP'si sayılır.
@@ -284,21 +323,27 @@ Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajı
 Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Her 15 dakika borsada bir gün gibidir: fiyatlar sert oynar, sağa gittikçe daha da sertleşir, `roket` bir adımda %50 oynayabilir ve birkaç günde bir batar. Piyasa 6 saatte bir sakin, normal ya da fırtınalı olur, hisseler çoğu zaman birlikte hareket eder, haberler fiyatı sıçratır. Hiçbiri yönü önceden söylemez.
 Alışta ve satışta %2 komisyon kesilir. Fiyatı 5 XP'nin altına düşen hisse batar: elindeki paylar silinir, hisse 100 XP'den açılır.
 
-### Web paneli
+Örnek: fiyat 100'ken `.borsa al kedi 1000` yazılır. 20 XP komisyon kesilir, 980 XP'lik pay alınır.
 
-Herkesin adını ve istatistiğini gösteren şifreli panel. Bottan ayrı çalışır, numara ban yese de açılır, veriye yalnızca bakar.
+| Satış anındaki fiyat | Pay değeri | Satış komisyonu | Eline geçen | Sonuç |
+|---|---|---|---|---|
+| 150 | 1.470 | 30 | 1.440 | +440 XP |
+| 100 | 980 | 20 | 960 | −40 XP |
+| 60 | 588 | 12 | 576 | −424 XP |
+| Hisse battı | 0 | yok | 0 | −1.000 XP |
 
-Sunucuda bir kez:
+Borsada sabit getiri yoktur. Aşağıdaki tablo 1.000 XP'lik alımın süre sonunda satılınca ne getirdiğini gösterir, komisyonlar dahildir.
+Değerler 40.000 denemelik simülasyondandır ve yaklaşıktır. Hücreler **kötü / orta / iyi** sırasındadır: denemelerin %10'u kötüden aşağıda, yarısı ortadan aşağıda, %10'u iyiden yukarıda kalır.
 
-1. Alan adını sunucunun IP'sine yönlendir. Cloudflare kullanılıyorsa kayıt **DNS only** olmalı: turuncu bulutta panel gerçek IP'yi göremez, deneme sınırı bozulur.
-2. `npm run panel:sifre` çalıştır. Çıkan şifreyi sakla, `PANEL_SIFRE_HASH=...` satırını `.env` dosyasına ekle.
-3. Önce botu yeniden başlat (veritabanı yeni yapıya geçer), sonra `npm run panel` ile paneli açık tut.
-4. `nginx-panel.conf.example` içeriğini kendi alan adınla `/etc/nginx/sites-available/panel` dosyasına yaz, `sites-enabled` altına bağla, `sudo nginx -t` ve `sudo systemctl reload nginx` çalıştır.
-5. `sudo certbot --nginx -d panel.alanadin.com --redirect` ile HTTPS sertifikasını al. Giriş ancak HTTPS'te çalışır.
+| Hisse | 1 saat | 6 saat | 1 gün | 3 gün | 1 günde batma | 3 günde batma |
+|---|---|---|---|---|---|---|
+| `muz` | 890 / 960 / 1.030 | 790 / 950 / 1.140 | 620 / 920 / 1.340 | 430 / 840 / 1.640 | %0 | %0 |
+| `cay` | 860 / 960 / 1.060 | 700 / 940 / 1.240 | 480 / 870 / 1.530 | 250 / 710 / 1.940 | %0 | %0,1 |
+| `simit` | 790 / 960 / 1.130 | 540 / 910 / 1.420 | 260 / 730 / 1.890 | 60 / 400 / 2.180 | %0,1 | %9 |
+| `kedi` | 710 / 950 / 1.220 | 370 / 860 / 1.640 | 100 / 500 / 2.190 | 0 / 110 / 1.740 | %5 | %43 |
+| `roket` | 580 / 940 / 1.330 | 160 / 710 / 1.940 | 0 / 190 / 2.000 | 0 / 0 / 350 | %33 | %83 |
 
-Panelde sıralama, grup rekorları, son 30 günün grafiği, borsa fiyat çizgileri, kişi sayfasında seviye, rozet, servet dağılımı ve XP gelişimi var. Grafikler güncellemeden sonra birikmeye başlar; borsa çizgileri `.borsa` kullanıldıkça dolar.
-
-Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
+Uzun beklemek sert hisselerde çoğu zaman kaybettirir, ama nadir denemeler çok büyük kazanır. Her hissede ortalama sonuç komisyon yüzünden 1.000 XP'nin biraz altındadır, bu yüzden garantili kazanç yolu yoktur.
 
 ### Kart koleksiyonu
 
@@ -342,14 +387,8 @@ Süre 10-600 sn, komut 60 sn'de bir kullanılabilir.
 | 1 saat oyunlardan 5 kat XP | %7 |
 | 1 saat oyunlardan 10 kat XP | %3 |
 
-Bonus `.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji` ve `.adamasmaca` XP'sine işler; mesaj, `.günlük` ve kumar etkilenmez.
+Bonus yalnızca oyun ödüllerine işler (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.tahmin`, `.karışık`, `.sayıoyunu`); mesaj, `.günlük`, `.görev` ve kumar etkilenmez.
 Bonus varken yenisi çıkarsa güçlü olan kalır, süre 1 saate döner.
-
-Oyun cevapları prefix taşımaz: botun **en son** oyun mesajını **yanıtlayarak**
-yazılır. Başka bir mesaja verilen yanıtlar ya da yanıtsız mesajlar yok sayılır.
-Bir grupta aynı anda tek oyun çalışır; oyunlar 1 saat (quiz ve emoji 10 dk, adam asmaca son
-tahminden 10 dk) sonra kendiliğinden kapanır.
-Durum yalnızca bellektedir — bot yeniden başlarsa yarım oyunlar düşer.
 
 ### Bekleme süresi
 
@@ -357,6 +396,22 @@ Aynı kişi aynı komutu art arda yazarsa komut çalışmaz; ilk denemede bir ke
 "⏳ biraz yavaş" uyarısı gelir, sonrakiler sessizce yok sayılır. Varsayılan 3 sn;
 medya ve dış servis komutları (`.sticker`, `.al`, `.tts`, `.efekt`, `.foto`, `.yaz`,
 `.meme`, `.hava`, `.deprem`, `.döviz`, `.namaz`) ve `.anket` 10 sn, `.etiket` 30 sn. Bot sahibi muaftır.
+
+## Web paneli
+
+Herkesin adını ve istatistiğini gösteren şifreli panel. Bottan ayrı çalışır, numara ban yese de açılır, veriye yalnızca bakar.
+
+Sunucuda bir kez:
+
+1. Alan adını sunucunun IP'sine yönlendir. Cloudflare kullanılıyorsa kayıt **DNS only** olmalı: turuncu bulutta panel gerçek IP'yi göremez, deneme sınırı bozulur.
+2. `npm run panel:sifre` çalıştır. Çıkan şifreyi sakla, `PANEL_SIFRE_HASH=...` satırını `.env` dosyasına ekle.
+3. Önce botu yeniden başlat (veritabanı yeni yapıya geçer), sonra `npm run panel` ile paneli açık tut.
+4. `nginx-panel.conf.example` içeriğini kendi alan adınla `/etc/nginx/sites-available/panel` dosyasına yaz, `sites-enabled` altına bağla, `sudo nginx -t` ve `sudo systemctl reload nginx` çalıştır.
+5. `sudo certbot --nginx -d panel.alanadin.com --redirect` ile HTTPS sertifikasını al. Giriş ancak HTTPS'te çalışır.
+
+Panelde sıralama, grup rekorları, son 30 günün grafiği, borsa fiyat çizgileri, kişi sayfasında seviye, rozet, servet dağılımı ve XP gelişimi var. Grafikler güncellemeden sonra birikmeye başlar; borsa çizgileri `.borsa` kullanıldıkça dolar.
+
+Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
 
 ## Yeni komut ekleme
 
@@ -392,9 +447,10 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma
 lib/            Paylaşılan yardımcılar (parse, router, sticker, ses, db, stats,
                 bekleme süresi, susturma, hesap makinesi)
 commands/       Her komut ayrı dosya; index.js klasörü otomatik tarar
-games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca)
+games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .blackjack, .mayın…)
+panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
 test/           Otomatik testler (npm test)
-data/           İçerik havuzları (JSON) + stats.db (sayaçlar, XP, günlük seri, susturulan gruplar)
+data/           İçerik havuzları (JSON) + stats.db (sayaçlar, XP, banka, borsa…) + yedek/
 auth/           Baileys oturum dosyaları — commit edilmez
 temp/           Medya işleme geçici dosyaları — işlem sonrası silinir
 ```
@@ -407,7 +463,7 @@ Biçim: düz string dizisi. Yeni içerik eklemek = dosyaya satır eklemek.
 **`auth/` ve `.env` asla commit edilmez.** `auth/` içindeki oturum dosyaları telefon
 numaranızı ve WhatsApp kimlik anahtarlarınızı taşır; sızması hesabın başkası
 tarafından ele geçirilmesi demektir. `data/stats.db` de commit edilmez, çünkü grup
-üyelerinin JID'lerini içerir. Üçü de `.gitignore` içindedir — yine de `git status`
+üyelerinin JID'lerini içerir, `data/yedek/` de aynı veriyi taşır. Hepsi `.gitignore` içindedir — yine de `git status`
 öncesi doğrulamak iyi bir alışkanlıktır.
 
 Log seviyesini `debug` yapmayın: Baileys protokol mesajlarını ham haliyle konsola
@@ -429,6 +485,7 @@ hızında ve yalnızca yanıt vererek çalışacak şekilde yazılmıştır; kö
 | Bot bir grupta hiçbir komuta cevap vermiyor | Grup `.sus` ile susturulmuş olabilir. Bir admin `.konuş` yazsın |
 | `.hava` "servis cevap vermiyor" diyor | Open-Meteo'ya ulaşılamıyor; bot çökmez, biraz sonra tekrar deneyin |
 | `.kelime` "servise ulaşılamıyor" diyor | `sozluk.gov.tr` yanıt vermiyor. Kelime geçersiz sayılmaz, oyun devam eder |
+| Panele giriş olmuyor | Giriş yalnızca HTTPS'te çalışır. `.env`'de `PANEL_SIFRE_HASH` dolu olmalı |
 | Konsolda `logged out` | Oturum ölmüştür, yeniden bağlanma denenmez. `auth/` temizleyip yeni QR okutun |
 
 ## Test
@@ -438,8 +495,8 @@ npm test
 ```
 
 WhatsApp bağlantısı gerektirmeyen kısımları dener: hesap makinesi, bekleme süresi,
-oyun cevapları, XP ve günlük seri, fotoğraf efektleri, komutların ve `data/*.json`
-havuzlarının biçimi. Gerçek `data/stats.db`'ye dokunmaz. Yeni komut ya da havuz
+oyun cevapları, XP ve günlük seri, ekonomi (banka, borsa, market, çark), panel,
+fotoğraf efektleri, komutların ve `data/*.json` havuzlarının biçimi. Gerçek `data/stats.db`'ye dokunmaz. Yeni komut ya da havuz
 satırı ekledikten sonra çalıştırmak, botu açmadan önce hataları yakalar.
 
 Mesaj gönderme, medya indirme ve grup davranışı canlı bağlantıyla elle
