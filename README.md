@@ -317,7 +317,7 @@ Süre, faiz alınan saat başı sayısıdır. Yatırdıktan sonraki ilk saat ba�
 | `.kredi öde 500` | Cüzdandan borç öder; `hepsi` ve `yarısı` da olur |
 
 Faiz saatlik %19 bileşiktir ve saat başlarında işler. Vade 24 saattir, aynı anda tek kredi alınır. Limit herkes için 400.000 XP'dir.
-Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler botun bankasına gider. Kasada para yoksa kredi verilmez.
+Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler botun bankasına gider. Tek kredi bu kasanın yarısını geçemez: kasada 90.000 XP varsa en çok 45.000 XP çekilir, bot bunu söyler. `.kredi` güncel limiti gösterir.
 
 | Çekilen | 1 saat | 6 saat | 12 saat | 24 saat (vade) |
 |---|---|---|---|---|
@@ -330,7 +330,7 @@ Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler 
 - Borç varken `.devret` kapalıdır.
 - Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Tahsilat kişinin vadeden sonraki ilk mesajında olur.
 - Eksi bakiye faiz almaz, oyun ve `.görev` XP'siyle kapanır. Hisse satışı ve mesaj XP'si de eksiyi azaltır.
-- `.iflas` eksi bakiyeyi siler, cüzdan 0 olur, kişi 12 saat kumar oynayamaz. Açık kredi silinmez, önce vade dolmalı. Elde hisse varsa önce satılmalı.
+- `.iflas` eksi bakiyeyi siler, cüzdan 0 olur, kişi 12 saat kumar oynayamaz, 24 saat kredi çekemez. Açık kredi silinmez, önce vade dolmalı. Elde hisse varsa önce satılmalı.
 - Eksideki kişi kumar oynayamaz, harcama yapamaz, kredi çekemez ve soyulamaz. Tekrar kumar için cüzdanın +500 XP'ye gelmesi gerekir.
 
 ### Sezon

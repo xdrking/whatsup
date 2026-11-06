@@ -1,6 +1,6 @@
 import logger from '../lib/logger.js'
 import { requireGroup } from '../lib/group.js'
-import { KREDI_FAIZ_YUZDESI, KREDI_LIMITI, KREDI_VADE_SAATI, MIN_KREDI } from '../lib/kredi.js'
+import { IFLAS_KREDI_YASAK_SAATI, KREDI_FAIZ_YUZDESI, KREDI_LIMITI, KREDI_VADE_SAATI, MIN_KREDI } from '../lib/kredi.js'
 import { miktarCoz } from '../lib/kumar.js'
 import { krediCek, krediDurumu, krediOde } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
@@ -16,10 +16,10 @@ export default {
   usage: '.kredi  —  .kredi çek <miktar>  —  .kredi öde <miktar|hepsi|yarısı>',
   details: [
     `Faiz saatlik %${KREDI_FAIZ_YUZDESI} bileşiktir, saat başlarında işler. Vade ${KREDI_VADE_SAATI} saat, aynı anda tek kredi.`,
-    `Limit ${sayi.format(KREDI_LIMITI)} XP, en az ${MIN_KREDI} XP çekilir.`,
+    `Limit ${sayi.format(KREDI_LIMITI)} XP, en az ${MIN_KREDI} XP çekilir. Tek kredi botun kasasının yarısını geçemez.`,
     'Borç varken `.banka yatır` önce borcu keser, `.devret` kapalıdır.',
     'Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır.',
-    'Eksi bakiye oyun ve görev XP\'siyle kapanır ya da `.iflas` ile silinir.',
+    `Eksi bakiye oyun ve görev XP'siyle kapanır ya da \`.iflas\` ile silinir, iflastan sonra ${IFLAS_KREDI_YASAK_SAATI} saat kredi çekilemez.`,
   ],
   category: 'oyun',
   cooldown: 5,
@@ -47,7 +47,12 @@ export default {
         if (s.acik) return await yaz(`💳 Önce mevcut borcunu kapat: ${sayi.format(s.borc)} XP`)
         if (s.eksi) return await yaz(`💳 Cüzdanın ekside, kredi verilmez: ${sayi.format(s.xp)} XP`)
         if (s.limit) return await yaz(`💳 Limitin ${sayi.format(s.limit)} XP.`)
-        if (s.kasa) return await yaz('💳 Botun bankasında bu kadar XP yok.')
+        if (s.yasak) return await yaz(`💳 İflas ettiğin için kredi yasağın var, ${sureYaz(s.yasak - Date.now())} kaldı.`)
+        if (s.kasaLimit !== undefined) {
+          return await yaz(s.kasaLimit < MIN_KREDI
+            ? '💳 Botun kasasında kredi verecek kadar XP yok.'
+            : `💳 Kasa az, en çok ${sayi.format(s.kasaLimit)} XP çekebilirsin.`)
+        }
 
         return await yaz([
           `💳 ${sayi.format(miktar)} XP kredi çekildi.`,

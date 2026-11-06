@@ -7,7 +7,7 @@ process.env.STATS_DB = ':memory:'
 
 const { FAIZ_YUZDESI, faizIslet } = await import('../lib/banka.js')
 const { SAAT_MS } = await import('../lib/borsa.js')
-const { borcIslet, IFLAS_YASAK_SAATI, KREDI_FAIZ_YUZDESI, KREDI_LIMITI, KREDI_VADE_SAATI } = await import('../lib/kredi.js')
+const { azamiKredi, borcIslet, IFLAS_KREDI_YASAK_SAATI, IFLAS_YASAK_SAATI, KREDI_FAIZ_YUZDESI, KREDI_LIMITI, KREDI_VADE_SAATI } = await import('../lib/kredi.js')
 const { hisseBul } = await import('../lib/borsa.js')
 const { kumarEngeli } = await import('../lib/kumar.js')
 const {
@@ -35,17 +35,29 @@ test('kredi faizi banka faizinden yüksek', () => {
 })
 
 test('kredi kasadan çıkar; limit, kasa ve ikinci kredi engellenir', () => {
-  const k = kur(1500)
+  const k = kur(2500)
   assert.deepEqual(krediCek({ ...k, miktar: KREDI_LIMITI + 1, now: T }), { limit: KREDI_LIMITI })
   assert.deepEqual(krediCek({ ...k, miktar: 1000, now: T }), { xp: 1000 })
-  assert.equal(getStats(k.chatJid, BOT).xp, 500)
+  assert.equal(getStats(k.chatJid, BOT).xp, 1500)
   assert.deepEqual(krediCek({ ...k, miktar: 100, now: T }), { acik: true, borc: 1000 })
 
   const fakir = kur(50)
-  assert.deepEqual(krediCek({ ...fakir, miktar: 100, now: T }), { kasa: true })
+  assert.deepEqual(krediCek({ ...fakir, miktar: 100, now: T }), { kasaLimit: 25 })
   assert.equal(getStats(fakir.chatJid, fakir.userJid).xp, 0)
 
   assert.deepEqual(krediCek({ chatJid: k.chatJid, userJid: BOT, miktar: 100, now: T }), { kapali: true })
+})
+
+test('tek kredi kasanın yarısını geçemez, limit durumda da görünür', () => {
+  assert.equal(azamiKredi(90_000), 45_000)
+  assert.equal(azamiKredi(10_000_000), KREDI_LIMITI)
+
+  const k = kur(90_000)
+  assert.equal(krediDurumu({ ...k, now: T }).limit, 45_000)
+  assert.deepEqual(krediCek({ ...k, miktar: 100_000, now: T }), { kasaLimit: 45_000 })
+  assert.deepEqual(krediCek({ ...k, miktar: 45_001, now: T }), { kasaLimit: 45_000 })
+  assert.deepEqual(krediCek({ ...k, miktar: 45_000, now: T }), { xp: 45_000 })
+  assert.equal(getStats(k.chatJid, BOT).xp, 45_000)
 })
 
 test('faiz saat başlarında işler, ödeme botun bankasına gider', () => {
@@ -174,6 +186,11 @@ test('iflas: eksi silinir, kumar 12 saat yasak, yasak bitince 500 XP yine gereki
   assert.equal(kumarEngeli(1000, yasakBitis, yasakBitis), null)
   assert.match(kumarEngeli(100, yasakBitis, yasakBitis), /en az 500 XP/)
   assert.equal(kumarYasagi('baska@g.us', e.userJid), 0)
+
+  const krediBitis = VADE + IFLAS_KREDI_YASAK_SAATI * SAAT_MS
+  assert.deepEqual(krediCek({ ...e, miktar: 100, now: VADE }), { yasak: krediBitis })
+  assert.deepEqual(krediCek({ ...e, miktar: 100, now: krediBitis - 1 }), { yasak: krediBitis })
+  assert.deepEqual(krediCek({ ...e, miktar: 100, now: krediBitis }), { xp: 100 })
 })
 
 test('iflas: artı cüzdan, açık kredi ve elde hisse reddedilir', () => {

@@ -952,12 +952,12 @@ kredi(chat_jid, user_jid, borc, faiz_saat, vade ms)   PK(chat_jid,user_jid)
 Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para, sonra enflasyondur: banka %15 kalır, kredi saatlik %19'dur.
 **Kredi faizi banka faizinin üstünde kalmalı**, yoksa kredi çekip bankaya yatıran XP basar; `test/kredi.test.js` denetler.
 
-- **Kasa:** botun banka hesabıdır. Kumar kayıpları bot cüzdanına düştüğü için kredi banka yetmezse cüzdandan da çıkar, ödemeler hep bankaya girer (`kasadanCek`, `kasayaYatir`).
+- **Kasa:** botun banka hesabıdır. Kumar kayıpları bot cüzdanına düştüğü için kredi banka yetmezse cüzdandan da çıkar, ödemeler hep bankaya girer (`kasadanCek`, `kasayaYatir`). Limit 400.000 XP'dir, tek kredi kasanın yarısını geçemez (`azamiKredi`): verilen kadar XP kasada kalmalı.
 - **Vade:** `krediGuncelle()` faizi işler, vade geçtiyse tahsil eder. `recordMessage` her mesajda çağırır, çünkü bot kendiliğinden yazmaz. Tahsilat sırası cüzdan, banka, eksi. Satır silinir.
 - **Eksi bakiye** `stats.xp`'nin eksi olmasıdır, ayrı alan yoktur. Faiz vadede durur, yoksa borç hiç kapanmazdı. Eksiyi kapatan XP bota gitmez, yanar.
 - **`.banka yatır`** borçluyken önce borcu keser. `.devret` borçluyken kapalıdır, para arkadaşa aktarılıp borçtan kaçılmasın.
 - **Kumar şartı:** `kumarEngeli()` komut katmanındadır, `lib/stats.js` şart bilmez. Yeni kumar komutu bunu çağırmalı. Borsa kumar sayılmaz.
-- **`.iflas`:** eksi cüzdanı sıfırlar, 12 saat kumar yasağı yazar (`iflas(chat_jid, user_jid, yasak_bitis)`), silinen XP kimseye gitmez. Açık kredi silinmez, yoksa kredi çekip harcamak bedava olurdu. Hisse varken reddedilir, yoksa krediyle alınan hisse iflastan sonra borçsuz paraya dönerdi. Yasak `kumarEngeli()`'nin ikinci argümanıdır, yeni kumar komutu `kumarYasagi()` ile birlikte çağırmalı.
+- **`.iflas`:** eksi cüzdanı sıfırlar, 12 saat kumar ve 24 saat kredi yasağı getirir (`iflas(chat_jid, user_jid, yasak_bitis)`; kumar bitişi saklanır, kredi bitişi ondan hesaplanır), silinen XP kimseye gitmez. Açık kredi silinmez, yoksa kredi çekip harcamak bedava olurdu. Hisse varken reddedilir, yoksa krediyle alınan hisse iflastan sonra borçsuz paraya dönerdi. Yasak `kumarEngeli()`'nin ikinci argümanıdır, yeni kumar komutu `kumarYasagi()` ile birlikte çağırmalı.
 - Eksi XP `xpAyarla`'da eksiltilmez, `soygunYap`'ta soyulmaz. Panelde **Borçlular** kartı açık kredileri ve eksi cüzdanları listeler. Kredi tutarı orada yalnızca gösterim için hesaplanır, veritabanına yazılmaz. Servet çubuğu eksiyi atlar.
 
 ## Elle Doğrulama

@@ -1,6 +1,6 @@
 import logger from '../lib/logger.js'
 import { requireGroup } from '../lib/group.js'
-import { IFLAS_YASAK_SAATI } from '../lib/kredi.js'
+import { IFLAS_KREDI_YASAK_SAATI, IFLAS_YASAK_SAATI } from '../lib/kredi.js'
 import { iflasEt } from '../lib/stats.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -11,7 +11,7 @@ export default {
   description: 'Eksi bakiyeni siler, karşılığında kumar yasağı alırsın',
   usage: '.iflas',
   details: [
-    `Cüzdanın eksideyse sıfırlanır, ${IFLAS_YASAK_SAATI} saat kumar oynayamazsın.`,
+    `Cüzdanın eksideyse sıfırlanır, ${IFLAS_YASAK_SAATI} saat kumar oynayamazsın, ${IFLAS_KREDI_YASAK_SAATI} saat kredi çekemezsin.`,
     'Açık kredi silinmez, önce vade dolmalı. Elinde hisse varsa önce satmalısın.',
   ],
   category: 'oyun',
@@ -33,7 +33,7 @@ export default {
       await yaz([
         `⚖️ *İflas* — ${sayi.format(s.silinen)} XP borç silindi.`,
         '👛 Cüzdan: 0 XP',
-        `🚫 ${IFLAS_YASAK_SAATI} saat kumar yasağı başladı.`,
+        `🚫 ${IFLAS_YASAK_SAATI} saat kumar, ${IFLAS_KREDI_YASAK_SAATI} saat kredi yasağı başladı.`,
       ].join('\n'))
     } catch (err) {
       logger.error({ err, from }, '.iflas başarısız')
