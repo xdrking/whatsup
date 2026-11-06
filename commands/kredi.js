@@ -19,7 +19,7 @@ export default {
     `Limit seviye başına ${sayi.format(SEVIYE_BASINA_LIMIT)} XP, en az ${MIN_KREDI} XP çekilir.`,
     'Borç varken `.banka yatır` önce borcu keser, `.devret` kapalıdır.',
     'Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır.',
-    'Eksi bakiye oyun ve görev XP\'siyle kapanır.',
+    'Eksi bakiye oyun ve görev XP\'siyle kapanır ya da `.iflas` ile silinir.',
   ],
   category: 'oyun',
   cooldown: 5,
@@ -84,7 +84,7 @@ export default {
         lines.push('Borcun yok.')
       }
       lines.push(`👛 Cüzdan: ${sayi.format(durum.xp)} XP`, `🏷️ Limit: ${sayi.format(durum.limit)} XP`)
-      if (durum.xp < 0) lines.push('', '🔴 Cüzdanın ekside. Oyun ve görevlerden XP kazanarak kapat.')
+      if (durum.xp < 0) lines.push('', '🔴 Cüzdanın ekside. Oyun ve görevlerden XP kazanarak kapat ya da `.iflas` yaz.')
       lines.push('', '`.kredi çek 1000`  •  `.kredi öde hepsi`')
 
       await yaz(lines.join('\n'))

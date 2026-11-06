@@ -1,6 +1,6 @@
 import { requireGroup } from '../lib/group.js'
 import { kumarEngeli, MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
-import { getStats } from '../lib/stats.js'
+import { getStats, kumarYasagi } from '../lib/stats.js'
 import { getGame } from '../games/gameManager.js'
 import { KUTU, MAYIN, mayinCarpani, start } from '../games/mayin.js'
 
@@ -26,7 +26,7 @@ export default {
     if (getGame(from)) return yaz('⚠️ Bu grupta zaten aktif bir oyun var.')
 
     const { xp } = getStats(from, sender)
-    const engel = kumarEngeli(xp)
+    const engel = kumarEngeli(xp, kumarYasagi(from, sender))
     if (engel) return yaz(`💣 ${engel}`)
 
     const cozum = miktarCoz(args[0], xp)

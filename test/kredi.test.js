@@ -7,11 +7,12 @@ process.env.STATS_DB = ':memory:'
 
 const { FAIZ_YUZDESI, faizIslet } = await import('../lib/banka.js')
 const { SAAT_MS } = await import('../lib/borsa.js')
-const { borcIslet, KREDI_FAIZ_YUZDESI, KREDI_VADE_SAATI, krediLimiti } = await import('../lib/kredi.js')
+const { borcIslet, IFLAS_YASAK_SAATI, KREDI_FAIZ_YUZDESI, KREDI_VADE_SAATI, krediLimiti } = await import('../lib/kredi.js')
+const { hisseBul } = await import('../lib/borsa.js')
 const { kumarEngeli } = await import('../lib/kumar.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, getStats, krediCek, krediDurumu, krediOde,
-  odulKoy, recordMessage, seviyeIlerlemesi, soygunYap, xpAyarla, xpDevret,
+  addXp, bankaBakiyesi, bankaYatir, borsaAl, borsaSat, botHesabiniTani, getStats, iflasEt, krediCek, krediDurumu, krediOde,
+  kumarYasagi, odulKoy, recordMessage, seviyeIlerlemesi, soygunYap, xpAyarla, xpDevret,
 } = await import('../lib/stats.js')
 
 const BOT = '905550000000@s.whatsapp.net'
@@ -156,4 +157,43 @@ test('.xpver eksi bakiyeyi yanlışlıkla sıfırlamaz', () => {
 
   assert.equal(xpAyarla({ ...e, miktar: -50 }).xp, xp)
   assert.equal(xpAyarla({ ...e, miktar: 50 }).xp, xp + 50)
+})
+
+test('iflas: eksi silinir, kumar 12 saat yasak, yasak bitince 500 XP yine gerekir', () => {
+  const e = kur()
+  krediCek({ ...e, miktar: 100, now: T })
+  krediDurumu({ ...e, now: VADE })
+  const { xp } = getStats(e.chatJid, e.userJid)
+  assert.ok(xp < 0)
+
+  const yasakBitis = VADE + IFLAS_YASAK_SAATI * SAAT_MS
+  assert.deepEqual(iflasEt({ ...e, now: VADE }), { silinen: -xp, yasakBitis })
+  assert.equal(getStats(e.chatJid, e.userJid).xp, 0)
+  assert.equal(kumarYasagi(e.chatJid, e.userJid), yasakBitis)
+
+  assert.match(kumarEngeli(1000, yasakBitis, VADE), /yasağın var/)
+  assert.equal(kumarEngeli(1000, yasakBitis, yasakBitis), null)
+  assert.match(kumarEngeli(100, yasakBitis, yasakBitis), /en az 500 XP/)
+  assert.equal(kumarYasagi('baska@g.us', e.userJid), 0)
+})
+
+test('iflas: artı cüzdan, açık kredi ve elde hisse reddedilir', () => {
+  const k = kur()
+  assert.deepEqual(iflasEt({ ...k, now: T }), { borcYok: true })
+
+  krediCek({ ...k, miktar: 1000, now: T })
+  assert.deepEqual(iflasEt({ ...k, now: T }), { kredili: true, borc: 1000 })
+  assert.equal(krediDurumu({ ...k, now: T }).borc, 1000)
+
+  const hisse = hisseBul('muz')
+  const sabit = () => 1000
+  const h = kur()
+  krediCek({ ...h, miktar: 1000, now: T })
+  borsaAl({ ...h, hisse, miktar: 500, now: T, rnd: sabit })
+  krediDurumu({ ...h, now: VADE })
+  assert.ok(getStats(h.chatJid, h.userJid).xp < 0)
+  assert.deepEqual(iflasEt({ ...h, now: VADE }), { portfoy: true })
+
+  borsaSat({ ...h, hisse, now: VADE, rnd: sabit })
+  assert.ok(iflasEt({ ...h, now: VADE }).silinen > 0)
 })

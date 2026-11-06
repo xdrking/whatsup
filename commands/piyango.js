@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto'
 import { requireGroup } from '../lib/group.js'
 import { kumarEngeli, MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
-import { getStats, piyangoBilet, piyangoBiletleri } from '../lib/stats.js'
+import { getStats, kumarYasagi, piyangoBilet, piyangoBiletleri } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import logger from '../lib/logger.js'
 
@@ -37,7 +37,7 @@ export default {
 
       if (args[0]) {
         const { xp } = getStats(from, sender)
-        const engel = kumarEngeli(xp)
+        const engel = kumarEngeli(xp, kumarYasagi(from, sender))
         if (engel) return await yaz(`🎫 ${engel}`)
 
         const cozum = miktarCoz(args[0], xp)

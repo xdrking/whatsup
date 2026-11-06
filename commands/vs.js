@@ -1,7 +1,7 @@
 import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { kumarEngeli, MIN_BAHIS, MIN_KUMAR_BAKIYESI } from '../lib/kumar.js'
-import { getStats } from '../lib/stats.js'
+import { getStats, kumarYasagi } from '../lib/stats.js'
 import { resolveTargets } from '../lib/target.js'
 import { getGame } from '../games/gameManager.js'
 import { start } from '../games/vs.js'
@@ -37,8 +37,8 @@ export default {
     else if (!rakip) hata = '❌ Bu kişi grupta bulunamadı.'
     else if (rakip === sender) hata = 'Kendinle bahse giremezsin 🙃'
     else if (rakip === jidNormalizedUser(sock.user?.id || '')) hata = 'Kasa bu masaya oturmaz 🤖'
-    else if (kumarEngeli(xp)) hata = kumarEngeli(xp)
-    else if (kumarEngeli(getStats(from, rakip).xp)) hata = `❌ Rakibin cüzdanında en az ${MIN_KUMAR_BAKIYESI} XP olmalı.`
+    else if (kumarEngeli(xp, kumarYasagi(from, sender))) hata = kumarEngeli(xp, kumarYasagi(from, sender))
+    else if (kumarEngeli(getStats(from, rakip).xp, kumarYasagi(from, rakip))) hata = `❌ Rakibin kumar oynayamıyor: cüzdanında ${MIN_KUMAR_BAKIYESI} XP yok ya da kumar yasağı var.`
     else if (miktar < MIN_BAHIS) hata = `En az ${MIN_BAHIS} XP basabilirsin.`
     else if (miktar > xp) hata = `O kadar XP'n yok. Senin XP'n: ${xp}`
     else if (getStats(from, rakip).xp < miktar) hata = '❌ Rakibin o kadar XP\'si yok.'

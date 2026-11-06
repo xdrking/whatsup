@@ -329,6 +329,7 @@ Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler 
 - Borç varken `.devret` kapalıdır.
 - Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Tahsilat kişinin vadeden sonraki ilk mesajında olur.
 - Eksi bakiye faiz almaz, oyun ve `.görev` XP'siyle kapanır. Hisse satışı ve mesaj XP'si de eksiyi azaltır.
+- `.iflas` eksi bakiyeyi siler, cüzdan 0 olur, kişi 12 saat kumar oynayamaz. Açık kredi silinmez, önce vade dolmalı. Elde hisse varsa önce satılmalı.
 - Eksideki kişi kumar oynayamaz, harcama yapamaz, kredi çekemez ve soyulamaz. Tekrar kumar için cüzdanın +500 XP'ye gelmesi gerekir.
 
 ### Sezon

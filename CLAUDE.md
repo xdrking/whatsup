@@ -286,7 +286,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 32 (tamam):** kumar kayıpları bot numarasının XP'sine gider. Ayrıntı aşağıda.
 - **Faz 33 (tamam):** `.haber` parodi haberleri. Ayrıntı aşağıda.
 - **Faz 34 (tamam):** `.kredi`, eksi bakiye ve kumar için 500 XP şartı. Ayrıntı aşağıda.
-- **Faz 35+:** yeni komutlar, her biri ayrı adım
+- **Faz 35 (tamam):** `.iflas`. Faz 34 bölümüne işlendi.
+- **Faz 36+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -956,6 +957,7 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 - **Eksi bakiye** `stats.xp`'nin eksi olmasıdır, ayrı alan yoktur. Faiz vadede durur, yoksa borç hiç kapanmazdı. Eksiyi kapatan XP bota gitmez, yanar.
 - **`.banka yatır`** borçluyken önce borcu keser. `.devret` borçluyken kapalıdır, para arkadaşa aktarılıp borçtan kaçılmasın.
 - **Kumar şartı:** `kumarEngeli()` komut katmanındadır, `lib/stats.js` şart bilmez. Yeni kumar komutu bunu çağırmalı. Borsa kumar sayılmaz.
+- **`.iflas`:** eksi cüzdanı sıfırlar, 12 saat kumar yasağı yazar (`iflas(chat_jid, user_jid, yasak_bitis)`), silinen XP kimseye gitmez. Açık kredi silinmez, yoksa kredi çekip harcamak bedava olurdu. Hisse varken reddedilir, yoksa krediyle alınan hisse iflastan sonra borçsuz paraya dönerdi. Yasak `kumarEngeli()`'nin ikinci argümanıdır, yeni kumar komutu `kumarYasagi()` ile birlikte çağırmalı.
 - Eksi XP `xpAyarla`'da eksiltilmez, `soygunYap`'ta soyulmaz. Panelde **Borçlular** kartı açık kredileri ve eksi cüzdanları listeler. Kredi tutarı orada yalnızca gösterim için hesaplanır, veritabanına yazılmaz. Servet çubuğu eksiyi atlar.
 
 ## Elle Doğrulama
@@ -1027,3 +1029,4 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 51. `.kredi çek 500` → cüzdan artar, `.kredi` borcu gösterir; ikinci kredi reddedilir; `.devret` reddedilir
 52. Borçluyken `.banka yatır 100` → borç 100 azalır, hesap değişmez; `.kredi öde hepsi` → borç biter
 53. Cüzdanda 500 XP yokken `.bahis`, `.blackjack`, `.piyango`, `.vs` → "en az 500 XP" mesajı
+54. Eksi cüzdanla `.iflas` → cüzdan 0, `.bahis` "kumar yasağın var" der; artı cüzdanla `.iflas` → reddedilir; hisse varken → "önce sat"
