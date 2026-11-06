@@ -9,7 +9,7 @@ const { GOREVLER, gununGorevleri } = await import('../lib/gorev.js')
 const { URUNLER, KALKAN_SURESI_MS } = await import('../lib/market.js')
 const { KASALAR, kasaCek } = await import('../lib/kasa.js')
 const { kartBul, kartCek, setCekisi, SETLER } = await import('../lib/kart.js')
-const { BANKA_TAVANI, faizHesapla, faizIslet, vergiHesapla } = await import('../lib/banka.js')
+const { BANKA_TAVANI, faizHesapla, faizIslet, servetVergisi } = await import('../lib/banka.js')
 const { haftaAnahtari, haftaBitisi, SEZON_ODULLERI } = await import('../lib/sezon.js')
 const { ADIM_MS, fiyatAdimi, HAVALAR, hisseBul, HISSELER, piyasaHavasi, SAAT_MS } = await import('../lib/borsa.js')
 const { VITRIN, vitrinUrunu } = await import('../lib/vitrin.js')
@@ -259,8 +259,11 @@ test('banka hesapları: faiz bileşik, tavansız, saat sınırlı; vergi yalnız
   assert.equal(faizHesapla(5, 1, 0.5).faiz, 1)
   assert.deepEqual(faizHesapla(BANKA_TAVANI - 10, 168), { faiz: 10, artik: 0 })
   assert.deepEqual(faizHesapla(BANKA_TAVANI, 168), { faiz: 0, artik: 0 })
-  assert.equal(vergiHesapla(10_000), 0)
-  assert.equal(vergiHesapla(20_000), 100)
+  assert.equal(servetVergisi(1_000_000, 1_000_000), 0)
+  assert.equal(servetVergisi(2_000_000, 1_000_000), 20_000)
+  assert.equal(servetVergisi(12_000_000, 1_000_000), 430_000)
+  assert.equal(servetVergisi(200_000_000, 1_000_000), 28_830_000)
+  assert.equal(servetVergisi(2_000_000, 2_000_000), 0)
 })
 
 test('banka: yatır, faiz işler, çekerken kesinti alınır', () => {
@@ -316,20 +319,22 @@ test('banka: yeni para tam bir saat durmadan faiz almaz, eski bakiye etkilenmez'
   assert.equal(faizIslet(1000, 0, 1000).faiz, faizIslet(1000, 0, 168).faiz)
 })
 
-test('vergi: günün ilk mesajında bir kez kesilir, banka muaf, altında kesilmez', () => {
-  const k = kisi(20_000)
+test('vergi: günün ilk mesajında bir kez kesilir, banka da sayılır, eşik altında kesilmez', () => {
+  const k = kisi(2_000_000)
   const mesaj = (at) => recordMessage({ ...k, type: 'conversation', at })
-  mesaj(T)
-  const xp = getStats(k.chatJid, k.userJid).xp
-  assert.equal(xp, 19_901)
-  mesaj(T + 60_000)
-  assert.equal(getStats(k.chatJid, k.userJid).xp, xp + 1)
-  assert.equal(bankaDurumu({ ...k, now: T }).sonVergi, 100)
+  bankaYatir({ ...k, miktar: 1_990_000, now: T })
 
-  bankaYatir({ ...k, miktar: 15_000, now: T })
-  const sonra = getStats(k.chatJid, k.userJid).xp
-  mesaj(T + GUN)
-  assert.equal(getStats(k.chatJid, k.userJid).xp, sonra + 1)
+  mesaj(T)
+  assert.equal(bankaDurumu({ ...k, now: T }).sonVergi, 20_000)
+  assert.equal(getStats(k.chatJid, k.userJid).xp, 0)
+  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 1_980_001)
+
+  mesaj(T + 60_000)
+  assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 1_980_001)
+
+  const fakir = kisi(500_000)
+  recordMessage({ ...fakir, type: 'conversation', at: T })
+  assert.equal(getStats(fakir.chatJid, fakir.userJid).xp, 500_001)
 })
 
 test('hafta: pazartesi başlar, Türkiye saatine göre döner', () => {

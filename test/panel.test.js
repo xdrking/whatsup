@@ -235,6 +235,32 @@ test('borçlular: kredi güncel tutarla, eksi cüzdan ayrı görünür, büyük 
   assert.deepEqual(veri.grup(GRUP).borclular, [])
 })
 
+test('ekonomi kartı: kur, faiz, enflasyon ve coin görünür; kayıt yoksa kart yok', async () => {
+  const grup = 'ekonomi@g.us'
+  const db = getDb()
+  db.prepare('INSERT INTO stats (chat_jid, user_jid, xp) VALUES (?, ?, ?)').run(grup, 'zengin@lid', 5000)
+  const gun = db.prepare('INSERT INTO ekonomi (chat_jid, day, arz, kur) VALUES (?, ?, ?, ?)')
+  gun.run(grup, '2026-06-01', 100_000_000, 1_000_000)
+  gun.run(grup, '2026-06-02', 250_000_000, 2_500_000)
+  db.prepare('INSERT INTO coin (chat_jid, user_jid, bakiye, toplu_hak) VALUES (?, ?, 7, 0)').run(grup, 'zengin@lid')
+  db.prepare('INSERT INTO mulk (chat_jid, user_jid, kod, adet, kira_saat) VALUES (?, ?, ?, 2, 0)').run(grup, 'zengin@lid', 'ev')
+  db.prepare('INSERT INTO faiz (chat_jid, oran) VALUES (?, 25)').run(grup)
+
+  const e = veri.grup(grup).ekonomi
+  assert.equal(e.kur, 2_500_000)
+  assert.equal(e.enflasyon, 1.5)
+  assert.deepEqual(e.faiz, { banka: 25, kredi: 29 })
+  assert.equal(e.toplamCoin, 7)
+  assert.equal(e.mulkler[0].adet, 2)
+  assert.equal(e.coinSahipleri[0].uye.user_jid, 'zengin@lid')
+
+  const Cookie = await cerezAl('8.8.8.1')
+  const html = await (await fetch(`${adres}/grup?id=${encodeURIComponent(grup)}`, { headers: { Cookie } })).text()
+  assert.ok(html.includes('Ekonomi'))
+  assert.ok(html.includes('2.500.000'))
+  assert.equal(veri.grup(GRUP).ekonomi, null)
+})
+
 test('hisse sayfası: grafik çizilir, aralık daralır, bilinmeyen değerler güvenli', async () => {
   const Cookie = await cerezAl('6.6.6.6')
   const al = (sorgu) => fetch(`${adres}/hisse?grup=${encodeURIComponent(GRUP)}&${sorgu}`, { headers: { Cookie } })

@@ -153,6 +153,24 @@ function borcDurumu(b) {
   return b.vade ? `Kredi · vade ${tarih.format(b.vade)}` : 'Eksi bakiye'
 }
 
+function ekonomiKarti(chatJid, e) {
+  return h`<section class="kart liste">
+    <h2>Ekonomi</h2>
+    <div class="satir"><span class="ad"><strong>Piyasadaki para</strong><small>Bugünün kaydı, bot hariç</small></span><span class="deger">${sayi.format(e.arz)}</span></div>
+    <div class="satir"><span class="ad"><strong>1 coin</strong></span><span class="deger">${sayi.format(e.kur)}</span></div>
+    <div class="satir"><span class="ad"><strong>Günlük enflasyon</strong></span><span class="deger">${e.enflasyon === null ? 'veri yok' : yuzde.format(e.enflasyon)}</span></div>
+    <div class="satir"><span class="ad"><strong>Saatlik faiz</strong><small>Banka / kredi</small></span><span class="deger">%${e.faiz.banka} / %${e.faiz.kredi}</span></div>
+    <div class="satir"><span class="ad"><strong>Toplam coin</strong></span><span class="deger">${sayi.format(e.toplamCoin)}</span></div>
+    ${e.mulkler.map((m) => h`<div class="satir"><span class="ad"><strong>${m.ad}</strong></span><span class="deger">${sayi.format(m.adet)}</span></div>`)}
+    ${e.coinSahipleri.map((c) => h`<a class="satir" href="${kisiLink(chatJid, c.user_jid)}">
+      ${c.uye ? avatar(c.uye) : ''}
+      <span class="ad"><strong>${c.uye ? adi(c.uye) : 'Eski üye'}</strong><small>Coin</small></span>
+      <span class="deger">${sayi.format(c.bakiye)}</span>
+    </a>`)}
+    ${e.arzGecmisi.length >= 2 ? cizgi(e.arzGecmisi, 'artis buyuk', { genislik: 240, yukseklik: 60 }) : ''}
+  </section>`
+}
+
 export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
   const sekmeler = Object.entries(SIRALAMALAR).map(([alan, ad]) =>
     h`<a class="${alan === g.alan ? 'secili' : ''}" href="${grupLink(chatJid)}&sirala=${alan}">${ad}</a>`)
@@ -205,6 +223,8 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
 </div>
 
 <div class="yan">
+  ${g.ekonomi ? ekonomiKarti(chatJid, g.ekonomi) : ''}
+
   <section class="kart"><h2>Son 30 gün</h2>${gunGrafigi(g.gunlukMesaj)}</section>
 
   ${g.sezon.length ? h`<section class="kart liste"><h2>Bu haftanın sezonu</h2>${g.sezon.map((s, i) => h`

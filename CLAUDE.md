@@ -290,7 +290,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 35 (tamam):** `.iflas`. Faz 34 bölümüne işlendi.
 - **Faz 36 (tamam):** coin ve `.coinmarket`. Ayrıntı aşağıda.
 - **Faz 37 (tamam):** coin kuru, haciz sigortası, `.tüik`, `.mülk`. Faz 36 bölümüne işlendi.
-- **Faz 38+:** yeni komutlar, her biri ayrı adım
+- **Faz 38 (tamam):** `.faizkararı`, `.teşvik`, artan oranlı vergi, panelde ekonomi kartı. Faz 36 bölümüne işlendi.
+- **Faz 39+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -828,7 +829,7 @@ olan kişiye `MIN_KURBAN_XP` uygulanmaz, yoksa fakir birinin ödülü sonsuza de
 banka(chat_jid, user_jid, bakiye, faiz_saat, faiz_artik, bekleyen, vergi_day, son_vergi)   PK(chat_jid,user_jid)
 ```
 
-Kurallar `lib/banka.js`'te saftır. Faiz saatliktir (%15, bot sahibinin kararı), bileşiktir ve bakiyenin tamamına
+Kurallar `lib/banka.js`'te saftır. Faiz saatliktir (varsayılan %15, sahip `.faizkararı` ile grup başına değiştirir), bileşiktir ve bakiyenin tamamına
 işler, tavan yoktur. XP bastığı için boşta en çok 7 günlük (168 saat) birikir ve `.banka`
 yazılınca işlenir. 1 XP'yi bulmayan küsurat `faiz_artik`'te devreder, yoksa küçük bakiye her
 saat bakınca hiç faiz alamazdı. Faiz saat başlarında işler. O saat diliminde yatırılan para `bekleyen`'dedir, ilk saat başında faiz almaz: yoksa
@@ -836,6 +837,7 @@ saat başına bir dakika kala yatıran tam saatin faizini alırdı. Her işlem �
 `BANKA_TAVANI` (1 katrilyon) kaldırılmaz: faiz bu oranda bakiyeyi günler içinde tam sayı sınırının üstüne çıkarır.
 Çekimdeki %5 ile vergi bot hesabına gider (Faz 32).
 
+Vergi artan oranlıdır (`servetVergisi`, dilimler `VERGI_DILIMLERI`, coin kuru cinsinden), cüzdan ve banka birlikte sayılır, önce cüzdandan alınır, bot muaftır.
 Vergi `recordMessage()` içinde kişinin günün ilk mesajında kesilir: komutla kesilseydi
 kaçılabilirdi. Bot kendiliğinden yazmadığı için vergiyi `.banka` gösterir. Mesaj başına DB'ye
 gidilmesin diye denetim bellektedir, yeniden başlatmada `vergi_day` çift kesintiyi önler.
@@ -989,7 +991,9 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 - **`.soygun herkes`:** `topluSoygun()` her üyeye ayrı zar atar (%40, kurbanın %10'u). Hak coinle alındığı için yakalanma cezası yoktur, günlük hak harcanmaz. Kalkan, korunma ve fakir kuralı normal soygunla aynıdır (`kurbanEngeli`). Soyulacak kimse yoksa hak yanmaz.
 - **`.hacizall`:** herkese açıktır, 30 coin yazıldığı an düşer, saklanan hak yoktur (`topluHaciz`). Listede görünür ama `.coinmarket al` ile alınmaz. Bankanın %45'i ve cüzdanın %50'si alıcının cüzdanına geçer. Botun kasasına dokunmaz. `.haciz` ayrı komuttur: yalnızca sahip kullanır, para bota gider. Kalkan korumaz, sigorta korur, bot hariçtir. Alınacak para yoksa coin düşmez.
 - Mesajlardaki XP tutarları `lib/sayi.js:binlik()` ile yazılır. Kopyalanacak komut metninde (`.devret @kişi 1000`) ham sayı kalır, yoksa `.devret` okuyamaz.
-- Panel coin ve mülk göstermez.
+- **`.faizkararı`:** `faiz(chat_jid, oran)`, satır yoksa varsayılan geçerlidir. Sınır 0-50. Kredi hep `KREDI_FAIZ_FARKI` üstündedir. Karar önce gruptaki bütün faizi eski orandan işler, yoksa yeni oran geçmiş saatlere uygulanırdı.
+- **`.teşvik`:** kasadan son 7 günde yazan üyelere eşit dağıtır (`tesvikDagit`), bölünmeyen artık kasada kalır.
+- **Panel:** grup sayfasında Ekonomi kartı `ekonomi` kaydını gösterir, yani kur ve para bugünün kaydıdır, anlık değildir. Tablolar bot yeni sürümle açılmadan yoktur, `ekonomiTablolariVar()` bu yüzden vardır.
 
 ## Elle Doğrulama
 
@@ -1070,3 +1074,6 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 61. `.coinmarket sat 1` → kurun %90'ı gelir; eksi cüzdan ve coinle `.iflas` → "önce coinlerini boz"
 62. `.mülk al ev` → 5 coin düşer, `.profil`'de görünür; bir saat sonra `.mülk topla` → kira gelir; sahip `.haciz @kişi ev` → ev gider, kasa artar
 63. `.top` → bot tek satır; sahip `.devret @bot 10` → botun satırı artar, ikinci satır açılmaz
+64. Sahip `.faizkararı 25` → banka %25, kredi %29; sıradan üye yazarsa tepki yok; `.banka` ve `.kredi çek` yeni oranı yazar
+65. Sahip `.teşvik 1000` → aktif üyeler eşit pay alır, kasa azalır; kasadan fazlası reddedilir
+66. Servet 1 coin değerini geçen kişi günün ilk mesajında vergi öder, `.banka` son vergiyi yazar; panelde Ekonomi kartı görünür

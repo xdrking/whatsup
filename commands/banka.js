@@ -1,9 +1,9 @@
 import {
-  CEKIM_KESINTI_YUZDESI, FAIZ_YUZDESI, VERGI_ESIGI, VERGI_YUZDESI,
+  CEKIM_KESINTI_YUZDESI, VERGI_DILIMLERI,
 } from '../lib/banka.js'
 import { requireGroup } from '../lib/group.js'
 import { miktarCoz } from '../lib/kumar.js'
-import { bankaCek, bankaDurumu, bankaYatir } from '../lib/stats.js'
+import { bankaCek, bankaDurumu, bankaYatir, faizDurumu } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
@@ -16,9 +16,9 @@ export default {
   description: 'XP\'ni soygun ve vergiden koru, saatlik faiz al',
   usage: '.banka  —  .banka yatır <miktar|hepsi|yarısı>  —  .banka çek <miktar|hepsi|yarısı>',
   details: [
-    `Bankadaki XP soyulamaz ve her saat tüm bakiyeye %${ondalik.format(FAIZ_YUZDESI)} faiz alır. Yeni yatırılan para tam bir saat durmadan faiz almaz. Faiz \`.banka\` yazınca işlenir, en çok 7 günlük birikir.`,
+    `Bankadaki XP soyulamaz ve her saat tüm bakiyeye faiz alır, oranı \`.banka\` gösterir. Yeni yatırılan para tam bir saat durmadan faiz almaz. Faiz \`.banka\` yazınca işlenir, en çok 7 günlük birikir.`,
     `Çekerken %${CEKIM_KESINTI_YUZDESI} kesilir. Bankadaki XP'yle kumar oynanmaz, seviyeye ve \`.top\`'a sayılmaz.`,
-    `Cüzdanda ${sayi.format(VERGI_ESIGI)} XP'nin üstü, o günkü ilk mesajında %${VERGI_YUZDESI} vergilenir. Banka vergiden muaftır.`,
+    `Cüzdan ve banka birlikte, o günkü ilk mesajında artan oranlı vergilenir: 1 coin değerine kadar vergi yok, en yüksek dilim %${VERGI_DILIMLERI.at(-1).yuzde}.`,
   ],
   category: 'oyun',
   cooldown: 5,
@@ -73,6 +73,7 @@ export default {
         `👛 Cüzdan: ${sayi.format(durum.xp)} XP`,
       ]
       if (durum.faiz) lines.push(`📈 Yeni faiz: +${sayi.format(durum.faiz)} XP`)
+      lines.push(`📈 Saatlik faiz: %${faizDurumu(from).banka}`)
       if (durum.sonVergi) lines.push(`💸 Son vergi: ${sayi.format(durum.sonVergi)} XP`)
       if (durum.borc) lines.push(`💳 Kredi borcu: ${sayi.format(durum.borc)} XP`)
       lines.push('', '`.banka yatır 500`  •  `.banka çek 500`')

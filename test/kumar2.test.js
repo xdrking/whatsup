@@ -160,21 +160,21 @@ test('bot hesabı: banka kesintisi, servet vergisi ve borsa komisyonu bota gider
   const bot = '905550000000@s.whatsapp.net'
   const hisse = HISSELER[0]
   botHesabiniTani({ id: bot })
-  addXp({ chatJid, userJid: 'a', amount: 20_000 })
+  addXp({ chatJid, userJid: 'a', amount: 2_000_000 })
 
   recordMessage({ chatJid, userJid: 'a', type: 'conversation' })
-  assert.equal(getStats(chatJid, bot).xp, 100)
+  assert.equal(getStats(chatJid, bot).xp, 20_000)
 
   bankaYatir({ chatJid, userJid: 'a', miktar: 1000 })
   const cekim = bankaCek({ chatJid, userJid: 'a', miktar: 1000 })
   assert.equal(cekim.kesinti, 50)
-  assert.equal(getStats(chatJid, bot).xp, 150)
+  assert.equal(getStats(chatJid, bot).xp, 20_050)
 
   const alis = borsaAl({ chatJid, userJid: 'a', hisse, miktar: 1000 })
-  assert.equal(getStats(chatJid, bot).xp, 150 + alis.komisyon)
+  assert.equal(getStats(chatJid, bot).xp, 20_050 + alis.komisyon)
 
   const satis = borsaSat({ chatJid, userJid: 'a', hisse })
-  assert.equal(getStats(chatJid, bot).xp, 150 + alis.komisyon + satis.komisyon)
+  assert.equal(getStats(chatJid, bot).xp, 20_050 + alis.komisyon + satis.komisyon)
 
   botHesabiniTani(null)
 })

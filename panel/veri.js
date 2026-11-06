@@ -6,7 +6,9 @@ import Database from 'better-sqlite3'
 import { HISSELER, SAAT_MS } from '../lib/borsa.js'
 import { istanbulDay } from '../lib/dataset.js'
 import { SETLER } from '../lib/kart.js'
-import { borcIslet } from '../lib/kredi.js'
+import { FAIZ_YUZDESI } from '../lib/banka.js'
+import { borcIslet, KREDI_FAIZ_FARKI } from '../lib/kredi.js'
+import { MULKLER } from '../lib/mulk.js'
 import { ROZETLER } from '../lib/rozet.js'
 import { haftaAnahtari } from '../lib/sezon.js'
 import { seviye, seviyeIlerlemesi } from '../lib/stats.js'
@@ -102,7 +104,42 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
    * Açık krediler ve eksi cüzdanlar, en büyük borçtan aza. Panel yazamadığı için
    * kredinin güncel tutarı burada yalnızca gösterim için hesaplanır.
    */
+  // Panel botun şemasını kuramaz: bot yeni sürümle açılmadan bu tablolar yoktur.
+  const ekonomiTablolariVar = () => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'faiz'").get()
+
+  function bankaFaizi(chatJid) {
+    if (!ekonomiTablolariVar()) return FAIZ_YUZDESI
+    return db.prepare('SELECT oran FROM faiz WHERE chat_jid = ?').get(chatJid)?.oran ?? FAIZ_YUZDESI
+  }
+
+  /** @returns {object | null} ekonomi kaydı yoksa null */
+  function ekonomi(chatJid, liste) {
+    if (!ekonomiTablolariVar()) return null
+
+    const kayitlar = db.prepare('SELECT day, arz, kur FROM ekonomi WHERE chat_jid = ? ORDER BY day DESC LIMIT 30').all(chatJid).reverse()
+    const son = kayitlar.at(-1)
+    if (!son) return null
+
+    const onceki = kayitlar.at(-2)
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const faiz = bankaFaizi(chatJid)
+    const mulkAdet = new Map(db.prepare('SELECT kod, SUM(adet) AS adet FROM mulk WHERE chat_jid = ? GROUP BY kod').all(chatJid).map((m) => [m.kod, m.adet]))
+
+    return {
+      arz: son.arz,
+      kur: son.kur,
+      enflasyon: onceki?.arz ? (son.arz - onceki.arz) / onceki.arz : null,
+      faiz: { banka: faiz, kredi: faiz + KREDI_FAIZ_FARKI },
+      arzGecmisi: kayitlar.map((g) => g.arz),
+      toplamCoin: db.prepare('SELECT COALESCE(SUM(bakiye), 0) AS t FROM coin WHERE chat_jid = ?').get(chatJid).t,
+      coinSahipleri: db.prepare('SELECT user_jid, bakiye FROM coin WHERE chat_jid = ? AND bakiye > 0 ORDER BY bakiye DESC LIMIT 5').all(chatJid)
+        .map((c) => ({ ...c, uye: adlar.get(c.user_jid) ?? null })),
+      mulkler: MULKLER.flatMap((m) => (mulkAdet.get(m.kod) ? [{ ad: m.ad, adet: mulkAdet.get(m.kod) }] : [])),
+    }
+  }
+
   function borclular(chatJid, liste, now) {
+    const krediFaizi = bankaFaizi(chatJid) + KREDI_FAIZ_FARKI
     const adlar = new Map(liste.map((u) => [u.user_jid, u]))
     const krediler = db.prepare('SELECT user_jid, borc, faiz_saat, vade FROM kredi WHERE chat_jid = ?').all(chatJid)
       .map((k) => {
@@ -110,7 +147,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         return {
           user_jid: k.user_jid,
           uye: adlar.get(k.user_jid) ?? null,
-          borc: borcIslet(k.borc, Math.max(0, saat - k.faiz_saat)),
+          borc: borcIslet(k.borc, Math.max(0, saat - k.faiz_saat), krediFaizi),
           vade: k.vade,
           gecti: now >= k.vade,
         }
@@ -155,6 +192,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         toplam: { uye: liste.length, mesaj: toplam('messages'), xp: toplam('xp'), banka: toplam('bakiye') },
         bugun,
         borclular: borclular(chatJid, liste, now),
+        ekonomi: ekonomi(chatJid, liste),
         saatler: saatler('chat_jid = ?', chatJid),
         gunlukMesaj: gunler(db.prepare('SELECT gun, SUM(mesaj) AS n FROM gecmis WHERE chat_jid = ? GROUP BY gun').all(chatJid), now),
         rekorlar: REKORLAR.flatMap((r) => {

@@ -1,8 +1,8 @@
 import logger from '../lib/logger.js'
 import { requireGroup } from '../lib/group.js'
-import { IFLAS_KREDI_YASAK_SAATI, KREDI_FAIZ_YUZDESI, KREDI_LIMITI, KREDI_VADE_SAATI, MIN_KREDI } from '../lib/kredi.js'
+import { IFLAS_KREDI_YASAK_SAATI, KREDI_LIMITI, KREDI_VADE_SAATI, MIN_KREDI } from '../lib/kredi.js'
 import { miktarCoz } from '../lib/kumar.js'
-import { krediCek, krediDurumu, krediOde } from '../lib/stats.js'
+import { faizDurumu, krediCek, krediDurumu, krediOde } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import { sureYaz } from './cark.js'
 
@@ -15,7 +15,7 @@ export default {
   description: 'Botun bankasından faizli kredi çeker',
   usage: '.kredi  —  .kredi çek <miktar>  —  .kredi öde <miktar|hepsi|yarısı>',
   details: [
-    `Faiz saatlik %${KREDI_FAIZ_YUZDESI} bileşiktir, saat başlarında işler. Vade ${KREDI_VADE_SAATI} saat, aynı anda tek kredi.`,
+    `Faiz saatlik bileşiktir, saat başlarında işler, banka faizinin 4 puan üstündedir. Vade ${KREDI_VADE_SAATI} saat, aynı anda tek kredi.`,
     `Limit ${sayi.format(KREDI_LIMITI)} XP, en az ${MIN_KREDI} XP çekilir. Tek kredi botun kasasının yarısını geçemez.`,
     'Borç varken `.banka yatır` önce borcu keser, `.devret` kapalıdır.',
     'Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır.',
@@ -56,7 +56,7 @@ export default {
 
         return await yaz([
           `💳 ${sayi.format(miktar)} XP kredi çekildi.`,
-          `⏰ Vade: ${KREDI_VADE_SAATI} saat  •  📈 Saatlik faiz: %${KREDI_FAIZ_YUZDESI}`,
+          `⏰ Vade: ${KREDI_VADE_SAATI} saat  •  📈 Saatlik faiz: %${faizDurumu(from).kredi}`,
           `👛 Cüzdan: ${sayi.format(s.xp)} XP`,
         ].join('\n'))
       }

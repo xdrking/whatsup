@@ -186,6 +186,8 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |
 | `.devret @a @b 50` | **Yalnızca owner.** a'nın XP'sinden b'ye aktarır; owner'ın kendi XP'si değişmez. `.help`'te görünmez |
+| `.faizkararı 25` | **Yalnızca owner.** Grubun saatlik banka faizini belirler (0-50), kredi 4 puan üstünde kalır. Birikmiş faiz eski orandan işlenir |
+| `.teşvik 5000000` | **Yalnızca owner.** Kasadan son 7 günde yazan üyelere eşit dağıtır, bot hariç. Eksi cüzdana giden pay önce eksiyi kapatır |
 | `.haciz @kişi ev` | **Yalnızca owner.** Kişinin bir mülkünü alır, değeri kasaya girer |
 | `.haciz @kişi 2000` | **Yalnızca owner.** Önce bankadan, yetmezse cüzdandan alıp botun bankasına aktarır. Onlar da yetmezse kalanı cüzdana eksi yazar, eksi kısım kasaya girmez. `hepsi` ve `yarısı` banka hesabına göredir. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
 | `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
@@ -291,9 +293,19 @@ En az 50 XP, koyarken %10'u kesilir. Aynı kişiye koyulan ödüller birikir.
 | `.banka yatır 500` | XP'yi hesaba koyar; `hepsi` ve `yarısı` da olur |
 | `.banka çek 500` | Hesaptan çeker, %5'i kesilir |
 
-Bankadaki XP soyulamaz, vergilenmez, her saat tüm bakiyeye %15 bileşik faiz alır (günde yaklaşık 28 kat). Faiz saat başlarında işler, yeni yatırılan para tam bir saat durmadan faiz almaz. Bakiye en çok 1 katrilyon XP olabilir. Faiz `.banka` yazınca işlenir, en çok 7 günlük birikir.
+Bankadaki XP soyulamaz, her saat tüm bakiyeye %15 bileşik faiz alır (oranı owner `.faizkararı` ile değiştirebilir) (günde yaklaşık 28 kat). Faiz saat başlarında işler, yeni yatırılan para tam bir saat durmadan faiz almaz. Bakiye en çok 1 katrilyon XP olabilir. Faiz `.banka` yazınca işlenir, en çok 7 günlük birikir.
 Bankadaki XP seviyeye ve `.top`'a sayılmaz, `.profil`'de ayrı görünür.
-Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajında %1 vergilenir ve vergi bot hesabına gider. `.banka` son vergiyi gösterir.
+Servet vergisi artan oranlıdır: cüzdan ve banka birlikte sayılır, kişinin o günkü ilk mesajında kesilir ve botun hesabına gider. Önce cüzdandan, yetmezse bankadan alınır. Dilimler coin kuruna bağlıdır, enflasyonda büyür. Her dilim yalnızca kendi aralığından alınır:
+
+| Servet (kur cinsinden) | Kur 1.000.000 iken | Günlük vergi |
+|---|---|---|
+| 1 coine kadar | 1M XP | yok |
+| 1-5 coin | 1M-5M XP | %2 |
+| 5-20 coin | 5M-20M XP | %5 |
+| 20-100 coin | 20M-100M XP | %10 |
+| 100 coin üstü | 100M XP üstü | %20 |
+
+Örnek: 12M XP servet 430.000 XP vergi öder. Coin ve mülk vergilenmez, bot muaftır.
 
 Yatırılan paranın hiç dokunulmazsa ne kadar olacağı (çekim kesintisi öncesi, XP):
 
@@ -326,7 +338,7 @@ Botun bankasından faizli XP çekilir. Ödenmeyen borç cüzdanı eksiye düşü
 
 | Konu | Değer |
 |---|---|
-| Faiz | Saatlik %19 bileşik, her saat başında işler |
+| Faiz | Saatlik %19 bileşik, her saat başında işler. Hep banka faizinin 4 puan üstündedir |
 | Vade | 24 saat, sonrasında faiz durur |
 | Aynı anda | Tek kredi |
 | Limit | 400.000 XP, ama kasanın yarısını geçemez |
