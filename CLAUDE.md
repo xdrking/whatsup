@@ -292,7 +292,7 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 36 (tamam):** coin ve `.coinmarket`. Ayrıntı aşağıda.
 - **Faz 37 (tamam):** coin kuru, haciz sigortası, `.tüik`, `.mülk`. Faz 36 bölümüne işlendi.
 - **Faz 38 (tamam):** `.faizkararı`, `.teşvik`, artan oranlı vergi, panelde ekonomi kartı. Faz 36 bölümüne işlendi.
-- **Faz 39 (tamam):** `.hapis`, `.kefalet`, `.seçim`, `.evlen`, `.boşan`, `.meslek`, `.çalış`, `.çete`, `.dava`, `.özet`. Ayrıntı aşağıda.
+- **Faz 39 (tamam):** `.hapis`, `.kefalet`, `.seçim` (askıda), `.evlen`, `.boşan`, `.meslek`, `.çalış`, `.çete`, `.dava`, `.özet`. Ayrıntı aşağıda.
 - **Faz 40+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
@@ -1014,13 +1014,15 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 
 - **`.hapis`:** `.soygun`'da yakalanan 2 saat girer. Toplu soygunda yakalanma olmadığı için hapis de yoktur. `kumarYasagi()` iflas ve hapsin geç biteni döner, kumar komutları ayrıca bir şey çağırmaz. `.soygun` ve `.çalış` kendisi denetler.
 - **`.kefalet`:** tutar yakalanırken cüzdanın %20'sidir ve saklanır, sonradan bankaya yatırmak düşürmez. XP yanar, enflasyonu frenler. Eş yarı fiyata öder.
-- **`.seçim`:** bu haftanın kazananı gelecek hafta başkandır. Kapanış `.sezon` gibi yeni haftadaki ilk okumadadır (`secimKapat`), `baskanMi` da çağırır. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Tek kişi tek oy, oy satın alınamaz, yoksa zengin hep kazanırdı.
-- **Başkan:** `.faizkararı` artık `ownerOnly` değildir, yetki komutun içindedir, yetkisiz kişi yine sessizce düşer. Başkan günde bir karar verir (`karar_gun`), sahip sınırsızdır. `.teşvik` ve `.haciz` yalnızca sahibindir.
+- **`.seçim` askıdadır (bot sahibinin kararı):** komut `commands/askida/secim.js`'tedir, alt klasör taranmadığı için yüklenmez. `lib/stats.js` ve `lib/secim.js` tarafı durur, testleri çalışır. Açmak için dosya `commands/`'a taşınır, importları `../lib/` olur, `.faizkararı`'na başkan yetkisi geri eklenir (`baskanMi`, `faizKarari({ baskan: true })`, `ownerOnly: false`).
+- **`.seçim` kuralları:** bu haftanın kazananı gelecek hafta başkandır. Kapanış `.sezon` gibi yeni haftadaki ilk okumadadır (`secimKapat`), `baskanMi` da çağırır. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Tek kişi tek oy, oy satın alınamaz, yoksa zengin hep kazanırdı.
+- **Başkan:** açılınca günde bir faiz kararı verir (`karar_gun`), sahip sınırsızdır. `.teşvik` ve `.haciz` yalnızca sahibindir.
 - **`.evlen`:** teklif oyun yuvasını 2 dk tutar, yalnızca teklif edilen yanıtlar. Bonus `.çalış`'ta %20 maaş ve yarı fiyat kefalettir. `.günlük`'e konmadı: 50 XP'nin bonusu bu ekonomide bir şey etmez.
 - **`.boşan`:** isteyen, cüzdan ve bankasının %20'sini eşine öder. `.boşan` tutarı gösterir, `.boşan onay` uygular. Borçluyken kapalıdır (`borcluMu`), yoksa evlenip boşanarak para borçtan kaçırılırdı.
 - **`.meslek`:** tanımlar `lib/meslek.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Maaş kurun on binde payıdır, 4 saatte bir alınır, XP basar. Mesleklerin ortalaması yakın kalmalı, fark risktedir. `addXp`'den geçmez, sezon puanı yazmaz: maaş mesaj ve oyun puanlarını ezerdi.
 - **`.çete`:** kasa faiz almaz, vergi, soygun ve hacizden muaftır. Bu yüzden yatırırken %5 kesilir ve bota gider, borçlu yatıramaz, kasası dolu lider `.iflas` edemez. Kasa `paraArzi`'ne girer, yoksa yatırmak kuru düşürürdü. Sıralama üyelerin `sezon` puanı toplamıdır, ödül `sezonDurumu()` kapanışında puanlar silinmeden yazılır.
 - **`.dava`:** `.anket` oyları okunamadığı için oylama yanıt tabanlıdır, `setLastMessage` oyda çağrılmaz (`.açıkartırma` gibi). Taraflar oy veremez. Kaybeden öder, davacı da. Miktar sanığın cüzdanının %25'iyle sınırlıdır, çoğunluk tek oylamayla birini sıfırlayamasın. Harç peşin bota gider, `.oyunbitir` dahil hiçbir durumda iade edilmez. Borçlu taraf kabul edilmez, kapanışta da denetlenir: dava para kaçırma yolu olmasın.
+- **Panel:** grup sayfasında Çeteler, Hapishane, Evlilikler, Meslekler, kişi sayfasında Hayat kartı vardır. Veri yoksa kart çıkmaz. Tablolar bot yeni sürümle açılmadan yoktur, `toplumTablolariVar()` bu yüzden vardır. Seçim panele eklenmedi.
 - **`.özet`:** yeni tablo yoktur. Mesajlar `gecmis`'ten son 7 gündür, gece kuşu ve kumar tüm zamanlardır, çünkü o tablolar haftalık tutulmaz. Çıktı bunu ayrı başlıkla yazar.
 
 ## Elle Doğrulama
@@ -1106,9 +1108,10 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 65. Sahip `.teşvik 1000` → aktif üyeler eşit pay alır, kasa azalır; kasadan fazlası reddedilir
 66. Servet 1 coin değerini geçen kişi günün ilk mesajında vergi öder, `.banka` son vergiyi yazar; panelde Ekonomi kartı görünür
 67. `.soygun`'da yakalanınca `.hapis` listeler; `.bahis`, `.soygun`, `.çalış` reddedilir; başkası `.kefalet @kişi` yazınca çıkar
-68. `.seçim aday` ve `.seçim oy @kişi` → XP düşer, ikinci oy reddedilir; pazartesi `.seçim` kazananı yazar; başkan `.faizkararı 25` çalışır, aynı gün ikincisi reddedilir; sıradan üye yazarsa tepki yok
+68. `.seçim` → askıda, bot hiç tepki vermez; sıradan üye `.faizkararı 25` yazarsa tepki yok
 69. `.evlen @kişi` → yalnızca hedefin `evet`i sayılır, `.profil` eşi gösterir; `.boşan` tutarı yazar, `.boşan onay` parayı aktarır
 70. `.meslek seç kurye`, `.çalış` → maaş gelir; ikinci `.çalış` kalan süreyi yazar
 71. `.çete kur Ad`, başkası `.çete katıl Ad`, `.çete yatır 1000` → kasaya 950 girer; üye `.çete çek` reddedilir, lider çeker
 72. `.dava @kişi 1000 sebep` → taraflar oy veremez, iki üye `haklı` yazınca 5 dk sonra XP geçer; tek oyda dava düşer
 73. `.özet` → son 7 günün mesajları ve tüm zamanlar başlığı gelir, bot listede yok
+74. Panelde grup sayfası çete, hapis, evlilik ve meslek kartlarını, kişi sayfası Hayat kartını gösterir; verisi olmayan kart çıkmaz

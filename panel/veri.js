@@ -8,6 +8,7 @@ import { istanbulDay } from '../lib/dataset.js'
 import { SETLER } from '../lib/kart.js'
 import { FAIZ_YUZDESI } from '../lib/banka.js'
 import { borcIslet, KREDI_FAIZ_FARKI } from '../lib/kredi.js'
+import { MESLEKLER, meslekKoduyla } from '../lib/meslek.js'
 import { MULKLER } from '../lib/mulk.js'
 import { ROZETLER } from '../lib/rozet.js'
 import { haftaAnahtari } from '../lib/sezon.js'
@@ -138,6 +139,55 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     }
   }
 
+  // Faz 39 tabloları da bot yeni sürümle açılmadan yoktur.
+  const toplumTablolariVar = () => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'cete'").get()
+
+  function toplum(chatJid, liste, now) {
+    if (!toplumTablolariVar()) return { ceteler: [], ciftler: [], hapistekiler: [], meslekler: [] }
+
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const uye = (jid) => adlar.get(jid) ?? null
+    const adetler = new Map(db.prepare('SELECT kod, COUNT(*) AS adet FROM meslek WHERE chat_jid = ? GROUP BY kod').all(chatJid).map((m) => [m.kod, m.adet]))
+
+    return {
+      // Kasa son işlenen değerdir, puan bu haftanın sezonundan gelir.
+      ceteler: db.prepare(`
+        SELECT c.ad, c.lider, c.kasa, COUNT(u.user_jid) AS uyeSayisi, COALESCE(SUM(s.puan), 0) AS puan
+        FROM cete c
+        LEFT JOIN cete_uye u ON u.chat_jid = c.chat_jid AND u.anahtar = c.anahtar
+        LEFT JOIN sezon s ON s.chat_jid = u.chat_jid AND s.user_jid = u.user_jid AND s.hafta = ?
+        WHERE c.chat_jid = ? GROUP BY c.anahtar ORDER BY puan DESC, c.kasa DESC, c.anahtar
+      `).all(haftaAnahtari(new Date(now)), chatJid).map((c) => ({ ...c, liderUye: uye(c.lider) })),
+      // Çift iki satırdır, her biri bir kez görünsün diye sıralı yarısı alınır.
+      ciftler: db.prepare('SELECT user_jid, es_jid, tarih FROM evlilik WHERE chat_jid = ? AND user_jid < es_jid ORDER BY tarih').all(chatJid)
+        .map((c) => ({ ...c, uye: uye(c.user_jid), es: uye(c.es_jid) })),
+      hapistekiler: db.prepare('SELECT user_jid, bitis, kefalet FROM hapis WHERE chat_jid = ? AND bitis > ? ORDER BY bitis').all(chatJid, now)
+        .map((h) => ({ ...h, uye: uye(h.user_jid) })),
+      meslekler: MESLEKLER.flatMap((m) => (adetler.get(m.kod) ? [{ ad: m.ad, adet: adetler.get(m.kod) }] : [])),
+    }
+  }
+
+  /** Kişi sayfasının Hayat kartı; hiçbiri yoksa alanlar boştur. */
+  function hayat(chatJid, userJid, liste, now) {
+    if (!toplumTablolariVar()) return {}
+
+    const es = db.prepare('SELECT es_jid, tarih FROM evlilik WHERE chat_jid = ? AND user_jid = ?').get(chatJid, userJid)
+    const hapis = db.prepare('SELECT bitis, kefalet FROM hapis WHERE chat_jid = ? AND user_jid = ? AND bitis > ?').get(chatJid, userJid, now)
+    const cete = db.prepare(`
+      SELECT c.ad, c.kasa, c.lider = @user AS lider FROM cete_uye u
+      JOIN cete c ON c.chat_jid = u.chat_jid AND c.anahtar = u.anahtar
+      WHERE u.chat_jid = @chat AND u.user_jid = @user
+    `).get({ chat: chatJid, user: userJid })
+    const kod = db.prepare('SELECT kod FROM meslek WHERE chat_jid = ? AND user_jid = ?').get(chatJid, userJid)?.kod
+
+    return {
+      es: es ? { ...es, uye: liste.find((u) => u.user_jid === es.es_jid) ?? null } : null,
+      hapis: hapis ?? null,
+      cete: cete ?? null,
+      meslek: meslekKoduyla(kod)?.ad ?? null,
+    }
+  }
+
   function borclular(chatJid, liste, now) {
     const krediFaizi = bankaFaizi(chatJid) + KREDI_FAIZ_FARKI
     const adlar = new Map(liste.map((u) => [u.user_jid, u]))
@@ -193,6 +243,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         bugun,
         borclular: borclular(chatJid, liste, now),
         ekonomi: ekonomi(chatJid, liste),
+        toplum: toplum(chatJid, liste, now),
         saatler: saatler('chat_jid = ?', chatJid),
         gunlukMesaj: gunler(db.prepare('SELECT gun, SUM(mesaj) AS n FROM gecmis WHERE chat_jid = ? GROUP BY gun').all(chatJid), now),
         rekorlar: REKORLAR.flatMap((r) => {
@@ -252,6 +303,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         sira: sira + 1,
         uyeSayisi: liste.length,
         ilerleme: seviyeIlerlemesi(uye.xp),
+        hayat: hayat(chatJid, userJid, liste, now),
         enAktifSaat,
         saatler: saatDizisi,
         gunlukMesaj: gunler(gecmis, now),

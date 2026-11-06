@@ -1,11 +1,13 @@
-import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
-import { OY_UCRETI } from '../lib/secim.js'
-import { binlik } from '../lib/sayi.js'
-import { haftaBitisi } from '../lib/sezon.js'
-import { adayOl, botHesabiMi, oyVer, secimDurumu } from '../lib/stats.js'
-import { mentionOf, resolveTargets } from '../lib/target.js'
-import { trLower } from '../lib/turkishWords.js'
-import logger from '../lib/logger.js'
+// Askıda: commands/index.js alt klasöre inmediği için yüklenmez. Açmak için bir üst klasöre taşınır,
+// `.faizkararı`na başkan yetkisi geri eklenir (bkz. CLAUDE.md, Faz 39).
+import { requireGroupMetadata, uyeKimligiBul } from '../../lib/group.js'
+import { OY_UCRETI } from '../../lib/secim.js'
+import { binlik } from '../../lib/sayi.js'
+import { haftaBitisi } from '../../lib/sezon.js'
+import { adayOl, botHesabiMi, oyVer, secimDurumu } from '../../lib/stats.js'
+import { mentionOf, resolveTargets } from '../../lib/target.js'
+import { trLower } from '../../lib/turkishWords.js'
+import logger from '../../lib/logger.js'
 
 const KAPALI = '🗳️ Sandıklar şu an kapalı, sonra dene.'
 

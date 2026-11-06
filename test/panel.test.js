@@ -261,6 +261,47 @@ test('ekonomi kartı: kur, faiz, enflasyon ve coin görünür; kayıt yoksa kart
   assert.equal(veri.grup(GRUP).ekonomi, null)
 })
 
+test('toplum: çete, hapis, evlilik ve meslek grup ve kişi sayfasında görünür', async () => {
+  const grup = 'toplum@g.us'
+  const simdi = 500_000 * SAAT_MS
+  const db = getDb()
+  const stats = db.prepare('INSERT INTO stats (chat_jid, user_jid, xp) VALUES (?, ?, ?)')
+  for (const jid of ['a@lid', 'b@lid', 'c@lid']) stats.run(grup, jid, 100)
+  db.prepare('INSERT INTO cete (chat_jid, anahtar, ad, lider, kasa) VALUES (?, ?, ?, ?, ?)').run(grup, 'kediler', '<b>Kediler</b>', 'a@lid', 950)
+  const uye = db.prepare('INSERT INTO cete_uye (chat_jid, user_jid, anahtar, katilma) VALUES (?, ?, ?, 1)')
+  uye.run(grup, 'a@lid', 'kediler')
+  uye.run(grup, 'b@lid', 'kediler')
+  const es = db.prepare('INSERT INTO evlilik (chat_jid, user_jid, es_jid, tarih) VALUES (?, ?, ?, 1)')
+  es.run(grup, 'a@lid', 'b@lid')
+  es.run(grup, 'b@lid', 'a@lid')
+  const hapis = db.prepare('INSERT INTO hapis (chat_jid, user_jid, bitis, kefalet) VALUES (?, ?, ?, 1800)')
+  hapis.run(grup, 'c@lid', simdi + SAAT_MS)
+  hapis.run(grup, 'b@lid', simdi - 1)
+  db.prepare('INSERT INTO meslek (chat_jid, user_jid, kod, secim) VALUES (?, ?, ?, 1)').run(grup, 'a@lid', 'kurye')
+
+  const t = veri.grup(grup, 'xp', simdi).toplum
+  assert.equal(t.ceteler[0].uyeSayisi, 2)
+  assert.equal(t.ciftler.length, 1)
+  assert.deepEqual(t.hapistekiler.map((h) => h.user_jid), ['c@lid'])
+  assert.deepEqual(t.meslekler, [{ ad: '🛵 Kurye', adet: 1 }])
+
+  const y = veri.kisi(grup, 'a@lid', simdi).hayat
+  assert.equal(y.es.es_jid, 'b@lid')
+  assert.equal(y.cete.lider, 1)
+  assert.equal(y.meslek, '🛵 Kurye')
+  assert.equal(y.hapis, null)
+
+  const Cookie = await cerezAl('8.8.8.2')
+  const sayfa = (yol) => fetch(`${adres}${yol}`, { headers: { Cookie } }).then((r) => r.text())
+  const html = await sayfa(`/grup?id=${encodeURIComponent(grup)}`)
+  for (const baslik of ['Çeteler', 'Evlilikler', 'Meslekler']) assert.ok(html.includes(baslik), baslik)
+  assert.ok(html.includes('&lt;b&gt;Kediler'))
+  assert.ok(!html.includes('<b>Kediler'))
+
+  const bos = await sayfa(`/grup?id=${encodeURIComponent(GRUP)}`)
+  assert.ok(!bos.includes('Evlilikler'))
+})
+
 test('hisse sayfası: grafik çizilir, aralık daralır, bilinmeyen değerler güvenli', async () => {
   const Cookie = await cerezAl('6.6.6.6')
   const al = (sorgu) => fetch(`${adres}/hisse?grup=${encodeURIComponent(GRUP)}&${sorgu}`, { headers: { Cookie } })

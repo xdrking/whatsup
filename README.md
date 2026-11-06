@@ -186,7 +186,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |
 | `.devret @a @b 50` | **Yalnızca owner.** a'nın XP'sinden b'ye aktarır; owner'ın kendi XP'si değişmez. `.help`'te görünmez |
-| `.faizkararı 25` | **Owner ve seçilmiş başkan.** Grubun saatlik banka faizini belirler (0-50), kredi 4 puan üstünde kalır. Birikmiş faiz eski orandan işlenir |
+| `.faizkararı 25` | **Yalnızca owner.** Grubun saatlik banka faizini belirler (0-50), kredi 4 puan üstünde kalır. Birikmiş faiz eski orandan işlenir |
 | `.teşvik 5000000` | **Yalnızca owner.** Kasadan son 7 günde yazan üyelere eşit dağıtır, bot hariç. Eksi cüzdana giden pay önce eksiyi kapatır |
 | `.haciz @kişi ev` | **Yalnızca owner.** Kişinin bir mülkünü alır, değeri kasaya girer |
 | `.haciz @kişi 2000` | **Yalnızca owner.** Önce bankadan, yetmezse cüzdandan alıp botun bankasına aktarır. Onlar da yetmezse kalanı cüzdana eksi yazar, eksi kısım kasaya girmez. `hepsi` ve `yarısı` banka hesabına göredir. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
@@ -451,13 +451,12 @@ XP TL ise coin altındır. Kur her gün piyasadaki paraya göre yenilenir: üyel
 
 Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 100.000 XP getirir, kur 2 katına çıkınca kira da iki katına çıkar. Kira saat başı birikir, 24 saatte durur, `.mülk topla` ile alınır. Mülk satılınca kurun %90'ı üstünden XP gelir. Owner `.haciz @kişi ev` ile bir mülke el koyar, değeri botun kasasına girer.
 
-### Hapis, seçim, evlilik, meslek, çete, dava
+### Hapis, evlilik, meslek, çete, dava
 
 | Komut | Yapar |
 |---|---|
 | `.hapis` | Hapistekileri, kalan süreyi ve kefaleti gösterir |
 | `.kefalet` | Hapisten çıkarır; `.kefalet @kişi` başkası için öder |
-| `.seçim` | Adayları ve başkanı gösterir; `.seçim aday`, `.seçim oy @kişi` |
 | `.evlen @kişi` | Evlenme teklif eder; `.evlen` durumunu gösterir |
 | `.boşan` | Nafakayı gösterir; `.boşan onay` boşar |
 | `.meslek` | Meslekleri gösterir; `.meslek seç kurye` |
@@ -468,8 +467,6 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 100.000 X
 
 **Hapis:** `.soygun`'da yakalanan 2 saat hapse girer, bu sürede soygun, kumar ve `.çalış` kapalıdır. Kefalet yakalanma anındaki cüzdanın %20'sidir, en az 100 XP, ödenen XP yanar.
 
-**Seçim:** adaylık coin kurunun %1'i, oy 100 XP'dir, ikisi de yanar. Kişi başı haftada tek oy vardır. Kazanan gelecek hafta başkandır, `.faizkararı` ile günde bir kez faizi değiştirir.
-
 **Evlilik:** evliler `.çalış`'ta %20 fazla maaş alır, eşinin kefaletini yarı fiyata öder. Boşanan, cüzdan ve bankasının %20'sini eşine öder. Borçluyken boşanılamaz.
 
 **Meslek:** maaş coin kuruna bağlıdır, kur 1.000.000 XP iken garson 4.500-5.500 XP, sanatçı 0-12.000 XP alır. Meslek 24 saatte bir değişir.
@@ -477,6 +474,8 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 100.000 X
 **Çete:** kurmak coin kurunun %1'idir, en çok 10 üye olur. Kasaya yatırılan XP'den %5 kesilir, kasadan yalnızca lider çeker. Sıralama üyelerin `.sezon` puanı toplamıdır, haftanın birincisi kasaya 5.000 XP alır.
 
 **Dava:** en az 100 XP, en çok sanığın cüzdanının %25'i. %5 harç peşin alınır, iade edilmez. En az 2 oy gerekir, taraflar oy veremez. Borçlular mahkemelik olamaz.
+
+Panelde grup sayfası Çeteler, Hapishane, Evlilikler ve Meslekler kartlarını, kişi sayfası Hayat kartını gösterir.
 
 ### Sezon
 

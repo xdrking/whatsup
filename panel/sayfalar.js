@@ -171,6 +171,44 @@ function ekonomiKarti(chatJid, e) {
   </section>`
 }
 
+function toplumKartlari(chatJid, t) {
+  return h`
+  ${t.ceteler.length ? h`<section class="kart liste"><h2>Çeteler</h2>${t.ceteler.map((c) => h`
+    <a class="satir" href="${kisiLink(chatJid, c.lider)}">
+      <span class="ad"><strong>${c.ad}</strong><small>Lider ${c.liderUye ? adi(c.liderUye) : 'eski üye'} · ${sayi.format(c.uyeSayisi)} üye · kasa ${sayi.format(c.kasa)}</small></span>
+      <span class="deger">${sayi.format(c.puan)}<small>puan</small></span>
+    </a>`)}</section>` : ''}
+
+  ${t.hapistekiler.length ? h`<section class="kart liste"><h2>Hapishane</h2>${t.hapistekiler.map((m) => h`
+    <a class="satir" href="${kisiLink(chatJid, m.user_jid)}">
+      ${m.uye ? avatar(m.uye) : ''}
+      <span class="ad"><strong>${m.uye ? adi(m.uye) : 'Eski üye'}</strong><small>Çıkış ${tarih.format(m.bitis)}</small></span>
+      <span class="deger">${sayi.format(m.kefalet)}<small>kefalet</small></span>
+    </a>`)}</section>` : ''}
+
+  ${t.ciftler.length ? h`<section class="kart liste"><h2>Evlilikler</h2>${t.ciftler.map((c) => h`
+    <a class="satir" href="${kisiLink(chatJid, c.user_jid)}">
+      <span class="ad"><strong>${c.uye ? adi(c.uye) : 'Eski üye'} 💍 ${c.es ? adi(c.es) : 'Eski üye'}</strong><small>${tarih.format(c.tarih)}</small></span>
+    </a>`)}</section>` : ''}
+
+  ${t.meslekler.length ? h`<section class="kart liste"><h2>Meslekler</h2>${t.meslekler.map((m) => h`
+    <div class="satir"><span class="ad"><strong>${m.ad}</strong></span><span class="deger">${sayi.format(m.adet)}</span></div>`)}</section>` : ''}`
+}
+
+function hayatKarti(chatJid, y) {
+  if (!y.meslek && !y.es && !y.cete && !y.hapis) return ''
+
+  return h`<section class="kart liste"><h2>Hayat</h2>
+    ${y.hapis ? h`<div class="satir"><span class="ad"><strong>🚔 Hapiste</strong><small>Çıkış ${tarih.format(y.hapis.bitis)}</small></span><span class="deger">${sayi.format(y.hapis.kefalet)}<small>kefalet</small></span></div>` : ''}
+    ${y.meslek ? h`<div class="satir"><span class="ad"><strong>${y.meslek}</strong><small>Meslek</small></span></div>` : ''}
+    ${y.cete ? h`<div class="satir"><span class="ad"><strong>🏴 ${y.cete.ad}</strong><small>${y.cete.lider ? 'Lider' : 'Üye'}</small></span><span class="deger">${sayi.format(y.cete.kasa)}<small>kasa</small></span></div>` : ''}
+    ${y.es ? h`<a class="satir" href="${kisiLink(chatJid, y.es.es_jid)}">
+      ${y.es.uye ? avatar(y.es.uye) : ''}
+      <span class="ad"><strong>💍 ${y.es.uye ? adi(y.es.uye) : 'Eski üye'}</strong><small>${tarih.format(y.es.tarih)}</small></span>
+    </a>` : ''}
+  </section>`
+}
+
 export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
   const sekmeler = Object.entries(SIRALAMALAR).map(([alan, ad]) =>
     h`<a class="${alan === g.alan ? 'secili' : ''}" href="${grupLink(chatJid)}&sirala=${alan}">${ad}</a>`)
@@ -224,6 +262,8 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
 
 <div class="yan">
   ${g.ekonomi ? ekonomiKarti(chatJid, g.ekonomi) : ''}
+
+  ${toplumKartlari(chatJid, g.toplum)}
 
   <section class="kart"><h2>Son 30 gün</h2>${gunGrafigi(g.gunlukMesaj)}</section>
 
@@ -478,6 +518,8 @@ export function kisiSayfasi(chatJid, k) {
 </div>
 
 <div class="yan">
+  ${hayatKarti(chatJid, k.hayat)}
+
   <section class="kart"><h2>Rozetler <small>${kazanilan.length}/${k.rozetler.length}</small></h2>
     <div class="etiketler">${k.rozetler.map((r) => h`<span class="${r.kazanildi ? 'var' : 'yok'}" title="${r.aciklama}">${r.ad}</span>`)}</div>
   </section>
