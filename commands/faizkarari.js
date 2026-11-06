@@ -12,7 +12,7 @@ export default {
     `Saatlik banka faizi 0-${AZAMI_FAIZ} arasında olabilir, kredi faizi 4 puan üstünde kalır.`,
     'Birikmiş faiz eski orandan işlenir, yeni oran bundan sonraki saatlere uygulanır.',
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   ownerOnly: true,
 
   async execute({ sock, msg, args, from, parsed }) {

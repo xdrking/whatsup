@@ -9,7 +9,7 @@ export default {
   aliases: ['kumarsıralama', 'kumarsiralama'],
   description: 'Kumarda en çok kazananlar ve kaybedenler',
   usage: '.kumartop',
-  category: 'istatistik',
+  category: 'kumar',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

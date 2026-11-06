@@ -15,7 +15,7 @@ export default {
     `\`.soygun\`'da yakalanan ${HAPIS_SAATI} saat hapse girer. Hapisteyken soygun, kumar ve \`.çalış\` kapalıdır.`,
     'Süre dolunca kendiliğinden çıkılır, erken çıkmak için `.kefalet`.',
   ],
-  category: 'oyun',
+  category: 'toplum',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

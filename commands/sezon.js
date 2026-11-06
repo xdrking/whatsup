@@ -17,7 +17,7 @@ export default {
     `İlk üç ${SEZON_ODULLERI.map((o) => sayi.format(o)).join(' / ')} XP alır, birincinin şampiyonluğu \`.profil\`'de görünür.`,
     'Ödüller yeni haftada `.sezon` ilk yazıldığında dağıtılır.',
   ],
-  category: 'oyun',
+  category: 'istatistik',
   ownerOnly: false,
 
   async execute({ sock, msg, from, parsed }) {

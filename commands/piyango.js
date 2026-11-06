@@ -26,7 +26,7 @@ export default {
     'Çekilişi bir grup admini ya da bot sahibi `.çekiliş` ile yapar, en az 2 kişi gerekir.',
     `Havuzun tamamı kazananındır. En az ${MIN_BAHIS} XP. Biletler iade edilmez.`,
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

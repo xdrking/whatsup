@@ -19,7 +19,7 @@ export default {
     '0 (yeşil) gelirse renk ve tek/çift bahisleri kaybeder.',
     `İkisi de sayıysa önce miktar yazılır. En az ${MIN_BAHIS} XP.`,
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

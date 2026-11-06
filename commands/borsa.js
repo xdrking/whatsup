@@ -28,7 +28,7 @@ export default {
     `Alışta ve satışta %${KOMISYON_YUZDESI} komisyon kesilir.`,
     `Fiyatı ${IFLAS_FIYATI} XP'nin altına düşen hisse batar: elindekiler silinir, hisse 100 XP'den yeniden açılır.`,
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

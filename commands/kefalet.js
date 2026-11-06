@@ -13,7 +13,7 @@ export default {
     'Tutar yakalanma anındaki cüzdanın %20\'sidir, en az 100 XP. Ödenen XP yanar.',
     'Eşin kefaletini yarı fiyata ödersin.',
   ],
-  category: 'oyun',
+  category: 'toplum',
   cooldown: 5,
   ownerOnly: false,
 

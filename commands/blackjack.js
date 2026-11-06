@@ -15,7 +15,7 @@ export default {
     'Kazanç 2x, ilk iki kartla 21 (blackjack) 2.5x, beraberlikte bahis geri döner.',
     `Süre 3 dk; dolarsa el \`dur\` sayılır. En az ${MIN_BAHIS} XP. Grupta aynı anda tek oyun.`,
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

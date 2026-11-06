@@ -11,7 +11,7 @@ export default {
     'Ödüller: ' + KAZI_ODULLERI.map((o) => `${o.s} ${o.carpan}x`).join('  '),
     `\`hepsi\` bütün XP'ni, \`yarısı\` yarısını basar. En az ${MIN_BAHIS} XP.`,
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

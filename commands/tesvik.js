@@ -12,7 +12,7 @@ export default {
   description: 'Bot sahibi: kasadan aktif üyelere eşit XP dağıtır',
   usage: '.teşvik <miktar>',
   details: [`Son ${TESVIK_AKTIF_GUN} günde yazan üyelere eşit bölünür, bot hariç. Eksi cüzdana giden pay önce eksiyi kapatır.`],
-  category: 'oyun',
+  category: 'ekonomi',
   ownerOnly: true,
 
   async execute({ sock, msg, args, from, parsed }) {

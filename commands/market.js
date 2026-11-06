@@ -24,7 +24,7 @@ export default {
     'Vitrin ürünü her hafta değişir, stoğu sınırlıdır, kişi başı haftada bir alınır.',
     'Satın alınan XP geri gelmez. Market her grupta ayrıdır.',
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

@@ -18,7 +18,7 @@ export default {
     `En az ${MIN_OY} oy gerekir, berabere ya da az oyda dava düşer. %5 harç peşin alınır, iade edilmez.`,
     `Miktar en az ${MIN_DAVA} XP, en çok sanığın cüzdanının %${AZAMI_DAVA_YUZDESI}'idir. Borçlular mahkemelik olamaz.`,
   ],
-  category: 'oyun',
+  category: 'toplum',
   cooldown: 300,
   ownerOnly: false,
 

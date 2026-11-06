@@ -17,7 +17,7 @@ export default {
     'Kabul ederse yazı-tura atılır: kazanan +100, kaybeden −100 XP.',
     `Kabul edilmeden XP'ye dokunulmaz. En az ${MIN_BAHIS} XP, iki tarafın da XP'si yetmeli.`,
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

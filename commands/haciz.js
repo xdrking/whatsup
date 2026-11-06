@@ -13,7 +13,7 @@ export default {
   aliases: [],
   description: 'Kişinin parasını botun bankasına aktarır, yetmezse eksiye düşürür',
   usage: '.haciz @kişi <miktar|hepsi|yarısı|mülk>',
-  category: 'oyun',
+  category: 'ekonomi',
   ownerOnly: true,
 
   async execute({ sock, msg, args, from, parsed }) {

@@ -57,7 +57,7 @@ export default {
     `Günde ${GUNLUK_DENEME} deneme. Soyulan kişiye 6 saat dokunulamaz. Kalkan \`.market\`'te satılır.`,
     '`.soygun herkes` gruptaki herkese ayrı ayrı dener, `.coinmarket`\'ten alınan hakla çalışır. Yakalanma cezası yoktur, kalkan yine korur.',
   ],
-  category: 'oyun',
+  category: 'toplum',
   cooldown: 30,
   ownerOnly: false,
 

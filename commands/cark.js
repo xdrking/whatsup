@@ -37,7 +37,7 @@ export default {
     'Bonus yalnızca oyun XP\'sine işler (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca).',
     'Bonus varken yenisi çıkarsa güçlü olan kalır, süre 1 saate döner. Hak ve bonus her grupta ayrıdır.',
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

@@ -27,7 +27,7 @@ export default {
     'Örnek: `.devret @ali 100` — senden 100 XP düşer, Ali\'ye 100 XP geçer.',
     'Yalnızca kendi XP\'ni devredebilirsin. XP her grupta ayrıdır.',
   ],
-  category: 'istatistik',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

@@ -12,7 +12,7 @@ export default {
     `\`hepsi\` bütün XP'ni, \`yarısı\` yarısını basar. En az ${MIN_BAHIS} XP.`,
     'Kaybedilen XP seviyeni de düşürebilir. Kasa her grupta ayrıdır.',
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

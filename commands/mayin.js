@@ -15,7 +15,7 @@ export default {
     '`çek` yazınca kazancı alırsın. Mayına basarsan bahsin tamamı gider.',
     `Süre 3 dk; dolarsa kazanç otomatik çekilir. En az ${MIN_BAHIS} XP. Grupta aynı anda tek oyun.`,
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

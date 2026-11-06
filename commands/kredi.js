@@ -21,7 +21,7 @@ export default {
     'Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır.',
     `Eksi bakiye oyun ve görev XP'siyle kapanır ya da \`.iflas\` ile silinir, iflastan sonra ${IFLAS_KREDI_YASAK_SAATI} saat kredi çekilemez.`,
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

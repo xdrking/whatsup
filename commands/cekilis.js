@@ -10,7 +10,7 @@ export default {
   aliases: ['cekilis', 'draw'],
   description: 'Piyango çekilişini yapar (grup admini veya bot sahibi)',
   usage: '.çekiliş',
-  category: 'oyun',
+  category: 'kumar',
   ownerOnly: false,
 
   async execute({ sock, msg, from, sender, parsed, isOwner }) {

@@ -14,7 +14,7 @@ export default {
     `Cüzdanın eksideyse sıfırlanır, ${IFLAS_YASAK_SAATI} saat kumar oynayamazsın, ${IFLAS_KREDI_YASAK_SAATI} saat kredi çekemezsin.`,
     'Açık kredi silinmez, önce vade dolmalı. Elinde hisse varsa önce satmalısın.',
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 10,
   ownerOnly: false,
 

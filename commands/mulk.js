@@ -18,7 +18,7 @@ export default {
     `Kira ${KIRA_AZAMI_SAAT} saatte durur, \`.mülk topla\` yazmak gerekir.`,
     `Satış coin kurunun %${BOZDURMA_YUZDESI}'inden XP olarak ödenir. Owner \`.haciz @kişi ev\` ile mülke el koyabilir.`,
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

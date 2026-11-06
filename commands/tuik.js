@@ -24,7 +24,7 @@ export default {
     'Para, üyelerin cüzdan ve bankasıdır, bot hariçtir. Enflasyon günlük kayıtlardan hesaplanır.',
     '"Resmi" oran şakadır, gerçeğin yarısıdır.',
   ],
-  category: 'istatistik',
+  category: 'ekonomi',
   cooldown: 10,
   ownerOnly: false,
 

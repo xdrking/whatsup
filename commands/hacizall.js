@@ -16,7 +16,7 @@ export default {
     `Herkesin bankasının %${HACIZ_BANKA_YUZDESI}'i ve cüzdanının %${HACIZ_CUZDAN_YUZDESI}'si senin cüzdanına geçer, ${urun.fiyat} coin düşer.`,
     'Soygun kalkanı korumaz, haciz sigortası korur. Botun kasasına dokunmaz. Alınacak para yoksa coin düşmez.',
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 30,
   ownerOnly: false,
 

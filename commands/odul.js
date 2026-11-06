@@ -16,7 +16,7 @@ export default {
     `En az ${MIN_ODUL} XP. Koyarken %${ODUL_KESINTI_YUZDESI}'u kesilir, koyulan XP geri gelmez.`,
     'Aynı kişiye koyulan ödüller birikir. Kalkanı olan kişi soyulamadığı için ödülü de alınamaz.',
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 10,
   ownerOnly: false,
 

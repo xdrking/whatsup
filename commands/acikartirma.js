@@ -18,7 +18,7 @@ export default {
     'Bot XP aktarmaz ve teklifi tahsil etmez: süre bitince kazananı yazar, satıcı `.devret` ile gönderir.',
     `Yalnızca sahip olduğun XP'yi satabilirsin. Süre ${MIN_SN}-${MAX_SN} sn.`,
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   // Her çağrı tüm gruba bildirim düşürür.
   cooldown: 60,
   ownerOnly: false,

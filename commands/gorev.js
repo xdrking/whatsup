@@ -12,7 +12,7 @@ export default {
     'Ödül otomatik gelmez: görevi bitirince `.görev` yazarak alırsın.',
     'Gün Türkiye saatiyle 00:00\'da yenilenir, alınmamış ödül yanar.',
   ],
-  category: 'istatistik',
+  category: 'ekonomi',
   ownerOnly: false,
 
   async execute({ sock, msg, from, sender, parsed }) {

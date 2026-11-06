@@ -105,8 +105,10 @@ Bot yalnızca **prefix ile başlayan** mesajlara tepki verir. Prefix'siz mesajla
 sessizce yok sayılır (yalnızca istatistik sayaçlarına işlenir).
 
 ```
-.help            komut listesi (medya, eğlence, grup… başlıklarıyla)
+.help            kısa komut menüsü
+.help oyun       bir bölümün açıklamalı listesi (medya, eğlence, grup, istatistik, araç, oyun, kumar, ekonomi, toplum)
 .help sticker    tek komutun ayrıntısı
+.help tümü       bütün komutlar açıklamalarıyla
 ```
 
 Bazı komutlar bir mesajı **yanıtlayarak** çalışır (`.sticker`, `.al`, `.tts`, `.efekt`),
@@ -599,7 +601,7 @@ export default {
   // Opsiyonel alanlar:
   // cooldown: 10,          bekleme süresi (sn); yoksa 3, 0 = sınırsız
   // details: ['…'],        .help selam yazınca gösterilen örnekli açıklama
-  // category: 'eğlence',   .help başlığı: medya | eğlence | grup | istatistik | araç | oyun
+  // category: 'eğlence',   .help başlığı: medya | eğlence | grup | istatistik | araç | oyun | kumar | ekonomi | toplum
   // worksWhenMuted: true,  .sus ile susturulmuş grupta da çalışır (yalnızca .konuş)
   async execute({ sock, from, msg }) {
     await sock.sendMessage(from, { text: 'Selam!' }, { quoted: msg })

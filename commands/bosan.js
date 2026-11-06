@@ -15,7 +15,7 @@ export default {
     `Cüzdan ve bankanın toplamının %${NAFAKA_YUZDESI}'si eşine geçer, önce cüzdandan alınır.`,
     '`.boşan` tutarı gösterir, `.boşan onay` uygular. Açık kredi ya da eksi cüzdanla boşanılamaz.',
   ],
-  category: 'oyun',
+  category: 'toplum',
   ownerOnly: false,
 
   async execute({ sock, msg, args, from, sender, parsed }) {

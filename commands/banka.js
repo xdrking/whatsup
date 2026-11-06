@@ -20,7 +20,7 @@ export default {
     `Çekerken %${CEKIM_KESINTI_YUZDESI} kesilir. Bankadaki XP'yle kumar oynanmaz, seviyeye ve \`.top\`'a sayılmaz.`,
     `Cüzdan ve banka birlikte, o günkü ilk mesajında artan oranlı vergilenir: 1 coin değerine kadar vergi yok, en yüksek dilim %${VERGI_DILIMLERI.at(-1).yuzde}.`,
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

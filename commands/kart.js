@@ -32,7 +32,7 @@ export default {
     'Takas: `.kart ver @ali 7` kartı verir. Karşılığını `.devret` ile alırsın, bot arada durmaz.',
     '⭐ kartlar nadirdir.',
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

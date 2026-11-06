@@ -20,7 +20,7 @@ export default {
     `Evliler \`.çalış\`'ta %${EVLI_MAAS_YUZDESI} fazla maaş alır, eşinin kefaletini yarı fiyata öder.`,
     `Boşanan \`.boşan\` ile servetinin %${NAFAKA_YUZDESI}'sini eşine nafaka öder.`,
   ],
-  category: 'oyun',
+  category: 'toplum',
   cooldown: 30,
   ownerOnly: false,
 

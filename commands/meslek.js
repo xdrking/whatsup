@@ -16,7 +16,7 @@ export default {
     `Maaş coin kuruna bağlıdır, ${CALISMA_SAATI} saatte bir \`.çalış\` yazılır.`,
     `Meslek ${MESLEK_DEGISIM_SAATI} saatte bir değiştirilebilir. Ortalamalar yakındır, riskli mesleklerde maaş daha çok oynar.`,
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   ownerOnly: false,
 
   async execute({ sock, msg, args, from, sender, parsed }) {

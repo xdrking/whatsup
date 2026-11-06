@@ -11,7 +11,7 @@ const { loadCommands } = await import('../commands/index.js')
 const commands = await loadCommands()
 const tekil = [...new Set(commands.values())]
 
-const KATEGORILER = new Set(['medya', 'eğlence', 'grup', 'istatistik', 'araç', 'oyun'])
+const KATEGORILER = new Set(['medya', 'eğlence', 'grup', 'istatistik', 'araç', 'oyun', 'kumar', 'ekonomi', 'toplum'])
 
 test('bütün komut dosyaları yüklendi, ad çakışması yok', async () => {
   const dosyalar = (await readdir(new URL('../commands/', import.meta.url))).filter(
@@ -31,6 +31,32 @@ test('her komut sözleşmeye uyar', () => {
     if (c.details) assert.ok(c.details.every((s) => typeof s === 'string' && s), `${c.name}: details`)
     if (c.cooldown !== undefined) assert.ok(Number.isFinite(c.cooldown) && c.cooldown >= 0, c.name)
   }
+})
+
+async function help(args = [], isOwner = false) {
+  let metin = ''
+  const sock = { sendMessage: async (_, { text }) => { metin = text } }
+  await commands.get('help').execute({ sock, msg: {}, from: 'g@g.us', args, commands, isOwner })
+  return metin
+}
+
+test('.help menüsü kısa kalır, görünen her komutu yazar, gizliyi yazmaz', async () => {
+  const menu = await help()
+  assert.ok(menu.split('\n').length < 45)
+  for (const c of tekil.filter((k) => !k.hidden && !k.ownerOnly)) assert.ok(menu.includes(`.${c.name}`), c.name)
+  assert.ok(!menu.includes('.xpver'))
+  assert.ok(!menu.includes('.haciz '))
+})
+
+test('.help bölümü: açıklama yazar, aynı adlı komuta yol gösterir', async () => {
+  const kumar = await help(['Kumar'])
+  assert.ok(kumar.includes('`.slot` —'))
+  assert.ok(!kumar.includes('`.kelime`'))
+
+  assert.ok((await help(['grup'])).includes('`.help .grup`'))
+  assert.ok((await help(['.grup'])).startsWith('*.grup*'))
+  assert.ok((await help(['tümü'])).includes('`.soygun` —'))
+  assert.match(await help(['xpver'], true), /diye bir komut yok/)
 })
 
 test('data/*.json havuzları boş olmayan string dizisi', async () => {

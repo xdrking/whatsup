@@ -11,7 +11,7 @@ export default {
     'Üst üste her gün alırsan ödül büyür: 1. gün 20, 2. gün 25 … 7. günden itibaren 50 XP.',
     'Bir gün kaçırırsan seri 1\'den başlar. Seri her grupta ayrı tutulur.',
   ],
-  category: 'istatistik',
+  category: 'ekonomi',
   ownerOnly: false,
 
   async execute({ sock, msg, from, sender }) {

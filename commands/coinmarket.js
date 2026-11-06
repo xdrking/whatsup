@@ -18,7 +18,7 @@ export default {
     'Toplu soygun hakkı `.soygun herkes` ile kullanılır. Coin her grupta ayrıdır.',
     'Toplu haciz `.hacizall` ile kullanılır, coin o an düşer.',
   ],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 

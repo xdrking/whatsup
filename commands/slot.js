@@ -12,7 +12,7 @@ export default {
     'Üçlü ödüller: ' + SEMBOLLER.map((x) => `${x.s} ${x.uclu}x`).join('  '),
     `\`hepsi\` bütün XP'ni, \`yarısı\` yarısını basar. En az ${MIN_BAHIS} XP.`,
   ],
-  category: 'oyun',
+  category: 'kumar',
   cooldown: 5,
   ownerOnly: false,
 

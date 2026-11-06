@@ -112,7 +112,7 @@ export default {
     `Sıralama üyelerin \`.sezon\` puanlarının toplamıdır. Haftanın birincisi kasaya ${binlik(CETE_SEZON_ODULU)} XP alır.`,
     'Lider ayrılırsa en eski üye lider olur, son üye ayrılırsa kasa ona kalır.',
   ],
-  category: 'oyun',
+  category: 'toplum',
   ownerOnly: false,
 
   async execute({ sock, msg, args, text, from, sender, parsed }) {

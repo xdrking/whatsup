@@ -163,7 +163,7 @@ export default {
   ownerOnly: false,
   cooldown: 10,          // opsiyonel, saniye; yoksa 3, 0 = sınırsız
   details: ['…'],        // opsiyonel, `.help <komut>` örnekli açıklaması
-  category: 'medya',     // .help başlığı: medya|eğlence|grup|istatistik|araç|oyun
+  category: 'medya',     // .help başlığı: medya|eğlence|grup|istatistik|araç|oyun|kumar|ekonomi|toplum
   async execute({ sock, msg, args, text, from, sender, parsed, commands, isOwner }) { }
 }
 ```
@@ -180,6 +180,9 @@ export default {
 
 `category` zorunludur; bilinmeyen kategori `.help`'te "Diğer" başlığına düşer ve
 `npm test` hata verir. Başlıkların sırası `commands/help.js:KATEGORILER`'dedir.
+`.help` yalnızca komut adlarını yazan kısa menüdür: WhatsApp'ta 100 satırlık liste okunmuyordu.
+Açıklamalar `.help <bölüm>` ve `.help tümü`'dedir. Bölüm adı komutla çakışırsa (`.help grup`) bölüm kazanır,
+komut `.help .grup` ile açılır.
 `createDatasetCommand` ile üretilen havuz komutları varsayılan olarak `eğlence`'dir.
 
 `details` yalnızca kullanımı tek satıra sığmayan komutlara yazılır (`.tts`, `.efekt`,
@@ -1114,4 +1117,5 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 71. `.çete kur Ad`, başkası `.çete katıl Ad`, `.çete yatır 1000` → kasaya 950 girer; üye `.çete çek` reddedilir, lider çeker
 72. `.dava @kişi 1000 sebep` → taraflar oy veremez, iki üye `haklı` yazınca 5 dk sonra XP geçer; tek oyda dava düşer
 73. `.özet` → son 7 günün mesajları ve tüm zamanlar başlığı gelir, bot listede yok
-74. Panelde grup sayfası çete, hapis, evlilik ve meslek kartlarını, kişi sayfası Hayat kartını gösterir; verisi olmayan kart çıkmaz
+74. `.help` → kısa menü; `.help kumar` → açıklamalı bölüm; `.help sticker` → komut ayrıntısı; `.help tümü` → uzun liste
+75. Panelde grup sayfası çete, hapis, evlilik ve meslek kartlarını, kişi sayfası Hayat kartını gösterir; verisi olmayan kart çıkmaz

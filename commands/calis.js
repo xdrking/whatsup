@@ -12,7 +12,7 @@ export default {
   description: 'Mesleğinde çalışıp maaş alır',
   usage: '.çalış',
   details: [`${CALISMA_SAATI} saatte bir çalışılır. Önce \`.meslek seç <meslek>\`. Hapisteyken çalışılmaz.`],
-  category: 'oyun',
+  category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,
 
