@@ -372,7 +372,7 @@ Süre 10-600 sn, komut 60 sn'de bir kullanılabilir.
 | Komut | Yapar |
 |---|---|
 | `.çark` | Ücretsiz hakla çarkı çevirir |
-| `.çark ekstra` | Hak bitince 100 XP karşılığında çevirir |
+| `.çark ekstra` | Hak bitince 400 XP karşılığında çevirir |
 | `.çark durum` | Kalan hak ve aktif bonus |
 
 | Ödül | Olasılık |

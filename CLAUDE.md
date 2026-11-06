@@ -727,7 +727,7 @@ cark(chat_jid, user_jid, window_start ms, spins, bonus_percent, bonus_until ms) 
 
 - **Hak:** 24 saatte 2 ücretsiz çevirme. Pencere ilk ücretsiz çevirmeyle başlar;
   takvim günü kullanılmaz, yoksa gece yarısının iki yanında 4 hak kullanılabilirdi.
-- **Ekstra:** `.çark ekstra` 100 XP, sınırsız. Ücretsiz hak varken ekstra istense de
+- **Ekstra:** `.çark ekstra` 400 XP, sınırsız. Ücretsiz hak varken ekstra istense de
   XP alınmaz. Sınır olmadığı için tek çevirmenin beklenen XP'si ücretin altında
   kalmalı (şu an 93 XP); `test/cark.test.js` bunu denetler.
 - **Bonus:** `addXp()` aktif bonusu uygular ve kazanılan miktarı döner, oyunlar mesajda
@@ -985,7 +985,7 @@ saldırı, gerçek kişiye uydurma suç isnadı, din ve etnik hedef, Erdoğan. H
     aynı komut grupta → hiç tepki yok; başkası özelden yazarsa → hiç tepki yok
 30. `.devret @kişi 10` → iki bakiye de değişir; bakiyeden fazlası → "o kadar XP'n yok"; sıradan üye
     `.devret @a @b 10` → reddedilir, sahip yazınca a'dan b'ye geçer (yön metindeki sırayla aynı olmalı)
-31. `.çark` iki kez → hak 0'a iner, üçüncüsü "hakkın bitti"; `.çark ekstra` → 100 XP düşer; `.çark durum` → kalan
+31. `.çark` iki kez → hak 0'a iner, üçüncüsü "hakkın bitti"; `.çark ekstra` → 400 XP düşer; `.çark durum` → kalan
     süre ve bonus; bonus varken oyun kazanılınca mesajdaki XP ile `.profil` artışı tutmalı
 32. `.blackjack 10` → `kart`/`dur` yanıtları çalışır, başkasının yanıtı yok sayılır; `.oyunbitir` iade etmez
 33. `.mayın 10` → kutu yanıtı çarpanı artırır, `çek` kazancı verir; mayında bahis yanar
