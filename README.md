@@ -311,14 +311,32 @@ Süre, faiz alınan saat başı sayısıdır. Yatırdıktan sonraki ilk saat ba�
 
 ### Kredi ve eksi bakiye
 
+Botun bankasından faizli XP çekilir. Ödenmeyen borç cüzdanı eksiye düşürür.
+
 | Komut | Yapar |
 |---|---|
-| `.kredi` | Borcu, vadeyi ve limiti gösterir |
-| `.kredi çek 1000` | Botun bankasından kredi çeker, en az 100 XP |
+| `.kredi` | Borcu, vadeye kalan süreyi ve güncel limiti gösterir |
+| `.kredi çek 1000` | Kredi çeker, XP cüzdana gelir. En az 100 XP |
 | `.kredi öde 500` | Cüzdandan borç öder; `hepsi` ve `yarısı` da olur |
+| `.iflas` | Eksi cüzdanı sıfırlar, karşılığında yasak alınır |
 
-Faiz saatlik %19 bileşiktir ve saat başlarında işler. Vade 24 saattir, aynı anda tek kredi alınır. Limit herkes için 400.000 XP'dir.
-Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler botun bankasına gider. Tek kredi bu kasanın yarısını geçemez: kasada 90.000 XP varsa en çok 45.000 XP çekilir, bot bunu söyler. `.kredi` güncel limiti gösterir.
+#### Kurallar
+
+| Konu | Değer |
+|---|---|
+| Faiz | Saatlik %19 bileşik, her saat başında işler |
+| Vade | 24 saat, sonrasında faiz durur |
+| Aynı anda | Tek kredi |
+| Limit | 400.000 XP, ama kasanın yarısını geçemez |
+| Erken ödeme | Serbest, cezası yok, kalan borca faiz işlemeye devam eder |
+
+Kasa, botun bankası ve cüzdanıdır. Kredi önce bankadan, yetmezse cüzdandan çıkar, ödemeler hep botun bankasına gider. Kasada 90.000 XP varsa tek seferde en çok 45.000 XP çekilir, fazlası istenirse bot sınırı yazar.
+
+Faiz bankanın %15'inden yüksektir, bu yüzden kredi çekip bankaya yatırmak kazandırmaz.
+
+#### Borç nasıl büyür
+
+Hiç ödeme yapılmazsa:
 
 | Çekilen | 1 saat | 6 saat | 12 saat | 24 saat (vade) |
 |---|---|---|---|---|
@@ -327,12 +345,46 @@ Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler 
 | 10.000 | 11.900 | 28.398 | 80.643 | 650.320 |
 | 400.000 | 476.000 | 1.135.905 | 3.225.697 | 26.012.798 |
 
-- Borç varken `.banka yatır` önce borcu keser, artan XP hesaba girer. Kesilen XP botun bankasına gider.
-- Borç varken `.devret` kapalıdır. Owner `.devret @a @b 50` ile borçlunun XP'sini yine taşıyabilir.
-- Vade dolunca borç önce cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Tahsilat kişinin vadeden sonraki ilk mesajında olur.
-- Eksi bakiye faiz almaz, oyun ve `.görev` XP'siyle kapanır. Hisse satışı ve mesaj XP'si de eksiyi azaltır.
-- `.iflas` eksi bakiyeyi siler, cüzdan 0 olur, kişi 12 saat kumar oynayamaz, 24 saat kredi çekemez. Açık kredi silinmez, önce vade dolmalı. Elde hisse varsa önce satılmalı.
-- Eksideki kişi kumar oynayamaz, harcama yapamaz, kredi çekemez ve soyulamaz. Tekrar kumar için cüzdanın +500 XP'ye gelmesi gerekir.
+Süre, geçen saat başı sayısıdır. Bankadan farklı olarak ilk saat başı da sayılır: 14:50'de çekilen kredi 15:00'te faiz alır.
+
+#### Ödeme yolları
+
+1. **`.kredi öde`:** cüzdandan öder. Borçtan fazlası yazılırsa yalnızca borç kadarı alınır.
+2. **`.banka yatır`:** borç varken yatırılan XP önce borcu keser, artanı hesaba girer. Borcu 1.417 XP olan kişi `.banka yatır 2000` yazarsa 1.417 XP borca, 583 XP hesabına gider.
+3. **Vade tahsilatı:** vade dolunca borç önce cüzdandan, sonra banka hesabından alınır. Yetmezse kalanı cüzdana eksi yazılır.
+
+Bankadaki XP doğrudan borca sayılmaz. Vadeden önce ödemek için `.banka çek` ile cüzdana alınmalı, burada %5 kesinti vardır.
+
+Örnek: 14:20'de 1.000 XP çekilir.
+
+| Saat | Olay | Borç |
+|---|---|---|
+| 14:20 | Kredi çekilir | 1.000 |
+| 15:00 | Faiz işler | 1.190 |
+| 16:00 | Faiz işler | 1.417 |
+| 16:05 | `.kredi öde 500` | 917 |
+| 17:00 | Faiz işler | 1.092 |
+| 17:10 | `.kredi öde hepsi` | Borç biter |
+
+Örnek: vadede borç 65.032 XP, cüzdanda 5.000 XP, bankada 10.000 XP olsun. İkisi de sıfırlanır, 15.000 XP botun bankasına gider, cüzdan **−50.032 XP** olur.
+
+Bot kendiliğinden yazmadığı için tahsilat kişinin vadeden sonraki ilk mesajında olur. Geç yazmak borcu büyütmez, tutar vade anında kalır.
+
+#### Borçluyken ve ekside
+
+| Durum | Kapalı olanlar |
+|---|---|
+| Açık kredi | `.devret`, ikinci kredi, `.iflas` |
+| Eksi cüzdan | Kumar, market, `.borsa al`, `.soygun`, `.devret`, `.banka yatır`, kredi. Eksideki kişi soyulamaz |
+
+Eksi bakiye faiz almaz. Oyun ve `.görev` XP'siyle kapanır, hisse satışı ve mesaj XP'si de eksiyi azaltır. Kumar için cüzdanın yeniden +500 XP'ye gelmesi gerekir. Eksiyi kapatan XP bota gitmez.
+
+#### İflas
+
+`.iflas` yalnızca cüzdan ekside iken çalışır: borç silinir, cüzdan 0 olur, kişi 12 saat kumar oynayamaz, 24 saat kredi çekemez.
+Açık kredi iflasla silinmez, vadenin dolması gerekir. Elde hisse varsa önce satılmalıdır.
+
+Owner, `.devret @a @b 50` ile borçlunun XP'sini taşıyabilir, `.haciz` ile banka hesabından kasaya alabilir. Haciz kredi borcundan düşmez.
 
 ### Sezon
 
