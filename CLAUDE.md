@@ -859,7 +859,8 @@ yönsüz parça verir: 6 saatte bir değişen piyasa havası (`piyasaHavasi()`, 
 hash'le çıkar, saklanmaz), bütün hisseleri birlikte iten ortak hareket ve fiyatı sıçratan haberler.
 **Ortalamaya dönen, trendi süren ya da tabanı olan bir fiyat yazılmamalı:** üçünde de "düşükte al,
 yüksekte sat" XP basar. Bu yüzden hisse tabanda durmaz, batar ve paylar silinir. Kumar karnesine
-yazılmaz.
+yazılmaz. Her adım bir işlem günü kadar serttir (bot sahibinin kararı, gerçekçi hali sıkıcıydı): oynaklık
+yüksek olduğu için hisseler sık batar, bu beklenen davranıştır.
 
 ### Faz 28 — `.kart`
 

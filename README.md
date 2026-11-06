@@ -281,7 +281,7 @@ Cüzdandaki XP'nin 10.000'in üstündeki kısmı, kişinin o günkü ilk mesajı
 | `.borsa al kedi 500` | 500 XP'lik hisse alır; `hepsi` ve `yarısı` da olur |
 | `.borsa sat kedi hepsi` | Payını satar; XP miktarı da yazılabilir |
 
-Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Fiyatlar 15 dakikada bir oynar, sağa gittikçe sertleşir. Piyasa 6 saatte bir sakin, normal ya da fırtınalı olur, hisseler çoğu zaman birlikte hareket eder, haberler fiyatı sıçratır. Hiçbiri yönü önceden söylemez.
+Hisseler uydurmadır: `muz`, `cay`, `simit`, `kedi`, `roket`. Her 15 dakika borsada bir gün gibidir: fiyatlar sert oynar, sağa gittikçe daha da sertleşir, `roket` bir adımda %50 oynayabilir ve birkaç günde bir batar. Piyasa 6 saatte bir sakin, normal ya da fırtınalı olur, hisseler çoğu zaman birlikte hareket eder, haberler fiyatı sıçratır. Hiçbiri yönü önceden söylemez.
 Alışta ve satışta %2 komisyon kesilir. Fiyatı 5 XP'nin altına düşen hisse batar: elindeki paylar silinir, hisse 100 XP'den açılır.
 
 ### Web paneli

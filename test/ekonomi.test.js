@@ -415,6 +415,14 @@ test('borsa: alım satımda komisyon kesilir, fiyat aynıysa zarar edilir', () =
   assert.deepEqual(borsaSat({ ...s }), { yok: true })
 })
 
+test('borsa: en sert adım ve en kötü haber fiyatı sıfırın altına indirmez', () => {
+  for (const h of HISSELER) {
+    const dip = fiyatAdimi(100, h, { carpan: 2, piyasa: -1 }, () => 0)
+    assert.equal(dip.haber, h.kotu)
+    assert.ok(dip.fiyat > 0, h.kod)
+  }
+})
+
 test('borsa havası: aynı adımda aynı, altı saat içinde değişmez', () => {
   const ilk = 24 * 1000
   assert.equal(piyasaHavasi('g@g.us', ilk), piyasaHavasi('g@g.us', ilk + 23))

@@ -22,7 +22,7 @@ export default {
   description: 'Uydurma hisselerde XP ile al sat yap',
   usage: '.borsa  —  .borsa al <hisse> <miktar|hepsi|yarısı>  —  .borsa sat <hisse> <miktar|hepsi|yarısı>',
   details: [
-    `Hisseler: ${KODLAR}. Fiyatlar 15 dakikada bir oynar, sağdakiler daha sert oynar.`,
+    `Hisseler: ${KODLAR}. Her 15 dakika borsada bir gün gibidir: fiyatlar sert oynar, sağdakiler daha da sert.`,
     'Piyasa sakin ya da fırtınalı olabilir, hisseler çoğu zaman birlikte hareket eder, haberler fiyatı sıçratır. Hiçbiri yönü önceden söylemez.',
     'Örnek: `.borsa al kedi 500` 500 XP\'lik alır, `.borsa sat kedi hepsi` tamamını satar.',
     `Alışta ve satışta %${KOMISYON_YUZDESI} komisyon kesilir.`,
