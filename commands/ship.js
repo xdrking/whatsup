@@ -22,7 +22,7 @@ function bar(percent) {
 
 // Sonuç iki JID'e sabitlenir: sıra değişse de, bot yeniden başlasa da aynı
 // çift hep aynı yüzdeyi alır. Bu yüzden Math.random() kullanılmaz.
-function uyumluluk(first, second) {
+export function uyumluluk(first, second) {
   const key = [digitsOf(first), digitsOf(second)].sort().join('|')
   return fnv1a(key) % 101
 }

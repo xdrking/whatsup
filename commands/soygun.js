@@ -5,7 +5,8 @@ import { digerUyeler, requireGroupMetadata, uyeKimligiBul } from '../lib/group.j
 import {
   BASARI_YUZDESI, GUNLUK_DENEME, MIN_HIRSIZ_XP, MIN_KURBAN_XP,
 } from '../lib/soygun.js'
-import { botHesabiMi, soygunYap, topluSoygun } from '../lib/stats.js'
+import { HAPIS_SAATI } from '../lib/hapis.js'
+import { botHesabiMi, hapisDurumu, soygunYap, topluSoygun } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -52,7 +53,7 @@ export default {
   usage: '.soygun @kişi  —  bir mesajı yanıtlayarak .soygun  —  .soygun herkes',
   details: [
     `Başarı şansı %${BASARI_YUZDESI}. Başarılıysan kurbanın XP'sinin %10'unu alırsın.`,
-    'Yakalanırsan kendi XP\'nin %10\'unu kurbana ödersin.',
+    `Yakalanırsan kendi XP'nin %10'unu kurbana ödersin ve ${HAPIS_SAATI} saat hapse girersin (\`.kefalet\`).`,
     `Günde ${GUNLUK_DENEME} deneme. Soyulan kişiye 6 saat dokunulamaz. Kalkan \`.market\`'te satılır.`,
     '`.soygun herkes` gruptaki herkese ayrı ayrı dener, `.coinmarket`\'ten alınan hakla çalışır. Yakalanma cezası yoktur, kalkan yine korur.',
   ],
@@ -66,6 +67,9 @@ export default {
     try {
       const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
       if (!metadata) return
+
+      const hapis = hapisDurumu(from, sender)
+      if (hapis) return await yaz(`🚔 Hapistesin, ${sureYaz(hapis.bitis - Date.now())} kaldı. Çıkmak için \`.kefalet\``)
 
       if (trLower(args[0] || '') === 'herkes') return await herkesiSoy({ yaz, from, sender, metadata })
 
@@ -100,6 +104,7 @@ export default {
               `🚓 *YAKALANDIN*`,
               `${mentionOf(sender)}, ${mentionOf(kurban)} kişisine *${binlik(s.miktar)} XP* ceza ödedi.`,
               `💸 ${binlik(s.hirsizXp)} XP  •  😎 ${binlik(s.kurbanXp)} XP`,
+              `🚔 ${HAPIS_SAATI} saat hapis. Kefalet: ${binlik(s.hapis.kefalet)} XP (\`.kefalet\`)`,
             ].join('\n'),
         taraflar,
       )

@@ -109,6 +109,7 @@ test('soygun yakalanma: hırsız kendi payını kurbana öder', () => {
   const s = soygunKur()
   assert.deepEqual(soygunYap({ ...s, sans: () => false, now: T }), {
     basarili: false, miktar: 20, odul: 0, hirsizXp: 180, kurbanXp: 1020,
+    hapis: { bitis: T + 2 * 3_600_000, kefalet: 100 },
   })
 })
 

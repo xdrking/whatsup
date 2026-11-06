@@ -33,12 +33,13 @@ export default {
       const lines = []
       const etiketler = []
 
-      for (const { kazananlar } of s.kapanan) {
+      for (const { kazananlar, cete } of s.kapanan) {
         lines.push('🎉 *Sezon bitti!*')
         kazananlar.forEach((k, i) => {
           lines.push(`${MADALYA[i]} ${mentionOf(k.user_jid)} +${sayi.format(k.odul)} XP`)
           etiketler.push(k.user_jid)
         })
+        if (cete) lines.push(`🏴 Haftanın çetesi: *${cete.ad}*, kasaya +${sayi.format(cete.odul)} XP`)
         lines.push('')
       }
 

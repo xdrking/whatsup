@@ -1,25 +1,32 @@
 import { AZAMI_FAIZ } from '../lib/banka.js'
 import { requireGroup } from '../lib/group.js'
-import { faizDurumu, faizKarari } from '../lib/stats.js'
+import { baskanMi, faizDurumu, faizKarari } from '../lib/stats.js'
 import logger from '../lib/logger.js'
 
 export default {
   name: 'faizkararı',
   aliases: ['faizkarari'],
-  description: 'Bot sahibi: grubun banka ve kredi faizini belirler',
+  description: 'Bot sahibi ve seçilmiş başkan: grubun banka ve kredi faizini belirler',
   usage: '.faizkararı <oran>',
   details: [
     `Saatlik banka faizi 0-${AZAMI_FAIZ} arasında olabilir, kredi faizi 4 puan üstünde kalır.`,
     'Birikmiş faiz eski orandan işlenir, yeni oran bundan sonraki saatlere uygulanır.',
+    'Başkan (`.seçim`) günde bir karar verebilir, başkası yazarsa bot cevap vermez.',
   ],
   category: 'oyun',
-  ownerOnly: true,
+  // Başkan da kullandığı için yetki aşağıdadır; yetkisiz kişi yine sessizce düşer.
+  ownerOnly: false,
 
-  async execute({ sock, msg, args, from, parsed }) {
+  async execute({ sock, msg, args, from, sender, parsed, isOwner }) {
     const yaz = (text) => sock.sendMessage(from, { text }, { quoted: msg })
 
     try {
       if (!(await requireGroup({ sock, msg, from, parsed }))) return
+
+      if (!isOwner && !baskanMi(from, sender)) {
+        logger.warn({ sender }, 'Yetkisiz komut denemesi: .faizkararı')
+        return
+      }
 
       if (!args[0]) {
         const f = faizDurumu(from)
@@ -31,8 +38,9 @@ export default {
         return await yaz(`🏦 Oran 0-${AZAMI_FAIZ} arasında tam sayı olmalı.`)
       }
 
-      const s = faizKarari({ chatJid: from, oran })
+      const s = faizKarari({ chatJid: from, oran, baskan: !isOwner })
       if (!s) return await yaz('🏦 Kurul toplanamadı, sonra dene.')
+      if (s.bugunVar) return await yaz('🏛️ Bugünkü kararını verdin, yarın yine toplan.')
 
       await yaz([
         '🏛️ *MERKEZ BANKASI FAİZ KARARI*',

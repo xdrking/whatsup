@@ -71,7 +71,7 @@ kategori, ad çakışması, `details` biçimi ve `data/*.json` hatalarını yaka
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
-games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca)
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava)
 panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
@@ -136,7 +136,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
-| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.vs`…) | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.vs`, `.evlen` teklifi, `.dava`…) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
@@ -144,6 +144,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | coin bakiyesi, toplu soygun hakkı, sigorta, mülkler, günlük kur | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | hapis, seçim ve başkan, evlilik, meslek, çete | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -291,7 +292,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 36 (tamam):** coin ve `.coinmarket`. Ayrıntı aşağıda.
 - **Faz 37 (tamam):** coin kuru, haciz sigortası, `.tüik`, `.mülk`. Faz 36 bölümüne işlendi.
 - **Faz 38 (tamam):** `.faizkararı`, `.teşvik`, artan oranlı vergi, panelde ekonomi kartı. Faz 36 bölümüne işlendi.
-- **Faz 39+:** yeni komutlar, her biri ayrı adım
+- **Faz 39 (tamam):** `.hapis`, `.kefalet`, `.seçim`, `.evlen`, `.boşan`, `.meslek`, `.çalış`, `.çete`, `.dava`, `.özet`. Ayrıntı aşağıda.
+- **Faz 40+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -995,6 +997,32 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 - **`.teşvik`:** kasadan son 7 günde yazan üyelere eşit dağıtır (`tesvikDagit`), bölünmeyen artık kasada kalır.
 - **Panel:** grup sayfasında Ekonomi kartı `ekonomi` kaydını gösterir, yani kur ve para bugünün kaydıdır, anlık değildir. Tablolar bot yeni sürümle açılmadan yoktur, `ekonomiTablolariVar()` bu yüzden vardır.
 
+### Faz 39 — Toplum komutları
+
+```
+hapis(chat_jid, user_jid, bitis, kefalet)                    PK(chat_jid,user_jid)
+secim_aday(chat_jid, hafta, user_jid, oy, sira)              PK(chat_jid,hafta,user_jid)
+secim_oy(chat_jid, hafta, user_jid)                          PK(chat_jid,hafta,user_jid)
+baskan(chat_jid, user_jid, hafta, karar_gun)                 PK(chat_jid)
+evlilik(chat_jid, user_jid, es_jid, tarih)                   PK(chat_jid,user_jid)
+meslek(chat_jid, user_jid, kod, secim, son_calisma)          PK(chat_jid,user_jid)
+cete(chat_jid, anahtar, ad, lider, kasa)                     PK(chat_jid,anahtar)
+cete_uye(chat_jid, user_jid, anahtar, katilma)               PK(chat_jid,user_jid)
+```
+
+Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib/cete.js`, `lib/dava.js`'te saftır, yazma `lib/stats.js`'tedir.
+
+- **`.hapis`:** `.soygun`'da yakalanan 2 saat girer. Toplu soygunda yakalanma olmadığı için hapis de yoktur. `kumarYasagi()` iflas ve hapsin geç biteni döner, kumar komutları ayrıca bir şey çağırmaz. `.soygun` ve `.çalış` kendisi denetler.
+- **`.kefalet`:** tutar yakalanırken cüzdanın %20'sidir ve saklanır, sonradan bankaya yatırmak düşürmez. XP yanar, enflasyonu frenler. Eş yarı fiyata öder.
+- **`.seçim`:** bu haftanın kazananı gelecek hafta başkandır. Kapanış `.sezon` gibi yeni haftadaki ilk okumadadır (`secimKapat`), `baskanMi` da çağırır. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Tek kişi tek oy, oy satın alınamaz, yoksa zengin hep kazanırdı.
+- **Başkan:** `.faizkararı` artık `ownerOnly` değildir, yetki komutun içindedir, yetkisiz kişi yine sessizce düşer. Başkan günde bir karar verir (`karar_gun`), sahip sınırsızdır. `.teşvik` ve `.haciz` yalnızca sahibindir.
+- **`.evlen`:** teklif oyun yuvasını 2 dk tutar, yalnızca teklif edilen yanıtlar. Bonus `.çalış`'ta %20 maaş ve yarı fiyat kefalettir. `.günlük`'e konmadı: 50 XP'nin bonusu bu ekonomide bir şey etmez.
+- **`.boşan`:** isteyen, cüzdan ve bankasının %20'sini eşine öder. `.boşan` tutarı gösterir, `.boşan onay` uygular. Borçluyken kapalıdır (`borcluMu`), yoksa evlenip boşanarak para borçtan kaçırılırdı.
+- **`.meslek`:** tanımlar `lib/meslek.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Maaş kurun on binde payıdır, 4 saatte bir alınır, XP basar. Mesleklerin ortalaması yakın kalmalı, fark risktedir. `addXp`'den geçmez, sezon puanı yazmaz: maaş mesaj ve oyun puanlarını ezerdi.
+- **`.çete`:** kasa faiz almaz, vergi, soygun ve hacizden muaftır. Bu yüzden yatırırken %5 kesilir ve bota gider, borçlu yatıramaz, kasası dolu lider `.iflas` edemez. Kasa `paraArzi`'ne girer, yoksa yatırmak kuru düşürürdü. Sıralama üyelerin `sezon` puanı toplamıdır, ödül `sezonDurumu()` kapanışında puanlar silinmeden yazılır.
+- **`.dava`:** `.anket` oyları okunamadığı için oylama yanıt tabanlıdır, `setLastMessage` oyda çağrılmaz (`.açıkartırma` gibi). Taraflar oy veremez. Kaybeden öder, davacı da. Miktar sanığın cüzdanının %25'iyle sınırlıdır, çoğunluk tek oylamayla birini sıfırlayamasın. Harç peşin bota gider, `.oyunbitir` dahil hiçbir durumda iade edilmez. Borçlu taraf kabul edilmez, kapanışta da denetlenir: dava para kaçırma yolu olmasın.
+- **`.özet`:** yeni tablo yoktur. Mesajlar `gecmis`'ten son 7 gündür, gece kuşu ve kumar tüm zamanlardır, çünkü o tablolar haftalık tutulmaz. Çıktı bunu ayrı başlıkla yazar.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1077,3 +1105,10 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 64. Sahip `.faizkararı 25` → banka %25, kredi %29; sıradan üye yazarsa tepki yok; `.banka` ve `.kredi çek` yeni oranı yazar
 65. Sahip `.teşvik 1000` → aktif üyeler eşit pay alır, kasa azalır; kasadan fazlası reddedilir
 66. Servet 1 coin değerini geçen kişi günün ilk mesajında vergi öder, `.banka` son vergiyi yazar; panelde Ekonomi kartı görünür
+67. `.soygun`'da yakalanınca `.hapis` listeler; `.bahis`, `.soygun`, `.çalış` reddedilir; başkası `.kefalet @kişi` yazınca çıkar
+68. `.seçim aday` ve `.seçim oy @kişi` → XP düşer, ikinci oy reddedilir; pazartesi `.seçim` kazananı yazar; başkan `.faizkararı 25` çalışır, aynı gün ikincisi reddedilir; sıradan üye yazarsa tepki yok
+69. `.evlen @kişi` → yalnızca hedefin `evet`i sayılır, `.profil` eşi gösterir; `.boşan` tutarı yazar, `.boşan onay` parayı aktarır
+70. `.meslek seç kurye`, `.çalış` → maaş gelir; ikinci `.çalış` kalan süreyi yazar
+71. `.çete kur Ad`, başkası `.çete katıl Ad`, `.çete yatır 1000` → kasaya 950 girer; üye `.çete çek` reddedilir, lider çeker
+72. `.dava @kişi 1000 sebep` → taraflar oy veremez, iki üye `haklı` yazınca 5 dk sonra XP geçer; tek oyda dava düşer
+73. `.özet` → son 7 günün mesajları ve tüm zamanlar başlığı gelir, bot listede yok

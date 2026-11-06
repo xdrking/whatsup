@@ -1,4 +1,4 @@
-import { bankaBakiyesi, botHesabiMi, coinDurumu, getStats, mulkDurumu, marketDurumu, sampiyonlukSayisi, seviyeIlerlemesi } from '../lib/stats.js'
+import { bankaBakiyesi, botHesabiMi, coinDurumu, getStats, mulkDurumu, marketDurumu, sampiyonlukSayisi, seviyeIlerlemesi, sosyalDurum } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -41,17 +41,23 @@ export default {
     const sampiyonluk = sampiyonlukSayisi(from, jid)
     const coin = coinDurumu(from, jid).bakiye
     const mulkler = mulkDurumu({ chatJid: from, userJid: jid })
+    const sosyal = sosyalDurum(from, jid)
 
     const lines = [
       `👤 *${ad}*  ${mentionOf(jid)}`,
       ...(unvan ? [unvan] : []),
       ...(sampiyonluk ? [`🏆 Sezon şampiyonu (${sampiyonluk} kez)`] : []),
+      ...(sosyal.baskan ? ['🏛️ Merkez Bankası Başkanı'] : []),
+      ...(sosyal.hapis ? ['🚔 Hapiste'] : []),
       `🏅 Seviye ${level}  •  ${sayi.format(veri.xp)} XP`,
       `${cubuk(kazanilan, gereken)}  ${sayi.format(kazanilan)}/${sayi.format(gereken)}`,
       `⬆️ Sonraki seviye: ${sayi.format(Math.max(0, sonraki - veri.xp))} XP kaldı`,
       ...(banka ? [`🏦 Bankada: ${sayi.format(banka)} XP`] : []),
       ...(coin ? [`🪙 Coin: ${sayi.format(coin)}`] : []),
       ...(mulkler.length ? [mulkler.map((m) => `${m.mulk.ad} x${m.adet}`).join('  •  ')] : []),
+      ...(sosyal.meslek ? [sosyal.meslek.ad] : []),
+      ...(sosyal.cete ? [`🏴 Çete: ${sosyal.cete}`] : []),
+      ...(sosyal.es ? [`💍 Eşi: ${mentionOf(sosyal.es)}`] : []),
       '',
       `💬 ${sayi.format(veri.messages)} mesaj  •  😂 ${sayi.format(veri.stickers)} sticker` +
         `  •  🎤 ${sayi.format(veri.voices)} ses`,
@@ -59,7 +65,7 @@ export default {
 
     await sock.sendMessage(
       from,
-      { text: lines.join('\n'), mentions: [jid] },
+      { text: lines.join('\n'), mentions: [jid, ...(sosyal.es ? [sosyal.es] : [])] },
       { quoted: msg },
     )
   },
