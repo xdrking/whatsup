@@ -212,6 +212,29 @@ test('borsa geçmişi: saat başı yazılır, 30 günden eskisi silinir, grup sa
   assert.ok(veri.grup(GRUP).borsa[0].gecmis.length <= 7 * 24)
 })
 
+test('borçlular: kredi güncel tutarla, eksi cüzdan ayrı görünür, büyük borç üstte', async () => {
+  const grup = 'borclu@g.us'
+  const db = getDb()
+  const simdi = 500_000 * SAAT_MS
+  const stats = db.prepare('INSERT INTO stats (chat_jid, user_jid, xp) VALUES (?, ?, ?)')
+  stats.run(grup, 'kredili@lid', 100)
+  stats.run(grup, 'eksi@lid', -5000)
+  stats.run(grup, 'temiz@lid', 100)
+  db.prepare('INSERT INTO kredi (chat_jid, user_jid, borc, faiz_saat, vade) VALUES (?, ?, ?, ?, ?)')
+    .run(grup, 'kredili@lid', 1000, 499_998, simdi + 22 * SAAT_MS)
+
+  const liste = veri.grup(grup, 'xp', simdi).borclular
+  assert.deepEqual(liste.map((b) => [b.user_jid, b.borc]), [['eksi@lid', 5000], ['kredili@lid', 1417]])
+
+  const yanit = await giris(SIFRE, '8.8.4.4')
+  const Cookie = yanit.headers.get('set-cookie').split(';')[0]
+  const html = await (await fetch(`${adres}/grup?id=${encodeURIComponent(grup)}`, { headers: { Cookie } })).text()
+  assert.ok(html.includes('Borçlular'))
+  assert.ok(html.includes('Eksi bakiye'))
+
+  assert.deepEqual(veri.grup(GRUP).borclular, [])
+})
+
 test('hisse sayfası: grafik çizilir, aralık daralır, bilinmeyen değerler güvenli', async () => {
   const Cookie = await cerezAl('6.6.6.6')
   const al = (sorgu) => fetch(`${adres}/hisse?grup=${encodeURIComponent(GRUP)}&${sorgu}`, { headers: { Cookie } })

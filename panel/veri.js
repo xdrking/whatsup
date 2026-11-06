@@ -3,9 +3,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import Database from 'better-sqlite3'
-import { HISSELER } from '../lib/borsa.js'
+import { HISSELER, SAAT_MS } from '../lib/borsa.js'
 import { istanbulDay } from '../lib/dataset.js'
 import { SETLER } from '../lib/kart.js'
+import { borcIslet } from '../lib/kredi.js'
 import { ROZETLER } from '../lib/rozet.js'
 import { haftaAnahtari } from '../lib/sezon.js'
 import { seviye, seviyeIlerlemesi } from '../lib/stats.js'
@@ -97,6 +98,29 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     })
   }
 
+  /**
+   * Açık krediler ve eksi cüzdanlar, en büyük borçtan aza. Panel yazamadığı için
+   * kredinin güncel tutarı burada yalnızca gösterim için hesaplanır.
+   */
+  function borclular(chatJid, liste, now) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const krediler = db.prepare('SELECT user_jid, borc, faiz_saat, vade FROM kredi WHERE chat_jid = ?').all(chatJid)
+      .map((k) => {
+        const saat = Math.min(Math.floor(now / SAAT_MS), Math.floor(k.vade / SAAT_MS))
+        return {
+          user_jid: k.user_jid,
+          uye: adlar.get(k.user_jid) ?? null,
+          borc: borcIslet(k.borc, Math.max(0, saat - k.faiz_saat)),
+          vade: k.vade,
+          gecti: now >= k.vade,
+        }
+      })
+    const eksiler = liste.filter((u) => u.xp < 0)
+      .map((u) => ({ user_jid: u.user_jid, uye: u, borc: -u.xp, vade: 0, gecti: false }))
+
+    return [...krediler, ...eksiler].toSorted((a, b) => b.borc - a.borc)
+  }
+
   return {
     db,
 
@@ -130,6 +154,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         uyeler: liste.toSorted((a, b) => b[alan] - a[alan]),
         toplam: { uye: liste.length, mesaj: toplam('messages'), xp: toplam('xp'), banka: toplam('bakiye') },
         bugun,
+        borclular: borclular(chatJid, liste, now),
         saatler: saatler('chat_jid = ?', chatJid),
         gunlukMesaj: gunler(db.prepare('SELECT gun, SUM(mesaj) AS n FROM gecmis WHERE chat_jid = ? GROUP BY gun').all(chatJid), now),
         rekorlar: REKORLAR.flatMap((r) => {

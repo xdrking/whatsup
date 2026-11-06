@@ -956,7 +956,7 @@ Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para,
 - **Eksi bakiye** `stats.xp`'nin eksi olmasıdır, ayrı alan yoktur. Faiz vadede durur, yoksa borç hiç kapanmazdı. Eksiyi kapatan XP bota gitmez, yanar.
 - **`.banka yatır`** borçluyken önce borcu keser. `.devret` borçluyken kapalıdır, para arkadaşa aktarılıp borçtan kaçılmasın.
 - **Kumar şartı:** `kumarEngeli()` komut katmanındadır, `lib/stats.js` şart bilmez. Yeni kumar komutu bunu çağırmalı. Borsa kumar sayılmaz.
-- Eksi XP `xpAyarla`'da eksiltilmez, `soygunYap`'ta soyulmaz. Panel kredi tablosunu göstermez, servet çubuğu eksiyi atlar.
+- Eksi XP `xpAyarla`'da eksiltilmez, `soygunYap`'ta soyulmaz. Panelde **Borçlular** kartı açık kredileri ve eksi cüzdanları listeler. Kredi tutarı orada yalnızca gösterim için hesaplanır, veritabanına yazılmaz. Servet çubuğu eksiyi atlar.
 
 ## Elle Doğrulama
 

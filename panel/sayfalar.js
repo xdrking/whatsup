@@ -148,6 +148,11 @@ function podyum(chatJid, ilkUc, alan) {
     </a>`)}</div>`
 }
 
+function borcDurumu(b) {
+  if (b.gecti) return 'Vadesi geçti, ilk mesajında tahsil edilir'
+  return b.vade ? `Kredi · vade ${tarih.format(b.vade)}` : 'Eksi bakiye'
+}
+
 export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
   const sekmeler = Object.entries(SIRALAMALAR).map(([alan, ad]) =>
     h`<a class="${alan === g.alan ? 'secili' : ''}" href="${grupLink(chatJid)}&sirala=${alan}">${ad}</a>`)
@@ -183,6 +188,13 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
     ${ilkUc.length ? podyum(chatJid, ilkUc, g.alan) : ''}
     ${siralama}
   </section>
+
+  ${g.borclular.length ? h`<section class="kart liste"><h2>Borçlular</h2>${g.borclular.map((b) => h`
+    <a class="satir" href="${kisiLink(chatJid, b.user_jid)}">
+      ${b.uye ? avatar(b.uye) : ''}
+      <span class="ad"><strong>${b.uye ? adi(b.uye) : 'Eski üye'}</strong><small>${borcDurumu(b)}</small></span>
+      <span class="deger">${sayi.format(b.borc)}</span>
+    </a>`)}</section>` : ''}
 
   ${g.rekorlar.length ? h`<section class="kart"><h2>Grup rekorları</h2><div class="rekorlar">${g.rekorlar.map((r) => h`
     <a class="rekor" href="${kisiLink(chatJid, r.uye.user_jid)}">
