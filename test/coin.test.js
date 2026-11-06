@@ -309,7 +309,7 @@ test('günün ilk mesajı ekonomi kaydını yazar', () => {
 
 test('botun LID satırı ana hesaba taşınır, devir de oraya gider', () => {
   const chatJid = yeniGrup()
-  const lid = '277455759773729@lid'
+  const lid = '222222222222222@lid'
   xpVer(chatJid, BOT, 1000)
   xpVer(chatJid, lid, 150_000)
   xpVer(chatJid, 'a@s', 500)
