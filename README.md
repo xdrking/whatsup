@@ -316,7 +316,7 @@ Süre, faiz alınan saat başı sayısıdır. Yatırdıktan sonraki ilk saat ba�
 | `.kredi çek 1000` | Botun bankasından kredi çeker, en az 100 XP |
 | `.kredi öde 500` | Cüzdandan borç öder; `hepsi` ve `yarısı` da olur |
 
-Faiz saatlik %19 bileşiktir ve saat başlarında işler. Vade 24 saattir, aynı anda tek kredi alınır. Limit seviye × 1.000 XP'dir, seviyeye bankadaki XP sayılmaz.
+Faiz saatlik %19 bileşiktir ve saat başlarında işler. Vade 24 saattir, aynı anda tek kredi alınır. Limit herkes için 400.000 XP'dir.
 Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler botun bankasına gider. Kasada para yoksa kredi verilmez.
 
 | Çekilen | 1 saat | 6 saat | 12 saat | 24 saat (vade) |
@@ -324,6 +324,7 @@ Kredi önce botun bankasından, yetmezse botun cüzdanından çıkar. Ödemeler 
 | 1.000 | 1.190 | 2.840 | 8.065 | 65.032 |
 | 5.000 | 5.950 | 14.199 | 40.322 | 325.160 |
 | 10.000 | 11.900 | 28.398 | 80.643 | 650.320 |
+| 400.000 | 476.000 | 1.135.905 | 3.225.697 | 26.012.798 |
 
 - Borç varken `.banka yatır` önce borcu keser, artan XP hesaba girer. Kesilen XP botun bankasına gider.
 - Borç varken `.devret` kapalıdır.

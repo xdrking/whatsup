@@ -7,7 +7,7 @@ process.env.STATS_DB = ':memory:'
 
 const { FAIZ_YUZDESI, faizIslet } = await import('../lib/banka.js')
 const { SAAT_MS } = await import('../lib/borsa.js')
-const { borcIslet, IFLAS_YASAK_SAATI, KREDI_FAIZ_YUZDESI, KREDI_VADE_SAATI, krediLimiti } = await import('../lib/kredi.js')
+const { borcIslet, IFLAS_YASAK_SAATI, KREDI_FAIZ_YUZDESI, KREDI_LIMITI, KREDI_VADE_SAATI } = await import('../lib/kredi.js')
 const { hisseBul } = await import('../lib/borsa.js')
 const { kumarEngeli } = await import('../lib/kumar.js')
 const {
@@ -28,16 +28,15 @@ function kur(kasa = 100_000) {
   return { chatJid, userJid: `u${sayac}@s.whatsapp.net` }
 }
 
-test('kredi faizi banka faizinden yüksek, limit seviyeyle büyür', () => {
+test('kredi faizi banka faizinden yüksek', () => {
   assert.ok(KREDI_FAIZ_YUZDESI > FAIZ_YUZDESI)
-  assert.equal(krediLimiti(3), 3000)
   assert.equal(borcIslet(1000, 0), 1000)
   assert.equal(borcIslet(1000, 1), 1190)
 })
 
 test('kredi kasadan çıkar; limit, kasa ve ikinci kredi engellenir', () => {
   const k = kur(1500)
-  assert.deepEqual(krediCek({ ...k, miktar: 1001, now: T }), { limit: 1000 })
+  assert.deepEqual(krediCek({ ...k, miktar: KREDI_LIMITI + 1, now: T }), { limit: KREDI_LIMITI })
   assert.deepEqual(krediCek({ ...k, miktar: 1000, now: T }), { xp: 1000 })
   assert.equal(getStats(k.chatJid, BOT).xp, 500)
   assert.deepEqual(krediCek({ ...k, miktar: 100, now: T }), { acik: true, borc: 1000 })
