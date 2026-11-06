@@ -396,6 +396,7 @@ XP TL ise coin altındır. 1 coin **1.000.000 XP**'dir, fiyat sabittir.
 | `.coinmarket` | Ürünleri, coinini ve XP'ni gösterir (kısa yol `.cm`) |
 | `.coinmarket coin 2` | Cüzdandaki XP ile 2 coin alır |
 | `.coinmarket al 1` | Ürünü coinle alır |
+| `.hacizall` | 30 coin karşılığı toplu haciz yapar |
 
 | No | Ürün | Fiyat |
 |---|---|---|
@@ -405,7 +406,7 @@ XP TL ise coin altındır. 1 coin **1.000.000 XP**'dir, fiyat sabittir.
 | 4 | 1 saat oyunlardan 30 kat XP | 5 coin |
 | 5 | Unvan: Altın Babası | 10 coin |
 | 6 | Unvan: Merkez Bankası Başkanı | 25 coin |
-| 7 | Toplu haciz (tek seferlik, satın alınca işler) | 30 coin |
+| 7 | Toplu haciz (`.hacizall` yazınca coin düşer ve işler) | 30 coin |
 | 8 | Unvan: Ekonominin Efendisi | 50 coin |
 
 - Ödenen XP yanar, coin XP'ye geri dönmez.
@@ -413,7 +414,7 @@ XP TL ise coin altındır. 1 coin **1.000.000 XP**'dir, fiyat sabittir.
 - Açık kredin varken coin alamazsın.
 - Toplu soygunda her üye için ayrı zar atılır: %40 şansla XP'sinin %10'u senin olur, başındaki ödül de gelir. Yakalanma cezası yoktur, günlük soygun hakkın harcanmaz.
 - Kalkanlı, yeni soyulmuş ve fakir üyeler atlanır. Soyulacak kimse yoksa hak yanmaz.
-- Toplu haciz herkesin bankasının %45'ini ve cüzdanının %50'sini alıcının cüzdanına geçirir. Kalkan korumaz, bot etkilenmez, eksi cüzdandan bir şey alınmaz. Alınacak para yoksa coin harcanmaz.
+- `.hacizall` herkesin bankasının %45'ini ve cüzdanının %50'sini alıcının cüzdanına geçirir. Kalkan korumaz, bot etkilenmez, eksi cüzdandan bir şey alınmaz. Alınacak para yoksa coin harcanmaz.
 
 ### Sezon
 

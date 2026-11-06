@@ -1,34 +1,9 @@
 import { COIN_FIYATI, COIN_URUNLERI } from '../lib/coin.js'
-import { digerUyeler, requireGroup, requireGroupMetadata } from '../lib/group.js'
+import { requireGroup } from '../lib/group.js'
 import { binlik } from '../lib/sayi.js'
-import { botHesabiMi, coinAl, coinDurumu, coinMarketAl, getStats, topluHaciz } from '../lib/stats.js'
-import { mentionOf } from '../lib/target.js'
+import { coinAl, coinDurumu, coinMarketAl, getStats } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
-
-async function hacizUygula({ sock, msg, from, sender, parsed, urun, yaz }) {
-  const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
-  if (!metadata) return
-
-  const kurbanlar = digerUyeler(metadata, sender).filter((jid) => !botHesabiMi(jid))
-  const s = topluHaciz({ chatJid: from, userJid: sender, kurbanlar, urun })
-  if (!s) return yaz('🪙 Coin market şu an kapalı, sonra dene.')
-  if (s.yetersiz) return yaz(`🪙 ${urun.fiyat} coin gerekiyor. Senin coinin: ${binlik(s.bakiye)}`)
-  if (s.hedefYok) return yaz('⚖️ Haczedilecek para yok. Coinin harcanmadı.')
-
-  const mentions = [sender, ...s.kurbanlar.map((k) => k.jid)]
-  return sock.sendMessage(from, {
-    text: [
-      `⚖️ *TOPLU HACİZ*  •  ${mentionOf(sender)}`,
-      '',
-      ...s.kurbanlar.map((k) => `💸 ${mentionOf(k.jid)} — ${binlik(k.miktar)} XP`),
-      '',
-      `💰 Toplam *${binlik(s.toplam)} XP*  •  XP'n: ${binlik(s.xp)}`,
-      `🪙 Kalan coin: ${binlik(s.bakiye)}`,
-    ].join('\n'),
-    mentions,
-  }, { quoted: msg })
-}
 
 export default {
   name: 'coinmarket',
@@ -40,7 +15,7 @@ export default {
     'Ödenen XP yanar, coin XP\'ye geri çevrilmez. Açık kredin varken coin alamazsın.',
     '`.coinmarket al 1` ürünü coinle alır. Unvan `.market` unvanının yerine geçer.',
     'Toplu soygun hakkı `.soygun herkes` ile kullanılır. Coin her grupta ayrıdır.',
-    'Toplu haciz satın alınca hemen işler: herkesin bankasından ve cüzdanından alınan para senin cüzdanına geçer. Kalkan korumaz.',
+    'Toplu haciz `.hacizall` ile kullanılır, coin o an düşer.',
   ],
   category: 'oyun',
   cooldown: 5,
@@ -69,7 +44,7 @@ export default {
         const urun = COIN_URUNLERI[Number(args[1]) - 1]
         if (!urun) return await yaz(`🪙 Ürün numarası yaz: \`.coinmarket al 1\` (1-${COIN_URUNLERI.length})`)
 
-        if (urun.topluHaciz) return await hacizUygula({ sock, msg, from, sender, parsed, urun, yaz })
+        if (urun.topluHaciz) return await yaz(`⚖️ Bu ürün satın alınmaz, \`.hacizall\` yazınca ${urun.fiyat} coin düşer ve hemen işler.`)
 
         const s = coinMarketAl({ chatJid: from, userJid: sender, urun })
         if (!s) return await yaz('🪙 Coin market şu an kapalı, sonra dene.')
