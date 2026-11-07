@@ -341,9 +341,9 @@ Botun bankasından faizli XP çekilir. Ödenmeyen borç cüzdanı eksiye düşü
 | Konu | Değer |
 |---|---|
 | Faiz | Saatlik %19 bileşik, her saat başında işler. Hep banka faizinin 4 puan üstündedir |
-| Vade | 24 saat, sonrasında faiz durur |
+| Vade | 12 saat, sonrasında faiz durur |
 | Aynı anda | Tek kredi |
-| Limit | 400.000 XP, ama kasanın yarısını geçemez |
+| Limit | 50.000.000 XP, ama kasanın yarısını geçemez |
 | Erken ödeme | Serbest, cezası yok, kalan borca faiz işlemeye devam eder |
 
 Kasa, botun bankası ve cüzdanıdır. Kredi önce bankadan, yetmezse cüzdandan çıkar, ödemeler hep botun bankasına gider. Kasada 90.000 XP varsa tek seferde en çok 45.000 XP çekilir, fazlası istenirse bot sınırı yazar.
@@ -354,12 +354,12 @@ Faiz bankanın %15'inden yüksektir, bu yüzden kredi çekip bankaya yatırmak k
 
 Hiç ödeme yapılmazsa:
 
-| Çekilen | 1 saat | 6 saat | 12 saat | 24 saat (vade) |
-|---|---|---|---|---|
-| 1.000 | 1.190 | 2.840 | 8.065 | 65.032 |
-| 5.000 | 5.950 | 14.199 | 40.322 | 325.160 |
-| 10.000 | 11.900 | 28.398 | 80.643 | 650.320 |
-| 400.000 | 476.000 | 1.135.905 | 3.225.697 | 26.012.798 |
+| Çekilen | 1 saat | 6 saat | 12 saat (vade) |
+|---|---|---|---|
+| 1.000 | 1.190 | 2.840 | 8.065 |
+| 5.000 | 5.950 | 14.199 | 40.322 |
+| 10.000 | 11.900 | 28.398 | 80.643 |
+| 50.000.000 | 59.500.000 | 141.988.043 | 403.212.086 |
 
 Süre, geçen saat başı sayısıdır. Bankadan farklı olarak ilk saat başı da sayılır: 14:50'de çekilen kredi 15:00'te faiz alır.
 
@@ -382,7 +382,7 @@ Bankadaki XP doğrudan borca sayılmaz. Vadeden önce ödemek için `.banka çek
 | 17:00 | Faiz işler | 1.092 |
 | 17:10 | `.kredi öde hepsi` | Borç biter |
 
-Örnek: vadede borç 65.032 XP, cüzdanda 5.000 XP, bankada 10.000 XP olsun. İkisi de sıfırlanır, 15.000 XP botun bankasına gider, cüzdan **−50.032 XP** olur.
+Örnek: vadede borç 8.065 XP, cüzdanda 1.000 XP, bankada 2.000 XP olsun. İkisi de sıfırlanır, 3.000 XP botun bankasına gider, cüzdan **−5.065 XP** olur.
 
 Bot kendiliğinden yazmadığı için tahsilat kişinin vadeden sonraki ilk mesajında olur. Geç yazmak borcu büyütmez, tutar vade anında kalır.
 

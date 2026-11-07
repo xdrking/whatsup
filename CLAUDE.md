@@ -964,7 +964,7 @@ kredi(chat_jid, user_jid, borc, faiz_saat, vade ms)   PK(chat_jid,user_jid)
 Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para, sonra enflasyondur: banka %15 kalır, kredi saatlik %19'dur.
 **Kredi faizi banka faizinin üstünde kalmalı**, yoksa kredi çekip bankaya yatıran XP basar; `test/kredi.test.js` denetler.
 
-- **Kasa:** botun banka hesabıdır. Kumar kayıpları bot cüzdanına düştüğü için kredi banka yetmezse cüzdandan da çıkar, ödemeler hep bankaya girer (`kasadanCek`, `kasayaYatir`). Limit 400.000 XP'dir, tek kredi kasanın yarısını geçemez (`azamiKredi`): verilen kadar XP kasada kalmalı.
+- **Kasa:** botun banka hesabıdır. Kumar kayıpları bot cüzdanına düştüğü için kredi banka yetmezse cüzdandan da çıkar, ödemeler hep bankaya girer (`kasadanCek`, `kasayaYatir`). Limit 50.000.000 XP'dir, tek kredi kasanın yarısını geçemez (`azamiKredi`): verilen kadar XP kasada kalmalı.
 - **Vade:** `krediGuncelle()` faizi işler, vade geçtiyse tahsil eder. `recordMessage` her mesajda çağırır, çünkü bot kendiliğinden yazmaz. Tahsilat sırası cüzdan, banka, eksi. Satır silinir.
 - **Eksi bakiye** `stats.xp`'nin eksi olmasıdır, ayrı alan yoktur. Faiz vadede durur, yoksa borç hiç kapanmazdı. Eksiyi kapatan XP bota gitmez, yanar.
 - **`.banka yatır`** borçluyken önce borcu keser. `.devret` borçluyken kapalıdır, para arkadaşa aktarılıp borçtan kaçılmasın. Sahibin başkası adına yaptığı devir (`sahipDevri`) muaftır, grup adminleri değil.

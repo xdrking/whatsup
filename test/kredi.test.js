@@ -50,7 +50,7 @@ test('kredi kasadan çıkar; limit, kasa ve ikinci kredi engellenir', () => {
 
 test('tek kredi kasanın yarısını geçemez, limit durumda da görünür', () => {
   assert.equal(azamiKredi(90_000), 45_000)
-  assert.equal(azamiKredi(10_000_000), KREDI_LIMITI)
+  assert.equal(azamiKredi(KREDI_LIMITI * 3), KREDI_LIMITI)
 
   const k = kur(90_000)
   assert.equal(krediDurumu({ ...k, now: T }).limit, 45_000)
