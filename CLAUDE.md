@@ -1009,6 +1009,7 @@ secim_oy(chat_jid, hafta, user_jid)                          PK(chat_jid,hafta,u
 baskan(chat_jid, user_jid, hafta, karar_gun)                 PK(chat_jid)
 evlilik(chat_jid, user_jid, es_jid, tarih)                   PK(chat_jid,user_jid)
 meslek(chat_jid, user_jid, kod, secim, son_calisma)          PK(chat_jid,user_jid)
+meslek_biten(chat_jid, user_jid, kod)                        PK(chat_jid,user_jid,kod)
 cete(chat_jid, anahtar, ad, lider, kasa)                     PK(chat_jid,anahtar)
 cete_uye(chat_jid, user_jid, anahtar, katilma)               PK(chat_jid,user_jid)
 ```
@@ -1022,7 +1023,7 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 - **Başkan:** açılınca günde bir faiz kararı verir (`karar_gun`), sahip sınırsızdır. `.teşvik` ve `.haciz` yalnızca sahibindir.
 - **`.evlen`:** teklif oyun yuvasını 2 dk tutar, yalnızca teklif edilen yanıtlar. Bonus `.çalış`'ta %20 maaş ve yarı fiyat kefalettir. `.günlük`'e konmadı: 50 XP'nin bonusu bu ekonomide bir şey etmez.
 - **`.boşan`:** isteyen, cüzdan ve bankasının %20'sini eşine öder. `.boşan` tutarı gösterir, `.boşan onay` uygular. Borçluyken kapalıdır (`borcluMu`), yoksa evlenip boşanarak para borçtan kaçırılırdı.
-- **`.meslek`:** tanımlar `lib/meslek.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Maaş kurun on binde payıdır, 30 dakikada bir alınır, XP basar. Maaşlar gerçek hayattaki kazanca göredir (bot sahibinin kararı): yazılımcının en düşük maaşı garsonun en yükseğinden az olmamalı, `test/toplum.test.js` denetler. `addXp`'den geçmez, sezon puanı yazmaz: maaş mesaj ve oyun puanlarını ezerdi.
+- **`.meslek`:** tanımlar `lib/meslek.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Maaş kurun on binde payıdır, 30 dakikada bir alınır, XP basar. Maaşlar gerçek hayattaki kazanca göredir (bot sahibinin kararı): yazılımcının en düşük maaşı garsonun en yükseğinden az olmamalı, `test/toplum.test.js` denetler. `tekSeferlik` meslek (futbolcu) bırakılınca `meslek_biten`'e yazılır, bir daha seçilemez. `addXp`'den geçmez, sezon puanı yazmaz: maaş mesaj ve oyun puanlarını ezerdi.
 - **`.çete`:** kasa faiz almaz, vergi, soygun ve hacizden muaftır. Bu yüzden yatırırken %5 kesilir ve bota gider, borçlu yatıramaz, kasası dolu lider `.iflas` edemez. Kasa `paraArzi`'ne girer, yoksa yatırmak kuru düşürürdü. Sıralama üyelerin `sezon` puanı toplamıdır, ödül `sezonDurumu()` kapanışında puanlar silinmeden yazılır.
 - **`.dava`:** `.anket` oyları okunamadığı için oylama yanıt tabanlıdır, `setLastMessage` oyda çağrılmaz (`.açıkartırma` gibi). Taraflar oy veremez. Kaybeden öder, davacı da. Miktar sanığın cüzdanının %25'iyle sınırlıdır, çoğunluk tek oylamayla birini sıfırlayamasın. Harç peşin bota gider, `.oyunbitir` dahil hiçbir durumda iade edilmez. Borçlu taraf kabul edilmez, kapanışta da denetlenir: dava para kaçırma yolu olmasın.
 - **Panel:** grup sayfasında Çeteler, Hapishane, Evlilikler, Meslekler, kişi sayfasında Hayat kartı vardır. Veri yoksa kart çıkmaz. Tablolar bot yeni sürümle açılmadan yoktur, `toplumTablolariVar()` bu yüzden vardır. Seçim panele eklenmedi.

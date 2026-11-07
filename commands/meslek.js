@@ -15,6 +15,7 @@ export default {
   details: [
     `Maaş coin kuruna bağlıdır, ${CALISMA_DAKIKASI} dakikada bir \`.çalış\` yazılır.`,
     `Meslek ${MESLEK_DEGISIM_SAATI} saatte bir değiştirilebilir. Maaşlar gerçek hayata göredir, riskli mesleklerde daha çok oynar.`,
+    'Futbolcu tek seferliktir: bırakan bir daha seçemez.',
   ],
   category: 'ekonomi',
   ownerOnly: false,
@@ -35,15 +36,20 @@ export default {
         const s = meslekSec({ chatJid: from, userJid: sender, meslek })
         if (!s) return await yaz('💼 İŞKUR şu an kapalı, sonra dene.')
         if (s.ayni) return await yaz(`💼 Zaten ${meslek.ad} olarak çalışıyorsun.`)
+        if (s.hakBitti) return await yaz(`💼 ${meslek.ad} bir kez seçilir, sen bıraktın. Geri dönüş yok.`)
         if (s.bekle) return await yaz(`💼 Meslek değiştirmek için ${sureYaz(s.bitis - Date.now())} beklemelisin.`)
-        return await yaz(`💼 Hayırlı olsun: *${meslek.ad}*\nMaaş için \`.çalış\``)
+        return await yaz([
+          `💼 Hayırlı olsun: *${meslek.ad}*`,
+          ...(meslek.tekSeferlik ? ['⚠️ Bu mesleği bırakırsan bir daha seçemezsin.'] : []),
+          'Maaş için `.çalış`',
+        ].join('\n'))
       }
 
       const durum = meslekDurumu(from, sender)
       await yaz([
         '💼 *Meslekler*',
         '',
-        ...MESLEKLER.map((m) => `${m.ad} — kurun %${yuzde(m.min)}-%${yuzde(m.max)}'i`),
+        ...MESLEKLER.map((m) => `${m.ad} — kurun %${yuzde(m.min)}-%${yuzde(m.max)}'i${m.tekSeferlik ? ' (tek seferlik)' : ''}`),
         '',
         durum ? `Mesleğin: ${durum.meslek.ad}` : 'Seçmek için: `.meslek seç kurye`',
       ].join('\n'))

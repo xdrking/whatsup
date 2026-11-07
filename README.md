@@ -475,22 +475,24 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 
 | Meslek | Maaş (XP) |
 |---|---|
-| Garson | 4.500-5.500 |
-| Kurye | 4.000-7.000 |
-| Çiftçi | 3.000-9.000 |
-| Berber | 5.000-9.000 |
-| Şoför | 6.500-8.500 |
-| Aşçı | 6.000-10.000 |
-| Öğretmen | 9.000-11.000 |
-| Hemşire | 10.000-13.000 |
-| Polis | 10.000-13.000 |
-| Sanatçı | 0-30.000 |
-| Mühendis | 15.000-21.000 |
-| Yazılımcı | 15.000-30.000 |
-| Avukat | 10.000-40.000 |
-| Doktor | 25.000-35.000 |
-| Pilot | 35.000-45.000 |
-| Futbolcu | 0-80.000 |
+| Garson | 45.000-55.000 |
+| Kurye | 40.000-70.000 |
+| Çiftçi | 30.000-90.000 |
+| Berber | 50.000-90.000 |
+| Şoför | 65.000-85.000 |
+| Aşçı | 60.000-100.000 |
+| Öğretmen | 90.000-110.000 |
+| Hemşire | 100.000-130.000 |
+| Polis | 100.000-130.000 |
+| Sanatçı | 0-300.000 |
+| Mühendis | 150.000-210.000 |
+| Yazılımcı | 150.000-300.000 |
+| Avukat | 100.000-400.000 |
+| Doktor | 250.000-350.000 |
+| Pilot | 350.000-450.000 |
+| Futbolcu (tek seferlik) | 0-2.000.000 |
+
+Futbolcu bir kez seçilir: bırakan bir daha seçemez.
 
 **Çete:** kurmak coin kurunun %1'idir, en çok 10 üye olur. Kasaya yatırılan XP'den %5 kesilir, kasadan yalnızca lider çeker. Sıralama üyelerin `.sezon` puanı toplamıdır, haftanın birincisi kasaya 5.000 XP alır.
 

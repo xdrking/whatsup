@@ -194,13 +194,13 @@ test('çalış: 4 saatte bir, hapiste kapalı, evliye bonus', () => {
   assert.deepEqual(meslekSec({ chatJid, userJid: 'a', meslek: garson, now: T }), { ayni: true })
 
   const s = calis({ chatJid, userJid: 'a', rnd, now: T })
-  assert.equal(s.maas, 4500)
+  assert.equal(s.maas, 45_000)
   assert.equal(s.esBonusu, 0)
-  assert.equal(xp(chatJid, 'a'), 4500)
+  assert.equal(xp(chatJid, 'a'), 45_000)
   assert.deepEqual(calis({ chatJid, userJid: 'a', rnd, now: T + 1 }), { bekle: T + SAAT / 2 })
 
   evlen({ chatJid, a: 'a', b: 'e', now: T })
-  assert.equal(calis({ chatJid, userJid: 'a', rnd, now: T + 4 * SAAT }).esBonusu, 900)
+  assert.equal(calis({ chatJid, userJid: 'a', rnd, now: T + 4 * SAAT }).esBonusu, 9000)
 
   soygunYap({ chatJid, hirsiz: 'a', kurban: 'k', sans: () => false, now: T + 8 * SAAT })
   assert.deepEqual(calis({ chatJid, userJid: 'a', rnd, now: T + 8 * SAAT }), { hapis: T + 10 * SAAT })
@@ -220,6 +220,19 @@ test('meslek değişimi: 24 saat bekler, çalışma beklemesini sıfırlamaz', (
   ver(yeni, 'a', 0)
   meslekSec({ chatJid: yeni, userJid: 'a', meslek: kurye, now: T })
   assert.equal(calis({ chatJid: yeni, userJid: 'a', rnd, now: T }).meslek.kod, 'kurye')
+})
+
+test('futbolcu tek seferlik: bırakan dönemez, başka grup etkilenmez', () => {
+  const chatJid = ayarla({ a: 0 })
+  const futbolcu = meslekBul('futbolcu')
+  assert.deepEqual(meslekSec({ chatJid, userJid: 'a', meslek: futbolcu, now: T }), { tamam: true })
+  assert.deepEqual(meslekSec({ chatJid, userJid: 'a', meslek: futbolcu, now: T + SAAT }), { ayni: true })
+
+  meslekSec({ chatJid, userJid: 'a', meslek: meslekBul('garson'), now: T + 24 * SAAT })
+  assert.deepEqual(meslekSec({ chatJid, userJid: 'a', meslek: futbolcu, now: T + 48 * SAAT }), { hakBitti: true })
+  assert.equal(meslekSec({ chatJid, userJid: 'a', meslek: meslekBul('kurye'), now: T + 48 * SAAT }).tamam, true)
+
+  assert.deepEqual(meslekSec({ chatJid: yeniGrup(), userJid: 'a', meslek: futbolcu, now: T }), { tamam: true })
 })
 
 test('çete adı: küçük harf anahtar, bozuk ad reddedilir', () => {
