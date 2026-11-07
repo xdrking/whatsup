@@ -446,12 +446,12 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 
 | Mülk | Fiyat | Saatlik kira |
 |---|---|---|
-| 🚗 Araba | 3 coin | yok |
-| 🏠 Ev | 5 coin | fiyatın %2'si |
-| 🏪 Dükkan | 15 coin | fiyatın %2,5'i |
-| 🏰 Villa | 40 coin | fiyatın %3'ü |
+| 🚗 Araba | 9 coin | yok |
+| 🏠 Ev | 15 coin | fiyatın %2'si |
+| 🏪 Dükkan | 45 coin | fiyatın %2,5'i |
+| 🏰 Villa | 120 coin | fiyatın %3'ü |
 
-Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 100.000 XP getirir, kur 2 katına çıkınca kira da iki katına çıkar. Kira saat başı birikir, 24 saatte durur, `.mülk topla` ile alınır. Mülk satılınca kurun %90'ı üstünden XP gelir. Owner `.haciz @kişi ev` ile bir mülke el koyar, değeri botun kasasına girer.
+Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 XP getirir, kur 2 katına çıkınca kira da iki katına çıkar. Kira saat başı birikir, 24 saatte durur, `.mülk topla` ile alınır. Mülk satılınca kurun %90'ı üstünden XP gelir. Owner `.haciz @kişi ev` ile bir mülke el koyar, değeri botun kasasına girer.
 
 ### Hapis, evlilik, meslek, çete, dava
 
