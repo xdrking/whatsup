@@ -296,7 +296,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 37 (tamam):** coin kuru, haciz sigortası, `.tüik`, `.mülk`. Faz 36 bölümüne işlendi.
 - **Faz 38 (tamam):** `.faizkararı`, `.teşvik`, artan oranlı vergi, panelde ekonomi kartı. Faz 36 bölümüne işlendi.
 - **Faz 39 (tamam):** `.hapis`, `.kefalet`, `.seçim` (askıda), `.evlen`, `.boşan`, `.meslek`, `.çalış`, `.çete`, `.dava`, `.özet`. Ayrıntı aşağıda.
-- **Faz 40+:** yeni komutlar, her biri ayrı adım
+- **Faz 40 (tamam):** `.vergitop`. Faz 25 bölümüne işlendi.
+- **Faz 41+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -847,6 +848,8 @@ Vergi `recordMessage()` içinde kişinin günün ilk mesajında kesilir: komutla
 kaçılabilirdi. Bot kendiliğinden yazmadığı için vergiyi `.banka` gösterir. Mesaj başına DB'ye
 gidilmesin diye denetim bellektedir, yeniden başlatmada `vergi_day` çift kesintiyi önler.
 
+Kesilen her vergi `vergi(chat_jid, user_jid, toplam)` tablosunda birikir, `.vergitop` buradan okur. Tablodan önceki vergiler kayıtlı değildir.
+
 ### Faz 26 — `.sezon`
 
 ```
@@ -1120,3 +1123,4 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 73. `.özet` → son 7 günün mesajları ve tüm zamanlar başlığı gelir, bot listede yok
 74. `.help` → kısa menü; `.help kumar` → açıklamalı bölüm; `.help sticker` → komut ayrıntısı; `.help tümü` → uzun liste
 75. Panelde grup sayfası çete, hapis, evlilik ve meslek kartlarını, kişi sayfası Hayat kartını gösterir; verisi olmayan kart çıkmaz
+76. Vergi ödeyen kişi `.vergitop`'ta görünür, bot listede yok; kimse ödemediyse "henüz kimse" yazar

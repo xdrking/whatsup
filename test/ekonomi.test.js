@@ -15,7 +15,7 @@ const { ADIM_MS, fiyatAdimi, HAVALAR, hisseBul, HISSELER, piyasaHavasi, SAAT_MS 
 const { VITRIN, vitrinUrunu } = await import('../lib/vitrin.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, kartlariOku, kartVer, setTamamla, vitrinKalan, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
+  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, kartlariOku, kartVer, setTamamla, vitrinKalan, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, vergiSiralama, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -327,6 +327,7 @@ test('vergi: günün ilk mesajında bir kez kesilir, banka da sayılır, eşik a
 
   mesaj(T)
   assert.equal(bankaDurumu({ ...k, now: T }).sonVergi, 20_000)
+  assert.deepEqual(vergiSiralama(k.chatJid), [{ user_jid: k.userJid, toplam: 20_000 }])
   assert.equal(getStats(k.chatJid, k.userJid).xp, 0)
   assert.equal(bankaBakiyesi(k.chatJid, k.userJid), 1_980_001)
 
