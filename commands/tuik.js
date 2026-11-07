@@ -42,7 +42,7 @@ export default {
           '📊 *TÜİK Ekonomi Bülteni*',
           '',
           `💰 Piyasadaki para: ${binlik(e.anlik)} XP`,
-          `🪙 Bugünkü coin kuru: ${binlik(e.kur)} XP`,
+          `🪙 Anlık coin kuru: ${binlik(e.kur)} XP`,
           satir('📈 Günlük enflasyon', enflasyon(e.arz, e.dun)),
           satir('📅 Haftalık enflasyon', enflasyon(e.arz, e.hafta)),
           '',

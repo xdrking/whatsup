@@ -12,8 +12,8 @@ export default {
   description: 'XP ile coin al, coinle özel ürünler satın al',
   usage: '.coinmarket  —  .coinmarket coin <adet>  —  .coinmarket sat <adet>  —  .coinmarket al <numara>',
   details: [
-    `Kur her gün piyasadaki paraya göre yenilenir, en az ${binlik(COIN_TABAN)} XP. \`.coinmarket coin 2\` cüzdandaki XP ile 2 coin alır.`,
-    `\`.coinmarket sat 2\` coini kurun %${BOZDURMA_YUZDESI}'ine bozdurur. Ödenen XP yanar. Açık kredin varken coin alamazsın.`,
+    `Kur piyasadaki paraya göre anlık değişir, en az ${binlik(COIN_TABAN)} XP. \`.coinmarket coin 2\` cüzdandaki XP ile 2 coin alır.`,
+    `\`.coinmarket sat 2\` coini kurun %${BOZDURMA_YUZDESI}'ine bozdurur. Kur gün içinde çıktıysa bozdurma günün ilk kuruyla yapılır. Ödenen XP yanar. Açık kredin varken coin alamazsın.`,
     '`.coinmarket al 1` ürünü coinle alır. Unvan `.market` unvanının yerine geçer.',
     'Toplu soygun hakkı `.soygun herkes` ile kullanılır. Coin her grupta ayrıdır.',
     'Toplu haciz `.hacizall` ile kullanılır, coin o an düşer.',
@@ -70,7 +70,7 @@ export default {
       const sigorta = sigortaBitisi(from, sender)
       await yaz([
         '🪙 *Coin Market*',
-        `Bugünkü kur: 1 coin = ${binlik(ekonomi.kur)} XP  •  Bozdurma: ${binlik(bozdurmaDegeri(1, ekonomi.kur))} XP`,
+        `Anlık kur: 1 coin = ${binlik(ekonomi.kur)} XP  •  Bozdurma: ${binlik(bozdurmaDegeri(1, ekonomi.bozdurmaKur))} XP`,
         '',
         ...COIN_URUNLERI.map((u, i) => `${i + 1}. ${u.ad} — ${u.fiyat} coin`),
         '',

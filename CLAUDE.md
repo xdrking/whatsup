@@ -984,7 +984,7 @@ mulk(chat_jid, user_jid, kod, adet, kira_saat, bekleyen)     PK(chat_jid,user_ji
 
 XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib/coin.js`'tedir, yeni ürün `COIN_URUNLERI`'ne bir satırdır. Komut adı `.coinmarket`'tir: `.coin` yazı-tura komutudur.
 
-- **Kur:** `coinKuru()` piyasadaki paranın yüzde biridir, en az 1.000.000 XP. Para, üyelerin artı cüzdanı ve bankasıdır (`paraArzi`). Bot sayılmaz: kasa kendi faiziyle büyür. Kur günün ilk mesajında sabitlenir (`gununEkonomisi`), gün içinde değişmez.
+- **Kur:** `coinKuru()` piyasadaki paranın yüzde biridir, en az 1.000.000 XP. Para, üyelerin artı cüzdanı ve bankasıdır (`paraArzi`). Bot sayılmaz: kasa kendi faiziyle büyür. Coin alışı ve gösterilen kur anlıktır (`anlikKur`, bot sahibinin kararı). Bozdurma anlık kurla günün kurundan düşük olanıdır (`bozdurmaKuru`), bu kaldırılmamalı: yoksa kredi çekip kuru %10 farkın üstüne şişiren kişi coinini bozup XP basardı. Maaş, kira, mülk satışı ve vergi günün ilk mesajında sabitlenen kuru kullanır (`gununEkonomisi`).
 - **İşlenmemiş faiz arza yazılır,** veritabanına yazılmadan hesaplanır. Yazılmazsa faizi birikmiş kişi ucuza coin alır, `.banka` ile kuru sıçratır, bozdururdu.
 - **Alış satış:** ödenen XP yanar. `.coinmarket sat` kurun %90'ını öder, bu fark kaldırılmamalı. Coin başkasına devredilmez, soyulmaz, hacizle alınmaz.
 - **`.iflas`** coin ya da mülk varken reddedilir, yoksa iflastan sonra borçsuz paraya dönerdi.

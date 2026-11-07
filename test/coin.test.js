@@ -193,19 +193,42 @@ test('coin kuru parayla artar, tabanın altına inmez', () => {
   assert.equal(bozdurmaDegeri(2, 1_000_000), 1_800_000)
 })
 
-test('kur gün içinde sabit, ertesi gün paraya göre yenilenir; bot sayılmaz', () => {
+test('kur anlık paraya göre değişir, günün kaydı sabit kalır; bot sayılmaz', () => {
   const chatJid = yeniGrup()
   xpVer(chatJid, BOT, 900_000_000)
   xpVer(chatJid, 'a@s', 200_000_000)
   assert.equal(ekonomiDurumu({ chatJid, now: T }).kur, 2_000_000)
 
   xpVer(chatJid, 'a@s', 200_000_000)
-  assert.equal(ekonomiDurumu({ chatJid, now: T + SAAT }).kur, 2_000_000)
+  const sonra = ekonomiDurumu({ chatJid, now: T + SAAT })
+  assert.equal(sonra.kur, 4_000_000)
+  assert.equal(sonra.gunKur, 2_000_000)
+  assert.equal(coinAl({ chatJid, userJid: 'a@s', adet: 1, now: T + SAAT }).ucret, 4_000_000)
+  xpVer(chatJid, 'a@s', 4_000_000)
 
   const yarin = ekonomiDurumu({ chatJid, now: T + GUN })
   assert.equal(yarin.kur, 4_000_000)
+  assert.equal(yarin.gunKur, 4_000_000)
   assert.equal(yarin.dun.arz, 200_000_000)
-  assert.equal(coinAl({ chatJid, userJid: 'a@s', adet: 1, now: T + GUN }).ucret, 4_000_000)
+})
+
+test('kuru gün içinde şişirmek bozdurmayı artırmaz, düşen kur bozdurmayı düşürür', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  xpVer(chatJid, userJid, 200_000_000)
+  assert.equal(ekonomiDurumu({ chatJid, now: T }).gunKur, 2_000_000)
+  coinAl({ chatJid, userJid, adet: 2, now: T })
+
+  xpVer(chatJid, 'b@s', 300_000_000)
+  const sisik = ekonomiDurumu({ chatJid, now: T })
+  assert.ok(sisik.kur > 2_000_000)
+  assert.equal(sisik.bozdurmaKur, 2_000_000)
+  assert.equal(coinSat({ chatJid, userJid, adet: 1, now: T }).kazanc, 1_800_000)
+
+  xpVer(chatJid, 'b@s', -300_000_000)
+  xpVer(chatJid, userJid, -190_000_000)
+  assert.equal(ekonomiDurumu({ chatJid, now: T }).bozdurmaKur, 1_000_000)
+  assert.equal(coinSat({ chatJid, userJid, adet: 1, now: T }).kazanc, 900_000)
 })
 
 test('işlenmemiş banka faizi kura yazılır: .banka yazmak kuru sıçratmaz', () => {
@@ -304,7 +327,7 @@ test('günün ilk mesajı ekonomi kaydını yazar', () => {
   xpVer(chatJid, 'a@s', 299_999_000)
   recordMessage({ chatJid, userJid: 'a@s', at: T })
   xpVer(chatJid, 'a@s', 300_000_000)
-  assert.equal(ekonomiDurumu({ chatJid, now: T }).kur, 3_000_000)
+  assert.equal(ekonomiDurumu({ chatJid, now: T }).gunKur, 3_000_000)
 })
 
 test('botun LID satırı ana hesaba taşınır, devir de oraya gider', () => {

@@ -404,7 +404,7 @@ Owner, `.devret @a @b 50` ile borçlunun XP'sini taşıyabilir, `.haciz` ile par
 
 ### Coin ve coin market
 
-XP TL ise coin altındır. Kur her gün piyasadaki paraya göre yenilenir: üyelerin cüzdan ve bankalarındaki toplam XP'nin yüzde biri, en az **1.000.000 XP**. Bot sayılmaz, kur gün içinde değişmez.
+XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyelerin cüzdan ve bankalarındaki toplam XP'nin yüzde biri, en az **1.000.000 XP**. Bot sayılmaz. Coin anlık kurdan alınır. Bozdurmada anlık kurla günün ilk kurundan düşük olanı geçerlidir, kredi çekip kuru şişirerek XP basılmasın. Maaş, kira, mülk satışı ve vergi günün ilk kurunu kullanır.
 
 | Piyasadaki para | 1 coin |
 |---|---|
