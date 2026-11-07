@@ -240,16 +240,20 @@ test('işlenmemiş banka faizi kura yazılır: .banka yazmak kuru sıçratmaz', 
   assert.ok(onceden.arz > 200_000_000 * 1.15 ** 70)
 })
 
-test('oyun ödülü kurla büyür, sezon puanı taban kalır', () => {
+test('oyun ödülü kurun karekökü kadar büyür, sezon puanı taban kalır', async () => {
   const chatJid = yeniGrup()
   const userJid = 'a@s'
-  assert.equal(oyunTutari(chatJid, 50, T), 100_000)
-  assert.equal(oyunOdulu({ chatJid, userJid, amount: 50, at: T }), 100_000)
-  assert.equal(getStats(chatJid, userJid).xp, 100_000)
+  assert.equal(oyunTutari(chatJid, 50, T), 152_000)
+  assert.equal(oyunOdulu({ chatJid, userJid, amount: 50, at: T }), 152_000)
+  assert.equal(getStats(chatJid, userJid).xp, 152_000)
   assert.equal(sezonDurumu({ chatJid, now: T }).siralama[0].puan, 50)
 
   xpVer(chatJid, 'b@s', 200_000_000)
-  assert.equal(oyunTutari(chatJid, 50, T), 210_000)
+  assert.equal(oyunTutari(chatJid, 50, T), 220_000)
+
+  const { oyunOlcegi } = await import('../lib/coin.js')
+  assert.equal(oyunOlcegi(50, 2_300_000), 230_000)
+  assert.equal(oyunOlcegi(50, 9_200_000), 460_000)
 })
 
 test('.tüik: kasa, açık kredi ve gün maaşı ekonomi durumunda', () => {

@@ -513,7 +513,7 @@ mesajı gönderilemese bile oyun mutlaka temizlenir, yoksa grup kalıcı olarak
 "zaten aktif bir oyun var" durumunda kilitlenir.
 
 XP `lib/stats.js:oyunOdulu()` ile verilir: oyun taban sayı yazar (kelime 30, tahmin 100), XP'ye
-`lib/coin.js:oyunOlcegi()` çevirir, kur 1.000.000 iken 50 taban 100.000 XP eder (bot sahibinin kararı).
+`lib/coin.js:oyunOlcegi()` çevirir, kur 2.300.000 iken 50 taban 230.000 XP eder ve ödül kurun karekökü kadar büyür (bot sahibinin kararı): doğrusal olsaydı ödül arzı, arz kuru, kur ödülü büyütüp enflasyonu hızlandırırdı.
 Sezon puanı taban kalır, kurla büyüseydi mesaj ve görev puanını ezerdi. `addXp` elle XP içindir, kurla büyümez. `recordMessage`'ın 30 sn'lik cooldown'u burada uygulanmaz (oyun XP'si
 kazanılmış XP'dir) ve `hours` tablosuna yazılmaz. `.stats`, `.profil` ve `.top`
 aynı `stats.xp` sütununu okuduğu için ek iş yoktur.
