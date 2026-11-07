@@ -61,10 +61,10 @@ test('açık krediyle coin alınamaz', () => {
 test('coin market: ürün etkisi yazılır, coin düşer', () => {
   const chatJid = yeniGrup()
   const userJid = 'a@s'
-  xpVer(chatJid, userJid, COIN_FIYATI * 60)
-  coinAl({ chatJid, userJid, adet: 60 })
+  xpVer(chatJid, userJid, COIN_FIYATI * 75)
+  coinAl({ chatJid, userJid, adet: 75 })
 
-  assert.deepEqual(coinMarketAl({ chatJid, userJid, urun: urun('kalkanMs'), now: T }), { bakiye: 51 })
+  assert.deepEqual(coinMarketAl({ chatJid, userJid, urun: urun('kalkanMs'), now: T }), { bakiye: 66 })
   assert.equal(marketDurumu(chatJid, userJid, T).kalkan, T + urun('kalkanMs').kalkanMs)
 
   coinMarketAl({ chatJid, userJid, urun: urun('bonus'), now: T })
@@ -84,8 +84,8 @@ test('coin market: ürün etkisi yazılır, coin düşer', () => {
 test('30 kat bonus oyun XP\'sini 30 ile çarpar', () => {
   const chatJid = yeniGrup()
   const userJid = 'a@s'
-  xpVer(chatJid, userJid, COIN_FIYATI * 15)
-  coinAl({ chatJid, userJid, adet: 15 })
+  xpVer(chatJid, userJid, COIN_FIYATI * 30)
+  coinAl({ chatJid, userJid, adet: 30 })
   coinMarketAl({ chatJid, userJid, urun: urun('bonus'), now: T })
   assert.equal(addXp({ chatJid, userJid, amount: 50, at: T + 1 }), 1500)
 })

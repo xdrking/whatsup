@@ -77,7 +77,7 @@ test('market: yetersiz XP, kalkan süresi eklenir, unvan iki kez alınmaz', () =
 test('market bonusu oyun XP\'sini katlar, çark hakkına dokunmaz', () => {
   const k = { chatJid: yeniGrup(), userJid: 'u@lid' }
   const bonus = urun('bonus', { bonus: 200 })
-  addXp({ ...k, amount: 500_000 })
+  addXp({ ...k, amount: 3_000_000 })
   marketAl({ ...k, urun: bonus, now: T })
 
   assert.equal(addXp({ ...k, amount: 5, at: T + 1 }), 15)

@@ -1,6 +1,6 @@
 import { binlik } from '../lib/sayi.js'
 import { requireGroup } from '../lib/group.js'
-import { carkCevir, EKSTRA_UCRET, ODULLER, UCRETSIZ_HAK } from '../lib/cark.js'
+import { carkCevir, EKSTRA_GUNLUK, ODULLER, UCRETSIZ_HAK } from '../lib/cark.js'
 import { carkDurumu, carkOyna, seviye } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -24,6 +24,11 @@ function hakSatiri({ kalan, yenilenme }, now) {
   return yenilenme ? `${satir} (yenilenmesine ${sureYaz(yenilenme - now)})` : satir
 }
 
+function ekstraSatiri({ ekstraKalan, ekstraFiyat }) {
+  const satir = `💸 Bugün kalan ekstra: ${Math.max(0, ekstraKalan)}/${EKSTRA_GUNLUK}`
+  return ekstraFiyat ? `${satir} (${binlik(ekstraFiyat)} XP)` : satir
+}
+
 export default {
   name: 'çark',
   aliases: ['cark', 'wheel', 'spin'],
@@ -31,7 +36,7 @@ export default {
   usage: '.çark  —  .çark ekstra  —  .çark durum',
   details: [
     `24 saatte ${UCRETSIZ_HAK} ücretsiz hakkın var; süre o turdaki ilk çevirmenle başlar.`,
-    `Hakkın bitince \`.çark ekstra\` ${EKSTRA_UCRET} XP karşılığında bir kez daha çevirir.`,
+    `Hakkın bitince \`.çark ekstra\` kurla artan bir ücretle bir kez daha çevirir, günde en çok ${EKSTRA_GUNLUK} kez.`,
     '`.çark durum` kalan hakkını ve aktif bonusunu gösterir.',
     `Ödüller: ${ODULLER.map((o) => o.etiket).join(', ')}.`,
     'Bonus yalnızca oyun XP\'sine işler (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca).',
@@ -55,7 +60,7 @@ export default {
         const durum = carkDurumu(kisi)
         if (!durum) return await yaz('🎡 Çark şu an kapalı, sonra dene.')
 
-        const lines = [hakSatiri(durum, now)]
+        const lines = [hakSatiri(durum, now), ekstraSatiri(durum)]
         if (durum.bonus) lines.push(bonusSatiri(durum.bonus, now))
         return await yaz(lines.join('\n'))
       }
@@ -71,16 +76,20 @@ export default {
       if (s.hakYok) {
         return await yaz([
           `🎡 Ücretsiz hakkın bitti. Yenilenmesine ${sureYaz(s.yenilenme - now)} var.`,
-          `💸 Beklemek istemezsen \`.çark ekstra\` (${EKSTRA_UCRET} XP).`,
+          s.ekstraKalan > 0
+            ? `💸 Beklemek istemezsen \`.çark ekstra\` (${binlik(s.ekstraFiyat)} XP, bugün ${s.ekstraKalan} hak).`
+            : '💸 Bugünkü ekstra haklarını da kullandın.',
         ].join('\n'))
       }
-      if (s.yetersiz) return await yaz(`🎡 Ekstra çevirme ${EKSTRA_UCRET} XP. Senin XP'n: ${binlik(s.xp)}`)
+      if (s.ekstraBitti) return await yaz(`🎡 Günde en çok ${EKSTRA_GUNLUK} ekstra çevirme alınır, yarın tekrar dene.`)
+      if (s.yetersiz) return await yaz(`🎡 Ekstra çevirme ${binlik(s.ekstraFiyat)} XP. Senin XP'n: ${binlik(s.xp)}`)
 
       const lines = ['🎡 Çark döndü…', `*${s.odul.etiket}*`, '']
       if (s.ucret) lines.push(`💸 Ücret: ${binlik(s.ucret)} XP`)
       if (s.xp !== s.once) lines.push(`💰 XP: ${binlik(s.once)} → ${binlik(s.xp)}`)
       if (s.bonus) lines.push(bonusSatiri(s.bonus, now))
       lines.push(hakSatiri(s, now))
+      if (s.ucret) lines.push(ekstraSatiri(s))
 
       const yeni = seviye(s.xp)
       if (yeni > seviye(s.once)) lines.push(`🆙 Seviye ${yeni} oldun!`)

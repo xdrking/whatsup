@@ -266,7 +266,7 @@ Her gün aşağıdaki görevlerden 3'ü çıkar, gruptaki herkese aynıdır. Gü
 
 **Market fiyatları coin kuruna bağlıdır:** aşağıdaki fiyatlar kur 2.300.000 XP iken geçerlidir, kur artınca aynı oranda artar, düşünce düşer. Key'lerin XP ödülleri ve vitrin de aynı orandadır. `.market` güncel fiyatı yazar.
 
-Market: 24 saatlik soygun kalkanı 5.000.000 XP, 1 saat 3 kat XP 1.150.000, 1 saat 5 kat XP 2.070.000, unvanlar 2.300.000 / 11.500.000 / 57.500.000 XP.
+Market: 24 saatlik soygun kalkanı 5.000.000 XP, 1 saat 3 kat XP 6.000.000, 1 saat 5 kat XP 12.000.000, vitrindeki 10 kat XP 25.000.000, unvanlar 2.300.000 / 11.500.000 / 57.500.000 XP.
 Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
 
 Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül çıkar:
@@ -433,7 +433,7 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 | 1 | 3 fazladan soygun hakkı | 3 coin |
 | 2 | Toplu soygun (`.soygun herkes`, tek kullanımlık) | 6 coin |
 | 3 | 7 günlük soygun kalkanı | 9 coin |
-| 4 | 1 saat oyunlardan 30 kat XP | 15 coin |
+| 4 | 1 saat oyunlardan 30 kat XP | 30 coin |
 | 5 | 3 günlük haciz sigortası (`.hacizall` işlemez) | 30 coin |
 | 6 | Unvan: Altın Babası | 30 coin |
 | 7 | Unvan: Merkez Bankası Başkanı | 75 coin |
@@ -571,7 +571,7 @@ Süre 10-600 sn, komut 60 sn'de bir kullanılabilir.
 | Komut | Yapar |
 |---|---|
 | `.çark` | Ücretsiz hakla çarkı çevirir |
-| `.çark ekstra` | Hak bitince 400 XP karşılığında çevirir |
+| `.çark ekstra` | Hak bitince çevirir: kur 2.300.000 iken 2.500.000 XP, kurla artar; günde en çok 3 kez |
 | `.çark durum` | Kalan hak ve aktif bonus |
 
 | Ödül | Olasılık |

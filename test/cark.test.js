@@ -6,10 +6,14 @@ process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
 const {
-  ODULLER, EKSTRA_UCRET, HAK_PENCERESI_MS, BONUS_SURESI_MS, bonusluXp, carkCevir,
+  ODULLER, EKSTRA_FIYATI, EKSTRA_GUNLUK, HAK_PENCERESI_MS, BONUS_SURESI_MS, bonusluXp, carkCevir,
 } = await import('../lib/cark.js')
 const { addXp, carkDurumu, carkOyna, getStats } = await import('../lib/stats.js')
 const { sureYaz } = await import('../commands/cark.js')
+const { kurOlcegi } = await import('../lib/coin.js')
+
+// Test veritabanında para yok, kur tabandadır (1.000.000).
+const EKSTRA_UCRET = kurOlcegi(EKSTRA_FIYATI, 1_000_000)
 
 const T = 1_000_000_000
 const BOS = { etiket: 'boş' }
@@ -22,6 +26,24 @@ test('ödül tablosu: toplam 100, beklenen XP ekstra ücretin altında', () => {
   assert.equal(ODULLER.reduce((t, o) => t + o.agirlik, 0), 100)
   const ev = ODULLER.reduce((t, o) => t + (o.agirlik / 100) * (o.xp || 0), 0)
   assert.ok(ev < EKSTRA_UCRET, `beklenen XP ${ev}`)
+})
+
+test('ekstra ücreti kurla büyür, günde en çok 3 kez alınır', () => {
+  const k = yeniKisi()
+  assert.equal(carkDurumu({ ...k, now: T }).ekstraFiyat, EKSTRA_UCRET)
+  addXp({ ...k, amount: EKSTRA_UCRET * 5 })
+  carkOyna({ ...k, cevir: bos, now: T })
+  carkOyna({ ...k, cevir: bos, now: T })
+
+  for (let i = EKSTRA_GUNLUK - 1; i >= 0; i--) {
+    assert.equal(carkOyna({ ...k, ekstra: true, cevir: bos, now: T }).ekstraKalan, i)
+  }
+  assert.deepEqual(carkOyna({ ...k, ekstra: true, cevir: bos, now: T }), { ekstraBitti: true })
+  assert.equal(getStats(k.chatJid, k.userJid).xp, EKSTRA_UCRET * 2)
+
+  // Ertesi gün sınır sıfırlanır.
+  const yarin = carkOyna({ ...k, ekstra: true, cevir: bos, now: T + HAK_PENCERESI_MS - 1 })
+  assert.equal(yarin.ekstraKalan, EKSTRA_GUNLUK - 1)
 })
 
 test('çekiliş: her ödüle ulaşılır', () => {
@@ -75,7 +97,7 @@ test('ekstra: hak varken ücret alınmaz, hak bitince alınır, XP yetmezse çev
 
   let cekildi = false
   const yetmez = carkOyna({ ...k, ekstra: true, cevir: () => { cekildi = true; return BOS }, now: T })
-  assert.deepEqual(yetmez, { yetersiz: true, xp: 15 })
+  assert.deepEqual(yetmez, { yetersiz: true, xp: 15, ekstraFiyat: EKSTRA_UCRET })
   assert.equal(cekildi, false)
 })
 
