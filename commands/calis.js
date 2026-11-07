@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto'
 import { sureYaz } from './cark.js'
 import { requireGroup } from '../lib/group.js'
-import { CALISMA_SAATI } from '../lib/meslek.js'
+import { CALISMA_DAKIKASI } from '../lib/meslek.js'
 import { binlik } from '../lib/sayi.js'
 import { calis } from '../lib/stats.js'
 import logger from '../lib/logger.js'
@@ -11,7 +11,7 @@ export default {
   aliases: ['calis', 'work', 'mesai'],
   description: 'Mesleğinde çalışıp maaş alır',
   usage: '.çalış',
-  details: [`${CALISMA_SAATI} saatte bir çalışılır. Önce \`.meslek seç <meslek>\`. Hapisteyken çalışılmaz.`],
+  details: [`${CALISMA_DAKIKASI} dakikada bir çalışılır. Önce \`.meslek seç <meslek>\`. Hapisteyken çalışılmaz.`],
   category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,

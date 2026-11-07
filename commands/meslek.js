@@ -1,6 +1,6 @@
 import { sureYaz } from './cark.js'
 import { requireGroup } from '../lib/group.js'
-import { CALISMA_SAATI, MESLEK_DEGISIM_SAATI, MESLEKLER, meslekBul } from '../lib/meslek.js'
+import { CALISMA_DAKIKASI, MESLEK_DEGISIM_SAATI, MESLEKLER, meslekBul } from '../lib/meslek.js'
 import { meslekDurumu, meslekSec } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -13,8 +13,8 @@ export default {
   description: 'Meslek seçer, maaş için `.çalış`',
   usage: '.meslek  —  .meslek seç <meslek>',
   details: [
-    `Maaş coin kuruna bağlıdır, ${CALISMA_SAATI} saatte bir \`.çalış\` yazılır.`,
-    `Meslek ${MESLEK_DEGISIM_SAATI} saatte bir değiştirilebilir. Ortalamalar yakındır, riskli mesleklerde maaş daha çok oynar.`,
+    `Maaş coin kuruna bağlıdır, ${CALISMA_DAKIKASI} dakikada bir \`.çalış\` yazılır.`,
+    `Meslek ${MESLEK_DEGISIM_SAATI} saatte bir değiştirilebilir. Maaşlar gerçek hayata göredir, riskli mesleklerde daha çok oynar.`,
   ],
   category: 'ekonomi',
   ownerOnly: false,

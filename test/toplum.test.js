@@ -179,6 +179,9 @@ test('meslek: maaş kura bağlı, aralıkta kalır', () => {
   assert.equal(meslekBul('YAZILIMCI').kod, 'yazilimci')
   assert.equal(meslekBul('çiftçi').kod, 'ciftci')
   assert.equal(meslekBul('astronot'), null)
+  assert.equal(new Set(MESLEKLER.map((m) => m.kod)).size, MESLEKLER.length)
+  assert.ok(meslekBul('yazılımcı').min > meslekBul('garson').max)
+  assert.ok(meslekBul('doktor').min > meslekBul('öğretmen').max)
 })
 
 test('çalış: 4 saatte bir, hapiste kapalı, evliye bonus', () => {
@@ -194,7 +197,7 @@ test('çalış: 4 saatte bir, hapiste kapalı, evliye bonus', () => {
   assert.equal(s.maas, 4500)
   assert.equal(s.esBonusu, 0)
   assert.equal(xp(chatJid, 'a'), 4500)
-  assert.deepEqual(calis({ chatJid, userJid: 'a', rnd, now: T + 1 }), { bekle: T + 4 * SAAT })
+  assert.deepEqual(calis({ chatJid, userJid: 'a', rnd, now: T + 1 }), { bekle: T + SAAT / 2 })
 
   evlen({ chatJid, a: 'a', b: 'e', now: T })
   assert.equal(calis({ chatJid, userJid: 'a', rnd, now: T + 4 * SAAT }).esBonusu, 900)
