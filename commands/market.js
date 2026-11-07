@@ -1,7 +1,8 @@
 import { sureYaz } from './cark.js'
+import { kurOlcegi } from '../lib/coin.js'
 import { requireGroup } from '../lib/group.js'
 import { KASALAR, kasaCek } from '../lib/kasa.js'
-import { marketCarpani, URUNLER } from '../lib/market.js'
+import { URUNLER } from '../lib/market.js'
 import { haftaAnahtari } from '../lib/sezon.js'
 import { ekonomiDurumu, getStats, kasaAc, marketAl, marketDurumu, vitrinKalan } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
@@ -73,7 +74,6 @@ export default {
 
       const ekonomi = ekonomiDurumu({ chatJid: from })
       if (!ekonomi) return await yaz('🛒 Market şu an kapalı, sonra dene.')
-      const carpan = marketCarpani(ekonomi.kur)
 
       const { unvan, kalkan } = marketDurumu(from, sender)
       const lines = [
@@ -81,11 +81,11 @@ export default {
         '',
         ...URUNLER.flatMap((u, i) => [
           ...(u === KASALAR[0] ? ['', '🗝️ *Random Key* (içinden rastgele ödül çıkar)'] : []),
-          `${i + 1}. ${u.ad} — ${sayi.format(u.fiyat * carpan)} XP`,
+          `${i + 1}. ${u.ad} — ${sayi.format(kurOlcegi(u.fiyat, ekonomi.kur))} XP`,
         ]),
         '',
         '✨ *Haftanın vitrini*',
-        `${liste.length}. ${vitrin.ad} — ${sayi.format(vitrin.fiyat * carpan)} XP (${vitrinKalan(from, hafta, vitrin.stok)}/${vitrin.stok} kaldı)`,
+        `${liste.length}. ${vitrin.ad} — ${sayi.format(kurOlcegi(vitrin.fiyat, ekonomi.kur))} XP (${vitrinKalan(from, hafta, vitrin.stok)}/${vitrin.stok} kaldı)`,
         '',
         `💰 XP'n: ${sayi.format(getStats(from, sender).xp)}`,
       ]

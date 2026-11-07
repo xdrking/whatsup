@@ -262,21 +262,21 @@ Her gün aşağıdaki görevlerden 3'ü çıkar, gruptaki herkese aynıdır. Gü
 | Çarkı çevir | 300 XP |
 | 1 soygun dene | 500 XP |
 
-**Market fiyatları coin kuruna bağlıdır:** aşağıdaki sayılar taban değerdir, gerçek fiyat `taban × kur / 1000` olur. Yani 1.000 taban 1 coin eder: kur 2.300.000 iken 300'lük kalkan 690.000 XP'dir. Key'lerin XP ödülleri, vitrin ve yedek XP de aynı oranda büyür. `.market` güncel fiyatı yazar.
+**Market fiyatları coin kuruna bağlıdır:** aşağıdaki fiyatlar kur 2.300.000 XP iken geçerlidir, kur artınca aynı oranda artar, düşünce düşer. Key'lerin XP ödülleri ve vitrin de aynı orandadır. `.market` güncel fiyatı yazar.
 
-Market tabanları: 24 saatlik soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
+Market: 24 saatlik soygun kalkanı 5.000.000 XP, 1 saat 3 kat XP 1.150.000, 1 saat 5 kat XP 2.070.000, unvanlar 2.300.000 / 11.500.000 / 57.500.000 XP.
 Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
 
 Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül çıkar:
 
 | Key | Fiyat | Boş | XP | Diğer ödüller |
 |---|---|---|---|---|
-| 🥉 Bronz | 50 | %20 | 20-250 | çark hakkı, soygun hakkı, 6 saat kalkan |
-| 🥈 Gümüş | 100 | %13 | 50-500 | çark hakkı, soygun hakkı, 6 saat kalkan |
-| 🥇 Altın | 250 | %12 | 100-1.000 | 3 kat XP, çark hakkı, soygun hakkı, 12 saat kalkan |
-| 💠 Platin | 500 | %7 | 250-2.500 | 3 ve 5 kat XP, 24 saat kalkan, 🍀 Şanslı unvanı |
-| 💎 Elmas | 750 | %6 | 250-2.500 | 5 ve 10 kat XP, 48 saat kalkan, 🗝️ Key Avcısı unvanı |
-| 🐉 Efsane | 1.000 | %5 | 500-10.000 | 5 ve 10 kat XP, 48 saat kalkan, 🐉 Efsane unvanı |
+| 🥉 Bronz | 1.000.000 | %20 | 400.000-5.000.000 | çark hakkı, soygun hakkı, 6 saat kalkan |
+| 🥈 Gümüş | 2.000.000 | %13 | 1.000.000-10.000.000 | çark hakkı, soygun hakkı, 6 saat kalkan |
+| 🥇 Altın | 5.000.000 | %12 | 2.000.000-20.000.000 | 3 kat XP, çark hakkı, soygun hakkı, 12 saat kalkan |
+| 💠 Platin | 10.000.000 | %7 | 5.000.000-50.000.000 | 3 ve 5 kat XP, 24 saat kalkan, 🍀 Şanslı unvanı |
+| 💎 Elmas | 15.000.000 | %6 | 5.000.000-50.000.000 | 5 ve 10 kat XP, 48 saat kalkan, 🗝️ Key Avcısı unvanı |
+| 🐉 Efsane | 20.000.000 | %5 | 10.000.000-200.000.000 | 5 ve 10 kat XP, 48 saat kalkan, 🐉 Efsane unvanı |
 
 Marketin son satırı haftanın vitrinidir: ürün her pazartesi değişir, stoğu sınırlıdır, kişi başı haftada bir alınır.
 10 kat XP, 7 gün kalkan, 3 çark hakkı, 3 soygun hakkı ya da nadir kart çıkabilir.

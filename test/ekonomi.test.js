@@ -61,9 +61,9 @@ test('market: yetersiz XP, kalkan süresi eklenir, unvan iki kez alınmaz', () =
   const kalkan = urun('kalkan')
   const unvan = urun('unvan')
 
-  assert.deepEqual(marketAl({ ...k, urun: kalkan, now: T }), { yetersiz: true, xp: 0, fiyat: 300_000 })
+  assert.deepEqual(marketAl({ ...k, urun: kalkan, now: T }), { yetersiz: true, xp: 0, fiyat: 2_174_000 })
 
-  addXp({ ...k, amount: (kalkan.fiyat * 2 + unvan.fiyat) * 1000 })
+  addXp({ ...k, amount: 2_174_000 * 2 + 1_000_000 })
   marketAl({ ...k, urun: kalkan, now: T })
   assert.equal(marketAl({ ...k, urun: kalkan, now: T }).kalkan, T + 2 * KALKAN_SURESI_MS)
 
@@ -77,7 +77,7 @@ test('market: yetersiz XP, kalkan süresi eklenir, unvan iki kez alınmaz', () =
 test('market bonusu oyun XP\'sini katlar, çark hakkına dokunmaz', () => {
   const k = { chatJid: yeniGrup(), userJid: 'u@lid' }
   const bonus = urun('bonus', { bonus: 200 })
-  addXp({ ...k, amount: bonus.fiyat * 1000 })
+  addXp({ ...k, amount: 500_000 })
   marketAl({ ...k, urun: bonus, now: T })
 
   assert.equal(addXp({ ...k, amount: 5, at: T + 1 }), 15)
@@ -132,7 +132,7 @@ test('soygun: kalkan ve hırsızın bakiyesi engeller', () => {
   assert.deepEqual(soygunYap({ ...s, sans: () => true, now: T }), { engel: 'hirsiz-fakir' })
 
   const kalkan = urun('kalkan')
-  addXp({ chatJid: s.chatJid, userJid: 'k', amount: 300_000 })
+  addXp({ chatJid: s.chatJid, userJid: 'k', amount: 2_174_000 })
   marketAl({ chatJid: s.chatJid, userJid: 'k', urun: kalkan, now: T })
   assert.equal(soygunYap({ ...s, sans: () => true, now: T }).engel, 'kalkan')
 })
@@ -145,7 +145,7 @@ const kisi = (xp) => {
 const ac = (k, odul, kasa = KASALAR[0]) => kasaAc({ ...k, kasa, cek: () => odul, now: T })
 
 test('key tabloları: fiyatlar, toplam 100, beklenen XP fiyatın altında', () => {
-  assert.deepEqual(KASALAR.map((k) => k.fiyat), [50, 100, 250, 500, 750, 1000])
+  assert.deepEqual(KASALAR.map((k) => k.fiyat), [1, 2, 5, 10, 15, 20].map((m) => m * 1_000_000))
   for (const kasa of KASALAR) {
     assert.equal(kasa.oduller.reduce((t, o) => t + o.agirlik, 0), 100, kasa.ad)
     const kartDegeri = (o) => {
@@ -169,40 +169,40 @@ test('key tabloları: fiyatlar, toplam 100, beklenen XP fiyatın altında', () =
 
 test('market fiyatı ve key XP ödülü coin kuruyla aynı oranda büyür', () => {
   const k = kisi(200_000_000)
-  assert.equal(marketAl({ ...k, urun: urun('kalkan'), now: T }).xp, 200_000_000 - 300 * 2000)
+  assert.equal(marketAl({ ...k, urun: urun('kalkan'), now: T }).xp, 200_000_000 - 4_348_000)
 
-  const s = ac(k, { etiket: 'x', xp: 20 })
-  assert.equal(s.odul.xp, 40_000)
-  assert.equal(s.odul.etiket, '💰 +40.000 XP')
+  const s = ac(k, { etiket: 'x', xp: 2_300_000 })
+  assert.equal(s.odul.xp, 2_000_000)
+  assert.equal(s.odul.etiket, '💰 +2.000.000 XP')
 })
 
 test('key: XP yetmezse ödül çekilmez, yeterse ücret düşer ve ödül eklenir', () => {
-  const k = kisi(49_000)
+  const k = kisi(434_000)
   let cekildi = false
   const s = kasaAc({ ...k, kasa: KASALAR[0], cek: () => { cekildi = true; return {} }, now: T })
-  assert.deepEqual(s, { yetersiz: true, xp: 49_000, fiyat: 50_000 })
+  assert.deepEqual(s, { yetersiz: true, xp: 434_000, fiyat: 435_000 })
   assert.equal(cekildi, false)
 
-  addXp({ ...k, amount: 51_000, at: T })
-  assert.equal(ac(k, { xp: 20 }).xp, 70_000)
-  assert.equal(ac(k, {}).xp, 20_000)
-  assert.equal(getStats(k.chatJid, k.userJid).xp, 20_000)
+  addXp({ ...k, amount: 456_000, at: T })
+  assert.equal(ac(k, { xp: 230_000 }).xp, 555_000)
+  assert.equal(ac(k, {}).xp, 120_000)
+  assert.equal(getStats(k.chatJid, k.userJid).xp, 120_000)
 })
 
 test('key: unvan boşsa yazılır, varsa korunur ve yerine XP gelir', () => {
-  const k = kisi(100_000)
+  const k = kisi(870_000)
   const odul = { unvan: '🍀 Şanslı', yedekXp: 500 }
   assert.equal(ac(k, odul).yedekXp, 0)
   assert.equal(marketDurumu(k.chatJid, k.userJid, T).unvan, odul.unvan)
 
-  const s = ac(k, { unvan: '🐉 Efsane', yedekXp: 1000 })
+  const s = ac(k, { unvan: '🐉 Efsane', yedekXp: 2_300_000 })
   assert.equal(s.yedekXp, 1_000_000)
   assert.equal(s.xp, 1_000_000)
   assert.equal(marketDurumu(k.chatJid, k.userJid, T).unvan, odul.unvan)
 })
 
 test('key: kalkan eklenir, unvana dokunmaz; bonus çark hakkına dokunmaz', () => {
-  const k = kisi(200_000)
+  const k = kisi(1_740_000)
   ac(k, { unvan: '🍀 Şanslı', yedekXp: 500 })
   ac(k, { kalkanMs: 1000 })
   ac(k, { kalkanMs: 1000 })
@@ -216,13 +216,13 @@ test('key: kalkan eklenir, unvana dokunmaz; bonus çark hakkına dokunmaz', () =
 
 test('key: çark hakkı açık da kapalı pencerede de fazladan çevirme verir', () => {
   const bos = () => ({})
-  const kapali = kisi(50_000)
+  const kapali = kisi(435_000)
   ac(kapali, { carkHakki: 1 })
   assert.equal(carkDurumu({ ...kapali, now: T }).kalan, 3)
   for (const kalan of [2, 1, 0]) assert.equal(carkOyna({ ...kapali, cevir: bos, now: T }).kalan, kalan)
   assert.ok(carkOyna({ ...kapali, cevir: bos, now: T }).hakYok)
 
-  const acik = kisi(50_000)
+  const acik = kisi(435_000)
   carkOyna({ ...acik, cevir: () => ({ bonus: 200 }), now: T })
   carkOyna({ ...acik, cevir: bos, now: T })
   ac(acik, { carkHakki: 1 })
@@ -232,7 +232,7 @@ test('key: çark hakkı açık da kapalı pencerede de fazladan çevirme verir',
 })
 
 test('key: soygun hakkı o gün üçüncü denemeyi açar, ertesi gün sıfırlanır', () => {
-  const k = kisi(55_000)
+  const k = kisi(440_000)
   const kurban = (i) => { addXp({ chatJid: k.chatJid, userJid: `v${i}`, amount: 5000, at: T }); return `v${i}` }
   const soy = (i, now = T) => soygunYap({ chatJid: k.chatJid, hirsiz: 'a', kurban: kurban(i), sans: () => false, now })
 
@@ -513,7 +513,7 @@ test('kartlar: numaralar benzersiz, her kart çekilebilir, nadir olan az çıkar
 })
 
 test('kart: key verir, takas edilir, set ödülü kartları harcar', () => {
-  const k = kisi(500_000)
+  const k = kisi(5_000_000)
   const set = SETLER[0]
   for (const kart of set.kartlar) ac(k, { kart: kart.no })
   ac(k, { kart: 1 })
@@ -540,7 +540,7 @@ test('vitrin: ürün haftaya bağlı, kartları gerçek nadir kart', () => {
 
 test('vitrin: stok tükenir, kişi başı bir, XP yetmeyen stok yakmaz, hafta değişince yenilenir', () => {
   const c = yeniGrup()
-  const urun = { ad: 'x', fiyat: 100, stok: 2, odul: { etiket: 'x' } }
+  const urun = { ad: 'x', fiyat: 230_000, stok: 2, odul: { etiket: 'x' } }
   const al = (userJid, vitrinHafta = 'h1') =>
     kasaAc({ chatJid: c, userJid, kasa: urun, cek: () => urun.odul, vitrinHafta, now: T })
   for (const u of ['a', 'b', 'c']) addXp({ chatJid: c, userJid: u, amount: 300_000, at: T })

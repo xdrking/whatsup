@@ -107,7 +107,7 @@ test('toplu haciz: banka %45, cüzdan %50 alıcıya geçer, kalkan korumaz', () 
 
   xpVer(chatJid, 'a@s', 3000)
   bankaYatir({ chatJid, userJid: 'a@s', miktar: 1000, now: T })
-  xpVer(chatJid, 'kalkanli@s', 1000 + 299_700)
+  xpVer(chatJid, 'kalkanli@s', 1000 + 2_173_700)
   marketAl({ chatJid, userJid: 'kalkanli@s', urun: URUNLER.find((u) => u.tur === 'kalkan'), now: T })
 
   const s = uygula(['a@s', 'kalkanli@s'])
@@ -152,7 +152,7 @@ test('toplu soygun: hak ister, kalkanlıyı atlar, kaçan ceza ödetmez', () => 
 
   xpVer(chatJid, 'a@s', 10_000)
   xpVer(chatJid, 'b@s', 10_000)
-  xpVer(chatJid, 'kalkanli@s', 10_000 + 299_700)
+  xpVer(chatJid, 'kalkanli@s', 10_000 + 2_173_700)
   xpVer(chatJid, 'fakir@s', 50)
   marketAl({ chatJid, userJid: 'kalkanli@s', urun: URUNLER.find((u) => u.tur === 'kalkan'), now: T })
   odulKoy({ chatJid, koyan: 'kalkanli@s', hedef: 'a@s', miktar: 1000 })

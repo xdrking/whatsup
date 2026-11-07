@@ -791,7 +791,7 @@ soygun(chat_jid, user_jid, day, deneme, korunma_until ms) PK(chat_jid,user_jid)
   Sayaçlar `gorevIlerlet()` ile stats yazma yollarında artar (`recordMessage`, `addXp`,
   `kumarKaydet`, `carkOyna`, `soygunYap`). Bot kendiliğinden mesaj atmadığı için ödül
   `.görev` yazılınca verilir. Satır gün değişince sıfırlanır, tablo büyümez.
-- **`.market`:** yeni ürün `lib/market.js:URUNLER`'e bir satır. `fiyat` taban değerdir, gerçek fiyat `marketCarpani(anlık kur)` ile çarpılır (1000 taban 1 coin, bot sahibinin kararı). Key ve vitrin de `kasaAc()`'ta aynı çarpanı alır, key'in XP ödülleri `odulOlcekle()` ile büyür: fiyat tek başına büyürse key beklentisi bozulur, ödül tek başına büyürse XP basılır. XP'nin ekonomiden çıktığı
+- **`.market`:** yeni ürün `lib/market.js:URUNLER`'e bir satır. `fiyat` kur 2.300.000 iken geçerli XP'dir, gerçek fiyat `lib/coin.js:kurOlcegi()` ile anlık kura göre hesaplanır (bot sahibinin kararı). Key ve vitrin de `kasaAc()`'ta aynı ölçeği alır, key'in XP ödülleri `odulOlcekle()` ile büyür: fiyat tek başına büyürse key beklentisi bozulur, ödül tek başına büyürse XP basılır. XP'nin ekonomiden çıktığı
   ana yerdir. Bonus ürünü `.çark` bonusuyla aynı alanı yazar, çark hakkına dokunmaz.
 - **`.soygun`:** kurallar `lib/soygun.js`'tedir. Toplam XP değişmez. Engeller (kalkan,
   korunma, bakiye) deneme hakkı yakmaz. Başarıyla soyulan kişi 6 saat korunur.
