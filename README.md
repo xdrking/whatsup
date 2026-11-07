@@ -262,7 +262,9 @@ Her gün aşağıdaki görevlerden 3'ü çıkar, gruptaki herkese aynıdır. Gü
 | Çarkı çevir | 300 XP |
 | 1 soygun dene | 500 XP |
 
-Market: 24 saatlik soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
+**Market fiyatları coin kuruna bağlıdır:** aşağıdaki sayılar taban değerdir, gerçek fiyat `taban × kur / 1000` olur. Yani 1.000 taban 1 coin eder: kur 2.300.000 iken 300'lük kalkan 690.000 XP'dir. Key'lerin XP ödülleri, vitrin ve yedek XP de aynı oranda büyür. `.market` güncel fiyatı yazar.
+
+Market tabanları: 24 saatlik soygun kalkanı 300 XP, 1 saat 3 kat XP 500, 1 saat 5 kat XP 900, unvanlar 1.000 / 5.000 / 25.000 XP.
 Unvan `.profil`'de görünür. Soygun günde 2 deneme; soyulan kişiye 6 saat dokunulamaz.
 
 Random key'ler de `.market al <numara>` ile açılır, içinden rastgele ödül çıkar:

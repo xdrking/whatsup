@@ -791,7 +791,7 @@ soygun(chat_jid, user_jid, day, deneme, korunma_until ms) PK(chat_jid,user_jid)
   Sayaçlar `gorevIlerlet()` ile stats yazma yollarında artar (`recordMessage`, `addXp`,
   `kumarKaydet`, `carkOyna`, `soygunYap`). Bot kendiliğinden mesaj atmadığı için ödül
   `.görev` yazılınca verilir. Satır gün değişince sıfırlanır, tablo büyümez.
-- **`.market`:** yeni ürün `lib/market.js:URUNLER`'e bir satır. XP'nin ekonomiden çıktığı
+- **`.market`:** yeni ürün `lib/market.js:URUNLER`'e bir satır. `fiyat` taban değerdir, gerçek fiyat `marketCarpani(anlık kur)` ile çarpılır (1000 taban 1 coin, bot sahibinin kararı). Key ve vitrin de `kasaAc()`'ta aynı çarpanı alır, key'in XP ödülleri `odulOlcekle()` ile büyür: fiyat tek başına büyürse key beklentisi bozulur, ödül tek başına büyürse XP basılır. XP'nin ekonomiden çıktığı
   ana yerdir. Bonus ürünü `.çark` bonusuyla aynı alanı yazar, çark hakkına dokunmaz.
 - **`.soygun`:** kurallar `lib/soygun.js`'tedir. Toplam XP değişmez. Engeller (kalkan,
   korunma, bakiye) deneme hakkı yakmaz. Başarıyla soyulan kişi 6 saat korunur.
@@ -1089,7 +1089,7 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 37. `.görev` → görevler listelenir; biten görevin XP'si bir kez verilir
 38. `.market al 1` → XP düşer; kalkanlı kişiye `.soygun` → engellenir, hak yanmaz; `.soygun` üçüncü kez → "hakkın bitti"
 39. `.açıkartırma 10 30` → herkes etiketlenir; ilk mesaja yanıt teklif olur, düşük teklif reddedilir; süre bitince kazanan yazılır, XP değişmez
-40. `.market` → key'ler ayrı başlıkta listelenir; `.market al 7` → 50 XP düşer, ödül yazılır; XP yetmezse ödül çıkmaz
+40. `.market` → key'ler ayrı başlıkta listelenir; `.market al 7` → `.market`'te yazan fiyat düşer, ödül yazılır; XP yetmezse ödül çıkmaz
 41. `.ödül @kişi 100` → 100 XP düşer, listede 90 XP görünür; o kişi soyulunca hırsız ödülü alır, liste boşalır
 42. `.banka yatır 100` → cüzdan düşer; `.banka çek 100` → 95 XP geri gelir; bir saat sonra `.banka` faizi gösterir
 43. `.sezon` → sıralama ve kalan gün gelir; oyun kazanınca puan artar, kumar kazanınca artmaz
