@@ -297,7 +297,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 38 (tamam):** `.faizkararı`, `.teşvik`, artan oranlı vergi, panelde ekonomi kartı. Faz 36 bölümüne işlendi.
 - **Faz 39 (tamam):** `.hapis`, `.kefalet`, `.seçim` (askıda), `.evlen`, `.boşan`, `.meslek`, `.çalış`, `.çete`, `.dava`, `.özet`. Ayrıntı aşağıda.
 - **Faz 40 (tamam):** `.vergitop`, `.vergikaçır`, `.tüik` kasa ve maaş satırları. Faz 25 ve Faz 36 bölümlerine işlendi.
-- **Faz 41+:** yeni komutlar, her biri ayrı adım
+- **Faz 41 (tamam):** `.piyasa` olayları, `.yatırım`, `.tefeci`. Ayrıntı aşağıda.
+- **Faz 42+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1038,6 +1039,19 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 - **Panel:** grup sayfasında Çeteler, Hapishane, Evlilikler, Meslekler, kişi sayfasında Hayat kartı vardır. Veri yoksa kart çıkmaz. Tablolar bot yeni sürümle açılmadan yoktur, `toplumTablolariVar()` bu yüzden vardır. Seçim panele eklenmedi.
 - **`.özet`:** yeni tablo yoktur. Mesajlar `gecmis`'ten son 7 gündür, gece kuşu ve kumar tüm zamanlardır, çünkü o tablolar haftalık tutulmaz. Çıktı bunu ayrı başlıkla yazar.
 
+### Faz 41 — Piyasa olayları, `.yatırım`, `.tefeci`
+
+```
+yatirim(chat_jid, user_jid, miktar, risk, carpan, bitis)                              PK(chat_jid,user_jid)
+tefeci(chat_jid, borclu, alacakli, anapara, borc, saat, vade, durum, teklif_bitis)    PK(chat_jid,borclu)
+```
+
+Kurallar `lib/olay.js`, `lib/yatirim.js`, `lib/tefeci.js`'te saftır, yazma `lib/stats.js`'tedir.
+
+- **Olay:** `piyasaOlayi()` grup ve 6 saatlik dilimden hash'le çıkar, saklanmaz (`.borsa` havası gibi). Dilim İstanbul 00/06/12/18'de başlar. Etkiler yüzdedir, `olayUygula()` uygular: maaş (`calis`), kira (`kiraIsle`, toplandığı andaki olay), market (`marketAl`, `marketFiyati`), oyun (`oyunOdulu`, `oyunTutari`), yatırım. **Coin kuru ve key fiyatı olaydan etkilenmez:** krizde ucuz coin alıp bozdurmak ve indirimde key beklentisini fiyatın üstüne çıkarmak XP basardı. Testler sabit zaman verir, olay hash'i bu yüzden belirlidir; market fiyatı bekleyen test `marketFiyati()` ile hesaplar.
+- **`.yatırım`:** sonuç yatırılırken zarla belirlenir, `carpan` anaparanın yüzdesidir; olay yalnızca kâr kısmını büyütür ya da küçültür. Kilitli para `paraArzi`'ne girer, yoksa yatırmak kuru düşürürdü. Borçlu yatıramaz (kredi parası tahsilatın dokunmadığı yere kaçmasın), açık yatırımla `.iflas` edilmez.
+- **`.tefeci`:** teklif tabloda `durum = 'teklif'` olarak 10 dk durur, para kabulde geçer ve alacaklının bakiyesi kabulde yeniden denetlenir. Faiz tek seferliktir (`geriOdeme`). Vade sonrası `tefeciTahsil()` `recordMessage`'da her mesajda borçlunun cüzdanından ve bankasından alır, yetmezse borç kalır, cüzdan eksiye düşmez. `.devret`'i etkilemez (bot sahibinin kararı): `borcluMu` tefeci borcunu saymaz. Kredi borcu ya da eksi bakiyesi olan borç veremez, yoksa kredi parası tahsilattan kaçırılırdı.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1131,3 +1145,6 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 75. Panelde grup sayfası çete, hapis, evlilik ve meslek kartlarını, kişi sayfası Hayat kartını gösterir; verisi olmayan kart çıkmaz
 76. Vergi ödeyen kişi `.vergitop`'ta görünür, bot listede yok; kimse ödemediyse "henüz kimse" yazar
 77. `.vergikaçır` → plan kurulur, ikinci yazışta "zaten hazır"; ertesi gün ilk mesajdan sonra `.vergikaçır` sonucu yazar, yakalanınca `.hapis` listeler; `.tüik` kasa, açık kredi ve maaş satırlarını gösterir
+78. `.piyasa` → olay ve bitişine kalan süre; `.tüik` aynı olayı yazar; Kara Cuma'da `.market` ürün fiyatları düşük, key fiyatı aynı
+79. `.yatırım 1000 yüksek` → cüzdan düşer; hemen `.yatırım` → kalan süre; 6 saat sonra `.yatırım` → sonuç ve ödeme; ikinci yatırım reddedilir
+80. `.tefeci ver @kişi 1000 20 1` → teklif; başkası `.tefeci kabul` yazarsa "teklifin yok"; hedef kabul edince para geçer, `.devret` çalışır; 1 saat sonra borçlu mesaj yazınca borç alacaklıya geçer

@@ -1,3 +1,4 @@
+import { piyasaOlayi } from '../lib/olay.js'
 import { requireGroup } from '../lib/group.js'
 import { binlik } from '../lib/sayi.js'
 import { ekonomiDurumu } from '../lib/stats.js'
@@ -43,6 +44,7 @@ export default {
           '',
           `💰 Piyasadaki para: ${binlik(e.anlik)} XP`,
           `🪙 Anlık coin kuru: ${binlik(e.kur)} XP`,
+          `🌐 Piyasa olayı: ${piyasaOlayi(from, Date.now()).ad}`,
           `🏦 Merkez bankası kasası: ${binlik(e.kasa)} XP`,
           `💳 Açık kredi: ${binlik(e.kredi.toplam)} XP (${e.kredi.adet} kişi)`,
           `💼 Bugün ödenen maaş: ${binlik(e.maas)} XP`,

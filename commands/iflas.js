@@ -32,6 +32,7 @@ export default {
       if (s.coin) return await yaz('⚖️ Önce coinlerini boz: `.coinmarket sat <adet>`')
       if (s.mulk) return await yaz('⚖️ Önce mülklerini sat: `.mülk sat <mülk>`')
       if (s.cete) return await yaz('⚖️ Önce çete kasasını boşalt: `.çete çek <miktar>`')
+      if (s.yatirim) return await yaz('⚖️ Önce yatırımının sonuçlanmasını bekle: `.yatırım`')
 
       await yaz([
         `⚖️ *İflas* — ${sayi.format(s.silinen)} XP borç silindi.`,

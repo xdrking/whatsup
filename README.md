@@ -506,6 +506,24 @@ Futbolcu kariyeri seçimden 24 saat sonra biter, aynı kişi o grupta bir daha f
 
 Panelde grup sayfası Çeteler, Hapishane, Evlilikler ve Meslekler kartlarını, kişi sayfası Hayat kartını gösterir.
 
+### Piyasa olayları, yatırım, tefeci
+
+| Komut | Yapar |
+|---|---|
+| `.piyasa` | Şu anki piyasa olayını ve bitişine kalan süreyi gösterir. Olay her grupta 6 saatte bir değişir (00, 06, 12, 18) |
+| `.yatırım <miktar> <düşük\|orta\|yüksek>` | Parayı 6 saat kilitler, sonuç yatırdığın an belirlenir |
+| `.yatırım` | Açık yatırımı gösterir, vadesi dolduysa sonucu açıklar ve parayı öder |
+| `.tefeci ver @kişi <miktar> <faiz> <saat>` | Faizli borç teklifi: `.tefeci ver @kişi 100000 20 12` 100.000 verir, 12 saat sonra 120.000 ister |
+| `.tefeci kabul` / `.tefeci red` | Teklifi alan 10 dk içinde cevaplar, kabulde para geçer |
+| `.tefeci öde <miktar\|hepsi>` | Borcu cüzdandan öder |
+| `.tefeci` | Borcunu ve alacaklarını gösterir |
+
+Olaylar: 😐 sakin, 📈 patlama (maaş ve kira 1,5 kat), 📉 kriz (maaş ve kira %30 düşük, market %20 indirim), 🎮 oyun festivali (oyun ödülü 2 kat), 🛍️ Kara Cuma (market %30 indirim), 🏠 emlak patlaması (kira 2 kat), 💸 zam yağmuru (market %30 pahalı), ✊ genel grev (maaş yarı, oyun 1,5 kat). Coin kuru ve key fiyatı olaydan etkilenmez. Kira toplandığı andaki olaya göre ödenir.
+
+Yatırım sonuçları anaparanın katıdır: düşük risk ×0,9 / ×1,1 / ×1,3, orta ×0,5 / ×1,2 / ×2, yüksek ×0 / ×1,5 / ×4. Patlamada kâr %20 büyür, krizde %20 küçülür, zarar değişmez. Borçluyken yatırım yapılmaz, açık yatırımla `.iflas` edilmez.
+
+Tefeci faizi tek seferliktir (en çok %100), vade 1-72 saat. Vade dolunca borç borçlunun cüzdanından ve bankasından alınır, yetmezse kalan borç sonradan gelen paradan kesilir; cüzdan eksiye düşmez. Kişinin aynı anda tek tefeci borcu olur. `.devret` tefeci borcundan etkilenmez, kredi borcu olan borç veremez.
+
 ### Sezon
 
 `.sezon` bu haftanın en çok XP kazananlarını gösterir. Her pazartesi sıfırlanır, yalnızca mesaj, oyun, `.günlük` ve `.görev` XP'si sayılır.

@@ -10,7 +10,7 @@ const { binlik } = await import('../lib/sayi.js')
 const { sonucSatirlari } = await import('../lib/kumar.js')
 const { KORUNMA_MS } = await import('../lib/soygun.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, oyunOdulu, oyunTutari, recordMessage, sezonDurumu, sigortaBitisi, xpDevret, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
+  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, oyunOdulu, oyunTutari, recordMessage, sezonDurumu, sigortaBitisi, xpDevret, marketAl, marketDurumu, marketFiyati, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
 } = await import('../lib/stats.js')
 const { URUNLER } = await import('../lib/market.js')
 const { kiraHesapla, KIRA_AZAMI_SAAT, mulkBul } = await import('../lib/mulk.js')
@@ -107,8 +107,9 @@ test('toplu haciz: banka %45, cüzdan %50 alıcıya geçer, kalkan korumaz', () 
 
   xpVer(chatJid, 'a@s', 3000)
   bankaYatir({ chatJid, userJid: 'a@s', miktar: 1000, now: T })
-  xpVer(chatJid, 'kalkanli@s', 1000 + 2_173_700)
-  marketAl({ chatJid, userJid: 'kalkanli@s', urun: URUNLER.find((u) => u.tur === 'kalkan'), now: T })
+  const kalkan = URUNLER.find((u) => u.tur === 'kalkan')
+  xpVer(chatJid, 'kalkanli@s', 700 + marketFiyati(chatJid, kalkan.fiyat, T))
+  assert.ok(!marketAl({ chatJid, userJid: 'kalkanli@s', urun: kalkan, now: T }).yetersiz)
 
   const s = uygula(['a@s', 'kalkanli@s'])
 
@@ -152,9 +153,10 @@ test('toplu soygun: hak ister, kalkanlıyı atlar, kaçan ceza ödetmez', () => 
 
   xpVer(chatJid, 'a@s', 10_000)
   xpVer(chatJid, 'b@s', 10_000)
-  xpVer(chatJid, 'kalkanli@s', 10_000 + 2_173_700)
+  const kalkan = URUNLER.find((u) => u.tur === 'kalkan')
+  xpVer(chatJid, 'kalkanli@s', 10_000 + marketFiyati(chatJid, kalkan.fiyat, T))
   xpVer(chatJid, 'fakir@s', 50)
-  marketAl({ chatJid, userJid: 'kalkanli@s', urun: URUNLER.find((u) => u.tur === 'kalkan'), now: T })
+  assert.ok(!marketAl({ chatJid, userJid: 'kalkanli@s', urun: kalkan, now: T }).yetersiz)
   odulKoy({ chatJid, koyan: 'kalkanli@s', hedef: 'a@s', miktar: 1000 })
 
   assert.deepEqual(toplu(() => true, ['fakir@s', 'kalkanli@s']), { hedefYok: true })

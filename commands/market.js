@@ -4,7 +4,8 @@ import { requireGroup } from '../lib/group.js'
 import { KASALAR, kasaCek } from '../lib/kasa.js'
 import { URUNLER } from '../lib/market.js'
 import { haftaAnahtari } from '../lib/sezon.js'
-import { ekonomiDurumu, getStats, kasaAc, marketAl, marketDurumu, vitrinKalan } from '../lib/stats.js'
+import { ekonomiDurumu, getStats, kasaAc, marketAl, marketDurumu, marketFiyati, vitrinKalan } from '../lib/stats.js'
+import { piyasaOlayi } from '../lib/olay.js'
 import { trLower } from '../lib/turkishWords.js'
 import { vitrinUrunu } from '../lib/vitrin.js'
 import logger from '../lib/logger.js'
@@ -76,12 +77,14 @@ export default {
       if (!ekonomi) return await yaz('🛒 Market şu an kapalı, sonra dene.')
 
       const { unvan, kalkan } = marketDurumu(from, sender)
+      const olay = piyasaOlayi(from, Date.now())
       const lines = [
         '🛒 *Market*',
+        ...(olay.market ? [`${olay.ad}: ${olay.aciklama}`] : []),
         '',
         ...URUNLER.flatMap((u, i) => [
           ...(u === KASALAR[0] ? ['', '🗝️ *Random Key* (içinden rastgele ödül çıkar)'] : []),
-          `${i + 1}. ${u.ad} — ${sayi.format(kurOlcegi(u.fiyat, ekonomi.kur))} XP`,
+          `${i + 1}. ${u.ad} — ${sayi.format(u.tur === 'kasa' ? kurOlcegi(u.fiyat, ekonomi.kur) : marketFiyati(from, u.fiyat))} XP`,
         ]),
         '',
         '✨ *Haftanın vitrini*',
