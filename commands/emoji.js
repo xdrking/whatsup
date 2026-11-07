@@ -11,7 +11,7 @@ export default {
     'Bot birkaç emoji ve türünü (film/dizi/şarkı) yazar; tahminini botun *son* oyun mesajını yanıtlayarak yaz.',
     'Her 3 yanlışta ipucu açılır: önce harf kalıbı, sonra baş harfler.',
     'Adın tamamı yazılmalı; Türkçe karakter şart değil, bilinen İngilizce adlar da kabul edilir.',
-    'İlk bilen +50 XP alır. Süre 10 dk.',
+    'İlk bilen kurla artan XP alır. Süre 10 dk.',
   ],
   category: 'oyun',
   ownerOnly: false,

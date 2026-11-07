@@ -2,7 +2,7 @@ import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import { calculate, CalcError } from '../lib/calc.js'
 import logger from '../lib/logger.js'
-import { addXp } from '../lib/stats.js'
+import { oyunOdulu, oyunTutari } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
 
@@ -78,7 +78,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   if (denetim.gecerli && denetim.sonuc === state.hedef) {
     state.finished = true
     endGame(from)
-    const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_SAYI })
+    const kazanc = oyunOdulu({ chatJid: from, userJid: parsed.sender, amount: XP_SAYI })
 
     await yaz({
       text: [
@@ -130,7 +130,7 @@ export async function start({ sock, msg, from, sender }) {
         `🎯 Hedef: *${hedef}*`,
         '',
         '↩️ İşlemi botun son mesajına yaz. Örnek: `(25 + 5) * 3`',
-        `Her sayı bir kez, hepsini kullanmak şart değil. İlk bulan +${XP_SAYI} XP alır. ⏱️ 5 dk`,
+        `Her sayı bir kez, hepsini kullanmak şart değil. İlk bulan +${binlik(oyunTutari(from, XP_SAYI))} XP alır. ⏱️ 5 dk`,
       ].join('\n'),
     },
     { quoted: msg },

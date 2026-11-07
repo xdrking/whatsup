@@ -9,7 +9,7 @@ export default {
   usage: '.tahmin',
   details: [
     'Tahminini botun son mesajına yanıt olarak yaz, bot yukarı ya da aşağı der.',
-    'İlk bilen +50 XP alır. 10 dk tahmin gelmezse oyun kapanır.',
+    'İlk bilen kurla artan XP alır. 10 dk tahmin gelmezse oyun kapanır.',
   ],
   category: 'oyun',
   ownerOnly: false,

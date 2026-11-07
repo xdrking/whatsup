@@ -10,7 +10,7 @@ export default {
   details: [
     'Bot 4 şıklı bir bilgi sorusu sorar.',
     'Cevabı soru mesajını yanıtlayarak yaz: harf (`b`), numara (`2`) ya da şıkkın kendisi.',
-    'Herkesin tek hakkı var; ilk doğru cevap +50 XP alır.',
+    'Herkesin tek hakkı var; ilk doğru cevap kurla artan XP alır.',
     '10 dakika içinde bilen çıkmazsa oyun kapanır ve cevap söylenir.',
   ],
   category: 'oyun',

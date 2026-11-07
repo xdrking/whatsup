@@ -1,6 +1,6 @@
 import { binlik } from '../lib/sayi.js'
 import logger from '../lib/logger.js'
-import { addXp } from '../lib/stats.js'
+import { oyunOdulu } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
 
@@ -72,7 +72,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     endGame(from)
 
     const rakip = state.oyuncular.find((j) => j !== parsed.sender)
-    const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_DUELLO })
+    const kazanc = oyunOdulu({ chatJid: from, userJid: parsed.sender, amount: XP_DUELLO })
 
     await cevapla(sock, msg, from, {
       text: [

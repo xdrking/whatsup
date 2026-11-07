@@ -10,7 +10,7 @@ export default {
   details: [
     'Bot gizli bir kelime seçer; botun *son* oyun mesajını yanıtlayarak bir harf (ör. `a`) ya da kelimenin tamamını yaz.',
     'Yanlış harf ve yanlış kelime tahmini aynı cezayı alır; 6 yanlışta adam asılır.',
-    'Kelimeyi tamamlayan +50 XP alır. 10 dk tahmin gelmezse oyun kapanır.',
+    'Kelimeyi tamamlayan kurla artan XP alır. 10 dk tahmin gelmezse oyun kapanır.',
   ],
   category: 'oyun',
   ownerOnly: false,

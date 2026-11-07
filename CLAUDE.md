@@ -510,8 +510,9 @@ kısaltılabilir). `.kelime`'de sayaç her geçerli kelimede sıfırlanır
 mesajı gönderilemese bile oyun mutlaka temizlenir, yoksa grup kalıcı olarak
 "zaten aktif bir oyun var" durumunda kilitlenir.
 
-XP mevcut sistemden verilir: `lib/stats.js:addXp()` — geçerli kelime +30, doğru
-tahmin +100. `recordMessage`'ın 30 sn'lik cooldown'u burada uygulanmaz (oyun XP'si
+XP `lib/stats.js:oyunOdulu()` ile verilir: oyun taban sayı yazar (kelime 30, tahmin 100), XP'ye
+`lib/coin.js:oyunOlcegi()` çevirir, kur 1.000.000 iken 50 taban 100.000 XP eder (bot sahibinin kararı).
+Sezon puanı taban kalır, kurla büyüseydi mesaj ve görev puanını ezerdi. `addXp` elle XP içindir, kurla büyümez. `recordMessage`'ın 30 sn'lik cooldown'u burada uygulanmaz (oyun XP'si
 kazanılmış XP'dir) ve `hours` tablosuna yazılmaz. `.stats`, `.profil` ve `.top`
 aynı `stats.xp` sütununu okuduğu için ek iş yoktur.
 
@@ -584,7 +585,7 @@ sırası her oyunda karışır.
   şıkları sırayla deneyerek kazanılmasın.
 - Süre 10 dk: `startGame` state'inde `timeoutMs` verilirse `gameManager` onu
   kullanır; `OYUN_TIMEOUT_MS` daha kısaysa o kazanır. Diğer oyunlar 1 saatte.
-- Doğru cevap +50 XP (`addXp`).
+- Doğru cevap taban +50 (`oyunOdulu`).
 
 ### Faz 12 — LID sahip, susturma, `.dc`, `.efekt`, `.hava`, `.düello`, `.seç`, `.hesap`
 

@@ -10,7 +10,7 @@ const { binlik } = await import('../lib/sayi.js')
 const { sonucSatirlari } = await import('../lib/kumar.js')
 const { KORUNMA_MS } = await import('../lib/soygun.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, recordMessage, sigortaBitisi, xpDevret, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
+  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, oyunOdulu, oyunTutari, recordMessage, sezonDurumu, sigortaBitisi, xpDevret, marketAl, marketDurumu, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
 } = await import('../lib/stats.js')
 const { URUNLER } = await import('../lib/market.js')
 const { kiraHesapla, KIRA_AZAMI_SAAT, mulkBul } = await import('../lib/mulk.js')
@@ -238,6 +238,18 @@ test('işlenmemiş banka faizi kura yazılır: .banka yazmak kuru sıçratmaz', 
 
   const onceden = ekonomiDurumu({ chatJid, now: T + 3 * GUN })
   assert.ok(onceden.arz > 200_000_000 * 1.15 ** 70)
+})
+
+test('oyun ödülü kurla büyür, sezon puanı taban kalır', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  assert.equal(oyunTutari(chatJid, 50, T), 100_000)
+  assert.equal(oyunOdulu({ chatJid, userJid, amount: 50, at: T }), 100_000)
+  assert.equal(getStats(chatJid, userJid).xp, 100_000)
+  assert.equal(sezonDurumu({ chatJid, now: T }).siralama[0].puan, 50)
+
+  xpVer(chatJid, 'b@s', 200_000_000)
+  assert.equal(oyunTutari(chatJid, 50, T), 210_000)
 })
 
 test('.tüik: kasa, açık kredi ve gün maaşı ekonomi durumunda', () => {

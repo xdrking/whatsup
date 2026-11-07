@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import logger from '../lib/logger.js'
-import { addXp } from '../lib/stats.js'
+import { oyunOdulu } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import {
   WordServiceError,
@@ -141,7 +141,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   state.currentWord = kelime
   state.requiredLetter = lastLetter(kelime)
 
-  addXp({ chatJid: from, userJid: parsed.sender, amount: XP_KELIME })
+  oyunOdulu({ chatJid: from, userJid: parsed.sender, amount: XP_KELIME })
 
   const result = await cevapla(sock, msg, from, {
     text: [

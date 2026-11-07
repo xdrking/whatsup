@@ -202,6 +202,8 @@ tavana ulaşır). Oyun ve görev ödülleri kendi başlıklarındadır. Level = 
 
 ### Oyunlar
 
+Oyun ödülleri coin kuruyla büyür: tablodaki sayı tabandır, kur 1.000.000 iken 50 taban 100.000 XP, kur 2.300.000 iken 230.000 XP eder. Oyun başlarken güncel ödül yazılır.
+
 | Komut | Yapar | XP | Süre |
 |---|---|---|---|
 | `.kelime` | Türkçe kelime zinciri. Kelimeler TDK'de doğrulanır | kelime başına +30 | son kelimeden 1 saat |

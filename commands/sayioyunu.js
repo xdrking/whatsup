@@ -10,7 +10,7 @@ export default {
   details: [
     'Bot 5 sayı ve bir hedef verir; işlemi botun son mesajına yanıt olarak yaz.',
     'Örnek: `(25 + 5) * 3`. Her sayı bir kez kullanılır, hepsi şart değil. + - * / ve parantez geçerli.',
-    'İlk bulan +100 XP alır. Süre 5 dk.',
+    'İlk bulan kurla artan XP alır. Süre 5 dk.',
   ],
   category: 'oyun',
   ownerOnly: false,

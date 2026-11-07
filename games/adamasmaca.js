@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import logger from '../lib/logger.js'
-import { addXp } from '../lib/stats.js'
+import { oyunOdulu } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { trLower, trUpper } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame, touchGame } from './gameManager.js'
@@ -122,7 +122,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     endGame(from)
 
     if (sonuc === 'kazandi') {
-      const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_ADAMASMACA })
+      const kazanc = oyunOdulu({ chatJid: from, userJid: parsed.sender, amount: XP_ADAMASMACA })
       await cevapla(sock, msg, from, {
         text: [
           '🎉 *KURTARILDI!*',

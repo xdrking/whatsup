@@ -1,7 +1,7 @@
 import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
-import { addXp } from '../lib/stats.js'
+import { oyunOdulu, oyunTutari } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame, touchGame } from './gameManager.js'
 
@@ -28,7 +28,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   if (tahmin === state.sayi) {
     state.finished = true
     endGame(from)
-    const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_TAHMIN })
+    const kazanc = oyunOdulu({ chatJid: from, userJid: parsed.sender, amount: XP_TAHMIN })
 
     await yaz({
       text: [
@@ -74,7 +74,7 @@ export async function start({ sock, msg, from, sender }) {
         '🔢 *SAYI TAHMİNİ*',
         '',
         `1 ile ${UST_SINIR} arasında bir sayı tuttum.`,
-        `↩️ Botun son mesajına sayı yaz. İlk bilen +${XP_TAHMIN} XP alır.`,
+        `↩️ Botun son mesajına sayı yaz. İlk bilen +${binlik(oyunTutari(from, XP_TAHMIN))} XP alır.`,
       ].join('\n'),
     },
     { quoted: msg },

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import logger from '../lib/logger.js'
-import { addXp } from '../lib/stats.js'
+import { oyunOdulu, oyunTutari } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
 
@@ -145,7 +145,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     state.finished = true
     endGame(from)
 
-    const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_QUIZ })
+    const kazanc = oyunOdulu({ chatJid: from, userJid: parsed.sender, amount: XP_QUIZ })
 
     await cevapla(sock, msg, from, {
       text: [
@@ -207,7 +207,7 @@ export async function start({ sock, msg, from, sender }) {
       ...soruMetni(state.soru),
       '',
       '↩️ Cevap için bu mesaja harfle yanıt ver. Herkesin tek hakkı var.',
-      `⭐ İlk bilen +${XP_QUIZ} XP alır.`,
+      `⭐ İlk bilen +${binlik(oyunTutari(from, XP_QUIZ))} XP alır.`,
     ].join('\n'),
   })
 

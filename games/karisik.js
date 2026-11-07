@@ -2,7 +2,7 @@ import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import logger from '../lib/logger.js'
-import { addXp } from '../lib/stats.js'
+import { oyunOdulu, oyunTutari } from '../lib/stats.js'
 import { mentionOf } from '../lib/target.js'
 import { trUpper } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame } from './gameManager.js'
@@ -37,7 +37,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   if (katla(body) === katla(state.kelime)) {
     state.finished = true
     endGame(from)
-    const kazanc = addXp({ chatJid: from, userJid: parsed.sender, amount: XP_KARISIK })
+    const kazanc = oyunOdulu({ chatJid: from, userJid: parsed.sender, amount: XP_KARISIK })
 
     await yaz({
       text: [
@@ -99,7 +99,7 @@ export async function start({ sock, msg, from, sender }) {
     '',
     `*${trUpper(harfleriKaristir(kelime)).split('').join(' ')}*`,
     '',
-    `↩️ Doğru kelimeyi botun son mesajına yaz. İlk bilen +${XP_KARISIK} XP alır. ⏱️ 5 dk`,
+    `↩️ Doğru kelimeyi botun son mesajına yaz. İlk bilen +${binlik(oyunTutari(from, XP_KARISIK))} XP alır. ⏱️ 5 dk`,
   ].join('\n'))
 
   const id = result?.key?.id
