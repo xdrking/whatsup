@@ -17,6 +17,18 @@ const GAMES_DIR = path.dirname(fileURLToPath(import.meta.url))
 const HAVUZ_DOSYASI = path.join(GAMES_DIR, 'kelimeler.json')
 
 const XP_KELIME = 30
+// Aynı kişi art arda en çok bu kadar kelime söyler, başkası yazınca sayaç sıfırlanır.
+// Ödül kurla büyüdüğü için tek kişi oyunu sonsuz XP makinesine çevirmesin (bot sahibinin kararı).
+export const SERI_SINIRI = 10
+
+/** Kişi art arda sınırı doldurduysa false. */
+export function seriIzinli(seri, jid) {
+  return !(seri?.jid === jid && seri.adet >= SERI_SINIRI)
+}
+
+export function seriIlerlet(seri, jid) {
+  return seri?.jid === jid ? { jid, adet: seri.adet + 1 } : { jid, adet: 1 }
+}
 
 // Türkçe harfler + düzeltme işaretli ünlüler (rüzgâr, hikâye). Rakam, boşluk
 // ve noktalama kabul edilmez: cevap tek bir kelime olmalı.
@@ -98,6 +110,13 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     return
   }
 
+  if (!seriIzinli(state.seri, parsed.sender)) {
+    await cevapla(sock, msg, from, {
+      text: `✋ Art arda en çok ${SERI_SINIRI} kelime söyleyebilirsin, önce başkası yazsın.`,
+    })
+    return
+  }
+
   if (state.used.has(kelime)) {
     await cevapla(sock, msg, from, { text: '❌ Bu kelime daha önce kullanıldı.' })
     return
@@ -138,6 +157,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   state.used.add(kelime)
   state.total += 1
   state.scores.set(parsed.sender, (state.scores.get(parsed.sender) || 0) + 1)
+  state.seri = seriIlerlet(state.seri, parsed.sender)
   state.currentWord = kelime
   state.requiredLetter = lastLetter(kelime)
 
@@ -147,6 +167,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     text: [
       `✅ ${mentionOf(parsed.sender)} — ${trUpper(kelime)}`,
       `🔤 Sıradaki harf: ${trUpper(state.requiredLetter)}`,
+      ...(state.seri.adet >= SERI_SINIRI ? [`✋ ${SERI_SINIRI} kelime oldu, sıra başkasında.`] : []),
     ].join('\n'),
     mentions: [parsed.sender],
   })
@@ -179,6 +200,7 @@ export async function start({ sock, msg, from, sender }) {
     used: new Set([ilk]),
     scores: new Map(),
     total: 0,
+    seri: null,
     onAnswer: cevapAl,
     summarize: (s) => bitisMetni(s, '🛑 Oyun elle bitirildi.', '🏁 *OYUN BİTTİ*'),
     onTimeout: async () => {
@@ -198,6 +220,7 @@ export async function start({ sock, msg, from, sender }) {
       `🔠 Sıradaki kelime ${trUpper(harf)} harfiyle başlamalı.`,
       '',
       '↩️ Cevap vermek için bu mesaja yanıt ver.',
+      `✋ Art arda en çok ${SERI_SINIRI} kelime, sonra başkası yazmalı.`,
       '⏱️ 1 saat boyunca cevap gelmezse oyun otomatik olarak sona erer.',
     ].join('\n'),
   })

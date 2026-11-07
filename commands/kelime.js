@@ -11,6 +11,7 @@ export default {
     'Bot bir başlangıç kelimesi verir; botun *son* oyun mesajını yanıtlayarak devam edilir.',
     'Kelimen öncekinin son harfiyle başlamalı (ğ ile biterse bir önceki harfle).',
     'Tek kelime olmalı, daha önce kullanılmamış olmalı ve TDK sözlüğünde bulunmalı.',
+    'Aynı kişi art arda en çok 10 kelime söyler, başkası geçerli bir kelime yazınca hakkı yenilenir.',
     'Her geçerli kelime kurla artan XP verir. Son geçerli kelimeden 1 saat sonra oyun kapanır.',
   ],
   category: 'oyun',

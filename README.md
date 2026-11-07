@@ -206,7 +206,7 @@ Oyun ödülleri coin kuruyla büyür: tablodaki sayı tabandır, kur 1.000.000 i
 
 | Komut | Yapar | XP | Süre |
 |---|---|---|---|
-| `.kelime` | Türkçe kelime zinciri. Kelimeler TDK'de doğrulanır | kelime başına +30 | son kelimeden 1 saat |
+| `.kelime` | Türkçe kelime zinciri. Kelimeler TDK'de doğrulanır, aynı kişi art arda en çok 10 kelime söyler | kelime başına +30 | son kelimeden 1 saat |
 | `.kimim` | Karakter tahmini; her 3 yanlışta yeni ipucu | +100 | 1 saat |
 | `.quiz` | 4 şıklı bilgi sorusu; herkesin tek hakkı var, ilk bilen kazanır | +50 | 10 dk |
 | `.düello @kişi` | İki kişilik hızlı matematik düellosu; ilk doğru cevap kazanır | +50 | 2 dk |
