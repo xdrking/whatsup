@@ -296,7 +296,7 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 37 (tamam):** coin kuru, haciz sigortası, `.tüik`, `.mülk`. Faz 36 bölümüne işlendi.
 - **Faz 38 (tamam):** `.faizkararı`, `.teşvik`, artan oranlı vergi, panelde ekonomi kartı. Faz 36 bölümüne işlendi.
 - **Faz 39 (tamam):** `.hapis`, `.kefalet`, `.seçim` (askıda), `.evlen`, `.boşan`, `.meslek`, `.çalış`, `.çete`, `.dava`, `.özet`. Ayrıntı aşağıda.
-- **Faz 40 (tamam):** `.vergitop`. Faz 25 bölümüne işlendi.
+- **Faz 40 (tamam):** `.vergitop`, `.vergikaçır`, `.tüik` kasa ve maaş satırları. Faz 25 ve Faz 36 bölümlerine işlendi.
 - **Faz 41+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
@@ -850,6 +850,8 @@ gidilmesin diye denetim bellektedir, yeniden başlatmada `vergi_day` çift kesin
 
 Kesilen her vergi `vergi(chat_jid, user_jid, toplam)` tablosunda birikir, `.vergitop` buradan okur. Tablodan önceki vergiler kayıtlı değildir.
 
+`.vergikaçır` `vergi_kacak(chat_jid, user_jid, aktif, sonuc, tutar)` tablosuna plan yazar. Komut da mesaj olduğu için o günün vergisi çoktan kesilmiştir, plan bir sonraki kesime işler. Zar `vergiAl()` içinde atılır (`kacisSonucu`). Bot kendiliğinden yazmadığı için sonuç `.vergikaçır` yazılınca görünür. Yakalanmanın beklentisi vergiden kötü kalmalı (%60, 3 kat), yoksa herkes her gün kaçardı.
+
 ### Faz 26 — `.sezon`
 
 ```
@@ -947,7 +949,7 @@ oyunun yanan bahsi de yazılmaz. `lib/handler.js` her mesajda `botHesabiniTani()
 
 LID'li grupta bot üye listesinde "...@lid" görünür. `xpDevret`, `xpAyarla` ve `getStats` bu kimliği `hesapKimligi()` ile ana hesaba çevirir. Eski devirlerin açtığı LID satırı `botHesabiniTani()` kimliği öğrenince ana hesaba taşınır ve silinir.
 
-Bakiye gruba yalnızca `.top`'ta görünür: `.profil` ve `.stats` başkasına "gizli" der, `.soygun` ve
+Bakiye gruba `.top`'ta ve `.tüik` kasa satırında görünür: `.profil` ve `.stats` başkasına "gizli" der, `.soygun` ve
 `.devret` botu hedef alamaz, çünkü sonuç mesajları bakiye yazar. Sahip `.profil @bot` ile görebilir.
 
 ### Faz 33 — `.haber`
@@ -992,7 +994,7 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 - **Alış satış:** ödenen XP yanar. `.coinmarket sat` kurun %90'ını öder, bu fark kaldırılmamalı. Coin başkasına devredilmez, soyulmaz, hacizle alınmaz.
 - **`.iflas`** coin ya da mülk varken reddedilir, yoksa iflastan sonra borçsuz paraya dönerdi.
 - **Sigorta:** yalnızca `.hacizall`'ı durdurur, sahibin `.haciz`'ini durdurmaz.
-- **`.tüik`:** günlük ve haftalık enflasyon `ekonomi` kayıtlarından çıkar. Kayıt `recordMessage`'da günün ilk mesajıyla yazılır, sohbet başına denetim bellektedir. "Resmi" oran şakadır, gerçeğin yarısıdır.
+- **`.tüik`:** kasa, açık kredi ve gün maaşını da yazar (`maas_gun(chat_jid, day, toplam)`, `calis` yazar). Kasa toplamının gösterilmesi bot sahibinin kararıdır. Günlük ve haftalık enflasyon `ekonomi` kayıtlarından çıkar. Kayıt `recordMessage`'da günün ilk mesajıyla yazılır, sohbet başına denetim bellektedir. "Resmi" oran şakadır, gerçeğin yarısıdır.
 - **`.mülk`:** tanımlar `lib/mulk.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Fiyat coindir, satış coin gibi kurun %90'ıdır, kira günün kuruna bağlıdır ve saat başı `bekleyen`e işlenir. Toplanmazsa 24 saatte durur. Kira XP basar. Sahip `.haciz @kişi ev` ile bir tane siler, değeri kasaya girer, kira sahibinde kalır.
 - **Kredi:** açık kredisi olan coin alamaz (`coinAl`), yoksa kredi parası tahsilatın dokunmadığı coine çevrilirdi.
 - **Ürün fiyatları** 3-150 coin arasındadır. Coin zaten piyasanın yüzde biri olduğu için XP karşılığı kurla kendiliğinden artar. `.hacizall` fiyatı, alacağı paradan yüksek kalmalı: 1 coin piyasanın %1'idir, haciz en çok %50 alır. Etki alanları key ödülleriyle aynıdır (`soygunHakki`, `kalkanMs`, `bonus`, `unvan`).
@@ -1124,3 +1126,4 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 74. `.help` → kısa menü; `.help kumar` → açıklamalı bölüm; `.help sticker` → komut ayrıntısı; `.help tümü` → uzun liste
 75. Panelde grup sayfası çete, hapis, evlilik ve meslek kartlarını, kişi sayfası Hayat kartını gösterir; verisi olmayan kart çıkmaz
 76. Vergi ödeyen kişi `.vergitop`'ta görünür, bot listede yok; kimse ödemediyse "henüz kimse" yazar
+77. `.vergikaçır` → plan kurulur, ikinci yazışta "zaten hazır"; ertesi gün ilk mesajdan sonra `.vergikaçır` sonucu yazar, yakalanınca `.hapis` listeler; `.tüik` kasa, açık kredi ve maaş satırlarını gösterir

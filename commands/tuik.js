@@ -21,7 +21,7 @@ export default {
   description: 'Gruptaki para, enflasyon, coin kuru ve en zenginler',
   usage: '.tüik',
   details: [
-    'Para, üyelerin cüzdan ve bankasıdır, bot hariçtir. Enflasyon günlük kayıtlardan hesaplanır.',
+    'Para, üyelerin cüzdan ve bankasıdır, bot hariçtir. Kasa botun cüzdanı ve bankasıdır. Enflasyon günlük kayıtlardan hesaplanır.',
     '"Resmi" oran şakadır, gerçeğin yarısıdır.',
   ],
   category: 'ekonomi',
@@ -43,6 +43,9 @@ export default {
           '',
           `💰 Piyasadaki para: ${binlik(e.anlik)} XP`,
           `🪙 Anlık coin kuru: ${binlik(e.kur)} XP`,
+          `🏦 Merkez bankası kasası: ${binlik(e.kasa)} XP`,
+          `💳 Açık kredi: ${binlik(e.kredi.toplam)} XP (${e.kredi.adet} kişi)`,
+          `💼 Bugün ödenen maaş: ${binlik(e.maas)} XP`,
           satir('📈 Günlük enflasyon', enflasyon(e.arz, e.dun)),
           satir('📅 Haftalık enflasyon', enflasyon(e.arz, e.hafta)),
           '',

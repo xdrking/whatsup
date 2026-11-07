@@ -195,6 +195,7 @@ test('çalış: 4 saatte bir, hapiste kapalı, evliye bonus', () => {
 
   const s = calis({ chatJid, userJid: 'a', rnd, now: T })
   assert.equal(s.maas, 45_000)
+  assert.equal(ekonomiDurumu({ chatJid, now: T }).maas, 45_000)
   assert.equal(s.esBonusu, 0)
   assert.equal(xp(chatJid, 'a'), 45_000)
   assert.deepEqual(calis({ chatJid, userJid: 'a', rnd, now: T + 1 }), { bekle: T + SAAT / 2 })

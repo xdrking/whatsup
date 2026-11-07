@@ -15,7 +15,7 @@ const { ADIM_MS, fiyatAdimi, HAVALAR, hisseBul, HISSELER, piyasaHavasi, SAAT_MS 
 const { VITRIN, vitrinUrunu } = await import('../lib/vitrin.js')
 const { KORUNMA_MS, soygunPayi } = await import('../lib/soygun.js')
 const {
-  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, kartlariOku, kartVer, setTamamla, vitrinKalan, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, vergiSiralama, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
+  addXp, bahisOyna, bankaBakiyesi, borsaAl, borsaDurumu, borsaSat, kartlariOku, kartVer, setTamamla, vitrinKalan, bankaCek, bankaDurumu, bankaYatir, carkDurumu, carkOyna, getStats, hapisDurumu, vergiKacirPlani, vergiSiralama, gorevTopla, kasaAc, marketAl, marketDurumu, odulKoy, odulListesi, recordMessage, sampiyonlukSayisi, sezonDurumu, soygunYap,
 } = await import('../lib/stats.js')
 const { istanbulDay } = await import('../lib/dataset.js')
 
@@ -318,6 +318,31 @@ test('banka: yeni para tam bir saat durmadan faiz almaz, eski bakiye etkilenmez'
   assert.equal(faizIslet(1000, 1000, 2).faiz, 150)
   assert.equal(faizIslet(1000, 0, 0).faiz, 0)
   assert.equal(faizIslet(1000, 0, 1000).faiz, faizIslet(1000, 0, 168).faiz)
+})
+
+test('.vergikaçır: plan sonraki vergiye işler, kaçan ödemez, yakalanan 3 kat öder ve hapse girer', () => {
+  const k = kisi(2_000_000)
+  const mesaj = (at, zar) => recordMessage({ ...k, type: 'conversation', at, rnd: () => zar })
+
+  const xp = () => getStats(k.chatJid, k.userJid).xp
+  mesaj(T, 0)
+  assert.equal(xp(), 1_980_001)
+
+  assert.deepEqual(vergiKacirPlani(k), { zatenVar: false, sonuc: '', tutar: 0 })
+  assert.equal(vergiKacirPlani(k).zatenVar, true)
+  mesaj(T + GUN, 0)
+  assert.equal(xp(), 1_980_002)
+  assert.equal(bankaDurumu({ ...k, now: T + GUN }).sonVergi, 0)
+  assert.equal(hapisDurumu(k.chatJid, k.userJid, T + GUN), null)
+
+  const { sonuc, zatenVar } = vergiKacirPlani(k)
+  assert.deepEqual({ sonuc, zatenVar }, { sonuc: 'kacti', zatenVar: false })
+  const ceza = 3 * servetVergisi(xp() + 1, 1_000_000)
+  const once = xp()
+  mesaj(T + 2 * GUN, 60)
+  assert.equal(xp(), once + 1 - ceza)
+  assert.equal(hapisDurumu(k.chatJid, k.userJid, T + 2 * GUN).bitis, T + 2 * GUN + 2 * SAAT_MS)
+  assert.equal(vergiKacirPlani(k).sonuc, 'yakalandi')
 })
 
 test('vergi: günün ilk mesajında bir kez kesilir, banka da sayılır, eşik altında kesilmez', () => {

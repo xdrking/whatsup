@@ -240,6 +240,17 @@ test('işlenmemiş banka faizi kura yazılır: .banka yazmak kuru sıçratmaz', 
   assert.ok(onceden.arz > 200_000_000 * 1.15 ** 70)
 })
 
+test('.tüik: kasa, açık kredi ve gün maaşı ekonomi durumunda', () => {
+  const chatJid = yeniGrup()
+  xpVer(chatJid, BOT, 10_000)
+  assert.equal(krediCek({ chatJid, userJid: 'a@s', miktar: 1000, now: T }).xp, 1000)
+
+  const e = ekonomiDurumu({ chatJid, now: T })
+  assert.equal(e.kasa, 9000)
+  assert.deepEqual(e.kredi, { adet: 1, toplam: 1000 })
+  assert.equal(e.maas, 0)
+})
+
 test('coin bozdurma %90 öder, fazlası reddedilir', () => {
   const chatJid = yeniGrup()
   const userJid = 'a@s'
