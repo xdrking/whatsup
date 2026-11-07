@@ -15,7 +15,7 @@ export default {
   details: [
     `Maaş coin kuruna bağlıdır, ${CALISMA_DAKIKASI} dakikada bir \`.çalış\` yazılır.`,
     `Meslek ${MESLEK_DEGISIM_SAATI} saatte bir değiştirilebilir. Maaşlar gerçek hayata göredir, riskli mesleklerde daha çok oynar.`,
-    'Futbolcu tek seferliktir: bırakan bir daha seçemez.',
+    'Futbolcu kariyeri 24 saat sürer, biten bir daha seçemez.',
   ],
   category: 'ekonomi',
   ownerOnly: false,
@@ -36,11 +36,11 @@ export default {
         const s = meslekSec({ chatJid: from, userJid: sender, meslek })
         if (!s) return await yaz('💼 İŞKUR şu an kapalı, sonra dene.')
         if (s.ayni) return await yaz(`💼 Zaten ${meslek.ad} olarak çalışıyorsun.`)
-        if (s.hakBitti) return await yaz(`💼 ${meslek.ad} bir kez seçilir, sen bıraktın. Geri dönüş yok.`)
+        if (s.hakBitti) return await yaz(`💼 ${meslek.ad} kariyerin bitti, bir daha seçemezsin.`)
         if (s.bekle) return await yaz(`💼 Meslek değiştirmek için ${sureYaz(s.bitis - Date.now())} beklemelisin.`)
         return await yaz([
           `💼 Hayırlı olsun: *${meslek.ad}*`,
-          ...(meslek.tekSeferlik ? ['⚠️ Bu mesleği bırakırsan bir daha seçemezsin.'] : []),
+          ...(meslek.kariyerSaati ? [`⚠️ Kariyerin ${meslek.kariyerSaati} saat sürer, sonra bir daha seçemezsin.`] : []),
           'Maaş için `.çalış`',
         ].join('\n'))
       }
@@ -49,9 +49,9 @@ export default {
       await yaz([
         '💼 *Meslekler*',
         '',
-        ...MESLEKLER.map((m) => `${m.ad} — kurun %${yuzde(m.min)}-%${yuzde(m.max)}'i${m.tekSeferlik ? ' (tek seferlik)' : ''}`),
+        ...MESLEKLER.map((m) => `${m.ad} — kurun %${yuzde(m.min)}-%${yuzde(m.max)}'i${m.kariyerSaati ? ` (${m.kariyerSaati} saatlik tek kariyer)` : ''}`),
         '',
-        durum ? `Mesleğin: ${durum.meslek.ad}` : 'Seçmek için: `.meslek seç kurye`',
+        durum ? `Mesleğin: ${durum.meslek.ad}${durum.kariyerBitis ? `, kariyerin ${sureYaz(durum.kariyerBitis - Date.now())} sonra bitiyor` : ''}` : 'Seçmek için: `.meslek seç kurye`',
       ].join('\n'))
     } catch (err) {
       logger.error({ err, from }, '.meslek başarısız')

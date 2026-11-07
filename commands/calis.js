@@ -24,6 +24,7 @@ export default {
 
       const s = calis({ chatJid: from, userJid: sender, rnd: randomInt })
       if (!s) return await yaz('💼 Bugün dükkân kapalı, sonra dene.')
+      if (s.kariyerBitti) return await yaz(`💼 ${s.kariyerBitti.ad} kariyerin bitti, bir daha seçemezsin. Yeni meslek: \`.meslek\``)
       if (s.meslekYok) return await yaz('💼 Önce meslek seç: `.meslek`')
       if (s.hapis) return await yaz(`🚔 Hapistesin, ${sureYaz(s.hapis - Date.now())} kaldı.`)
       if (s.bekle) return await yaz(`💼 Mesain bitmedi, ${sureYaz(s.bekle - Date.now())} sonra gel.`)

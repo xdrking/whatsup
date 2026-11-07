@@ -13,7 +13,7 @@ const { kumarEngeli } = await import('../lib/kumar.js')
 const {
   adayOl, bankaBakiyesi, bankaYatir, baskanMi, botHesabiniTani, bosan, calis, ceteAt, ceteAyril, ceteCek, ceteDurumu,
   ceteKatil, ceteKur, ceteYatir, davaAc, davaOde, ekonomiDurumu, esBul, evlen, faizDurumu, faizKarari, getStats, haftaOzeti,
-  hapisDurumu, hapistekiler, iflasEt, kefaletOde, krediCek, kumarYasagi, meslekSec, oyVer, recordMessage, secimDurumu,
+  hapisDurumu, hapistekiler, iflasEt, kefaletOde, krediCek, kumarYasagi, meslekDurumu, meslekSec, oyVer, recordMessage, secimDurumu,
   sezonDurumu, soygunYap, sosyalDurum, xpAyarla,
 } = await import('../lib/stats.js')
 
@@ -222,15 +222,27 @@ test('meslek değişimi: 24 saat bekler, çalışma beklemesini sıfırlamaz', (
   assert.equal(calis({ chatJid: yeni, userJid: 'a', rnd, now: T }).meslek.kod, 'kurye')
 })
 
-test('futbolcu tek seferlik: bırakan dönemez, başka grup etkilenmez', () => {
+test('futbolcu kariyeri 24 saatte biter, aynı kişi dönemez, başka grup etkilenmez', () => {
   const chatJid = ayarla({ a: 0 })
   const futbolcu = meslekBul('futbolcu')
   assert.deepEqual(meslekSec({ chatJid, userJid: 'a', meslek: futbolcu, now: T }), { tamam: true })
   assert.deepEqual(meslekSec({ chatJid, userJid: 'a', meslek: futbolcu, now: T + SAAT }), { ayni: true })
 
-  meslekSec({ chatJid, userJid: 'a', meslek: meslekBul('garson'), now: T + 24 * SAAT })
+  const rnd = (min) => min
+  assert.equal(meslekDurumu(chatJid, 'a', T + SAAT).kariyerBitis, T + 24 * SAAT)
+  assert.equal(calis({ chatJid, userJid: 'a', rnd, now: T + 24 * SAAT - 1 }).meslek.kod, 'futbolcu')
+  assert.equal(calis({ chatJid, userJid: 'a', rnd, now: T + 24 * SAAT }).kariyerBitti.kod, 'futbolcu')
+  assert.equal(meslekDurumu(chatJid, 'a', T + 24 * SAAT), null)
+  assert.deepEqual(calis({ chatJid, userJid: 'a', rnd, now: T + 24 * SAAT }), { meslekYok: true })
+
   assert.deepEqual(meslekSec({ chatJid, userJid: 'a', meslek: futbolcu, now: T + 48 * SAAT }), { hakBitti: true })
   assert.equal(meslekSec({ chatJid, userJid: 'a', meslek: meslekBul('kurye'), now: T + 48 * SAAT }).tamam, true)
+
+  // Çalışmadan süresi dolan da kapanır: başka meslek seçince hakkı gider.
+  const grup = ayarla({ b: 0 })
+  meslekSec({ chatJid: grup, userJid: 'b', meslek: futbolcu, now: T })
+  assert.equal(meslekSec({ chatJid: grup, userJid: 'b', meslek: meslekBul('garson'), now: T + 25 * SAAT }).tamam, true)
+  assert.deepEqual(meslekSec({ chatJid: grup, userJid: 'b', meslek: futbolcu, now: T + 26 * SAAT }), { hakBitti: true })
 
   assert.deepEqual(meslekSec({ chatJid: yeniGrup(), userJid: 'a', meslek: futbolcu, now: T }), { tamam: true })
 })

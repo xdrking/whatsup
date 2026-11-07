@@ -490,9 +490,9 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | Avukat | 100.000-400.000 |
 | Doktor | 250.000-350.000 |
 | Pilot | 350.000-450.000 |
-| Futbolcu (tek seferlik) | 0-2.000.000 |
+| Futbolcu (24 saatlik kariyer) | 0-2.000.000 |
 
-Futbolcu bir kez seçilir: bırakan bir daha seçemez.
+Futbolcu kariyeri seçimden 24 saat sonra biter, aynı kişi o grupta bir daha futbolcu olamaz.
 
 **Çete:** kurmak coin kurunun %1'idir, en çok 10 üye olur. Kasaya yatırılan XP'den %5 kesilir, kasadan yalnızca lider çeker. Sıralama üyelerin `.sezon` puanı toplamıdır, haftanın birincisi kasaya 5.000 XP alır.
 
