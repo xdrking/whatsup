@@ -420,19 +420,19 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 | `.coinmarket al 1` | Ürünü coinle alır |
 | `.tüik` | Piyasadaki para, enflasyon, coin kuru ve en zenginler (`.enflasyon` da olur) |
 | `.mülk` | Mülkleri ve kiranı gösterir; `.mülk al ev`, `.mülk sat ev`, `.mülk topla` |
-| `.hacizall` | 30 coin karşılığı toplu haciz yapar |
+| `.hacizall` | 90 coin karşılığı toplu haciz yapar |
 
 | No | Ürün | Fiyat |
 |---|---|---|
-| 1 | 3 fazladan soygun hakkı | 1 coin |
-| 2 | Toplu soygun (`.soygun herkes`, tek kullanımlık) | 2 coin |
-| 3 | 7 günlük soygun kalkanı | 3 coin |
-| 4 | 1 saat oyunlardan 30 kat XP | 5 coin |
-| 5 | 3 günlük haciz sigortası (`.hacizall` işlemez) | 10 coin |
-| 6 | Unvan: Altın Babası | 10 coin |
-| 7 | Unvan: Merkez Bankası Başkanı | 25 coin |
-| 8 | Toplu haciz (`.hacizall` yazınca coin düşer ve işler) | 30 coin |
-| 9 | Unvan: Ekonominin Efendisi | 50 coin |
+| 1 | 3 fazladan soygun hakkı | 3 coin |
+| 2 | Toplu soygun (`.soygun herkes`, tek kullanımlık) | 6 coin |
+| 3 | 7 günlük soygun kalkanı | 9 coin |
+| 4 | 1 saat oyunlardan 30 kat XP | 15 coin |
+| 5 | 3 günlük haciz sigortası (`.hacizall` işlemez) | 30 coin |
+| 6 | Unvan: Altın Babası | 30 coin |
+| 7 | Unvan: Merkez Bankası Başkanı | 75 coin |
+| 8 | Toplu haciz (`.hacizall` yazınca coin düşer ve işler) | 90 coin |
+| 9 | Unvan: Ekonominin Efendisi | 150 coin |
 
 - Ödenen XP yanar. Coin kurun %90'ına geri bozdurulur.
 - Coin devredilmez, soyulmaz, hacizle alınmaz.

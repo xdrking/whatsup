@@ -992,9 +992,9 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 - **`.tüik`:** günlük ve haftalık enflasyon `ekonomi` kayıtlarından çıkar. Kayıt `recordMessage`'da günün ilk mesajıyla yazılır, sohbet başına denetim bellektedir. "Resmi" oran şakadır, gerçeğin yarısıdır.
 - **`.mülk`:** tanımlar `lib/mulk.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Fiyat coindir, satış coin gibi kurun %90'ıdır, kira günün kuruna bağlıdır ve saat başı `bekleyen`e işlenir. Toplanmazsa 24 saatte durur. Kira XP basar. Sahip `.haciz @kişi ev` ile bir tane siler, değeri kasaya girer, kira sahibinde kalır.
 - **Kredi:** açık kredisi olan coin alamaz (`coinAl`), yoksa kredi parası tahsilatın dokunmadığı coine çevrilirdi.
-- **Ürün fiyatları** 1-50 coin arasındadır. Etki alanları key ödülleriyle aynıdır (`soygunHakki`, `kalkanMs`, `bonus`, `unvan`).
+- **Ürün fiyatları** 3-150 coin arasındadır. Coin zaten piyasanın yüzde biri olduğu için XP karşılığı kurla kendiliğinden artar. `.hacizall` fiyatı, alacağı paradan yüksek kalmalı: 1 coin piyasanın %1'idir, haciz en çok %50 alır. Etki alanları key ödülleriyle aynıdır (`soygunHakki`, `kalkanMs`, `bonus`, `unvan`).
 - **`.soygun herkes`:** `topluSoygun()` her üyeye ayrı zar atar (%40, kurbanın %10'u). Hak coinle alındığı için yakalanma cezası yoktur, günlük hak harcanmaz. Kalkan, korunma ve fakir kuralı normal soygunla aynıdır (`kurbanEngeli`). Soyulacak kimse yoksa hak yanmaz.
-- **`.hacizall`:** herkese açıktır, 30 coin yazıldığı an düşer, saklanan hak yoktur (`topluHaciz`). Listede görünür ama `.coinmarket al` ile alınmaz. Bankanın %45'i ve cüzdanın %50'si alıcının cüzdanına geçer. Botun kasasına dokunmaz. `.haciz` ayrı komuttur: yalnızca sahip kullanır, para bota gider. Kalkan korumaz, sigorta korur, bot hariçtir. Alınacak para yoksa coin düşmez.
+- **`.hacizall`:** herkese açıktır, 90 coin yazıldığı an düşer, saklanan hak yoktur (`topluHaciz`). Listede görünür ama `.coinmarket al` ile alınmaz. Bankanın %45'i ve cüzdanın %50'si alıcının cüzdanına geçer. Botun kasasına dokunmaz. `.haciz` ayrı komuttur: yalnızca sahip kullanır, para bota gider. Kalkan korumaz, sigorta korur, bot hariçtir. Alınacak para yoksa coin düşmez.
 - Mesajlardaki XP tutarları `lib/sayi.js:binlik()` ile yazılır. Kopyalanacak komut metninde (`.devret @kişi 1000`) ham sayı kalır, yoksa `.devret` okuyamaz.
 - **`.faizkararı`:** `faiz(chat_jid, oran)`, satır yoksa varsayılan geçerlidir. Sınır 0-50. Kredi hep `KREDI_FAIZ_FARKI` üstündedir. Karar önce gruptaki bütün faizi eski orandan işler, yoksa yeni oran geçmiş saatlere uygulanırdı.
 - **`.teşvik`:** kasadan son 7 günde yazan üyelere eşit dağıtır (`tesvikDagit`), bölünmeyen artık kasada kalır.
@@ -1102,7 +1102,7 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 56. Kumarda büyük kazanç → mesajda `2.000.000` biçimi; `.açıkartırma` sonundaki `.devret` örneği noktasız kalır
 57. `.coinmarket coin 1` → 1.000.000 XP düşer, `.profil` coini gösterir; açık krediyle → reddedilir; `.coin` yazı-tura atmaya devam eder
 58. `.coinmarket al 2` sonra `.soygun herkes` → kalkanlı üye listede yok, bot soyulmaz, hak biter; hakkı olmayan → "hakkın yok"
-59. `.hacizall` → herkesin hesabı ve cüzdanı düşer, para alıcının cüzdanına geçer; 30 coin yoksa hiçbir şey değişmez; sigortalı üye "sigortalı" yazar, parası düşmez
+59. `.hacizall` → herkesin hesabı ve cüzdanı düşer, para alıcının cüzdanına geçer; 90 coin yoksa hiçbir şey değişmez; sigortalı üye "sigortalı" yazar, parası düşmez
 60. `.tüik` → para, kur ve zenginler gelir, bot listede yok; ertesi gün enflasyon yüzdesi görünür; `.coinmarket` aynı kuru yazar
 61. `.coinmarket sat 1` → kurun %90'ı gelir; eksi cüzdan ve coinle `.iflas` → "önce coinlerini boz"
 62. `.mülk al ev` → 5 coin düşer, `.profil`'de görünür; bir saat sonra `.mülk topla` → kira gelir; sahip `.haciz @kişi ev` → ev gider, kasa artar

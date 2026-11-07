@@ -30,9 +30,9 @@ test('binlik: tutarlar noktayla ayrılır', () => {
   assert.ok(sonucSatirlari({ once: 1000000, xp: 3000000, fark: 2000000 })[0].includes('+2.000.000 XP'))
 })
 
-test('coin ürünleri 1-50 coin arasındadır', () => {
-  assert.ok(COIN_URUNLERI.every((u) => u.fiyat >= 1 && u.fiyat <= 50))
-  assert.equal(urun('topluHak').fiyat, 2)
+test('coin ürünleri 3-150 coin arasındadır', () => {
+  assert.ok(COIN_URUNLERI.every((u) => u.fiyat >= 3 && u.fiyat <= 150))
+  assert.equal(urun('topluHak').fiyat, 6)
 })
 
 test('coin alımı: XP yanar, yetmezse hiçbir şey değişmez', () => {
@@ -61,10 +61,10 @@ test('açık krediyle coin alınamaz', () => {
 test('coin market: ürün etkisi yazılır, coin düşer', () => {
   const chatJid = yeniGrup()
   const userJid = 'a@s'
-  xpVer(chatJid, userJid, COIN_FIYATI * 20)
-  coinAl({ chatJid, userJid, adet: 20 })
+  xpVer(chatJid, userJid, COIN_FIYATI * 60)
+  coinAl({ chatJid, userJid, adet: 60 })
 
-  assert.deepEqual(coinMarketAl({ chatJid, userJid, urun: urun('kalkanMs'), now: T }), { bakiye: 17 })
+  assert.deepEqual(coinMarketAl({ chatJid, userJid, urun: urun('kalkanMs'), now: T }), { bakiye: 51 })
   assert.equal(marketDurumu(chatJid, userJid, T).kalkan, T + urun('kalkanMs').kalkanMs)
 
   coinMarketAl({ chatJid, userJid, urun: urun('bonus'), now: T })
@@ -77,15 +77,15 @@ test('coin market: ürün etkisi yazılır, coin düşer', () => {
 
   assert.deepEqual(
     coinMarketAl({ chatJid, userJid, urun: COIN_URUNLERI.at(-1), now: T }),
-    { yetersiz: true, bakiye: 2 },
+    { yetersiz: true, bakiye: 6 },
   )
 })
 
 test('30 kat bonus oyun XP\'sini 30 ile çarpar', () => {
   const chatJid = yeniGrup()
   const userJid = 'a@s'
-  xpVer(chatJid, userJid, COIN_FIYATI * 5)
-  coinAl({ chatJid, userJid, adet: 5 })
+  xpVer(chatJid, userJid, COIN_FIYATI * 15)
+  coinAl({ chatJid, userJid, adet: 15 })
   coinMarketAl({ chatJid, userJid, urun: urun('bonus'), now: T })
   assert.equal(addXp({ chatJid, userJid, amount: 50, at: T + 1 }), 1500)
 })
@@ -96,14 +96,14 @@ test('toplu haciz: banka %45, cüzdan %50 alıcıya geçer, kalkan korumaz', () 
   const haciz = urun('topluHaciz')
   const uygula = (kurbanlar) => topluHaciz({ chatJid, userJid: alici, kurbanlar, urun: haciz, now: T })
 
-  assert.equal(haciz.fiyat, 30)
+  assert.equal(haciz.fiyat, 90)
   assert.deepEqual(uygula(['a@s']), { yetersiz: true, bakiye: 0 })
 
-  xpVer(chatJid, alici, COIN_FIYATI * 30)
-  coinAl({ chatJid, userJid: alici, adet: 30 })
+  xpVer(chatJid, alici, COIN_FIYATI * 90)
+  coinAl({ chatJid, userJid: alici, adet: 90 })
 
   assert.deepEqual(uygula(['bos@s']), { hedefYok: true })
-  assert.equal(coinDurumu(chatJid, alici).bakiye, 30)
+  assert.equal(coinDurumu(chatJid, alici).bakiye, 90)
 
   xpVer(chatJid, 'a@s', 3000)
   bankaYatir({ chatJid, userJid: 'a@s', miktar: 1000, now: T })
@@ -124,8 +124,8 @@ test('toplu haciz: banka %45, cüzdan %50 alıcıya geçer, kalkan korumaz', () 
 test('fazladan soygun hakkı günlük sınırı aşar', () => {
   const chatJid = yeniGrup()
   const hirsiz = 'h@s'
-  xpVer(chatJid, hirsiz, COIN_FIYATI)
-  coinAl({ chatJid, userJid: hirsiz, adet: 1 })
+  xpVer(chatJid, hirsiz, COIN_FIYATI * 3)
+  coinAl({ chatJid, userJid: hirsiz, adet: 3 })
   xpVer(chatJid, hirsiz, 1000)
   coinMarketAl({ chatJid, userJid: hirsiz, urun: urun('soygunHakki'), now: T })
 
@@ -145,8 +145,8 @@ test('toplu soygun: hak ister, kalkanlıyı atlar, kaçan ceza ödetmez', () => 
 
   assert.deepEqual(toplu(() => true, ['a@s']), { hakYok: true })
 
-  xpVer(chatJid, hirsiz, COIN_FIYATI * 2)
-  coinAl({ chatJid, userJid: hirsiz, adet: 2 })
+  xpVer(chatJid, hirsiz, COIN_FIYATI * 6)
+  coinAl({ chatJid, userJid: hirsiz, adet: 6 })
   coinMarketAl({ chatJid, userJid: hirsiz, urun: urun('topluHak'), now: T })
   assert.equal(coinDurumu(chatJid, hirsiz).topluHak, 1)
 
@@ -252,8 +252,8 @@ test('coin bozdurma %90 öder, fazlası reddedilir', () => {
 test('haciz sigortası .hacizall\'ı durdurur, sahibin .haciz\'ini durdurmaz', () => {
   const chatJid = yeniGrup()
   const alici = 'h@s'
-  coinVer(chatJid, alici, 30)
-  coinVer(chatJid, 's@s', 10)
+  coinVer(chatJid, alici, 90)
+  coinVer(chatJid, 's@s', 30)
   coinMarketAl({ chatJid, userJid: 's@s', urun: urun('sigortaMs'), now: T })
   assert.equal(sigortaBitisi(chatJid, 's@s', T), T + urun('sigortaMs').sigortaMs)
 
@@ -268,7 +268,7 @@ test('haciz sigortası .hacizall\'ı durdurur, sahibin .haciz\'ini durdurmaz', (
   assert.equal(hacizEt({ chatJid, userJid: 's@s', miktar: 100, now: T }).xp, 900)
 
   // Süresi biten sigorta korumaz.
-  coinVer(chatJid, alici, 30, T)
+  coinVer(chatJid, alici, 90, T)
   const sonra = topluHaciz({ chatJid, userJid: alici, kurbanlar: ['s@s'], urun: haciz, now: T + 4 * GUN })
   assert.equal(sonra.kurbanlar.length, 1)
 })
