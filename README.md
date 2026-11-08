@@ -215,8 +215,11 @@ Oyun ödülleri coin kuruyla büyür ama yavaş: tablodaki sayı tabandır, kur 
 | `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul | +50 | son tahminden 10 dk |
 | `.karışık` | Harfleri karışmış kelimeyi bul | +50 | 5 dk |
 | `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz | +100 | 5 dk |
+| `.wordle kelime` | Günün 5 harfli kelimesini 6 denemede bul, 🟩🟨⬛ ile ipucu gelir. Herkese aynı kelime, kişi başı 6 hak | 1. denemede +100 … 6.'da +30 | gün boyu |
 
 `.oyunbitir` aktif oyunu kapatır (başlatan kişi, grup admini veya owner).
+
+`.wordle` yanıtla değil komutla oynanır ve oyun yuvasını tutmaz: başka oyun açıkken de oynanır. Tahminler grupta göründüğü için başkasının tahtası ipucudur. Sözlükte olmayan kelime hak yakmaz.
 
 Çark ve market bonusları bu ödüllerin üstüne işler: 10 kat bonusu olan kişi `.quiz`'den 500 XP, `.kimim`'den 1.000 XP alır.
 
@@ -238,6 +241,11 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.kazı 50` | Kazı kazan; 3 aynı sembol 1x-50x |
 | `.blackjack 100` | Krupiyeye karşı 21; mesaja `kart` ya da `dur`. Kazanç 2x, blackjack 2.5x |
 | `.mayın 100` | 12 kutuda 3 mayın; her kutu çarpanı artırır, `çek` ile kazancı alırsın |
+| `.plinko 100 yüksek` | Top 8 sıra çividen düşer; risk `düşük` (0.6x-5x), `orta` (0.4x-13x), `yüksek` (0.2x-29x) |
+| `.crash 100 2.5` | Roket hedef çarpana varmadan patlamazsa hedefin katını alırsın (1.01x-1000x) |
+| `.hilo 100` | Sıradaki kart `yüksek` mi `düşük` mü; bildikçe çarpan katlanır, `geç` kartı değiştirir, `çek` kazancı alır |
+| `.kule 100 zor` | Ejderha kulesi: 8 kat, her katta yumurtayı bul. `kolay` / `orta` / `zor`, tepe 9.58x / 24.6x / 245.76x |
+| `.yarış 100 3` | At yarışı: ilk bahis yarışı açar, 60 sn içinde herkes katılabilir. Oranlar 2.74x-12x |
 | `.vs @kişi 100` | İki kişilik bahis; rakip `kabul` yazarsa yazı-tura, kazanan rakibinkini alır |
 | `.piyango 50` | Ortak havuza XP yatırır, şans yatırılan XP oranındadır. Yalnız `.piyango` havuzu gösterir |
 | `.çekiliş` | Piyangoyu çeker, havuzun tamamı kazananın olur (grup admini veya owner) |
@@ -664,7 +672,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma
 lib/            Paylaşılan yardımcılar (parse, router, sticker, ses, db, stats,
                 bekleme süresi, susturma, hesap makinesi)
 commands/       Her komut ayrı dosya; index.js klasörü otomatik tarar
-games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .blackjack, .mayın…)
+games/          Oyun mantığı ve oyun havuzları (.kelime, .kimim, .quiz, .blackjack, .mayın, .kule, .wordle…)
 panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
 test/           Otomatik testler (npm test)
 data/           İçerik havuzları (JSON) + stats.db (sayaçlar, XP, banka, borsa…) + yedek/
