@@ -73,6 +73,7 @@ lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendi
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
 games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle)
 panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
+scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
 auth/           Baileys oturum dosyaları — GİT'E ASLA GİRMEZ
