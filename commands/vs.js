@@ -4,16 +4,21 @@ import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { kumarEngeli, MIN_BAHIS, MIN_KUMAR_BAKIYESI } from '../lib/kumar.js'
 import { getStats, kumarYasagi } from '../lib/stats.js'
 import { resolveTargets } from '../lib/target.js'
+import { trLower } from '../lib/turkishWords.js'
 import { getGame } from '../games/gameManager.js'
 import { start } from '../games/vs.js'
+
+const TUMU = new Set(['hepsi', 'all', 'hep', 'allin'])
+const YARISI = new Set(['yarısı', 'yarisi', 'yarı', 'yari'])
 
 export default {
   name: 'vs',
   aliases: ['meydan', 'kapış'],
   description: 'Biriyle XP bahsine gir — kazanan rakibinin XP\'sini alır',
-  usage: '.vs @kişi <miktar>  —  bir mesajı yanıtlayarak .vs <miktar>',
+  usage: '.vs @kişi <miktar|hepsi|yarısı>  —  bir mesajı yanıtlayarak .vs <miktar>',
   details: [
     'Örnek: `.vs @ali 100`. Rakip 60 sn içinde botun mesajına `kabul` ya da `red` yazar.',
+    '`hepsi` ve `yarısı` senin cüzdanına göre hesaplanır, rakibin de o kadar XP\'si olmalı.',
     'Kabul ederse yazı-tura atılır: kazanan +100, kaybeden −100 XP.',
     `Kabul edilmeden XP'ye dokunulmaz. En az ${MIN_BAHIS} XP, iki tarafın da XP'si yetmeli.`,
   ],
@@ -27,11 +32,13 @@ export default {
     const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
     if (!metadata) return
 
-    const miktar = Number(args.find((a) => /^\d+$/.test(a)))
     // `args` verilmez: miktar 8+ haneliyse elle yazılmış numara sanılırdı.
     const [hedef] = resolveTargets(parsed)
     const rakip = hedef && uyeKimligiBul(metadata, hedef)
     const xp = getStats(from, sender).xp
+
+    const miktarArg = args.map((a) => trLower(a)).find((a) => /^\d+$/.test(a) || TUMU.has(a) || YARISI.has(a))
+    const miktar = TUMU.has(miktarArg) ? xp : YARISI.has(miktarArg) ? Math.floor(xp / 2) : Number(miktarArg)
 
     let hata = null
     if (!hedef || !Number.isSafeInteger(miktar)) hata = 'Kullanım: `.vs @kişi <miktar>`'
