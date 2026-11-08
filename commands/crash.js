@@ -1,7 +1,7 @@
 import { binlik } from '../lib/sayi.js'
 import { requireGroup } from '../lib/group.js'
 import {
-  argumanlariAyir, CRASH_DONUS, CRASH_EN_AZ, CRASH_EN_COK, crashHedefCoz, crashUc, kumarOyna, MIN_BAHIS,
+  argumanlariAyir, CRASH_DONUS, CRASH_EN_AZ, CRASH_EN_COK, crashHedefCoz, crashUc, kumarOyna, MIN_BAHIS, MIN_KUMAR_BAKIYESI,
 } from '../lib/kumar.js'
 
 /** Roketin yolu: patlama noktasına kadar birkaç ara çarpan. */
@@ -16,10 +16,16 @@ export default {
   description: 'Roket hedef çarpana varmadan patlamazsa kazanırsın',
   usage: '.crash <miktar|hepsi|yarısı> <hedef çarpan>',
   details: [
-    'Roket kalkar, çarpan yükselir ve rastgele bir anda patlar.',
-    'Hedefi baştan söylersin: roket hedefe varırsa bahsin o kadar katını alırsın, önce patlarsa bahis yanar.',
-    `Örnek: \`.crash 1000 2.5\`. Hedef ${CRASH_EN_AZ}x-${binlik(CRASH_EN_COK)}x. Hedef büyüdükçe şans düşer:`,
-    `2x hedefin tutma şansı %${CRASH_DONUS * 50}, 10x hedefin %${CRASH_DONUS * 10}. En az ${MIN_BAHIS} XP.`,
+    '🚀 *Nasıl oynanır*',
+    '1. `.crash <miktar> <hedef>` yaz. Hedef, roketin varmasını beklediğin çarpandır.',
+    '2. Roket 1x\'ten kalkar, çarpan yükselir ve rastgele bir noktada patlar.',
+    '3. Patlamadan hedefe varırsa bahsinin hedef katını alırsın, varamazsa bahis yanar.',
+    'Tek mesajlık oyun: canlı "şimdi çek" yok, hedef otomatik çekimdir.',
+    '📊 *Tutma şansı* (hedef büyüdükçe kazanç artar, şans düşer)',
+    [1.5, 2, 5, 10, 100].map((h) => `${h}x → %${Math.round(CRASH_DONUS * 1000 / h) / 10}`).join('  •  '),
+    '📝 *Örnek*: `.crash 1000 2` → roket 3.4x\'te patlarsa 2.000 XP alırsın, 1.7x\'te patlarsa 1.000 XP gider.',
+    `Hedef ${CRASH_EN_AZ}x-${binlik(CRASH_EN_COK)}x, ondalık \`2.5\` ya da \`2,5\` yazılır. Önce miktar, sonra hedef.`,
+    `En az ${MIN_BAHIS} XP basılır, cüzdanda en az ${MIN_KUMAR_BAKIYESI} XP olmalı.`,
   ],
   category: 'kumar',
   cooldown: 5,

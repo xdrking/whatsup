@@ -1,7 +1,7 @@
 import { requireGroup } from '../lib/group.js'
-import { argumanlariAyir, kumarEngeli, MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
+import { argumanlariAyir, kumarEngeli, MIN_BAHIS, MIN_KUMAR_BAKIYESI, miktarCoz } from '../lib/kumar.js'
 import { getStats, kumarYasagi } from '../lib/stats.js'
-import { ATLAR, atListesi, BAHIS_SURESI_MS, bahisYap, yarisDurumu } from '../games/yaris.js'
+import { ATLAR, atOrani, BAHIS_SURESI_MS, bahisYap, yarisDurumu } from '../games/yaris.js'
 
 export default {
   name: 'yarış',
@@ -9,10 +9,16 @@ export default {
   description: 'At yarışı — herkes aynı koşuya bahis yapar',
   usage: '.yarış <miktar|hepsi|yarısı> <at no>',
   details: [
-    `İlk bahis yarışı açar, ${BAHIS_SURESI_MS / 1000} sn boyunca başkaları da \`.yarış <miktar> <at no>\` ile katılır.`,
-    'Süre dolunca koşu yapılır, kazanan ata basanlar orandaki katı alır. Kişi başı bir bahis.',
-    ...atListesi().split('\n'),
-    `\`.yarış\` tek başına atları ve açık yarışın bahislerini gösterir. En az ${MIN_BAHIS} XP.`,
+    '🏇 *Nasıl oynanır*',
+    '1. `.yarış <miktar> <at no>` yaz. Açık yarış yoksa bu bahis yeni yarışı açar.',
+    `2. ${BAHIS_SURESI_MS / 1000} sn boyunca gruptaki herkes aynı komutla kendi atına basar. Kişi başı bir bahis.`,
+    '3. Süre dolunca atlar koşar. Kazanan ata basan herkes bahsinin oran katını alır, diğerleri bahsini kaybeder.',
+    'Bahis komutla verilir, bota yanıt yazmak gerekmez.',
+    '📊 *Atlar* (oran büyüdükçe kazanma şansı düşer)',
+    ...ATLAR.map((at, i) => `${i + 1}. ${at.ad}  •  ${atOrani(at)}x  •  %${at.sans} şans`),
+    '📝 *Örnek*: `.yarış 1000 4` → Tosun kazanırsa 8.000 XP alırsın, kaybederse 1.000 XP gider.',
+    '`.yarış` tek başına atları ve açık yarışın bahislerini gösterir. `.oyunbitir` koşuyu hemen başlatır, iade yok.',
+    `En az ${MIN_BAHIS} XP basılır, cüzdanda en az ${MIN_KUMAR_BAKIYESI} XP olmalı.`,
   ],
   category: 'kumar',
   cooldown: 5,

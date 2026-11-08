@@ -1,5 +1,5 @@
 import { requireGroup } from '../lib/group.js'
-import { argumanlariAyir, kumarEngeli, MIN_BAHIS, miktarCoz } from '../lib/kumar.js'
+import { argumanlariAyir, kumarEngeli, MIN_BAHIS, MIN_KUMAR_BAKIYESI, miktarCoz } from '../lib/kumar.js'
 import { getStats, kumarYasagi } from '../lib/stats.js'
 import { getGame } from '../games/gameManager.js'
 import { KAT, kuleCarpani, start, ZORLUK, zorlukCoz } from '../games/kule.js'
@@ -10,12 +10,19 @@ export default {
   description: 'Ejderha kulesine tırman, her katta yumurtayı bul',
   usage: '.kule <miktar|hepsi|yarısı> [kolay|orta|zor]',
   details: [
-    `Kule ${KAT} kattır. Her katta botun mesajına kutu numarası yazarsın: yumurtaysa bir kat çıkarsın, ejderhaysa bahis yanar.`,
+    '🐉 *Nasıl oynanır*',
+    `1. \`.kule <miktar> <zorluk>\` yaz, ${KAT} katlı kule çıkar. En alt kattan başlarsın.`,
+    '2. Botun mesajını yanıtlayarak o kattaki kutulardan birinin numarasını yaz.',
+    '3. Altından 🥚 çıkarsa bir kat çıkarsın ve çarpan büyür. 🐉 çıkarsa bahis yanar.',
+    '4. İstediğin an `çek` yaz, ulaştığın katın çarpanını al. Tepeye çıkarsan kendiliğinden çekilir.',
+    'Kulenin yanındaki sayı o katın çarpanıdır.',
+    '📊 *Zorluklar*',
     ...Object.entries(ZORLUK).map(
-      ([ad, z]) => `${ad}: ${z.kutu} kutuda ${z.yumurta} yumurta, tepe ${kuleCarpani(ad, KAT)}x`,
+      ([ad, z]) => `${ad}: ${z.kutu} kutuda ${z.kutu - z.yumurta} ejderha  •  ${[1, 2, 3].map((k) => `${kuleCarpani(ad, k)}x`).join(', ')} … tepe ${kuleCarpani(ad, KAT)}x`,
     ),
-    `\`çek\` kazancı alır. Örnek: \`.kule 1000 zor\`, zorluk yazılmazsa orta.`,
-    `Süre 3 dk; dolarsa kazanç otomatik çekilir. En az ${MIN_BAHIS} XP. Grupta aynı anda tek oyun.`,
+    '📝 *Örnek*: `.kule 1000 kolay` → `2` 🥚 (1.28x) → `4` 🥚 (1.7x) → `çek` → 1.700 XP',
+    'Zorluk yazılmazsa orta. Yalnızca başlatan oynar.',
+    `Süre 3 dk, dolarsa kazanç otomatik çekilir. En az ${MIN_BAHIS} XP basılır, cüzdanda en az ${MIN_KUMAR_BAKIYESI} XP olmalı. Grupta aynı anda tek oyun.`,
   ],
   category: 'kumar',
   cooldown: 5,
