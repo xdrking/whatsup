@@ -1010,7 +1010,7 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 - **`.coindevret`:** bot sahibinin kararıyla eklendi (`coinDevret`). Borçlu (`borcluMu`: kredi ya da eksi cüzdan) gönderemez: coin tahsilata ve hacze girmediği için arkadaşa aktarılıp `.iflas` ile borçtan kaçılırdı. Bota gönderilmez. Tefeci borcu `.devret`'teki gibi engel değildir.
 - **`.iflas`** coin ya da mülk varken reddedilir, yoksa iflastan sonra borçsuz paraya dönerdi.
 - **Sigorta:** yalnızca `.hacizall`'ı durdurur, sahibin `.haciz`'ini durdurmaz.
-- **`.tüik`:** kasa, açık kredi ve gün maaşını da yazar (`maas_gun(chat_jid, day, toplam)`, `calis` yazar). Kasa toplamının gösterilmesi bot sahibinin kararıdır. Günlük ve haftalık enflasyon `ekonomi` kayıtlarından çıkar. Kayıt `recordMessage`'da günün ilk mesajıyla yazılır, sohbet başına denetim bellektedir. "Resmi" oran şakadır, gerçeğin yarısıdır.
+- **`.tüik`:** kasa, açık kredi ve gün maaşını da yazar (`maas_gun(chat_jid, day, toplam)`, `calis` yazar). Kasa toplamının gösterilmesi bot sahibinin kararıdır. Günlük ve haftalık enflasyon `ekonomi` kayıtlarından çıkar. Kayıt `recordMessage`'da günün ilk mesajıyla yazılır, sohbet başına denetim bellektedir. Enflasyon satırları bu açılış kaydına göredir, gün içinde değişmez; bu yüzden bülten anlık değişimi ayrıca yazar ve bozdurma kuru anlık kurun %80'inin altındaysa "bugün bozdurmayın" uyarısı verir (`uyariSatirlari`): hiperenflasyon gününde açılış kuru geride kalınca coin bozdurmak neredeyse değersizdi. "Resmi" oran şakadır, gerçeğin yarısıdır.
 - **`.mülk`:** tanımlar `lib/mulk.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Fiyat coindir, satış coin gibi kurun %90'ıdır, kira günün kuruna bağlıdır ve saat başı `bekleyen`e işlenir. Toplanmazsa 24 saatte durur. Kira XP basar. Sahip `.haciz @kişi ev` ile bir tane siler, değeri kasaya girer, kira sahibinde kalır.
 - **Kredi:** açık kredisi olan coin alamaz (`coinAl`), yoksa kredi parası tahsilatın dokunmadığı coine çevrilirdi.
 - **Ürün fiyatları** 3-150 coin arasındadır. Coin zaten piyasanın yüzde biri olduğu için XP karşılığı kurla kendiliğinden artar. `.hacizall` fiyatı, alacağı paradan yüksek kalmalı: 1 coin piyasanın %1'idir, haciz en çok %50 alır. Etki alanları key ödülleriyle aynıdır (`soygunHakki`, `kalkanMs`, `bonus`, `unvan`).
@@ -1163,7 +1163,7 @@ kumar_oyun(chat_jid, user_jid, oyun, won, lost, games, en_buyuk, en_kotu)   PK(c
 57. `.coinmarket coin 1` → 1.000.000 XP düşer, `.profil` coini gösterir; açık krediyle → reddedilir; `.coin` yazı-tura atmaya devam eder
 58. `.coinmarket al 2` sonra `.soygun herkes` → kalkanlı üye listede yok, bot soyulmaz, hak biter; hakkı olmayan → "hakkın yok"
 59. `.hacizall` → herkesin hesabı ve cüzdanı düşer, para alıcının cüzdanına geçer; 90 coin yoksa hiçbir şey değişmez; sigortalı üye "sigortalı" yazar, parası düşmez
-60. `.tüik` → para, kur ve zenginler gelir, bot listede yok; ertesi gün enflasyon yüzdesi görünür; `.coinmarket` aynı kuru yazar
+60. `.tüik` → para, kur, "bugün açılıştan beri" satırı ve zenginler gelir, bot listede yok; ertesi gün enflasyon yüzdesi görünür; `.coinmarket` aynı kuru yazar
 61. `.coinmarket sat 1` → kurun %90'ı gelir; eksi cüzdan ve coinle `.iflas` → "önce coinlerini boz"
 62. `.mülk al ev` → 15 coin düşer, `.profil`'de görünür; bir saat sonra `.mülk topla` → kira gelir; sahip `.haciz @kişi ev` → ev gider, kasa artar
 63. `.top` → bot tek satır; sahip `.devret @bot 10` → botun satırı artar, ikinci satır açılmaz

@@ -379,3 +379,14 @@ test('botun LID satırı ana hesaba taşınır, devir de oraya gider', () => {
 
   botHesabiniTani({ id: BOT })
 })
+
+test('.tüik uyarıları: gün içi değişim ve düşük bozdurma', async () => {
+  const { uyariSatirlari } = await import('../commands/tuik.js')
+  const [degisim, uyari] = uyariSatirlari({ arz: 8_000_000_000, anlik: 100_000_000_000, kur: 1_000_000_000, bozdurmaKur: 80_000_000 })
+  assert.match(degisim, /\+%1\.150/)
+  assert.match(uyari, /bozdurmayın: bozdurma 72\.000\.000 XP/)
+
+  const normal = uyariSatirlari({ arz: 100, anlik: 90, kur: 1_000_000, bozdurmaKur: 1_000_000 })
+  assert.equal(normal.length, 1)
+  assert.match(normal[0], /−%10/)
+})
