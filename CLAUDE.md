@@ -301,7 +301,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 40 (tamam):** `.vergitop`, `.vergikaçır`, `.tüik` kasa ve maaş satırları. Faz 25 ve Faz 36 bölümlerine işlendi.
 - **Faz 41 (tamam):** `.piyasa` olayları, `.yatırım`, `.tefeci`. Ayrıntı aşağıda.
 - **Faz 42 (tamam):** `.plinko`, `.crash`, `.hilo`, `.kule`, `.yarış`, `.wordle`. Ayrıntı aşağıda.
-- **Faz 43+:** yeni komutlar, her biri ayrı adım
+- **Faz 43 (tamam):** `.istifa`, futbolcu onayı, `.coindevret`. Faz 36 ve Faz 39 bölümlerine işlendi.
+- **Faz 44+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -999,7 +1000,8 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 
 - **Kur:** `coinKuru()` piyasadaki paranın yüzde biridir, en az 1.000.000 XP. Para, üyelerin artı cüzdanı ve bankasıdır (`paraArzi`). Bot sayılmaz: kasa kendi faiziyle büyür. Coin alışı ve gösterilen kur anlıktır (`anlikKur`, bot sahibinin kararı). Bozdurma anlık kurla günün kurundan düşük olanıdır (`bozdurmaKuru`), bu kaldırılmamalı: yoksa kredi çekip kuru %10 farkın üstüne şişiren kişi coinini bozup XP basardı. Maaş, kira, mülk satışı ve vergi günün ilk mesajında sabitlenen kuru kullanır (`gununEkonomisi`).
 - **İşlenmemiş faiz arza yazılır,** veritabanına yazılmadan hesaplanır. Yazılmazsa faizi birikmiş kişi ucuza coin alır, `.banka` ile kuru sıçratır, bozdururdu.
-- **Alış satış:** ödenen XP yanar. `.coinmarket sat` kurun %90'ını öder, bu fark kaldırılmamalı. Coin başkasına devredilmez, soyulmaz, hacizle alınmaz.
+- **Alış satış:** ödenen XP yanar. `.coinmarket sat` kurun %90'ını öder, bu fark kaldırılmamalı. Coin soyulmaz, hacizle alınmaz.
+- **`.coindevret`:** bot sahibinin kararıyla eklendi (`coinDevret`). Borçlu (`borcluMu`: kredi ya da eksi cüzdan) gönderemez: coin tahsilata ve hacze girmediği için arkadaşa aktarılıp `.iflas` ile borçtan kaçılırdı. Bota gönderilmez. Tefeci borcu `.devret`'teki gibi engel değildir.
 - **`.iflas`** coin ya da mülk varken reddedilir, yoksa iflastan sonra borçsuz paraya dönerdi.
 - **Sigorta:** yalnızca `.hacizall`'ı durdurur, sahibin `.haciz`'ini durdurmaz.
 - **`.tüik`:** kasa, açık kredi ve gün maaşını da yazar (`maas_gun(chat_jid, day, toplam)`, `calis` yazar). Kasa toplamının gösterilmesi bot sahibinin kararıdır. Günlük ve haftalık enflasyon `ekonomi` kayıtlarından çıkar. Kayıt `recordMessage`'da günün ilk mesajıyla yazılır, sohbet başına denetim bellektedir. "Resmi" oran şakadır, gerçeğin yarısıdır.
@@ -1036,7 +1038,8 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 - **Başkan:** açılınca günde bir faiz kararı verir (`karar_gun`), sahip sınırsızdır. `.teşvik` ve `.haciz` yalnızca sahibindir.
 - **`.evlen`:** teklif oyun yuvasını 2 dk tutar, yalnızca teklif edilen yanıtlar. Bonus `.çalış`'ta %20 maaş ve yarı fiyat kefalettir. `.günlük`'e konmadı: 50 XP'nin bonusu bu ekonomide bir şey etmez.
 - **`.boşan`:** isteyen, cüzdan ve bankasının %20'sini eşine öder. `.boşan` tutarı gösterir, `.boşan onay` uygular. Borçluyken kapalıdır (`borcluMu`), yoksa evlenip boşanarak para borçtan kaçırılırdı.
-- **`.meslek`:** tanımlar `lib/meslek.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Maaş kurun on binde payıdır, 30 dakikada bir alınır, XP basar. Maaşlar gerçek hayattaki kazanca göredir (bot sahibinin kararı): yazılımcının en düşük maaşı garsonun en yükseğinden az olmamalı, `test/toplum.test.js` denetler. `kariyerSaati` olan meslek (futbolcu, 24 saat) süresi dolunca `aktifMeslek()` ile kişinin ilk meslek okumasında kapanır, `meslek_biten`'e yazılır, bir daha seçilemez. Satır silindiği için kişi hemen yeni meslek seçebilir. `addXp`'den geçmez, sezon puanı yazmaz: maaş mesaj ve oyun puanlarını ezerdi.
+- **`.meslek`:** tanımlar `lib/meslek.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Maaş kurun on binde payıdır, 30 dakikada bir alınır, XP basar. Maaşlar gerçek hayattaki kazanca göredir (bot sahibinin kararı): yazılımcının en düşük maaşı garsonun en yükseğinden az olmamalı, `test/toplum.test.js` denetler. `kariyerSaati` olan meslek (futbolcu, 24 saat) süresi dolunca `aktifMeslek()` ile kişinin ilk meslek okumasında kapanır, `meslek_biten`'e yazılır, bir daha seçilemez. Satır silindiği için kişi hemen yeni meslek seçebilir. Kariyerli meslek `onay` yazılmadan seçilmez (bot sahibinin kararı, insanlar bilmeden futbolcu seçip yakıyordu). `addXp`'den geçmez, sezon puanı yazmaz: maaş mesaj ve oyun puanlarını ezerdi.
+- **`.istifa`:** satır silinmez, `kod` `ISSIZ` olur (`meslekIstifa`): silinseydi istifa edip hemen yeni meslek seçerek 24 saatlik değişim beklemesi atlanırdı. Kariyerli meslekte istifa kariyeri bitirir (`meslek_biten`) ve satırı siler, süresi dolan kariyer gibi yeni meslek hemen seçilir.
 - **`.çete`:** kasa faiz almaz, vergi, soygun ve hacizden muaftır. Bu yüzden yatırırken %5 kesilir ve bota gider, borçlu yatıramaz, kasası dolu lider `.iflas` edemez. Kasa `paraArzi`'ne girer, yoksa yatırmak kuru düşürürdü. Sıralama üyelerin `sezon` puanı toplamıdır, ödül `sezonDurumu()` kapanışında puanlar silinmeden yazılır.
 - **`.dava`:** `.anket` oyları okunamadığı için oylama yanıt tabanlıdır, `setLastMessage` oyda çağrılmaz (`.açıkartırma` gibi). Taraflar oy veremez. Kaybeden öder, davacı da. Miktar sanığın cüzdanının %25'iyle sınırlıdır, çoğunluk tek oylamayla birini sıfırlayamasın. Harç peşin bota gider, `.oyunbitir` dahil hiçbir durumda iade edilmez. Borçlu taraf kabul edilmez, kapanışta da denetlenir: dava para kaçırma yolu olmasın.
 - **Panel:** grup sayfasında Çeteler, Hapishane, Evlilikler, Meslekler, kişi sayfasında Hayat kartı vardır. Veri yoksa kart çıkmaz. Tablolar bot yeni sürümle açılmadan yoktur, `toplumTablolariVar()` bu yüzden vardır. Seçim panele eklenmedi.
@@ -1169,3 +1172,5 @@ Kumarın bütün kuralları (`kumarEngeli`, `kumarYasagi`, karne, bot hesabı) e
 83. `.kule 100 zor` → kutu yanıtı kat çıkarır, ejderhada bahis yanar, `çek` kazancı verir; başkasının yanıtı yok sayılır
 84. `.yarış 100 1`, başkası `.yarış 200 3` → ikisi listede; aynı kişi ikinci bahiste "zaten bastın"; 60 sn sonra pist ve sonuçlar gelir
 85. `.wordle kalem` → renkli satır; sözlükte olmayan kelime hak yakmaz; 6 hak bitince yedinci reddedilir; bot yeniden başlayınca hak tazelenmez
+86. `.meslek seç futbolcu` → uyarı gelir, meslek değişmez; `onay` ile seçilir; `.istifa` → kariyer biter, `.meslek seç kurye` hemen çalışır. Kuryeyken `.istifa` → `.meslek seç garson` kalan süreyi yazar
+87. `.coindevret @kişi 1` → iki coin bakiyesi yazılır; coinden fazlası → "o kadar coinin yok"; açık krediyle → reddedilir; `@bot` → reddedilir

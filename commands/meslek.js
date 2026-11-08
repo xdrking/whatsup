@@ -6,6 +6,16 @@ import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
 const yuzde = (binde) => String(binde / 100).replace('.', ',')
+const KARIYER = MESLEKLER.find((m) => m.kariyerSaati)
+
+/** Kariyerli meslek seçilmeden önce gösterilir: insanlar ne olduğunu bilmeden seçip yakıyordu. */
+const kariyerUyarisi = (m) => [
+  `⚠️ *${m.ad} tek seferlik bir kariyerdir, iyi düşün:*`,
+  `• Maaş her \`.çalış\`ta kurun %${yuzde(m.min)} ile %${yuzde(m.max)} arası rastgele bir pay olarak gelir. Kötü günde hiç para çıkmaz, iyi günde pilotun birkaç katını alırsın.`,
+  `• Kariyer seçtiğin andan ${m.kariyerSaati} saat sonra biter. Bitince ${m.ad.split(' ').pop()} *bir daha asla* seçilemez.`,
+  `• ${m.kariyerSaati} saat boyunca başka mesleğe geçemezsin. \`.istifa\` edersen kariyer o an biter, yine geri dönülmez.`,
+  '• Kariyer bitince hemen yeni meslek seçebilirsin.',
+]
 
 export default {
   name: 'meslek',
@@ -15,7 +25,9 @@ export default {
   details: [
     `Maaş coin kuruna bağlıdır, ${CALISMA_DAKIKASI} dakikada bir \`.çalış\` yazılır.`,
     `Meslek ${MESLEK_DEGISIM_SAATI} saatte bir değiştirilebilir. Maaşlar gerçek hayata göredir, riskli mesleklerde daha çok oynar.`,
-    'Futbolcu kariyeri 24 saat sürer, biten bir daha seçemez.',
+    `\`.istifa\` meslekten çıkarır. Yeni meslek yine ${MESLEK_DEGISIM_SAATI} saat dolunca seçilir.`,
+    ...kariyerUyarisi(KARIYER),
+    `Seçmek için onay gerekir: \`.meslek seç ${KARIYER.adlar[0]} onay\``,
   ],
   category: 'ekonomi',
   ownerOnly: false,
@@ -27,11 +39,21 @@ export default {
       if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
       const ilk = trLower(args[0] || '')
-      const ad = ['seç', 'sec'].includes(ilk) ? args[1] : args[0]
+      const kalan = ['seç', 'sec'].includes(ilk) ? args.slice(1) : args
+      const ad = kalan[0]
+      const onay = ['onay', 'onaylıyorum', 'evet'].includes(trLower(kalan[1] || ''))
 
       if (ad) {
         const meslek = meslekBul(ad)
         if (!meslek) return await yaz(`💼 Hangi meslek? ${MESLEKLER.map((m) => `\`${m.adlar[0]}\``).join(', ')}`)
+
+        if (meslek.kariyerSaati && !onay) {
+          return await yaz([
+            ...kariyerUyarisi(meslek),
+            '',
+            `Yine de istiyorsan: \`.meslek seç ${meslek.adlar[0]} onay\``,
+          ].join('\n'))
+        }
 
         const s = meslekSec({ chatJid: from, userJid: sender, meslek })
         if (!s) return await yaz('💼 İŞKUR şu an kapalı, sonra dene.')
@@ -49,7 +71,7 @@ export default {
       await yaz([
         '💼 *Meslekler*',
         '',
-        ...MESLEKLER.map((m) => `${m.ad} — kurun %${yuzde(m.min)}-%${yuzde(m.max)}'i${m.kariyerSaati ? ` (${m.kariyerSaati} saatlik tek kariyer)` : ''}`),
+        ...MESLEKLER.map((m) => `${m.ad} — kurun %${yuzde(m.min)}-%${yuzde(m.max)}'i${m.kariyerSaati ? ` ⚠️ ${m.kariyerSaati} saatlik tek seferlik kariyer, önce \`.help meslek\`` : ''}`),
         '',
         durum ? `Mesleğin: ${durum.meslek.ad}${durum.kariyerBitis ? `, kariyerin ${sureYaz(durum.kariyerBitis - Date.now())} sonra bitiyor` : ''}` : 'Seçmek için: `.meslek seç kurye`',
       ].join('\n'))

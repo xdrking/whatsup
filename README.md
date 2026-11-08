@@ -431,6 +431,7 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 | `.coinmarket` | Ürünleri, coinini ve XP'ni gösterir (kısa yol `.cm`) |
 | `.coinmarket coin 2` | Cüzdandaki XP ile 2 coin alır |
 | `.coinmarket sat 2` | 2 coini kurun %90'ına bozdurur |
+| `.coindevret @kişi 5` | Kendi coininden 5 tanesini gönderir; kredi borcu ya da eksi cüzdanla kapalı |
 | `.coinmarket al 1` | Ürünü coinle alır |
 | `.tüik` | Piyasadaki para, enflasyon, coin kuru ve en zenginler (`.enflasyon` da olur) |
 | `.mülk` | Mülkleri ve kiranı gösterir; `.mülk al ev`, `.mülk sat ev`, `.mülk topla` |
@@ -449,7 +450,7 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 | 9 | Unvan: Ekonominin Efendisi | 150 coin |
 
 - Ödenen XP yanar. Coin kurun %90'ına geri bozdurulur.
-- Coin devredilmez, soyulmaz, hacizle alınmaz.
+- Coin `.coindevret` ile gönderilir ama soyulmaz, hacizle alınmaz. Borçlu gönderemez.
 - Coin ya da mülk varken `.iflas` yapılamaz, önce satılır.
 - Açık kredin varken coin alamazsın.
 - Toplu soygunda her üye için ayrı zar atılır: %40 şansla XP'sinin %10'u senin olur, başındaki ödül de gelir. Yakalanma cezası yoktur, günlük soygun hakkın harcanmaz.
@@ -476,6 +477,7 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | `.evlen @kişi` | Evlenme teklif eder; `.evlen` durumunu gösterir |
 | `.boşan` | Nafakayı gösterir; `.boşan onay` boşar |
 | `.meslek` | Meslekleri gösterir; `.meslek seç kurye` |
+| `.istifa` | Meslekten çıkar; yeni meslek yine 24 saat dolunca seçilir |
 | `.çalış` | 30 dakikada bir maaş alır |
 | `.çete` | Çeten ve haftalık sıralama; `kur`, `katıl`, `ayrıl`, `yatır`, `çek`, `at` |
 | `.dava @kişi 1000 sebep` | Grup 5 dakika `haklı` ya da `haksız` oylar, kaybeden öder |
@@ -506,7 +508,7 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | Pilot | 350.000-450.000 |
 | Futbolcu (24 saatlik kariyer) | 0-2.000.000 |
 
-Futbolcu kariyeri seçimden 24 saat sonra biter, aynı kişi o grupta bir daha futbolcu olamaz.
+Futbolcu kariyeri seçimden 24 saat sonra biter, aynı kişi o grupta bir daha futbolcu olamaz. Seçmeden önce bot uyarı yazar, `.meslek seç futbolcu onay` gerekir. Futbolcu `.istifa` ederse kariyeri o an biter ve hemen yeni meslek seçebilir; diğer mesleklerde istifa 24 saatlik beklemeyi kısaltmaz.
 
 **Çete:** kurmak coin kurunun %1'idir, en çok 10 üye olur. Kasaya yatırılan XP'den %5 kesilir, kasadan yalnızca lider çeker. Sıralama üyelerin `.sezon` puanı toplamıdır, haftanın birincisi kasaya 5.000 XP alır.
 
