@@ -69,7 +69,7 @@ function sonuclandir(state, sebep) {
   }
 
   const odeme = Math.floor(state.bahis * odemeCarpani(state.oyuncu, state.krupiye))
-  const s = kumarOde({ chatJid: state.chatJid, userJid: state.starterJid, bahis: state.bahis, odeme })
+  const s = kumarOde({ oyun: 'blackjack', chatJid: state.chatJid, userJid: state.starterJid, bahis: state.bahis, odeme })
 
   const lines = ['🃏 *BLACKJACK*', '', ...masa(state, false), '']
   if (sebep) lines.push(sebep)
@@ -140,7 +140,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
   })
 
   if (!state) {
-    kumarOde({ chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
+    kumarOde({ oyun: 'blackjack', chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
     return yaz({ text: '⚠️ Bu grupta zaten aktif bir oyun var.' })
   }
 
@@ -158,7 +158,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
   if (!id) {
     logger.error({ from }, 'Oyun mesajının id\'si alınamadı, blackjack iade edildi')
     endGame(from)
-    kumarOde({ chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
+    kumarOde({ oyun: 'blackjack', chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
     return yaz({ text: 'Oyun başlatılamadı, bahsin iade edildi.' })
   }
   setLastMessage(from, id)

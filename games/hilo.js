@@ -64,7 +64,7 @@ function secenekler(state) {
 
 function sonuclandir(state, odeme, sebep) {
   state.finished = true
-  const s = kumarOde({ chatJid: state.chatJid, userJid: state.starterJid, bahis: state.bahis, odeme })
+  const s = kumarOde({ oyun: 'hilo', chatJid: state.chatJid, userJid: state.starterJid, bahis: state.bahis, odeme })
   const lines = ['🃏 *HI-LO*', '', `Kartlar: ${state.gecmis.join(' ')}`, '', sebep]
   if (s) lines.push(...sonucSatirlari({ once: s.xp - s.fark, xp: s.xp, fark: s.fark }))
   else lines.push('❌ Sonuç yazılamadı.')
@@ -157,7 +157,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
   })
 
   if (!state) {
-    kumarOde({ chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
+    kumarOde({ oyun: 'hilo', chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
     return yaz({ text: '⚠️ Bu grupta zaten aktif bir oyun var.' })
   }
 
@@ -174,7 +174,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
   if (!id) {
     logger.error({ from }, 'Oyun mesajının id\'si alınamadı, hi-lo iade edildi')
     endGame(from)
-    kumarOde({ chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
+    kumarOde({ oyun: 'hilo', chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
     return yaz({ text: 'Oyun başlatılamadı, bahsin iade edildi.' })
   }
   setLastMessage(from, id)

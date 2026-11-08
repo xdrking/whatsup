@@ -36,6 +36,7 @@ export default {
     }
 
     await kumarOyna({
+      oyun: 'plinko',
       sock, msg, from, sender,
       miktarArg: miktar,
       cevir: () => plinkoAt(risk),

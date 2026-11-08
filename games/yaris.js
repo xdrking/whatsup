@@ -57,7 +57,7 @@ function kostur(state) {
   const satirlar = []
   for (const [jid, b] of state.bahisler) {
     const odeme = b.at === kazanan ? Math.floor(b.miktar * oran) : 0
-    const s = kumarOde({ chatJid: state.chatJid, userJid: jid, bahis: b.miktar, odeme })
+    const s = kumarOde({ oyun: 'yarış', chatJid: state.chatJid, userJid: jid, bahis: b.miktar, odeme })
     if (!s) satirlar.push(`${mentionOf(jid)}: ❌ sonuç yazılamadı`)
     else if (s.fark > 0) satirlar.push(`✅ ${mentionOf(jid)}: *+${binlik(s.fark)} XP*`)
     else satirlar.push(`❌ ${mentionOf(jid)}: ${binlik(s.fark)} XP`)
@@ -113,7 +113,7 @@ export async function bahisYap({ sock, msg, from, sender, miktar, at }) {
       },
     })
     if (!state) {
-      kumarOde({ chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
+      kumarOde({ oyun: 'yarış', chatJid: from, userJid: sender, bahis: miktar, odeme: miktar })
       return yaz({ text: '⚠️ Bu grupta zaten aktif bir oyun var.' })
     }
   }

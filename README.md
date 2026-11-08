@@ -215,6 +215,7 @@ Oyun ödülleri coin kuruyla büyür ama yavaş: tablodaki sayı tabandır, kur 
 | `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul | +50 | son tahminden 10 dk |
 | `.karışık` | Harfleri karışmış kelimeyi bul | +50 | 5 dk |
 | `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz | +100 | 5 dk |
+| `.tabu` | Yazan kişi anlatıcı olur, kelime ve yasaklı sözcükler ona özelden gelir. İpucu ve tahminler tabu mesajına yanıt olarak yazılır, yasaklı sözcük oyunu bitirir | bilen +40, anlatan +20 | 3 dk |
 | `.wordle kelime` | Günün 5 harfli kelimesini grupça bul: tek ortak tahta, 🟩🟨⬛ ile ipucu, ilk bilen kazanır ve kelime o gün kapanır. Kişi başı 3 hak | grup 1 tahminde bulursa +100 … 6+ tahminde +30 | gün boyu |
 
 `.oyunbitir` aktif oyunu kapatır (başlatan kişi, grup admini veya owner).
@@ -250,6 +251,7 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.piyango 50` | Ortak havuza XP yatırır, şans yatırılan XP oranındadır. Yalnız `.piyango` havuzu gösterir |
 | `.çekiliş` | Piyangoyu çeker, havuzun tamamı kazananın olur (grup admini veya owner) |
 | `.kumartop` | Kumarda en çok kazananlar ve kaybedenler |
+| `.kumarkarnem` | Kendi kumar geçmişin: oyun oyun net sonuç, en büyük vurgun, kasaya kaptırılan |
 
 Bota karşı oynanan kumarda kaybedilen XP, banka kesintisi, servet vergisi ve borsa komisyonu QR ile bağlı numaranın hesabına gider. `.vs` ve `.piyango` hariçtir, oradaki kayıp diğer oyuncuya geçer. Bakiye yalnızca `.top`'ta görünür.
 
@@ -434,6 +436,7 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 | `.coindevret @kişi 5` | Kendi coininden 5 tanesini gönderir; kredi borcu ya da eksi cüzdanla kapalı |
 | `.coinmarket al 1` | Ürünü coinle alır |
 | `.tüik` | Piyasadaki para, enflasyon, coin kuru ve en zenginler (`.enflasyon` da olur) |
+| `.servet` | Cüzdan, banka, coin, mülk, hisse, yatırım ve borçlarla net servet. `.servet top` gerçek zengin sıralaması |
 | `.mülk` | Mülkleri ve kiranı gösterir; `.mülk al ev`, `.mülk sat ev`, `.mülk topla` |
 | `.hacizall` | 90 coin karşılığı toplu haciz yapar |
 

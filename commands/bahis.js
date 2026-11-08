@@ -27,6 +27,7 @@ export default {
     const yuz = yuzCoz(secim) || (Math.random() < 0.5 ? 'Yazı' : 'Tura')
 
     await kumarOyna({
+      oyun: 'bahis',
       sock, msg, from, sender,
       miktarArg: miktar,
       cevir: () => yaziTura(yuz),

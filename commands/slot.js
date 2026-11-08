@@ -20,6 +20,7 @@ export default {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     await kumarOyna({
+      oyun: 'slot',
       sock, msg, from, sender,
       miktarArg: args[0],
       cevir: () => slotCevir(),

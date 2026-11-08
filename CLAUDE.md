@@ -71,7 +71,7 @@ kategori, ad çakışması, `details` biçimi ve `data/*.json` hatalarını yaka
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
-games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle)
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu)
 panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
 scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
@@ -143,7 +143,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
-| `lib/db.js` + `lib/stats.js` | kumar karnesi ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | kumar karnesi (toplam ve oyun başına) ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | coin bakiyesi, toplu soygun hakkı, sigorta, mülkler, günlük kur | `data/stats.db` (kalıcı) |
@@ -306,7 +306,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 42 (tamam):** `.plinko`, `.crash`, `.hilo`, `.kule`, `.yarış`, `.wordle`. Ayrıntı aşağıda.
 - **Faz 43 (tamam):** `.istifa`, futbolcu onayı, `.coindevret`. Faz 36 ve Faz 39 bölümlerine işlendi.
 - **Faz 44 (tamam):** yazılı tutarlar (`50 milyon`) ve `.devret hepsi`. Komut sözleşmesindeki `args` maddesine işlendi.
-- **Faz 45+:** yeni komutlar, her biri ayrı adım
+- **Faz 45 (tamam):** `.servet`, `.kumarkarnem`, `.tabu`. Ayrıntı aşağıda.
+- **Faz 46+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1077,6 +1078,16 @@ Kumarın bütün kuralları (`kumarEngeli`, `kumarYasagi`, karne, bot hesabı) e
 - **`.yarış`:** oyun yuvasını 60 sn tutar. Bahis yanıtla değil komutla verilir (`lastMessageId` hep null), kişi başı bir bahis. Oranlar sabit ve bota karşıdır, her atın beklenen dönüşü %96'dır: havuz paylaşımı olsaydı tek kişinin bastığı yarışta karşı taraf olmazdı. Kazanan önce çekilir, pist ona göre çizilir. Koşu bitip sonuç gönderilirken gelen bahis reddedilir (`finished`), yoksa ödenmeyecek bir bahis alınırdı. `.oyunbitir` koşuyu hemen yapar, iade yoktur.
 - **`.wordle`:** oyun yuvasını tutmaz, komutla oynanır. Kelime `games/kelimeler.json`'daki 5 harfli kelimelerden `fnv1a(wordle|gün)` ile seçilir, her grupta aynıdır. **Tahta gruba aittir:** herkes aynı tahtaya yazar, ilk bilen ödülü alır ve kelime o gün kapanır (`wordle_grup.cozen`). Kişi tahtası olmaz: tahminler grupta göründüğü için bilenin mesajı kopyalanıp herkes ödül alıyordu (bu hata bir kez yapıldı). Kişi başı günde 3 hak (`wordle`), tek kişi bütün tahminleri yapamasın. Ödül gruptaki toplam tahmin sayısına göre azalır (100 → 30 taban, `oyunOdulu`). Havuzda olmayan tahmin TDK'de doğrulanır, servis yoksa hak yanmaz. Hak ve çözen veritabanındadır, yeniden başlatma hak tazelemesin diye. Tahminler saklanmaz, tahta satırları yalnızca bellektedir. Sayım TDK isteğinden sonra `wordleKaydet()` transaction'ında yeniden denetlenir: bu arada başkası bilmiş olabilir.
 
+### Faz 45 — `.servet`, `.kumarkarnem`, `.tabu`
+
+```
+kumar_oyun(chat_jid, user_jid, oyun, won, lost, games, en_buyuk, en_kotu)   PK(chat_jid,user_jid,oyun)
+```
+
+- **`.servet`:** `servetHesapla()` hiçbir şey yazmaz; faiz, kira ve kredi faizi yalnızca gösterim için hesaplanır (panel gibi). Her şey bugün nakde çevrilse ne edeceğiyle sayılır: coin `bozdurmaKuru`, mülk satış fiyatı, hisse son işlenen fiyat (borsa ilerletilmez). Çete kasası kişinin değildir, sayılmaz. `.servet top` bot hariç bütün üyeleri hesaplar, kurlar bir kez okunur.
+- **`.kumarkarnem`:** `kumarKaydet()`'e verilen `oyun` adı `kumar_oyun`'a yazılır. Yeni kumar oyunu `kumarOyna({ oyun })` ya da `kumarOde({ oyun })` ile adını vermeli, yoksa yalnızca toplamda görünür. Tablodan önceki oyunlar dökümde yoktur. "Kasaya kaptırılan" `.vs` ve `.piyango` dışındaki oyunların netidir.
+- **`.tabu`:** kart anlatana özelden gider (bot sahibinin onayıyla): mesajı anlatanın kendi komutu tetikler. `senderPn`'e gönderilir, LID'e özel mesaj her zaman ulaşmıyor. Gönderilemezse oyun kapanır. İpucu ve tahminler aynı tabu mesajına yanıttır, `setLastMessage` yalnızca başta çağrılır (`.açıkartırma` gibi). Anlatanın yanıtı ipucudur, yasaklı sözcük (4+ harfliler ekli haliyle, kısalar tam) oyunu bitirir. Anlatan da ödül alır ama bilenden az: kelimeyi özelden arkadaşına söyleyip XP kasmak cazip olmasın, bekleme süresi bu yüzden 5 dk. Kartlar `games/tabu.json`'dadır (`[{ kelime, yasak[] }]`, elle yazılır).
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1180,3 +1191,6 @@ Kumarın bütün kuralları (`kumarEngeli`, `kumarYasagi`, karne, bot hesabı) e
 85. `.wordle kalem` → ortak tahtaya satır eklenir, yazanın adıyla; 3 hak bitince dördüncü reddedilir; biri bilince başkası aynı kelimeyi yazarsa "… bildi" der, XP almaz; bot yeniden başlayınca hak tazelenmez
 86. `.meslek seç futbolcu` → uyarı gelir, meslek değişmez; `onay` ile seçilir; `.istifa` → kariyer biter, `.meslek seç kurye` hemen çalışır. Kuryeyken `.istifa` → `.meslek seç garson` kalan süreyi yazar
 87. `.coindevret @kişi 1` → iki coin bakiyesi yazılır; coinden fazlası → "o kadar coinin yok"; açık krediyle → reddedilir; `@bot` → reddedilir
+88. `.servet` → cüzdan, banka, coin, mülk satırları ve net; `.servet top` → bot yok, coinli kişi `.tüik`'ten farklı sırada olabilir; `.servet @bot` sıradan üyeye "gizli"
+89. `.slot 100` ve `.mayın 100` sonrası `.kumarkarnem` → iki oyun ayrı satırda, en büyük vurgun ve kasaya kaptırılan yazılır
+90. `.tabu` → kart özelden gelir, grupta tabu mesajı; anlatan yasaklı sözcüğü yanıtlarsa "TABU!"; başkası kelimeyi yanıtlarsa ikisi de XP alır; anlatan `pas` → yeni kart özelden

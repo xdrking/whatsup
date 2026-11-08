@@ -46,6 +46,7 @@ export default {
     }
 
     await kumarOyna({
+      oyun: 'crash',
       sock, msg, from, sender,
       miktarArg: miktar,
       cevir: () => crashUc(hedef),

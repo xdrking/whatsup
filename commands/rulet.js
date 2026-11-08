@@ -38,6 +38,7 @@ export default {
     }
 
     await kumarOyna({
+      oyun: 'rulet',
       sock, msg, from, sender,
       miktarArg: miktar,
       cevir: () => ruletCevir(secim),

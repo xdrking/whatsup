@@ -19,6 +19,7 @@ export default {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     await kumarOyna({
+      oyun: 'kazı',
       sock, msg, from, sender,
       miktarArg: argumanlariAyir(args).miktar,
       cevir: () => kaziCevir(),
