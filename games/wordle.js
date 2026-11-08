@@ -1,4 +1,5 @@
 import { binlik } from '../lib/sayi.js'
+import { displayName, mentionOf } from '../lib/target.js'
 import { readFile } from 'node:fs/promises'
 import logger from '../lib/logger.js'
 import { fnv1a } from '../lib/hash.js'
@@ -7,14 +8,15 @@ import { oyunOdulu, oyunTutari, wordleDurumu, wordleKaydet } from '../lib/stats.
 import { isValidTurkishWord, trLower, trUpper, WordServiceError } from '../lib/turkishWords.js'
 
 export const HARF = 5
-export const HAK = 6
-/** Taban ödül, kaçıncı denemede bildiğine göre; XP'ye `oyunOdulu` kurla çevirir. */
+/** Kişi başı günlük tahmin. Tahta ortak olduğu için tek kişi bütün tahminleri yapamasın diye sınırlıdır. */
+export const HAK = 3
+/** Taban ödül, gruptaki toplam tahmin sayısına göre; XP'ye `oyunOdulu` kurla çevirir. */
 export const ODULLER = [100, 80, 60, 50, 40, 30]
 
 const VERI = new URL('./kelimeler.json', import.meta.url)
 const TR_HARF = /^[abcçdefgğhıijklmnoöprsştuüvyz]+$/
 
-/** Tahtalar yalnızca bellektedir, bot yeniden başlarsa eski satırlar görünmez; hak ve çözüm veritabanındadır. */
+/** Grup tahtası yalnızca bellektedir, bot yeniden başlarsa eski satırlar görünmez; hak ve çözüm veritabanındadır. */
 const tahtalar = new Map()
 
 let havuz = null
@@ -56,47 +58,48 @@ export function degerlendir(tahmin, hedef) {
 
 const harfSatiri = (kelime) => [...trUpper(kelime)].join(' ')
 
-function tahtaAl(anahtar, gun) {
-  const t = tahtalar.get(anahtar)
+export const oduluHesapla = (toplam) => ODULLER[Math.min(toplam, ODULLER.length) - 1]
+
+function tahtaAl(from, gun) {
+  const t = tahtalar.get(from)
   if (t?.gun === gun) return t
   const yeni = { gun, satirlar: [] }
-  tahtalar.set(anahtar, yeni)
+  tahtalar.set(from, yeni)
   return yeni
 }
 
 /**
- * `.wordle` gövdesi; mesaj nesnesi döner, gönderme komutta yapılır.
+ * `.wordle` gövdesi; mesaj nesnesi döner, gönderme komutta yapılır. Tahta gruba aittir:
+ * ilk bilen kazanır ve kelime o gün kapanır, bilenin mesajını kopyalamak bir şey kazandırmaz.
  * @param {string} [tahmin]  boşsa yalnızca durum gösterilir
  */
 export async function wordleOyna({ from, sender, tahmin, now = new Date() }) {
   const gun = istanbulDay(now)
-  const anahtar = `${from}|${sender}`
   const liste = await havuzuYukle()
   const hedef = gununKelimesi(liste, gun)
+  const tahta = tahtaAl(from, gun)
   const durum = wordleDurumu(from, sender, gun)
-  const tahta = tahtaAl(anahtar, gun)
 
   const baslik = `🟩 *WORDLE*  •  ${gun}`
-  const ozet = () => tahta.satirlar.join('\n')
+  const kapali = (cozen) => ({
+    text: `✅ Bugünkü kelimeyi ${mentionOf(cozen)} bildi: *${trUpper(hedef)}*. Yeni kelime yarın.`,
+    mentions: [cozen],
+  })
+
+  if (durum.cozen) return kapali(durum.cozen)
 
   if (!tahmin) {
     const lines = [baslik, '']
-    if (tahta.satirlar.length) lines.push(ozet(), '')
-    if (durum.cozuldu) lines.push(`✅ Bugünkü kelimeyi ${durum.deneme}. denemede bildin.`)
-    else if (durum.deneme >= HAK) lines.push('❌ Bugünkü hakların bitti. Yeni kelime yarın.')
-    else {
-      lines.push(
-        `${HARF} harfli Türkçe kelimeyi ${HAK} denemede bul: \`.wordle kelime\``,
-        '🟩 doğru yer  🟨 kelimede var, yeri yanlış  ⬛ yok',
-        `Kalan hak: ${HAK - durum.deneme}  •  İlk denemede bilirsen ${binlik(oyunTutari(from, ODULLER[0]))} XP`,
-      )
-    }
-    lines.push(`👥 Bugün bilen: ${durum.cozenler}`)
+    if (tahta.satirlar.length) lines.push(...tahta.satirlar, '')
+    lines.push(
+      `${HARF} harfli Türkçe kelimeyi grupça bulun, ilk bilen kazanır: \`.wordle kelime\``,
+      '🟩 doğru yer  🟨 kelimede var, yeri yanlış  ⬛ yok',
+      `Senin kalan hakkın: ${Math.max(0, HAK - durum.deneme)}  •  Şu an bilene ${binlik(oyunTutari(from, oduluHesapla(durum.toplam + 1)))} XP`,
+    )
     return { text: lines.join('\n') }
   }
 
-  if (durum.cozuldu) return { text: '✅ Bugünkü kelimeyi zaten bildin. Yeni kelime yarın.' }
-  if (durum.deneme >= HAK) return { text: '❌ Bugünkü hakların bitti. Yeni kelime yarın.' }
+  if (durum.deneme >= HAK) return { text: `❌ Bugünkü ${HAK} hakkını kullandın. Diğerleri bulabilir, yeni kelime yarın.` }
 
   const kelime = trLower(tahmin)
   if ([...kelime].length !== HARF || !TR_HARF.test(kelime)) {
@@ -117,19 +120,17 @@ export async function wordleOyna({ from, sender, tahmin, now = new Date() }) {
   const dogru = kelime === hedef
   const kayit = wordleKaydet({ chatJid: from, userJid: sender, gun, dogru, hak: HAK })
   if (!kayit) return { text: '🟩 Wordle şu an kapalı, sonra dene.' }
-  if (!kayit.kabul) return { text: kayit.cozuldu ? '✅ Bugünkü kelimeyi zaten bildin.' : '❌ Bugünkü hakların bitti.' }
+  if (kayit.kapandi) return kapali(kayit.kapandi)
+  if (kayit.hakYok) return { text: `❌ Bugünkü ${HAK} hakkını kullandın.` }
 
-  tahta.satirlar.push(`${degerlendir(kelime, hedef)}  ${harfSatiri(kelime)}`)
-  const lines = [baslik, '', ozet(), '']
+  tahta.satirlar.push(`${degerlendir(kelime, hedef)}  ${harfSatiri(kelime)}  (${displayName(sender)})`)
+  const lines = [baslik, '', ...tahta.satirlar, '']
 
   if (dogru) {
-    const kazanc = oyunOdulu({ chatJid: from, userJid: sender, amount: ODULLER[kayit.deneme - 1] })
-    lines.push(`🎉 ${kayit.deneme}/${HAK} denemede bildin! ⭐ +${binlik(kazanc)} XP`)
-  } else if (kayit.deneme >= HAK) {
-    // Kelime yazılmaz: aynı kelimeyle oynayan diğerleri için spoiler olurdu.
-    lines.push('❌ Hakların bitti. Yeni kelime yarın.')
-  } else {
-    lines.push(`Kalan hak: ${HAK - kayit.deneme}`)
+    const kazanc = oyunOdulu({ chatJid: from, userJid: sender, amount: oduluHesapla(kayit.toplam) })
+    lines.push(`🎉 ${mentionOf(sender)} bildi! Grup ${kayit.toplam} tahminde buldu. ⭐ +${binlik(kazanc)} XP`, 'Yeni kelime yarın.')
+    return { text: lines.join('\n'), mentions: [sender] }
   }
+  lines.push(`Senin kalan hakkın: ${HAK - kayit.deneme}`)
   return { text: lines.join('\n') }
 }

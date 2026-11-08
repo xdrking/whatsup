@@ -215,11 +215,11 @@ Oyun ödülleri coin kuruyla büyür ama yavaş: tablodaki sayı tabandır, kur 
 | `.tahmin` | Botun tuttuğu 1-100 arası sayıyı bul | +50 | son tahminden 10 dk |
 | `.karışık` | Harfleri karışmış kelimeyi bul | +50 | 5 dk |
 | `.sayıoyunu` | 5 sayıyla hedefe ulaşan işlemi yaz | +100 | 5 dk |
-| `.wordle kelime` | Günün 5 harfli kelimesini 6 denemede bul, 🟩🟨⬛ ile ipucu gelir. Herkese aynı kelime, kişi başı 6 hak | 1. denemede +100 … 6.'da +30 | gün boyu |
+| `.wordle kelime` | Günün 5 harfli kelimesini grupça bul: tek ortak tahta, 🟩🟨⬛ ile ipucu, ilk bilen kazanır ve kelime o gün kapanır. Kişi başı 3 hak | grup 1 tahminde bulursa +100 … 6+ tahminde +30 | gün boyu |
 
 `.oyunbitir` aktif oyunu kapatır (başlatan kişi, grup admini veya owner).
 
-`.wordle` yanıtla değil komutla oynanır ve oyun yuvasını tutmaz: başka oyun açıkken de oynanır. Tahminler grupta göründüğü için başkasının tahtası ipucudur. Sözlükte olmayan kelime hak yakmaz.
+`.wordle` yanıtla değil komutla oynanır ve oyun yuvasını tutmaz: başka oyun açıkken de oynanır. Sözlükte olmayan kelime hak yakmaz.
 
 Çark ve market bonusları bu ödüllerin üstüne işler: 10 kat bonusu olan kişi `.quiz`'den 500 XP, `.kimim`'den 1.000 XP alır.
 

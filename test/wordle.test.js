@@ -1,11 +1,11 @@
-// .wordle: renk kuralı, günün kelimesi ve hak sayacı.
+// .wordle: renk kuralı, günün kelimesi, ortak tahta ve hak sayacı.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
-const { degerlendir, gununKelimesi, HAK } = await import('../games/wordle.js')
+const { degerlendir, gununKelimesi, HAK, ODULLER, oduluHesapla } = await import('../games/wordle.js')
 const { wordleDurumu, wordleKaydet } = await import('../lib/stats.js')
 
 test('renkler: yerinde yeşil, yeri yanlış sarı, fazla tekrar siyah', () => {
@@ -23,16 +23,25 @@ test('günün kelimesi: aynı gün aynı, gün değişince seçim değişebilir'
   assert.ok(new Set(gunler.map((g) => gununKelimesi(liste, g))).size > 1)
 })
 
-test('hak: 6 yanlıştan sonra kabul edilmez, çözülen gün kapanır, yeni gün sıfırlanır', () => {
+test('hak: kişi başı sınırlı, ilk bilen günü kapatır, yeni gün sıfırlanır', () => {
   const chatJid = 'g@g.us'
-  const userJid = 'w@s.whatsapp.net'
+  const gun = '2026-11-08'
   for (let i = 1; i <= HAK; i += 1) {
-    assert.deepEqual(wordleKaydet({ chatJid, userJid, gun: '2026-11-08', dogru: false, hak: HAK }), { kabul: true, deneme: i, cozuldu: false })
+    assert.deepEqual(wordleKaydet({ chatJid, userJid: 'a', gun, dogru: false, hak: HAK }), { kabul: true, deneme: i, toplam: i })
   }
-  assert.equal(wordleKaydet({ chatJid, userJid, gun: '2026-11-08', dogru: true, hak: HAK }).kabul, false)
+  assert.deepEqual(wordleKaydet({ chatJid, userJid: 'a', gun, dogru: true, hak: HAK }), { hakYok: true })
 
-  assert.equal(wordleDurumu(chatJid, userJid, '2026-11-09').deneme, 0)
-  assert.equal(wordleKaydet({ chatJid, userJid, gun: '2026-11-09', dogru: true, hak: HAK }).cozuldu, true)
-  assert.equal(wordleKaydet({ chatJid, userJid, gun: '2026-11-09', dogru: false, hak: HAK }).kabul, false)
-  assert.deepEqual(wordleDurumu(chatJid, userJid, '2026-11-09'), { deneme: 1, cozuldu: true, cozenler: 1 })
+  assert.deepEqual(wordleKaydet({ chatJid, userJid: 'b', gun, dogru: true, hak: HAK }), { kabul: true, deneme: 1, toplam: HAK + 1 })
+  // Bilenin mesajını kopyalayan kazanamaz: gün kapandı.
+  assert.deepEqual(wordleKaydet({ chatJid, userJid: 'c', gun, dogru: true, hak: HAK }), { kapandi: 'b' })
+  assert.deepEqual(wordleDurumu(chatJid, 'c', gun), { deneme: 0, toplam: HAK + 1, cozen: 'b' })
+
+  assert.deepEqual(wordleDurumu(chatJid, 'a', '2026-11-09'), { deneme: 0, toplam: 0, cozen: null })
+  assert.equal(wordleKaydet({ chatJid, userJid: 'c', gun: '2026-11-09', dogru: true, hak: HAK }).kabul, true)
+  assert.equal(wordleKaydet({ chatJid: 'baska@g.us', userJid: 'c', gun: '2026-11-09', dogru: true, hak: HAK }).kabul, true)
+})
+
+test('ödül: toplam tahmin arttıkça azalır, tabanda durur', () => {
+  assert.equal(oduluHesapla(1), ODULLER[0])
+  assert.equal(oduluHesapla(50), ODULLER.at(-1))
 })

@@ -137,8 +137,8 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
 | `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.hilo`, `.kule`, `.yarış`, `.vs`, `.evlen` teklifi, `.dava`…) | bellek (süreçle ölür) |
-| `games/wordle.js` | kişinin bugünkü wordle tahtası (tahmin satırları) | bellek (süreçle ölür) |
-| `lib/db.js` + `lib/stats.js` | `.wordle` günlük deneme sayısı ve çözüldü mü | `data/stats.db` (kalıcı) |
+| `games/wordle.js` | grubun bugünkü wordle tahtası (tahmin satırları) | bellek (süreçle ölür) |
+| `lib/db.js` + `lib/stats.js` | `.wordle` kişi başı günlük hak, grubun toplam tahmini ve bileni | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
@@ -1062,6 +1062,7 @@ Kurallar `lib/olay.js`, `lib/yatirim.js`, `lib/tefeci.js`'te saftır, yazma `lib
 
 ```
 wordle(chat_jid, user_jid, day, deneme, cozuldu)   PK(chat_jid,user_jid)
+wordle_grup(chat_jid, day, toplam, cozen)          PK(chat_jid)
 ```
 
 Kumarın bütün kuralları (`kumarEngeli`, `kumarYasagi`, karne, bot hesabı) eski oyunlarla aynıdır. Her oyunun beklenen dönüşü %90-100 arasındadır, `test/kumar3.test.js` denetler.
@@ -1069,7 +1070,7 @@ Kumarın bütün kuralları (`kumarEngeli`, `kumarYasagi`, karne, bot hesabı) e
 - **`.plinko`, `.crash`:** tek adımlıdır, `kumarOyna()` kullanır, kurallar `lib/kumar.js`'tedir. Plinko 8 sıradır, kutu sağa sapma sayısıdır (binom). WhatsApp'ta canlı "şimdi çek" yazılamadığı için crash'te hedef baştan verilir. Patlama noktası `P(X ≥ x) = 0.96 / x` ile çekilir, bu yüzden her hedefin beklenen dönüşü aynıdır.
 - **`.hilo`, `.kule`:** `.mayın` gibi oyun katmanındadır (`games/`), bahis `xpCek()` ile baştan alınır, zaman aşımı ve `.oyunbitir` kazancı çeker. Hi-lo'da deste sonsuzdur (her kart bağımsız), "yüksek" ve "düşük" eşit kartı da kapsar. Olasılığı 1 olan tahmin (As'ta yüksek) reddedilir. Çarpan her tahminde %97 ile çarpılır, `HILO_TAVAN`'da (1000x) kendiliğinden çekilir: tavan olmasa çarpan sınırsız büyürdü. Kule 8 kattır, çarpanı `.mayın` gibi adil oranın %96'sıdır. "Uzman" zorluğu (3 kutuda 1 yumurta) bilerek yok: tepe çarpanı 6.000x'i geçiyordu.
 - **`.yarış`:** oyun yuvasını 60 sn tutar. Bahis yanıtla değil komutla verilir (`lastMessageId` hep null), kişi başı bir bahis. Oranlar sabit ve bota karşıdır, her atın beklenen dönüşü %96'dır: havuz paylaşımı olsaydı tek kişinin bastığı yarışta karşı taraf olmazdı. Kazanan önce çekilir, pist ona göre çizilir. Koşu bitip sonuç gönderilirken gelen bahis reddedilir (`finished`), yoksa ödenmeyecek bir bahis alınırdı. `.oyunbitir` koşuyu hemen yapar, iade yoktur.
-- **`.wordle`:** oyun yuvasını tutmaz, komutla oynanır. Kelime `games/kelimeler.json`'daki 5 harfli kelimelerden `fnv1a(wordle|gün)` ile seçilir, her grupta aynıdır. Havuzda olmayan tahmin TDK'de doğrulanır (`isValidTurkishWord`), servis yoksa hak yanmaz. Hak ve çözüm `wordle` tablosundadır, yeniden başlatma hak tazelemesin diye. Tahminler saklanmaz, tahta yalnızca bellektedir. Hak sayımı TDK isteğinden sonra `wordleKaydet()` transaction'ında yeniden denetlenir. Hak bitince kelime yazılmaz: diğerleri için spoiler olurdu. Ödül `oyunOdulu()` ile verilir (1. denemede 100 taban, 6.'da 30).
+- **`.wordle`:** oyun yuvasını tutmaz, komutla oynanır. Kelime `games/kelimeler.json`'daki 5 harfli kelimelerden `fnv1a(wordle|gün)` ile seçilir, her grupta aynıdır. **Tahta gruba aittir:** herkes aynı tahtaya yazar, ilk bilen ödülü alır ve kelime o gün kapanır (`wordle_grup.cozen`). Kişi tahtası olmaz: tahminler grupta göründüğü için bilenin mesajı kopyalanıp herkes ödül alıyordu (bu hata bir kez yapıldı). Kişi başı günde 3 hak (`wordle`), tek kişi bütün tahminleri yapamasın. Ödül gruptaki toplam tahmin sayısına göre azalır (100 → 30 taban, `oyunOdulu`). Havuzda olmayan tahmin TDK'de doğrulanır, servis yoksa hak yanmaz. Hak ve çözen veritabanındadır, yeniden başlatma hak tazelemesin diye. Tahminler saklanmaz, tahta satırları yalnızca bellektedir. Sayım TDK isteğinden sonra `wordleKaydet()` transaction'ında yeniden denetlenir: bu arada başkası bilmiş olabilir.
 
 ## Elle Doğrulama
 
@@ -1171,6 +1172,6 @@ Kumarın bütün kuralları (`kumarEngeli`, `kumarYasagi`, karne, bot hesabı) e
 82. `.hilo 100` → `yüksek`/`düşük` kartı açar, `geç` çarpanı değiştirmez, `çek` kazancı verir; As'ta `yüksek` reddedilir
 83. `.kule 100 zor` → kutu yanıtı kat çıkarır, ejderhada bahis yanar, `çek` kazancı verir; başkasının yanıtı yok sayılır
 84. `.yarış 100 1`, başkası `.yarış 200 3` → ikisi listede; aynı kişi ikinci bahiste "zaten bastın"; 60 sn sonra pist ve sonuçlar gelir
-85. `.wordle kalem` → renkli satır; sözlükte olmayan kelime hak yakmaz; 6 hak bitince yedinci reddedilir; bot yeniden başlayınca hak tazelenmez
+85. `.wordle kalem` → ortak tahtaya satır eklenir, yazanın adıyla; 3 hak bitince dördüncü reddedilir; biri bilince başkası aynı kelimeyi yazarsa "… bildi" der, XP almaz; bot yeniden başlayınca hak tazelenmez
 86. `.meslek seç futbolcu` → uyarı gelir, meslek değişmez; `onay` ile seçilir; `.istifa` → kariyer biter, `.meslek seç kurye` hemen çalışır. Kuryeyken `.istifa` → `.meslek seç garson` kalan süreyi yazar
 87. `.coindevret @kişi 1` → iki coin bakiyesi yazılır; coinden fazlası → "o kadar coinin yok"; açık krediyle → reddedilir; `@bot` → reddedilir
