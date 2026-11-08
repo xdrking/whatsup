@@ -71,7 +71,7 @@ kategori, ad çakışması, `details` biçimi ve `data/*.json` hatalarını yaka
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
-games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu)
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu, .vampir)
 panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
 scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
@@ -137,7 +137,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
-| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.hilo`, `.kule`, `.yarış`, `.vs`, `.evlen` teklifi, `.dava`…) | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.hilo`, `.kule`, `.yarış`, `.vs`, `.evlen` teklifi, `.dava`, `.vampir`…) | bellek (süreçle ölür) |
 | `games/wordle.js` | grubun bugünkü wordle tahtası (tahmin satırları) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | `.wordle` kişi başı günlük hak, grubun toplam tahmini ve bileni | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
@@ -307,7 +307,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 43 (tamam):** `.istifa`, futbolcu onayı, `.coindevret`. Faz 36 ve Faz 39 bölümlerine işlendi.
 - **Faz 44 (tamam):** yazılı tutarlar (`50 milyon`) ve `.devret hepsi`. Komut sözleşmesindeki `args` maddesine işlendi.
 - **Faz 45 (tamam):** `.servet`, `.kumarkarnem`, `.tabu`. Ayrıntı aşağıda.
-- **Faz 46+:** yeni komutlar, her biri ayrı adım
+- **Faz 46 (tamam):** `.vampir`. Ayrıntı aşağıda.
+- **Faz 47+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1088,6 +1089,16 @@ kumar_oyun(chat_jid, user_jid, oyun, won, lost, games, en_buyuk, en_kotu)   PK(c
 - **`.kumarkarnem`:** `kumarKaydet()`'e verilen `oyun` adı `kumar_oyun`'a yazılır. Yeni kumar oyunu `kumarOyna({ oyun })` ya da `kumarOde({ oyun })` ile adını vermeli, yoksa yalnızca toplamda görünür. Tablodan önceki oyunlar dökümde yoktur. "Kasaya kaptırılan" `.vs` ve `.piyango` dışındaki oyunların netidir.
 - **`.tabu`:** kart anlatana özelden gider (bot sahibinin onayıyla): mesajı anlatanın kendi komutu tetikler. `senderPn`'e gönderilir, LID'e özel mesaj her zaman ulaşmıyor. Gönderilemezse oyun kapanır. İpucu ve tahminler aynı tabu mesajına yanıttır, `setLastMessage` yalnızca başta çağrılır (`.açıkartırma` gibi). Anlatanın yanıtı ipucudur, yasaklı sözcük (4+ harfliler ekli haliyle, kısalar tam) oyunu bitirir. Anlatan da ödül alır ama bilenden az: kelimeyi özelden arkadaşına söyleyip XP kasmak cazip olmasın, bekleme süresi bu yüzden 5 dk. Kartlar `games/tabu.json`'dadır (`[{ kelime, yasak[] }]`, elle yazılır).
 
+### Faz 46 — `.vampir`
+
+Kurallar `lib/vampir.js`'te saftır, akış `games/vampir.js`'tedir. Veritabanına yalnızca kazanan takımın `oyunOdulu`'su yazılır.
+
+- **Fazlar:** lobi (2 dk, `katıl`/`çık`/`başla`, 4-16 kişi) → gece (90 sn) → gündüz (3 dk) → gece… Her fazın kendi zamanlayıcısı vardır, `gameManager` zaman aşımı (10 dk, her fazda `touchGame`) yalnızca takılan oyunu kapatır. Faz geçişi `faz = 'gecis'` ile await'ten önce kilitlenir, geç gelen zamanlayıcı ya da son oy ikinci kez geçiş yapmaz.
+- **Özel mesaj:** roller ve gece listeleri oyunculara özelden gider (bot sahibinin onayıyla, oyuncu `katıl` yazarak ister). `senderPn`'e gönderilir, `.tabu` gibi. Bir role ulaşılamazsa oyun başlamadan kapanır.
+- **Gece eylemi** komutla ve özelden yazılır (`.vampir öldür|koru|bak <no>`): özel sohbet grubu söylemediği için oyuncunun oyunu `aktifOyunlar`'dan bulunur. Grupta yazılırsa bot uyarır, eylem işlenmez. Herkes eylemini yapınca gece erken biter.
+- **Oylama** son gündüz mesajına yanıttır, `setLastMessage` oyda çağrılmaz. Tek başına en çok oyu alan asılır, beraberlikte ya da pas oyları yetişince kimse asılmaz: rastgele asmak masumu zarla öldürmek olurdu. Vampir oyları bölünürse kurban berabere kalanlardan çekilir.
+- **Kazanma:** vampir kalmazsa köy, vampirler kalan köylülere yetişirse vampirler. Ölüler dahil kazanan takımın herkesi ödül alır, vampirin ödülü büyüktür. `.oyunbitir` ve zaman aşımı ödülsüzdür, rolleri açıklar.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1194,3 +1205,4 @@ kumar_oyun(chat_jid, user_jid, oyun, won, lost, games, en_buyuk, en_kotu)   PK(c
 88. `.servet` → cüzdan, banka, coin, mülk satırları ve net; `.servet top` → bot yok, coinli kişi `.tüik`'ten farklı sırada olabilir; `.servet @bot` sıradan üyeye "gizli"
 89. `.slot 100` ve `.mayın 100` sonrası `.kumarkarnem` → iki oyun ayrı satırda, en büyük vurgun ve kasaya kaptırılan yazılır
 90. `.tabu` → kart özelden gelir, grupta tabu mesajı; anlatan yasaklı sözcüğü yanıtlarsa "TABU!"; başkası kelimeyi yanıtlarsa ikisi de XP alır; anlatan `pas` → yeni kart özelden
+91. `.vampir` → 4 kişi `katıl`, kuran `başla`; herkese rol özelden gelir; grupta `.vampir öldür 2` → "özelden yaz"; vampir özelden öldürünce sabah ölen ve rolü yazar; gündüz oylamasında herkes oy verince sonuç hemen gelir; vampir asılınca köy XP alır
