@@ -7,6 +7,7 @@ process.env.STATS_DB = ':memory:'
 
 const { default: devret, etiketSirasi } = await import('../commands/devret.js')
 const { addXp, getStats, xpDevret } = await import('../lib/stats.js')
+const { miktarlariCoz } = await import('../lib/sayi.js')
 
 const A = '111@lid'
 const B = '222@lid'
@@ -27,7 +28,7 @@ async function calistir({ gonderen = A, mentions = [], quoted = null, text, isOw
 
   await devret.execute({
     sock, msg: {}, from, text, isOwner,
-    args: text.split(/\s+/),
+    args: miktarlariCoz(text.split(/\s+/)),
     sender: gonderen,
     parsed: { isGroup: true, sender: gonderen, mentions, quoted },
   })
@@ -110,4 +111,23 @@ test('kendine, gruptan olmayana ve geçersiz miktara devir yok', async () => {
     assert.equal(r.xp(A), 100)
     assert.match(r.yanit, /Kullanım/)
   }
+})
+
+test('hepsi cüzdanın tamamını, yarısı yarısını devreder', async () => {
+  const r = await calistir({ mentions: [B], text: '@222 hepsi', xp: { [A]: 151 } })
+  assert.equal(r.xp(A), 0)
+  assert.equal(r.xp(B), 151)
+
+  const y = await calistir({ mentions: [B], text: '@222 Yarısı', xp: { [A]: 151 } })
+  assert.equal(y.xp(B), 75)
+})
+
+test('boş cüzdanla hepsi devredilmez', async () => {
+  const r = await calistir({ mentions: [B], text: '@222 all' })
+  assert.match(r.yanit, /Devredecek XP yok/)
+})
+
+test('yazılı tutar sayıya çevrilir', async () => {
+  const r = await calistir({ mentions: [B], text: '@222 1,5 bin', xp: { [A]: 2000 } })
+  assert.equal(r.xp(B), 1500)
 })

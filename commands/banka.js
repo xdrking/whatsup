@@ -17,6 +17,7 @@ export default {
   usage: '.banka  —  .banka yatır <miktar|hepsi|yarısı>  —  .banka çek <miktar|hepsi|yarısı>',
   details: [
     `Bankadaki XP soyulamaz ve her saat tüm bakiyeye faiz alır, oranı \`.banka\` gösterir. Yeni yatırılan para tam bir saat durmadan faiz almaz. Faiz \`.banka\` yazınca işlenir, en çok 7 günlük birikir.`,
+    'Tutar `50 milyon`, `1,5 milyar`, `50m` ya da `50.000.000` diye yazılabilir: `.banka çek 50 milyon`.',
     `Çekerken %${CEKIM_KESINTI_YUZDESI} kesilir. Bankadaki XP'yle kumar oynanmaz, seviyeye ve \`.top\`'a sayılmaz.`,
     `Cüzdan ve banka birlikte, o günkü ilk mesajında artan oranlı vergilenir: 1 coin değerine kadar vergi yok, en yüksek dilim %${VERGI_DILIMLERI.at(-1).yuzde}.`,
   ],

@@ -1,10 +1,13 @@
 import { binlik } from '../lib/sayi.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
-import { botHesabiMi, xpDevret } from '../lib/stats.js'
+import { botHesabiMi, getStats, xpDevret } from '../lib/stats.js'
 import { digitsOf, mentionOf, resolveTargets } from '../lib/target.js'
+import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
-const KULLANIM = 'Kullanım: `.devret @kişi <miktar>`\nÖrnek: `.devret @ali 100`'
+const KULLANIM = 'Kullanım: `.devret @kişi <miktar|hepsi|yarısı>`\nÖrnek: `.devret @ali 100`, `.devret @ali 50 milyon`'
+const TUMU = new Set(['hepsi', 'all', 'hep', 'allin'])
+const YARISI = new Set(['yarısı', 'yarisi', 'yarı', 'yari'])
 
 /**
  * Etiketleri metindeki sıraya dizer. `mentionedJid` dizisinin sırası garanti
@@ -22,9 +25,10 @@ export default {
   name: 'devret',
   aliases: ['transfer', 'xpdevret'],
   description: 'Kendi XP\'nden başkasına devreder',
-  usage: '.devret @kişi <miktar>  —  bir mesajı yanıtlayarak .devret <miktar>',
+  usage: '.devret @kişi <miktar|hepsi|yarısı>  —  bir mesajı yanıtlayarak .devret <miktar>',
   details: [
     'Örnek: `.devret @ali 100` — senden 100 XP düşer, Ali\'ye 100 XP geçer.',
+    '`.devret @ali hepsi` cüzdanının tamamını, `yarısı` yarısını gönderir. Tutar `50 milyon`, `1,5 milyar`, `50m` diye de yazılabilir.',
     'Yalnızca kendi XP\'ni devredebilirsin. XP her grupta ayrıdır.',
   ],
   category: 'ekonomi',
@@ -47,11 +51,10 @@ export default {
         return
       }
 
-      const miktarArg = args.find((a) => /^\d+$/.test(a))
-      const miktar = Number(miktarArg)
+      const miktarArg = trLower(args.find((a) => /^\d+$/.test(a) || TUMU.has(trLower(a)) || YARISI.has(trLower(a))) ?? '')
       const [hedefHam] = etiketler.length ? etiketler.slice(-1) : resolveTargets(parsed)
 
-      if (etiketler.length > 2 || !hedefHam || !Number.isSafeInteger(miktar) || miktar <= 0) {
+      if (etiketler.length > 2 || !hedefHam || !miktarArg) {
         await yaz(KULLANIM)
         return
       }
@@ -67,6 +70,17 @@ export default {
 
       if (kaynak === hedef) {
         await yaz('❌ Aynı kişiye devir yapılamaz.')
+        return
+      }
+
+      // "hepsi" kaynağın o anki cüzdanıdır; arada değişirse xpDevret yetersiz der.
+      const cuzdan = () => getStats(from, kaynak).xp
+      const miktar = TUMU.has(miktarArg) ? cuzdan()
+        : YARISI.has(miktarArg) ? Math.floor(cuzdan() / 2)
+          : Number(miktarArg)
+
+      if (!Number.isSafeInteger(miktar) || miktar <= 0) {
+        await yaz(/^\d+$/.test(miktarArg) ? KULLANIM : '❌ Devredecek XP yok.')
         return
       }
 

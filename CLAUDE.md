@@ -171,7 +171,9 @@ export default {
 }
 ```
 
-- `args` — prefix ve komut adı ayrıldıktan sonraki kelime dizisi
+- `args` — prefix ve komut adı ayrıldıktan sonraki kelime dizisi. Yazılı tutarlar handler'da
+  `lib/sayi.js:miktarlariCoz()` ile rakama çevrilmiştir (`50 milyon`, `1,5 milyar`, `50m`, `50.000.000` →
+  `50000000`), komut yalnızca rakam okur. Birimsiz ondalık (`0,25`) dokunulmadan gelir. `text` ham kalır
 - `text` — aynı bölümün ham hali (`.tts` gibi serbest metin alan komutlar için)
 - `from` — sohbetin JID'i (yanıt buraya gider)
 - `sender` — mesajı yazan kişinin JID'i (grupta `from`'dan farklıdır)
@@ -303,7 +305,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 41 (tamam):** `.piyasa` olayları, `.yatırım`, `.tefeci`. Ayrıntı aşağıda.
 - **Faz 42 (tamam):** `.plinko`, `.crash`, `.hilo`, `.kule`, `.yarış`, `.wordle`. Ayrıntı aşağıda.
 - **Faz 43 (tamam):** `.istifa`, futbolcu onayı, `.coindevret`. Faz 36 ve Faz 39 bölümlerine işlendi.
-- **Faz 44+:** yeni komutlar, her biri ayrı adım
+- **Faz 44 (tamam):** yazılı tutarlar (`50 milyon`) ve `.devret hepsi`. Komut sözleşmesindeki `args` maddesine işlendi.
+- **Faz 45+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -735,6 +738,7 @@ sıradan üye yazarsa reddedilir. Sözdizimi bilerek `details`'te yok, README'de
   transaction'da yapar. Sahip de kaynağın bakiyesini aşamaz; XP basmak `.xpver`'in işi.
 - `last_seen` değişmez (`xpAktar`): devir alan kişi mesaj yazmış görünmesin.
 - Hedef `uyeKimligiBul()` ile gruptaki üye kimliğine çevrilir; üye değilse devir yapılmaz.
+- `hepsi`/`yarısı` kaynağın o anki cüzdanıdır, sahip başkası adına da kullanabilir.
 - `mentionedJid` sırasına güvenilmez: XP'nin yönü `etiketSirasi()` ile metindeki
   sıradan çıkar.
 
