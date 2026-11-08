@@ -188,7 +188,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.rozet` | Kazanılan rozetler ve sıradakilerin ilerlemesi |
 | `.devret @kişi 100` | Kendi XP'nden başkasına devreder (mesajı yanıtlayarak `.devret 100` da olur) |
 | `.devret @a @b 50` | **Yalnızca owner.** a'nın XP'sinden b'ye aktarır; owner'ın kendi XP'si değişmez. `.help`'te görünmez |
-| `.faizkararı 25` | **Yalnızca owner.** Grubun saatlik banka faizini belirler (0-50), kredi 4 puan üstünde kalır. Birikmiş faiz eski orandan işlenir |
+| `.faizkararı 0,25` | **Yalnızca owner.** Grubun saatlik banka faizini belirler (0-50, en çok 2 ondalık), kredi 4 puan üstünde kalır. Mesaj günlük karşılığını da yazar (%0,25 saatlik ≈ günde %6). Birikmiş faiz eski orandan işlenir |
 | `.teşvik 5000000` | **Yalnızca owner.** Kasadan son 7 günde yazan üyelere eşit dağıtır, bot hariç. Eksi cüzdana giden pay önce eksiyi kapatır |
 | `.haciz @kişi ev` | **Yalnızca owner.** Kişinin bir mülkünü alır, değeri kasaya girer |
 | `.haciz @kişi 2000` | **Yalnızca owner.** Önce bankadan, yetmezse cüzdandan alıp botun bankasına aktarır. Onlar da yetmezse kalanı cüzdana eksi yazar, eksi kısım kasaya girmez. `hepsi` ve `yarısı` banka hesabına göredir. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |

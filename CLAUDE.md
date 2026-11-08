@@ -1012,7 +1012,7 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 - **`.soygun herkes`:** `topluSoygun()` her üyeye ayrı zar atar (%40, kurbanın %10'u). Hak coinle alındığı için yakalanma cezası yoktur, günlük hak harcanmaz. Kalkan, korunma ve fakir kuralı normal soygunla aynıdır (`kurbanEngeli`). Soyulacak kimse yoksa hak yanmaz.
 - **`.hacizall`:** herkese açıktır, 90 coin yazıldığı an düşer, saklanan hak yoktur (`topluHaciz`). Listede görünür ama `.coinmarket al` ile alınmaz. Bankanın %45'i ve cüzdanın %50'si alıcının cüzdanına geçer. Botun kasasına dokunmaz. `.haciz` ayrı komuttur: yalnızca sahip kullanır, para bota gider. Kalkan korumaz, sigorta korur, bot hariçtir. Alınacak para yoksa coin düşmez.
 - Mesajlardaki XP tutarları `lib/sayi.js:binlik()` ile yazılır. Kopyalanacak komut metninde (`.devret @kişi 1000`) ham sayı kalır, yoksa `.devret` okuyamaz.
-- **`.faizkararı`:** `faiz(chat_jid, oran)`, satır yoksa varsayılan geçerlidir. Sınır 0-50. Kredi hep `KREDI_FAIZ_FARKI` üstündedir. Karar önce gruptaki bütün faizi eski orandan işler, yoksa yeni oran geçmiş saatlere uygulanırdı.
+- **`.faizkararı`:** `faiz(chat_jid, oran)`, satır yoksa varsayılan geçerlidir. Sınır 0-50, en çok 2 ondalık basamak (`faizOranCoz`): faiz saatlik ve bileşik olduğu için %1 bile günde 1,27 kat eder, tam sayı enflasyonu frenlemeye yetmiyordu (bot sahibinin kararı). `oran` sütunu `INTEGER` tanımlıdır ama SQLite ondalığı kayıpsız saklar, taşıma gerekmez. Kredi hep `KREDI_FAIZ_FARKI` üstündedir, toplam `krediFaizi()` ile yuvarlanır. Oran ekranda `oranYaz()` ile virgüllü yazılır. Karar önce gruptaki bütün faizi eski orandan işler, yoksa yeni oran geçmiş saatlere uygulanırdı.
 - **`.teşvik`:** kasadan son 7 günde yazan üyelere eşit dağıtır (`tesvikDagit`), bölünmeyen artık kasada kalır.
 - **Panel:** grup sayfasında Ekonomi kartı `ekonomi` kaydını gösterir, yani kur ve para bugünün kaydıdır, anlık değildir. Tablolar bot yeni sürümle açılmadan yoktur, `ekonomiTablolariVar()` bu yüzden vardır.
 
@@ -1152,7 +1152,7 @@ Kumarın bütün kuralları (`kumarEngeli`, `kumarYasagi`, karne, bot hesabı) e
 61. `.coinmarket sat 1` → kurun %90'ı gelir; eksi cüzdan ve coinle `.iflas` → "önce coinlerini boz"
 62. `.mülk al ev` → 15 coin düşer, `.profil`'de görünür; bir saat sonra `.mülk topla` → kira gelir; sahip `.haciz @kişi ev` → ev gider, kasa artar
 63. `.top` → bot tek satır; sahip `.devret @bot 10` → botun satırı artar, ikinci satır açılmaz
-64. Sahip `.faizkararı 25` → banka %25, kredi %29; sıradan üye yazarsa tepki yok; `.banka` ve `.kredi çek` yeni oranı yazar
+64. Sahip `.faizkararı 25` → banka %25, kredi %29; `.faizkararı 0,25` → banka %0,25, kredi %4,25, günlük karşılığı yazar; `0,125` → reddedilir; sıradan üye yazarsa tepki yok; `.banka` ve `.kredi çek` yeni oranı yazar
 65. Sahip `.teşvik 1000` → aktif üyeler eşit pay alır, kasa azalır; kasadan fazlası reddedilir
 66. Servet 1 coin değerini geçen kişi günün ilk mesajında vergi öder, `.banka` son vergiyi yazar; panelde Ekonomi kartı görünür
 67. `.soygun`'da yakalanınca `.hapis` listeler; `.bahis`, `.soygun`, `.çalış` reddedilir; başkası `.kefalet @kişi` yazınca çıkar

@@ -7,7 +7,7 @@ import { HISSELER, SAAT_MS } from '../lib/borsa.js'
 import { istanbulDay } from '../lib/dataset.js'
 import { SETLER } from '../lib/kart.js'
 import { FAIZ_YUZDESI } from '../lib/banka.js'
-import { borcIslet, KREDI_FAIZ_FARKI } from '../lib/kredi.js'
+import { borcIslet, krediFaizi } from '../lib/kredi.js'
 import { MESLEKLER, meslekKoduyla } from '../lib/meslek.js'
 import { MULKLER } from '../lib/mulk.js'
 import { ROZETLER } from '../lib/rozet.js'
@@ -130,7 +130,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
       arz: son.arz,
       kur: son.kur,
       enflasyon: onceki?.arz ? (son.arz - onceki.arz) / onceki.arz : null,
-      faiz: { banka: faiz, kredi: faiz + KREDI_FAIZ_FARKI },
+      faiz: { banka: faiz, kredi: krediFaizi(faiz) },
       arzGecmisi: kayitlar.map((g) => g.arz),
       toplamCoin: db.prepare('SELECT COALESCE(SUM(bakiye), 0) AS t FROM coin WHERE chat_jid = ?').get(chatJid).t,
       coinSahipleri: db.prepare('SELECT user_jid, bakiye FROM coin WHERE chat_jid = ? AND bakiye > 0 ORDER BY bakiye DESC LIMIT 5').all(chatJid)
@@ -189,7 +189,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
   }
 
   function borclular(chatJid, liste, now) {
-    const krediFaizi = bankaFaizi(chatJid) + KREDI_FAIZ_FARKI
+    const krediOrani = krediFaizi(bankaFaizi(chatJid))
     const adlar = new Map(liste.map((u) => [u.user_jid, u]))
     const krediler = db.prepare('SELECT user_jid, borc, faiz_saat, vade FROM kredi WHERE chat_jid = ?').all(chatJid)
       .map((k) => {
@@ -197,7 +197,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         return {
           user_jid: k.user_jid,
           uye: adlar.get(k.user_jid) ?? null,
-          borc: borcIslet(k.borc, Math.max(0, saat - k.faiz_saat), krediFaizi),
+          borc: borcIslet(k.borc, Math.max(0, saat - k.faiz_saat), krediOrani),
           vade: k.vade,
           gecti: now >= k.vade,
         }

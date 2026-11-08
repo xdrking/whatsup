@@ -1,3 +1,4 @@
+import { oranYaz } from '../lib/banka.js'
 import logger from '../lib/logger.js'
 import { requireGroup } from '../lib/group.js'
 import { IFLAS_KREDI_YASAK_SAATI, KREDI_LIMITI, KREDI_VADE_SAATI, MIN_KREDI } from '../lib/kredi.js'
@@ -56,7 +57,7 @@ export default {
 
         return await yaz([
           `💳 ${sayi.format(miktar)} XP kredi çekildi.`,
-          `⏰ Vade: ${KREDI_VADE_SAATI} saat  •  📈 Saatlik faiz: %${faizDurumu(from).kredi}`,
+          `⏰ Vade: ${KREDI_VADE_SAATI} saat  •  📈 Saatlik faiz: %${oranYaz(faizDurumu(from).kredi)}`,
           `👛 Cüzdan: ${sayi.format(s.xp)} XP`,
         ].join('\n'))
       }

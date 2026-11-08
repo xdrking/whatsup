@@ -2,6 +2,7 @@
 // bir ad asla ham HTML olarak sayfaya düşmemeli.
 import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
+import { oranYaz } from '../lib/banka.js'
 import { ARALIKLAR, SIRALAMALAR } from './veri.js'
 
 // Stil tarayıcıda önbelleklenir: adres içerikle değişmezse yeni HTML eski stille açılır.
@@ -159,7 +160,7 @@ function ekonomiKarti(chatJid, e) {
     <div class="satir"><span class="ad"><strong>Piyasadaki para</strong><small>Bugünün kaydı, bot hariç</small></span><span class="deger">${sayi.format(e.arz)}</span></div>
     <div class="satir"><span class="ad"><strong>1 coin</strong></span><span class="deger">${sayi.format(e.kur)}</span></div>
     <div class="satir"><span class="ad"><strong>Günlük enflasyon</strong></span><span class="deger">${e.enflasyon === null ? 'veri yok' : yuzde.format(e.enflasyon)}</span></div>
-    <div class="satir"><span class="ad"><strong>Saatlik faiz</strong><small>Banka / kredi</small></span><span class="deger">%${e.faiz.banka} / %${e.faiz.kredi}</span></div>
+    <div class="satir"><span class="ad"><strong>Saatlik faiz</strong><small>Banka / kredi</small></span><span class="deger">%${oranYaz(e.faiz.banka)} / %${oranYaz(e.faiz.kredi)}</span></div>
     <div class="satir"><span class="ad"><strong>Toplam coin</strong></span><span class="deger">${sayi.format(e.toplamCoin)}</span></div>
     ${e.mulkler.map((m) => h`<div class="satir"><span class="ad"><strong>${m.ad}</strong></span><span class="deger">${sayi.format(m.adet)}</span></div>`)}
     ${e.coinSahipleri.map((c) => h`<a class="satir" href="${kisiLink(chatJid, c.user_jid)}">

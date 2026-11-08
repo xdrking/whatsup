@@ -1,5 +1,5 @@
 import {
-  CEKIM_KESINTI_YUZDESI, VERGI_DILIMLERI,
+  CEKIM_KESINTI_YUZDESI, oranYaz, VERGI_DILIMLERI,
 } from '../lib/banka.js'
 import { requireGroup } from '../lib/group.js'
 import { miktarCoz } from '../lib/kumar.js'
@@ -73,7 +73,7 @@ export default {
         `👛 Cüzdan: ${sayi.format(durum.xp)} XP`,
       ]
       if (durum.faiz) lines.push(`📈 Yeni faiz: +${sayi.format(durum.faiz)} XP`)
-      lines.push(`📈 Saatlik faiz: %${faizDurumu(from).banka}`)
+      lines.push(`📈 Saatlik faiz: %${oranYaz(faizDurumu(from).banka)}`)
       if (durum.sonVergi) lines.push(`💸 Son vergi: ${sayi.format(durum.sonVergi)} XP`)
       if (durum.borc) lines.push(`💳 Kredi borcu: ${sayi.format(durum.borc)} XP`)
       lines.push('', '`.banka yatır 500`  •  `.banka çek 500`')

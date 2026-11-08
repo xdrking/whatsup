@@ -246,3 +246,29 @@ test('iflas: artı cüzdan, açık kredi ve elde hisse reddedilir', () => {
   borsaSat({ ...h, hisse, now: VADE, rnd: sabit })
   assert.ok(iflasEt({ ...h, now: VADE }).silinen > 0)
 })
+
+test('ondalıklı faiz: ayrıştırma, kredi farkı ve kararın saklanması', async () => {
+  const { faizOranCoz, gunlukFaiz, oranYaz } = await import('../lib/banka.js')
+  const { krediFaizi } = await import('../lib/kredi.js')
+  const { faizDurumu, faizKarari } = await import('../lib/stats.js')
+
+  assert.equal(faizOranCoz('0,25'), 0.25)
+  assert.equal(faizOranCoz('%0.5'), 0.5)
+  assert.equal(faizOranCoz('3'), 3)
+  assert.equal(faizOranCoz('0'), 0)
+  assert.equal(faizOranCoz('0.125'), null)
+  assert.equal(faizOranCoz('51'), null)
+  assert.equal(faizOranCoz('-1'), null)
+  assert.equal(faizOranCoz('abc'), null)
+
+  assert.equal(krediFaizi(0.1), 4.1)
+  assert.equal(oranYaz(0.25), '0,25')
+  assert.ok(Math.abs(gunlukFaiz(1) - 26.97) < 0.01)
+
+  const chatJid = 'ondalik@g.us'
+  assert.deepEqual(faizKarari({ chatJid, oran: 0.25 }), { once: FAIZ_YUZDESI, banka: 0.25, kredi: 4.25 })
+  assert.deepEqual(faizDurumu(chatJid), { banka: 0.25, kredi: 4.25 })
+  // Küçük oran bakiyeyi büyütür ama yavaş: 1.000.000 XP, 24 saatte %6'dan az.
+  const { faiz } = faizIslet(1_000_000, 0, 24, 0, 0.25)
+  assert.ok(faiz > 50_000 && faiz < 62_000, String(faiz))
+})
