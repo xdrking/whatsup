@@ -9,7 +9,7 @@ import { endGame, getGame, setLastMessage, startGame, touchGame } from './gameMa
 import { katla } from './kimim.js'
 
 const LOBI_MS = 2 * 60_000
-const GECE_MS = 90_000
+const GECE_MS = 120_000
 const GUNDUZ_MS = 3 * 60_000
 // Fazlar kendi zamanlayıcısıyla ilerler. Bu yalnızca bir faz takılırsa oyun yuvası kilitli kalmasın diye.
 const GUVENLIK_MS = 10 * 60_000

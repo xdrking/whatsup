@@ -12,7 +12,7 @@ export default {
   details: [
     `1. \`.vampir\` köyü kurar. Bot mesajına \`katıl\` yazan oyuna girer (${MIN_OYUNCU}-${MAX_OYUNCU} kişi), kuran \`başla\` yazar.`,
     '2. Roller özelden gelir: 🧛 vampir, 🩺 doktor, 🔮 kahin, 👨‍🌾 köylü.',
-    '3. Gece (90 sn) bota özelden: vampir `.vampir öldür <no>`, doktor `.vampir koru <no>`, kahin `.vampir bak <no>`.',
+    '3. Gece (2 dk) bota özelden: vampir `.vampir öldür <no>`, doktor `.vampir koru <no>`, kahin `.vampir bak <no>`.',
     '4. Gündüz (3 dk) herkes gruptaki oylama mesajına numara ya da `pas` yazar. Tek başına en çok oyu alan asılır.',
     '5. Bütün vampirler ölürse köy, vampirler köylülere yetişirse vampirler kazanır. Kazanan takım XP alır.',
   ],

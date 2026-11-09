@@ -1094,7 +1094,7 @@ kumar_oyun(chat_jid, user_jid, oyun, won, lost, games, en_buyuk, en_kotu)   PK(c
 
 Kurallar `lib/vampir.js`'te saftır, akış `games/vampir.js`'tedir. Veritabanına yalnızca kazanan takımın `oyunOdulu`'su yazılır.
 
-- **Fazlar:** lobi (2 dk, `katıl`/`çık`/`başla`, 4-16 kişi) → gece (90 sn) → gündüz (3 dk) → gece… Her fazın kendi zamanlayıcısı vardır, `gameManager` zaman aşımı (10 dk, her fazda `touchGame`) yalnızca takılan oyunu kapatır. Faz geçişi `faz = 'gecis'` ile await'ten önce kilitlenir, geç gelen zamanlayıcı ya da son oy ikinci kez geçiş yapmaz.
+- **Fazlar:** lobi (2 dk, `katıl`/`çık`/`başla`, 4-16 kişi) → gece (2 dk) → gündüz (3 dk) → gece… Her fazın kendi zamanlayıcısı vardır, `gameManager` zaman aşımı (10 dk, her fazda `touchGame`) yalnızca takılan oyunu kapatır. Faz geçişi `faz = 'gecis'` ile await'ten önce kilitlenir, geç gelen zamanlayıcı ya da son oy ikinci kez geçiş yapmaz.
 - **Özel mesaj:** roller ve gece listeleri oyunculara özelden gider (bot sahibinin onayıyla, oyuncu `katıl` yazarak ister). `senderPn`'e gönderilir, `.tabu` gibi. Bir role ulaşılamazsa oyun başlamadan kapanır.
 - **Gece eylemi** komutla ve özelden yazılır (`.vampir öldür|koru|bak <no>`): özel sohbet grubu söylemediği için oyuncunun oyunu `aktifOyunlar`'dan bulunur. Grupta yazılırsa bot uyarır, eylem işlenmez. Herkes eylemini yapınca gece erken biter.
 - **Oylama** son gündüz mesajına yanıttır, `setLastMessage` oyda çağrılmaz. Tek başına en çok oyu alan asılır, beraberlikte ya da pas oyları yetişince kimse asılmaz: rastgele asmak masumu zarla öldürmek olurdu. Vampir oyları bölünürse kurban berabere kalanlardan çekilir.
