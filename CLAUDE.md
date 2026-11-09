@@ -1122,15 +1122,16 @@ Kurallar `lib/pet.js`'te saftır, yazma `lib/stats.js`'in sonundaki pet bölüm�
 ### Faz 49 — Seçim, bakanlıklar, hazine, darbe
 
 ```
-makam_aday(chat_jid, hafta, makam, user_jid, oy, sira)       PK(chat_jid,hafta,makam,user_jid)
-makam_oy(chat_jid, hafta, makam, user_jid)                   PK(chat_jid,hafta,makam,user_jid)
+makam_secim(chat_jid, makam, baslangic ms)                   PK(chat_jid,makam)
+makam_aday(chat_jid, secim, makam, user_jid, oy, sira)       PK(chat_jid,secim,makam,user_jid)
+makam_oy(chat_jid, secim, makam, user_jid)                   PK(chat_jid,secim,makam,user_jid)
 makam(chat_jid, makam, user_jid, kalici, karar_gun)          PK(chat_jid,makam)
 hazine_aktarim(chat_jid, day, user_jid, miktar)              PK(chat_jid,day,user_jid)
 ```
 
 Kurallar `lib/devlet.js` ve `lib/secim.js`'te saftır, yazma `lib/stats.js`'tedir. Makamlar `MAKAMLAR`'dadır, `kod` veritabanına yazılır, değiştirilmez.
 
-- **Seçim:** her makamın (başkan, İçişleri, Adalet, Savunma) ayrı haftalık seçimi vardır. Kapanış `.sezon` gibi yeni haftadaki ilk okumadadır (`secimKapat`). Kazanan **yenisi seçilene kadar** makamda kalır. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Makam başına tek oy, oy satın alınamaz. Eski tek makamlı tablolar (`baskan`, `secim_*`) taşınmadan silinir: ilk başkan bot sahibidir (bot sahibinin kararı). Başkan satırı yokken başkan sahiptir, bunu komut katmanı `sahipUyeKimligi()` ile gösterir, veritabanına yazılmaz.
+- **Seçim:** her makamın (başkan, İçişleri, Adalet, Savunma) ayrı seçimi vardır. Makama ilk aday olan seçimi başlatır (`makam_secim`), sandık **30 dakika** sonra kapanır (`SECIM_SURE_MS`, bot sahibinin kararı: haftalık seçimi grup bekleyemiyordu). `secim` sütunu seçimin başlangıcıdır (ms, metin). En çok oy alan (en az 1) kazanır, eşitlikte önce aday olan; kazanan **yenisi seçilene kadar** makamda kalır, oy çıkmazsa makam değişmez. Kapanış her seçim okumasında `secimKapat`'tadır; ayrıca `games/secim.js` adaylıkta kurulan zamanlayıcıyla sonucu gruba yazar (susturulmuş grupta yazmaz). Bot yeniden başlarsa zamanlayıcı ölür, sonuç bir sonraki `.seçim`'de görünür. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Seçim başına tek oy, oy satın alınamaz. Haftalık sürümden kalan `hafta` sütunları taşınırken bekleyen adayların seçimi o anda yeniden başlar. Eski tek makamlı tablolar (`baskan`, `secim_*`) taşınmadan silinir: ilk başkan bot sahibidir (bot sahibinin kararı). Başkan satırı yokken başkan sahiptir, bunu komut katmanı `sahipUyeKimligi()` ile gösterir, veritabanına yazılmaz.
 - **Başkan:** günde bir `.faizkararı` (`karar_gun`), sahip sınırsız. `.hazine ver`: günde en çok 3 kişi, toplam **günün açılış piyasasının %10'u** (`hazineLimiti`), kendine yok. Hazinenin yüzdesi değildir: hazine piyasadan kat kat büyük olduğu için kur bir günde katlanırdı (bot sahibinin kararı). Sahip `.hazine ver`'i başkan gibi kullanır. `.teşvik` ve `.haciz` yalnızca sahibindir.
 - **Bakanlar:** yetki günde bir, para basmaz: İçişleri `af` (hapis satırını siler), Adalet `tutukla` (1 saat, kefalet soygundaki gibi), Savunma `kalkan` (24 saat, `market.kalkan_until`). Hedef engeli hakkı yakmaz.
 - **`.darbe` (gizli):** `hidden: true`, `ownerOnly`, yalnızca özelden; grupta yazılırsa iz bırakmadan düşer (`.xpver` gibi). `.help`'te görünmez, satılmaz. `.darbe <grup id>` yönetimi **hemen** sahibe verir (`makam.kalici = 1`), başkan seçimi askıya alınır; bakanlıklar sürer. `.darbe bitir <grup id>` askıyı kaldırır, başkan yenisi seçilene kadar sahiptir.
@@ -1244,6 +1245,6 @@ Kurallar `lib/devlet.js` ve `lib/secim.js`'te saftır, yazma `lib/stats.js`'tedi
 90. `.tabu` → kart özelden gelir, grupta tabu mesajı; anlatan yasaklı sözcüğü yanıtlarsa "TABU!"; başkası kelimeyi yanıtlarsa ikisi de XP alır; anlatan `pas` → yeni kart özelden
 91. `.vampir` → 4 kişi `katıl`, kuran `başla`; herkese rol özelden gelir; grupta `.vampir öldür 2` → "özelden yaz"; vampir özelden öldürünce sabah ölen ve rolü yazar; gündüz oylamasında herkes oy verince sonuç hemen gelir; vampir asılınca köy XP alır
 92. `.pet sahiplen kedi Pamuk` → XP düşer, `.pet` kartı gösterir; hemen `.pet besle` → "tok"; `.pet oyna` iki kez → ikincisi kalan süreyi yazar; `.pet hediye` → XP gelir, ikincisi bekletir; `.pet @kişi` başkasının kartını açar
-93. `.seçim aday adalet`, başkası `.seçim oy adalet @kişi` → yeni haftada `.seçim` kazananı etiketler; `.bakan tutukla @x` → 1 saat hapis, ikincisi "yarın"; İçişleri `.bakan af @x` → çıkar
+93. `.seçim aday adalet` → "seçim başladı", başkası `.seçim oy adalet @kişi`; 30 dk sonra bot sonucu kendiliğinden yazar ve kazananı etiketler; açık seçim yokken `.seçim oy` → "açık seçim yok"; `.bakan tutukla @x` → 1 saat hapis, ikincisi "yarın"; İçişleri `.bakan af @x` → çıkar
 94. Seçilmiş başkan yokken `.hazine` başkanı sahip yazar; `.hazine ver @kişi 1000` → kasa azalır; dördüncü kişi "yarın"; limit üstü → kalanı yazar; sıradan üye → "yalnızca başkan"
 95. Sahip özelden `.darbe <grup id>` → grupta herkes etiketlenir, üyelere özelden mesaj gelir; `destek` yanıtı ✅ alır; 10 dk sonra sonuç, `.seçim aday` → "askıda"; grupta `.darbe` → hiç tepki yok; `.help darbe` → yok; `.darbe bitir <grup id>` → seçim açılır

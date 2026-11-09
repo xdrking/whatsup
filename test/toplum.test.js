@@ -19,6 +19,7 @@ const {
 
 const SAAT = 3_600_000
 const HAFTA = 7 * 24 * SAAT
+const SECIM = 30 * 60 * 1000
 // Çarşamba öğlen.
 const T = new Date('2026-06-10T12:00:00+03:00').getTime()
 const BOT = '905550000000@s.whatsapp.net'
@@ -86,26 +87,33 @@ test('kefalet: cüzdan ve banka toplamından hesaplanır', () => {
   assert.equal(hapis.kefalet, 2180)
 })
 
-test('seçim: kazanan ertesi hafta başkan olur, oy tektir, ücretler yanar', () => {
+test('seçim: 30 dakika sonra en çok oy alan başkan olur, oy tektir, ücretler yanar', () => {
   const chatJid = ayarla({ a: 50_000, b: 50_000, c: 1000, d: 1000 })
-  assert.deepEqual(adayOl({ chatJid, userJid: 'a', now: T }), { ucret: 10_000, xp: 40_000 })
+  assert.deepEqual(adayOl({ chatJid, userJid: 'a', now: T }), { ucret: 10_000, xp: 40_000, bitis: T + SECIM, basladi: true })
   assert.deepEqual(adayOl({ chatJid, userJid: 'a', now: T }), { zaten: true })
   adayOl({ chatJid, userJid: 'b', now: T + 1 })
 
   assert.deepEqual(oyVer({ chatJid, secmen: 'c', aday: 'd', now: T }), { adayDegil: true })
-  assert.deepEqual(oyVer({ chatJid, secmen: 'c', aday: 'b', now: T }), { xp: 900 })
+  assert.deepEqual(oyVer({ chatJid, secmen: 'c', aday: 'b', now: T }), { xp: 900, bitis: T + SECIM })
   assert.deepEqual(oyVer({ chatJid, secmen: 'c', aday: 'a', now: T }), { zaten: true })
   oyVer({ chatJid, secmen: 'd', aday: 'b', now: T })
   oyVer({ chatJid, secmen: 'a', aday: 'a', now: T })
 
-  assert.equal(baskanMi(chatJid, 'b', T), false)
-  assert.equal(baskanMi(chatJid, 'b', T + HAFTA), true)
-  assert.equal(baskanMi(chatJid, 'a', T + HAFTA), false)
-  assert.equal(sosyalDurum(chatJid, 'b', T + HAFTA).baskan, true)
-  assert.equal(secimDurumu({ chatJid, userJid: 'c', now: T + HAFTA }).oyVerdi.baskan, false)
+  assert.equal(secimDurumu({ chatJid, userJid: 'c', now: T }).secimler.baskan.oyVerdi, true)
+  assert.equal(baskanMi(chatJid, 'b', T + SECIM - 1), false)
+  assert.equal(baskanMi(chatJid, 'b', T + SECIM), true)
+  assert.equal(baskanMi(chatJid, 'a', T + SECIM), false)
+  assert.equal(sosyalDurum(chatJid, 'b', T + SECIM).baskan, true)
+  assert.equal(secimDurumu({ chatJid, userJid: 'c', now: T + SECIM }).secimler.baskan, null)
+  assert.deepEqual(oyVer({ chatJid, secmen: 'c', aday: 'b', now: T + SECIM }), { secimYok: true })
+
+  // Yeni adaylık yeni seçim başlatır, oy hakkı tazelenir.
+  assert.equal(adayOl({ chatJid, userJid: 'a', now: T + SECIM + 1 }).basladi, true)
+  assert.equal(oyVer({ chatJid, secmen: 'c', aday: 'a', now: T + SECIM + 2 }).xp, 800)
 
   // Yenisi seçilene kadar makamda kalır.
-  assert.equal(baskanMi(chatJid, 'b', T + 2 * HAFTA), true)
+  assert.equal(baskanMi(chatJid, 'b', T + 2 * SECIM), true)
+  assert.equal(baskanMi(chatJid, 'a', T + 2 * SECIM + 1), true)
 })
 
 test('seçim: eşitlikte önce aday olan kazanır, yeni başkan bir kez duyurulur', () => {
