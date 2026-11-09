@@ -1,7 +1,7 @@
 import { requireGroup } from '../lib/group.js'
 import { binlik } from '../lib/sayi.js'
 import { vergiSiralama } from '../lib/stats.js'
-import { mentionOf } from '../lib/target.js'
+import { displayName } from '../lib/target.js'
 import logger from '../lib/logger.js'
 
 export default {
@@ -25,9 +25,8 @@ export default {
         [
           '💸 *En Çok Vergi Ödeyenler*',
           '',
-          ...liste.map((r, i) => `${i + 1}. ${mentionOf(r.user_jid)} — ${binlik(r.toplam)} XP`),
+          ...liste.map((r, i) => `${i + 1}. ${displayName(r.user_jid)} — ${binlik(r.toplam)} XP`),
         ].join('\n'),
-        liste.map((r) => r.user_jid),
       )
     } catch (err) {
       logger.error({ err, from }, '.vergitop başarısız')

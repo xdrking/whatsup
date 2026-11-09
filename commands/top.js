@@ -1,6 +1,6 @@
 import { requireGroup } from '../lib/group.js'
 import { getLeaderboard, seviye } from '../lib/stats.js'
-import { mentionOf } from '../lib/target.js'
+import { displayName } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
 const MADALYA = ['🥇', '🥈', '🥉']
@@ -40,7 +40,7 @@ export default {
 
     const lines = sira.map((row, index) => {
       const isaret = MADALYA[index] || `${index + 1}.`
-      return `${isaret} ${mentionOf(row.user_jid)} — ${sayi.format(row.xp)} XP ` +
+      return `${isaret} ${displayName(row.user_jid)} — ${sayi.format(row.xp)} XP ` +
         `(Sv ${seviye(row.xp)})`
     })
 
@@ -48,7 +48,6 @@ export default {
       from,
       {
         text: [`🏆 *XP Sıralaması* (ilk ${sira.length})`, '', ...lines].join('\n'),
-        mentions: sira.map((row) => row.user_jid),
       },
       { quoted: msg },
     )

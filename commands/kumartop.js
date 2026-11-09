@@ -1,6 +1,6 @@
 import { requireGroup } from '../lib/group.js'
 import { kumarSiralama } from '../lib/stats.js'
-import { mentionOf } from '../lib/target.js'
+import { displayName } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
 
@@ -22,7 +22,7 @@ export default {
     }
 
     const satir = (r, i) =>
-      `${i + 1}. ${mentionOf(r.user_jid)} — ${r.net > 0 ? '+' : ''}${sayi.format(r.net)} XP (${r.games} oyun)`
+      `${i + 1}. ${displayName(r.user_jid)} — ${r.net > 0 ? '+' : ''}${sayi.format(r.net)} XP (${r.games} oyun)`
 
     const lines = ['🎰 *Kumar Karnesi*']
     if (kazananlar.length) lines.push('', '🏆 *Kazananlar*', ...kazananlar.map(satir))
@@ -30,7 +30,7 @@ export default {
 
     await sock.sendMessage(
       from,
-      { text: lines.join('\n'), mentions: [...kazananlar, ...kaybedenler].map((r) => r.user_jid) },
+      { text: lines.join('\n') },
       { quoted: msg },
     )
   },

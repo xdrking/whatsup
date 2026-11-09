@@ -238,6 +238,7 @@ Oturum dosyalarının içeriği (creds, keys) hiçbir koşulda loglanmaz. `pino`
 - İndirilen medyayı `temp/` dışında bırakma, işlem sonrası silmeyi atlama.
 - Komut dosyası içinde `process.env` okuma dışında global durum tutma — komutlar durumsuzdur.
 - Mention'ı elle biçimlendirme: metinde `@<numara>` yazıp `mentions` dizisini boş bırakma ya da tam JID'i (`@...@s.whatsapp.net`) metne basma. İkisi de tıklanmayan çirkin metin üretir. `lib/target.js` içindeki `mentionOf()` kullanılır.
+- Sıralama listelerinde etiket atma (`.top`, `.servet top`, `.kumartop`, `.tüik`, `.vergitop`, `.sezon`, `.özet`): ad `lib/target.js:displayName()` ile düz yazılır, `mentions` boş kalır. Her çağrıda listedeki herkese bildirim gidiyordu (bot sahibinin kararı). İstisna `.sezon` kapanışındaki ödül alanlardır, haftada bir kez etiketlenir.
 - `.kimvar`'ı "online listesi" gibi sunma — bkz. Faz 8.
 - `data/*.json` havuzlarını koddan yazma/düzenleme; bunlar elle bakılan içeriktir.
 

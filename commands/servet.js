@@ -1,7 +1,7 @@
 import { requireGroup } from '../lib/group.js'
 import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, servetDurumu, servetSiralama } from '../lib/stats.js'
-import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
+import { displayName, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
@@ -28,8 +28,7 @@ export default {
         const liste = servetSiralama({ chatJid: from })
         if (!liste.length) return await yaz('💎 Henüz servet sahibi yok.')
         return await yaz(
-          ['💎 *En zenginler (net servet)*', '', ...liste.map((r, i) => `${i + 1}. ${mentionOf(r.user_jid)} — ${binlik(r.net)} XP`)].join('\n'),
-          liste.map((r) => r.user_jid),
+          ['💎 *En zenginler (net servet)*', '', ...liste.map((r, i) => `${i + 1}. ${displayName(r.user_jid)} — ${binlik(r.net)} XP`)].join('\n'),
         )
       }
 

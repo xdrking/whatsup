@@ -1,7 +1,7 @@
 import { requireGroup } from '../lib/group.js'
 import { binlik } from '../lib/sayi.js'
 import { haftaOzeti } from '../lib/stats.js'
-import { mentionOf } from '../lib/target.js'
+import { displayName } from '../lib/target.js'
 import logger from '../lib/logger.js'
 
 const MADALYA = ['🥇', '🥈', '🥉']
@@ -25,11 +25,7 @@ export default {
       const o = haftaOzeti({ chatJid: from })
       if (!o) return await yaz('📰 Özet şu an çıkarılamıyor, sonra dene.')
 
-      const etiketler = []
-      const kisi = (jid) => {
-        etiketler.push(jid)
-        return mentionOf(jid)
-      }
+      const kisi = displayName
 
       const lines = ['📰 *Haftanın Özeti*', '', `💬 Son 7 günde ${binlik(o.toplamMesaj)} mesaj`]
       o.yazanlar.forEach((y, i) => lines.push(`${MADALYA[i]} ${kisi(y.user_jid)} — ${binlik(y.mesaj)} mesaj`))
@@ -44,7 +40,7 @@ export default {
       if (o.kumarKazanan) lines.push(`🎰 Kumarın kralı: ${kisi(o.kumarKazanan.user_jid)} (+${binlik(o.kumarKazanan.net)} XP)`)
       if (o.kumarKaybeden) lines.push(`🪦 Kumarın kurbanı: ${kisi(o.kumarKaybeden.user_jid)} (${binlik(o.kumarKaybeden.net)} XP)`)
 
-      await yaz(lines.join('\n'), [...new Set(etiketler)])
+      await yaz(lines.join('\n'))
     } catch (err) {
       logger.error({ err, from }, '.özet başarısız')
       await yaz('📰 Bir şeyler ters gitti.').catch((e) =>

@@ -1,7 +1,7 @@
 import { requireGroup } from '../lib/group.js'
 import { SEZON_ODULLERI, haftaBitisi } from '../lib/sezon.js'
 import { sezonDurumu } from '../lib/stats.js'
-import { mentionOf } from '../lib/target.js'
+import { displayName, mentionOf } from '../lib/target.js'
 import logger from '../lib/logger.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -46,16 +46,14 @@ export default {
       lines.push(`🏆 *Bu hafta*  •  ${gun} gün kaldı`, '')
       if (s.siralama.length) {
         s.siralama.forEach((k, i) => {
-          lines.push(`${MADALYA[i] ?? `${i + 1}.`} ${mentionOf(k.user_jid)} — ${sayi.format(k.puan)} XP`)
-          etiketler.push(k.user_jid)
+          lines.push(`${MADALYA[i] ?? `${i + 1}.`} ${displayName(k.user_jid)} — ${sayi.format(k.puan)} XP`)
         })
       } else {
         lines.push('Henüz kimse XP kazanmadı.')
       }
 
       if (s.sonSampiyon) {
-        lines.push('', `👑 Son şampiyon: ${mentionOf(s.sonSampiyon.user_jid)} (${s.sonSampiyon.kez} kez)`)
-        etiketler.push(s.sonSampiyon.user_jid)
+        lines.push('', `👑 Son şampiyon: ${displayName(s.sonSampiyon.user_jid)} (${s.sonSampiyon.kez} kez)`)
       }
 
       await yaz(lines.join('\n'), [...new Set(etiketler)])

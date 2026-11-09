@@ -3,7 +3,7 @@ import { piyasaOlayi } from '../lib/olay.js'
 import { requireGroup } from '../lib/group.js'
 import { binlik } from '../lib/sayi.js'
 import { ekonomiDurumu } from '../lib/stats.js'
-import { mentionOf } from '../lib/target.js'
+import { displayName } from '../lib/target.js'
 import logger from '../lib/logger.js'
 
 const yuzde = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 })
@@ -77,9 +77,8 @@ export default {
           ...uyariSatirlari(e),
           '',
           '🏆 *En zenginler*',
-          ...e.zenginler.map((z, i) => `${i + 1}. ${mentionOf(z.user_jid)} — ${binlik(z.servet)} XP`),
+          ...e.zenginler.map((z, i) => `${i + 1}. ${displayName(z.user_jid)} — ${binlik(z.servet)} XP`),
         ].join('\n'),
-        e.zenginler.map((z) => z.user_jid),
       )
     } catch (err) {
       logger.error({ err, from }, '.tüik başarısız')
