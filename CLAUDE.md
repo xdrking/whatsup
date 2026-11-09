@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Kişisel, eğlence amaçlı bir WhatsApp botu. Tek bir arkadaş grubunda kullanılır.
 
 - **Ticari değil.** Ücretli özellik, müşteri, SLA yok.
-- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz.
+- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz. Tek istisna sahibin `.darbe`'sidir: grup üyelerine özelden yazar (bot sahibinin kararı, ban riski bilerek kabul edildi, Faz 49).
 - Kod kalitesi hedefi: bir kişinin altı ay sonra okuyup anlayabileceği sadelik. Üretim ölçekli soyutlama, DI container, mikroservis vb. **istenmiyor**.
 
 ## Stack
@@ -147,7 +147,8 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | coin bakiyesi, toplu soygun hakkı, sigorta, mülkler, günlük kur | `data/stats.db` (kalıcı) |
-| `lib/db.js` + `lib/stats.js` | hapis, seçim ve başkan, evlilik, meslek, çete | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | hapis, seçim, başkan ve bakanlar, hazine aktarımı, evlilik, meslek, çete | `data/stats.db` (kalıcı) |
+| `games/darbe.js` | süren darbenin oyları | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | `.pet` evcil hayvanlar | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
@@ -312,7 +313,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 46 (tamam):** `.vampir`. Ayrıntı aşağıda.
 - **Faz 47 (tamam):** `.pet`. Ayrıntı aşağıda.
 - **Faz 48 (tamam):** sıfır atma betiği. Ayrıntı aşağıda.
-- **Faz 49+:** yeni komutlar, her biri ayrı adım
+- **Faz 49 (tamam):** `.seçim` geri döndü, bakanlıklar, `.hazine`, gizli `.darbe`. Ayrıntı aşağıda.
+- **Faz 50+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1030,9 +1032,6 @@ XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib
 
 ```
 hapis(chat_jid, user_jid, bitis, kefalet)                    PK(chat_jid,user_jid)
-secim_aday(chat_jid, hafta, user_jid, oy, sira)              PK(chat_jid,hafta,user_jid)
-secim_oy(chat_jid, hafta, user_jid)                          PK(chat_jid,hafta,user_jid)
-baskan(chat_jid, user_jid, hafta, karar_gun)                 PK(chat_jid)
 evlilik(chat_jid, user_jid, es_jid, tarih)                   PK(chat_jid,user_jid)
 meslek(chat_jid, user_jid, kod, secim, son_calisma)          PK(chat_jid,user_jid)
 meslek_biten(chat_jid, user_jid, kod)                        PK(chat_jid,user_jid,kod)
@@ -1044,9 +1043,7 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 
 - **`.hapis`:** `.soygun`'da yakalanan 2 saat girer. Toplu soygunda yakalanma olmadığı için hapis de yoktur. `kumarYasagi()` iflas ve hapsin geç biteni döner, kumar komutları ayrıca bir şey çağırmaz. `.soygun` ve `.çalış` kendisi denetler.
 - **`.kefalet`:** tutar yakalanırken cüzdan ve banka toplamının %20'sidir (bot sahibinin kararı) ve saklanır, sonradan harcamak düşürmez. Ödeyenin cüzdanından alınır, botun bankasına gider (`kasayaYatir`). Eş yarı fiyata öder.
-- **`.seçim` askıdadır (bot sahibinin kararı):** komut `commands/askida/secim.js`'tedir, alt klasör taranmadığı için yüklenmez. `lib/stats.js` ve `lib/secim.js` tarafı durur, testleri çalışır. Açmak için dosya `commands/`'a taşınır, importları `../lib/` olur, `.faizkararı`'na başkan yetkisi geri eklenir (`baskanMi`, `faizKarari({ baskan: true })`, `ownerOnly: false`).
-- **`.seçim` kuralları:** bu haftanın kazananı gelecek hafta başkandır. Kapanış `.sezon` gibi yeni haftadaki ilk okumadadır (`secimKapat`), `baskanMi` da çağırır. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Tek kişi tek oy, oy satın alınamaz, yoksa zengin hep kazanırdı.
-- **Başkan:** açılınca günde bir faiz kararı verir (`karar_gun`), sahip sınırsızdır. `.teşvik` ve `.haciz` yalnızca sahibindir.
+- **`.seçim`, başkan ve bakanlar:** Faz 49'a taşındı.
 - **`.evlen`:** teklif oyun yuvasını 2 dk tutar, yalnızca teklif edilen yanıtlar. Bonus `.çalış`'ta %20 maaş ve yarı fiyat kefalettir. `.günlük`'e konmadı: 50 XP'nin bonusu bu ekonomide bir şey etmez.
 - **`.boşan`:** isteyen, cüzdan ve bankasının %20'sini eşine öder. `.boşan` tutarı gösterir, `.boşan onay` uygular. Borçluyken kapalıdır (`borcluMu`), yoksa evlenip boşanarak para borçtan kaçırılırdı.
 - **`.meslek`:** tanımlar `lib/meslek.js`'tedir, `kod` veritabanına yazılır, değiştirilmez. Maaş kurun on binde payıdır, 30 dakikada bir alınır, XP basar. Maaşlar gerçek hayattaki kazanca göredir (bot sahibinin kararı): yazılımcının en düşük maaşı garsonun en yükseğinden az olmamalı, `test/toplum.test.js` denetler. `kariyerSaati` olan meslek (futbolcu, 24 saat) süresi dolunca `aktifMeslek()` ile kişinin ilk meslek okumasında kapanır, `meslek_biten`'e yazılır, bir daha seçilemez. Satır silindiği için kişi hemen yeni meslek seçebilir. Kariyerli meslek `onay` yazılmadan seçilmez (bot sahibinin kararı, insanlar bilmeden futbolcu seçip yakıyordu). `addXp`'den geçmez, sezon puanı yazmaz: maaş mesaj ve oyun puanlarını ezerdi.
@@ -1121,6 +1118,23 @@ Kurallar `lib/pet.js`'te saftır, yazma `lib/stats.js`'in sonundaki pet bölüm�
 `scripts/sifir-at.js` tek seferliktir, bot sahibi elle ve **bot kapalıyken** çalıştırır: XP cinsinden her tutarı 1000'e böler (`lib/sifirAt.js:SIFIR_AT_SUTUNLARI`). Argümansız önizler, `--uygula` önce `data/yedek/sifir-at-oncesi-*.db` yedeği alır, sonra tek transaction'da yazar; grup id verilirse yalnızca o grup. Coin, mülk adedi ve hisse fiyatı bölünmez: kur paradan hesaplandığı için kendiliğinden düşer, hissede pay adedi bölünür. Level XP'den hesaplandığı için düşer. Yeni bir XP sütunu eklenirse listeye yazılır, `test/sifirat.test.js` listedeki sütunların şemada olduğunu denetler.
 
 **Enflasyonu durdurmaz**, yalnızca rakamları küçültür: maaş ve kira kurla doğrusal büyüdüğü için para kendini besler.
+
+### Faz 49 — Seçim, bakanlıklar, hazine, darbe
+
+```
+makam_aday(chat_jid, hafta, makam, user_jid, oy, sira)       PK(chat_jid,hafta,makam,user_jid)
+makam_oy(chat_jid, hafta, makam, user_jid)                   PK(chat_jid,hafta,makam,user_jid)
+makam(chat_jid, makam, user_jid, kalici, karar_gun)          PK(chat_jid,makam)
+hazine_aktarim(chat_jid, day, user_jid, miktar)              PK(chat_jid,day,user_jid)
+```
+
+Kurallar `lib/devlet.js` ve `lib/secim.js`'te saftır, yazma `lib/stats.js`'tedir. Makamlar `MAKAMLAR`'dadır, `kod` veritabanına yazılır, değiştirilmez.
+
+- **Seçim:** her makamın (başkan, İçişleri, Adalet, Savunma) ayrı haftalık seçimi vardır. Kapanış `.sezon` gibi yeni haftadaki ilk okumadadır (`secimKapat`). Kazanan **yenisi seçilene kadar** makamda kalır. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Makam başına tek oy, oy satın alınamaz. Eski tek makamlı tablolar (`baskan`, `secim_*`) taşınmadan silinir: ilk başkan bot sahibidir (bot sahibinin kararı). Başkan satırı yokken başkan sahiptir, bunu komut katmanı `sahipUyeKimligi()` ile gösterir, veritabanına yazılmaz.
+- **Başkan:** günde bir `.faizkararı` (`karar_gun`), sahip sınırsız. `.hazine ver`: günde en çok 3 kişi, toplam **günün açılış piyasasının %10'u** (`hazineLimiti`), kendine yok. Hazinenin yüzdesi değildir: hazine piyasadan kat kat büyük olduğu için kur bir günde katlanırdı (bot sahibinin kararı). Sahip `.hazine ver`'i başkan gibi kullanır. `.teşvik` ve `.haciz` yalnızca sahibindir.
+- **Bakanlar:** yetki günde bir, para basmaz: İçişleri `af` (hapis satırını siler), Adalet `tutukla` (1 saat, kefalet soygundaki gibi), Savunma `kalkan` (24 saat, `market.kalkan_until`). Hedef engeli hakkı yakmaz.
+- **`.darbe` (gizli):** `hidden: true`, `ownerOnly`, yalnızca özelden; grupta yazılırsa iz bırakmadan düşer (`.xpver` gibi). `.help`'te görünmez, satılmaz. `.darbe <grup id>` yönetimi **hemen** sahibe verir (`makam.kalici = 1`), başkan seçimi askıya alınır; bakanlıklar sürer. `.darbe bitir <grup id>` askıyı kaldırır, başkan yenisi seçilene kadar sahiptir.
+- **Darbe akışı** (`games/darbe.js`): oyun yuvasını tutmaz, `.oyunbitir` durduramaz. Grupta herkes etiketlenir, her üyeye özelden yazılır (aralarında 3 sn, numara biliniyorsa numaraya). Duyuru mesajına `destek`/`karşı` yanıtı oydur, son yanıt geçerli, tepki emojisiyle onaylanır. Kanca `lib/handler.js`'te oyun kancasından öncedir ve susturulmuş grupta da çalışır. 10 dk sonra `darbeSonuc()`: destekçiye 1 coinin XP karşılığı hazineden (yetmezse azı), **destek vermeyen herkese** (karşı ve sessiz) banka ve cüzdanın %60'ı hazineye, coinin %60'ı ve mülklerin yarısı (aşağı yuvarlanır) yanar. Sigorta ve kalkan korumaz. Bot yeniden başlarsa yönetim sahipte kalır, ceza ve ödül işlenmez.
 
 ## Elle Doğrulama
 
@@ -1205,7 +1219,7 @@ Kurallar `lib/pet.js`'te saftır, yazma `lib/stats.js`'in sonundaki pet bölüm�
 65. Sahip `.teşvik 1000` → aktif üyeler eşit pay alır, kasa azalır; kasadan fazlası reddedilir
 66. Servet 1 coin değerini geçen kişi günün ilk mesajında vergi öder, `.banka` son vergiyi yazar; panelde Ekonomi kartı görünür
 67. `.soygun`'da yakalanınca `.hapis` listeler; `.bahis`, `.soygun`, `.çalış` reddedilir; başkası `.kefalet @kişi` yazınca çıkar
-68. `.seçim` → askıda, bot hiç tepki vermez; sıradan üye `.faizkararı 25` yazarsa tepki yok
+68. `.seçim` → hükümet ve dört seçim; sıradan üye `.faizkararı 25` → "yalnızca başkan"; başkan ikinci kararda "yarın tekrar"
 69. `.evlen @kişi` → yalnızca hedefin `evet`i sayılır, `.profil` eşi gösterir; `.boşan` tutarı yazar, `.boşan onay` parayı aktarır
 70. `.meslek seç kurye`, `.çalış` → maaş gelir; ikinci `.çalış` kalan süreyi yazar
 71. `.çete kur Ad`, başkası `.çete katıl Ad`, `.çete yatır 1000` → kasaya 950 girer; üye `.çete çek` reddedilir, lider çeker
@@ -1230,3 +1244,6 @@ Kurallar `lib/pet.js`'te saftır, yazma `lib/stats.js`'in sonundaki pet bölüm�
 90. `.tabu` → kart özelden gelir, grupta tabu mesajı; anlatan yasaklı sözcüğü yanıtlarsa "TABU!"; başkası kelimeyi yanıtlarsa ikisi de XP alır; anlatan `pas` → yeni kart özelden
 91. `.vampir` → 4 kişi `katıl`, kuran `başla`; herkese rol özelden gelir; grupta `.vampir öldür 2` → "özelden yaz"; vampir özelden öldürünce sabah ölen ve rolü yazar; gündüz oylamasında herkes oy verince sonuç hemen gelir; vampir asılınca köy XP alır
 92. `.pet sahiplen kedi Pamuk` → XP düşer, `.pet` kartı gösterir; hemen `.pet besle` → "tok"; `.pet oyna` iki kez → ikincisi kalan süreyi yazar; `.pet hediye` → XP gelir, ikincisi bekletir; `.pet @kişi` başkasının kartını açar
+93. `.seçim aday adalet`, başkası `.seçim oy adalet @kişi` → yeni haftada `.seçim` kazananı etiketler; `.bakan tutukla @x` → 1 saat hapis, ikincisi "yarın"; İçişleri `.bakan af @x` → çıkar
+94. Seçilmiş başkan yokken `.hazine` başkanı sahip yazar; `.hazine ver @kişi 1000` → kasa azalır; dördüncü kişi "yarın"; limit üstü → kalanı yazar; sıradan üye → "yalnızca başkan"
+95. Sahip özelden `.darbe <grup id>` → grupta herkes etiketlenir, üyelere özelden mesaj gelir; `destek` yanıtı ✅ alır; 10 dk sonra sonuç, `.seçim aday` → "askıda"; grupta `.darbe` → hiç tepki yok; `.help darbe` → yok; `.darbe bitir <grup id>` → seçim açılır

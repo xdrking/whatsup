@@ -102,10 +102,10 @@ test('seçim: kazanan ertesi hafta başkan olur, oy tektir, ücretler yanar', ()
   assert.equal(baskanMi(chatJid, 'b', T + HAFTA), true)
   assert.equal(baskanMi(chatJid, 'a', T + HAFTA), false)
   assert.equal(sosyalDurum(chatJid, 'b', T + HAFTA).baskan, true)
-  assert.equal(secimDurumu({ chatJid, userJid: 'c', now: T + HAFTA }).oyVerdi, false)
+  assert.equal(secimDurumu({ chatJid, userJid: 'c', now: T + HAFTA }).oyVerdi.baskan, false)
 
-  // Görev bir haftadır.
-  assert.equal(baskanMi(chatJid, 'b', T + 2 * HAFTA), false)
+  // Yenisi seçilene kadar makamda kalır.
+  assert.equal(baskanMi(chatJid, 'b', T + 2 * HAFTA), true)
 })
 
 test('seçim: eşitlikte önce aday olan kazanır, yeni başkan bir kez duyurulur', () => {
@@ -119,11 +119,11 @@ test('seçim: eşitlikte önce aday olan kazanır, yeni başkan bir kez duyurulu
   assert.equal(secimDurumu({ chatJid, userJid: 'c', now: T + HAFTA }).yeniBaskan, null)
 })
 
-test('seçim: görev haftası kaçırıldıysa başkan yazılmaz', () => {
+test('seçim: kapanış geç okunsa da kazanan başkan olur', () => {
   const chatJid = ayarla({ a: 50_000, c: 1000 })
   adayOl({ chatJid, userJid: 'a', now: T })
   oyVer({ chatJid, secmen: 'c', aday: 'a', now: T })
-  assert.equal(baskanMi(chatJid, 'a', T + 2 * HAFTA), false)
+  assert.equal(baskanMi(chatJid, 'a', T + 2 * HAFTA), true)
 })
 
 test('başkan günde bir faiz kararı verir, sahip sınırsızdır', () => {
