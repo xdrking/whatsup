@@ -128,6 +128,7 @@ async function geceBaslat(state, giris = '') {
     ...(giris ? [giris, ''] : []),
     `🌙 *GECE ${state.gece}*`, '',
     'Köy uyuyor. Gece rolleri bana özelden yazsın.',
+    'Rolün ya da liste gelmediyse bana özelden `.vampir` yaz.',
     `⏱️ ${GECE_MS / 1000} sn`, '',
     grupListesi(canlilar(state)),
   ].join('\n'), { son: true })
@@ -336,10 +337,8 @@ const EYLEMLER = {
 export const geceEylemiMi = (kelime) => Boolean(EYLEMLER[katla(kelime)])
 
 /** Özelden gelen `.vampir öldür|koru|bak <no>`. */
-export async function geceEylemi({ sock, msg, parsed, args }) {
-  const yaz = (text) => sock.sendMessage(parsed.from, { text }, { quoted: msg })
-  const gerekenRol = EYLEMLER[katla(args[0])]
-
+/** Özelden yazanın oyununu bulur. İki grupta birden oynayan için gecesi süren oyun öne alınır. */
+function oyunumuBul(parsed) {
   let state = null
   let ben = null
   for (const s of aktifOyunlar) {
@@ -348,13 +347,34 @@ export async function geceEylemi({ sock, msg, parsed, args }) {
       continue
     }
     const o = oyuncuBul(s, parsed)
-    // İki grupta birden oynayan için gecesi süren oyun öne alınır.
     if (o && (!state || (s.faz === 'gece' && state.faz !== 'gece'))) {
       state = s
       ben = o
     }
   }
+  return { state, ben }
+}
 
+/**
+ * Özelden `.vampir`: rolü ve gecenin listesini yeniden yollar. Alıcının telefonu çevrimdışıyken
+ * giden mesaj tek tikte kalıp hiç düşmeyebiliyor, oyuncu kendi isteyince yanıt hemen ulaşıyor.
+ */
+export async function rolHatirlat({ sock, msg, parsed }) {
+  const yaz = (text) => sock.sendMessage(parsed.from, { text }, { quoted: msg })
+  const { state, ben } = oyunumuBul(parsed)
+  if (!state) return yaz('Aktif bir vampir oyununda değilsin. Oyunu grupta `.vampir` ile kur.')
+  if (state.faz === 'lobi') return yaz('Oyun henüz başlamadı, roller başlayınca gelir.')
+  const satirlar = [rolMetni(state, ben)]
+  if (!ben.canli) satirlar.push('', '💀 Öldün, artık bir şey yapamazsın.')
+  else if (state.faz === 'gece' && ben.rol !== 'koylu') satirlar.push('', `🌙 *Gece ${state.gece}*`, '', ozelListe(state, ben))
+  return yaz(satirlar.join('\n'))
+}
+
+export async function geceEylemi({ sock, msg, parsed, args }) {
+  const yaz = (text) => sock.sendMessage(parsed.from, { text }, { quoted: msg })
+  const gerekenRol = EYLEMLER[katla(args[0])]
+
+  const { state, ben } = oyunumuBul(parsed)
   if (!state) return yaz('Aktif bir vampir oyununda değilsin.')
   if (state.faz !== 'gece') return yaz('Şu an gece değil.')
   if (!ben.canli) return yaz('💀 Ölüler bir şey yapamaz.')

@@ -2,7 +2,7 @@ import logger from '../lib/logger.js'
 import { requireGroup } from '../lib/group.js'
 import { MAX_OYUNCU, MIN_OYUNCU } from '../lib/vampir.js'
 import { getGame } from '../games/gameManager.js'
-import { geceEylemi, geceEylemiMi, start } from '../games/vampir.js'
+import { geceEylemi, geceEylemiMi, rolHatirlat, start } from '../games/vampir.js'
 
 export default {
   name: 'vampir',
@@ -11,7 +11,7 @@ export default {
   usage: '.vampir',
   details: [
     `1. \`.vampir\` köyü kurar. Bot mesajına \`katıl\` yazan oyuna girer (${MIN_OYUNCU}-${MAX_OYUNCU} kişi), kuran \`başla\` yazar.`,
-    '2. Roller özelden gelir: 🧛 vampir, 🩺 doktor, 🔮 kahin, 👨‍🌾 köylü.',
+    '2. Roller özelden gelir: 🧛 vampir, 🩺 doktor, 🔮 kahin, 👨‍🌾 köylü. Gelmediyse bota özelden `.vampir` yaz, rolün ve gecenin listesi yeniden gelir.',
     '3. Gece (2 dk) bota özelden: vampir `.vampir öldür <no>`, doktor `.vampir koru <no>`, kahin `.vampir bak <no>`.',
     '4. Gündüz (3 dk) herkes gruptaki oylama mesajına numara ya da `pas` yazar. Tek başına en çok oyu alan asılır.',
     '5. Bütün vampirler ölürse köy, vampirler köylülere yetişirse vampirler kazanır. Kazanan takım XP alır.',
@@ -30,6 +30,10 @@ export default {
         return
       }
 
+      if (!parsed.isGroup) {
+        await rolHatirlat({ sock, msg, parsed })
+        return
+      }
       if (!(await requireGroup({ sock, msg, from, parsed }))) return
       if (getGame(from)) {
         await sock.sendMessage(from, { text: '⚠️ Bu grupta zaten aktif bir oyun var.' }, { quoted: msg })
