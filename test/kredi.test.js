@@ -54,7 +54,7 @@ test('tek kredi kasanın yarısını geçemez, limit durumda da görünür', () 
 
   const k = kur(90_000)
   assert.equal(krediDurumu({ ...k, now: T }).limit, 45_000)
-  assert.deepEqual(krediCek({ ...k, miktar: 100_000, now: T }), { kasaLimit: 45_000 })
+  assert.deepEqual(krediCek({ ...k, miktar: 49_000, now: T }), { kasaLimit: 45_000 })
   assert.deepEqual(krediCek({ ...k, miktar: 45_001, now: T }), { kasaLimit: 45_000 })
   assert.deepEqual(krediCek({ ...k, miktar: 45_000, now: T }), { xp: 45_000 })
   assert.equal(getStats(k.chatJid, BOT).xp, 45_000)
@@ -258,10 +258,14 @@ test('ondalıklı faiz: ayrıştırma, kredi farkı ve kararın saklanması', as
   assert.equal(faizOranCoz('0'), 0)
   assert.equal(faizOranCoz('0.125'), null)
   assert.equal(faizOranCoz('51'), null)
-  assert.equal(faizOranCoz('-1'), null)
+  assert.equal(faizOranCoz('-1'), -1)
+  assert.equal(faizOranCoz('-0,5'), -0.5)
+  assert.equal(faizOranCoz('-5,01'), null)
+  assert.ok(Object.is(faizOranCoz('-0'), 0))
   assert.equal(faizOranCoz('abc'), null)
 
   assert.equal(krediFaizi(0.1), 4.1)
+  assert.equal(krediFaizi(-2), 4)
   assert.equal(oranYaz(0.25), '0,25')
   assert.ok(Math.abs(gunlukFaiz(1) - 26.97) < 0.01)
 
@@ -271,4 +275,13 @@ test('ondalıklı faiz: ayrıştırma, kredi farkı ve kararın saklanması', as
   // Küçük oran bakiyeyi büyütür ama yavaş: 1.000.000 XP, 24 saatte %6'dan az.
   const { faiz } = faizIslet(1_000_000, 0, 24, 0, 0.25)
   assert.ok(faiz > 50_000 && faiz < 62_000, String(faiz))
+})
+
+test('eksi faiz: bakiye erir, sıfırın altına inmez', () => {
+  // -1 saatlik, 24 saat: 1.000.000 × (0,99^24 - 1) ≈ -214.330
+  const { faiz } = faizIslet(1_000_000, 0, 24, 0, -1)
+  assert.ok(faiz < -214_000 && faiz > -215_000, String(faiz))
+  const kucuk = faizIslet(1, 0, 168, 0, -5)
+  assert.ok(1 + kucuk.faiz >= 0)
+  assert.ok(kucuk.artik >= 0)
 })

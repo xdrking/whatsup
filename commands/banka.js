@@ -73,7 +73,7 @@ export default {
         `💰 Hesap: ${sayi.format(durum.bakiye)} XP`,
         `👛 Cüzdan: ${sayi.format(durum.xp)} XP`,
       ]
-      if (durum.faiz) lines.push(`📈 Yeni faiz: +${sayi.format(durum.faiz)} XP`)
+      if (durum.faiz) lines.push(`${durum.faiz > 0 ? '📈' : '📉'} Yeni faiz: ${durum.faiz > 0 ? '+' : ''}${sayi.format(durum.faiz)} XP`)
       lines.push(`📈 Saatlik faiz: %${oranYaz(faizDurumu(from).banka)}`)
       if (durum.sonVergi) lines.push(`💸 Son vergi: ${sayi.format(durum.sonVergi)} XP`)
       if (durum.borc) lines.push(`💳 Kredi borcu: ${sayi.format(durum.borc)} XP`)

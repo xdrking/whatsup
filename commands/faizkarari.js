@@ -1,4 +1,4 @@
-import { AZAMI_FAIZ, faizOranCoz, gunlukFaiz, oranYaz } from '../lib/banka.js'
+import { ASGARI_FAIZ, AZAMI_FAIZ, faizOranCoz, gunlukFaiz, oranYaz } from '../lib/banka.js'
 import { requireGroup } from '../lib/group.js'
 import { faizDurumu, faizKarari } from '../lib/stats.js'
 import logger from '../lib/logger.js'
@@ -9,7 +9,7 @@ export default {
   description: 'Bot sahibi: grubun banka ve kredi faizini belirler',
   usage: '.faizkararı <oran>',
   details: [
-    `Saatlik banka faizi 0-${AZAMI_FAIZ} arasında olabilir, ondalık da yazılır: \`.faizkararı 0,25\`. Kredi faizi 4 puan üstünde kalır.`,
+    `Saatlik banka faizi ${ASGARI_FAIZ} ile ${AZAMI_FAIZ} arasında olabilir, ondalık da yazılır: \`.faizkararı 0,25\`. Eksi faiz bankadaki parayı eritir. Kredi faizi 4 puan üstünde kalır, eksiye inmez.`,
     'Faiz saatlik ve bileşiktir, küçük oran bile günde büyür:',
     [0.1, 0.25, 0.5, 1, 5, 15].map((o) => `%${oranYaz(o)} → günde %${oranYaz(gunlukFaiz(o))}`).join('  •  '),
     'Birikmiş faiz eski orandan işlenir, yeni oran bundan sonraki saatlere uygulanır.',
@@ -30,7 +30,7 @@ export default {
 
       const oran = faizOranCoz(args[0])
       if (oran === null) {
-        return await yaz(`🏦 Oran 0-${AZAMI_FAIZ} arasında olmalı, en çok 2 ondalık basamak. Örnek: \`.faizkararı 0,25\``)
+        return await yaz(`🏦 Oran ${ASGARI_FAIZ} ile ${AZAMI_FAIZ} arasında olmalı, en çok 2 ondalık basamak. Örnek: \`.faizkararı 0,25\`, \`.faizkararı -0,5\``)
       }
 
       const s = faizKarari({ chatJid: from, oran })
