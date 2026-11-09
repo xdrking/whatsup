@@ -26,7 +26,7 @@ export default {
   category: 'araç',
   ownerOnly: false,
 
-  async execute({ sock, msg, from, args, commands, isOwner }) {
+  async execute({ sock, msg, from, args, commands, isOwner, parsed }) {
     const prefix = process.env.PREFIX || '.'
     const botName = process.env.BOT_NAME || 'wp-bot'
 
@@ -73,7 +73,9 @@ export default {
       const wanted = args[0].toLowerCase().replace(prefix, '')
       const command = commands.get(wanted)
 
-      if (!command || gizli(command)) {
+      // Rehberi olan gizli komut (.darbe) yalnızca sahibe ve özelden açılır: grupta herkes görürdü.
+      const sahibeOzel = command?.hidden && command.details?.length && isOwner && parsed?.isGroup === false
+      if (!command || (gizli(command) && !sahibeOzel)) {
         await yaz(`\`${wanted}\` diye bir komut yok. Listeyi görmek için \`${prefix}help\`.`)
         return
       }

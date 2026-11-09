@@ -16,6 +16,26 @@ export default {
   hidden: true,
   ownerOnly: true,
   cooldown: 0,
+  // Yalnızca sahip özelden `.help darbe` yazınca görünür (commands/help.js).
+  details: [
+    '🪖 *Darbe nasıl yapılır?*\n',
+    '1️⃣ Grubun id\'sini öğren: grupta `.id` yaz, "...@g.us" ile biten satır.',
+    '2️⃣ Bota *özelden* yaz: `.darbe <grup id>`',
+    '   Örnek: `.darbe 120363012345678901@g.us`',
+    '   Grupta yazarsan hiçbir şey olmaz, iz de kalmaz.\n',
+    '⚡ *Hemen olanlar*',
+    '• Başkanlık sana geçer, başkan seçimi askıya alınır. Bakanlıklar sürer.',
+    '• Grupta herkes etiketlenir, her üyeye özelden duyuru gider (aralarında 3 sn).',
+    '• Üyeler gruptaki darbe mesajına *destek* ya da *karşı* yanıtı verir, son yanıt geçerli.\n',
+    '⏱️ *10 dakika sonra*',
+    '• Destek verenlere hazineden 1 coin değerinde XP (hazine yetmezse azı).',
+    '• Destek vermeyen herkesin (karşı ve sessiz) banka ve cüzdanının %60\'ı hazineye geçer,',
+    '  coininin %60\'ı ve mülklerinin yarısı yanar. Sigorta ve kalkan korumaz.\n',
+    '🕊️ *Bitirmek*: `.darbe bitir <grup id>`',
+    '   Seçim yeniden açılır, yenisi seçilene kadar başkan sensin.\n',
+    '⚠️ Bot o 10 dakikada yeniden başlarsa yönetim sende kalır ama ceza ve ödül işlenmez.',
+    '⚠️ Herkese özelden mesaj gittiği için numaranın ban riski vardır.',
+  ],
 
   async execute({ sock, msg, args, from, parsed }) {
     const yaz = (text) => sock.sendMessage(from, { text }, { quoted: msg })

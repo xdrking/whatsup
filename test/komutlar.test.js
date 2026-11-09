@@ -33,10 +33,10 @@ test('her komut sözleşmeye uyar', () => {
   }
 })
 
-async function help(args = [], isOwner = false) {
+async function help(args = [], isOwner = false, isGroup = true) {
   let metin = ''
   const sock = { sendMessage: async (_, { text }) => { metin = text } }
-  await commands.get('help').execute({ sock, msg: {}, from: 'g@g.us', args, commands, isOwner })
+  await commands.get('help').execute({ sock, msg: {}, from: 'g@g.us', args, commands, isOwner, parsed: { isGroup } })
   return metin
 }
 
@@ -57,6 +57,14 @@ test('.help bölümü: açıklama yazar, aynı adlı komuta yol gösterir', asyn
   assert.ok((await help(['.grup'])).startsWith('*.grup*'))
   assert.ok((await help(['tümü'])).includes('`.soygun` —'))
   assert.match(await help(['xpver'], true), /diye bir komut yok/)
+  assert.match(await help(['xpver'], true, false), /diye bir komut yok/)
+})
+
+test('.help darbe: rehber yalnızca sahibe ve özelden açılır', async () => {
+  assert.match(await help(['darbe'], true, false), /Darbe nasıl yapılır/)
+  assert.match(await help(['darbe'], true, true), /diye bir komut yok/)
+  assert.match(await help(['darbe'], false, false), /diye bir komut yok/)
+  assert.match(await help(['darbe'], false, true), /diye bir komut yok/)
 })
 
 test('data/*.json havuzları boş olmayan string dizisi', async () => {
