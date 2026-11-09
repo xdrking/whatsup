@@ -481,7 +481,7 @@ Kabul sırası: tek kelime mi → doğru harfle mi başlıyor → daha önce kul
 → TDK'de var mı. **Ağ isteği en sona bırakılır.** Geçersiz cevapta `currentWord`,
 `requiredLetter`, `lastMessageId` ve zaman aşımı sayacı **değişmez**.
 
-Aynı kişi art arda en çok `SERI_SINIRI` (10) kelime söyler, başkasının geçerli kelimesi sayacı sıfırlar (bot sahibinin kararı): ödül kurla büyüdüğü için tek kişi XP basmasın. Denetim ağ isteğinden öncedir, hak yakmaz.
+Aynı kişinin art arda kelime sınırı yoktur (bot sahibinin kararı, önceden 10'du).
 
 Doğrulama `lib/turkishWords.js:isValidTurkishWord()` üzerinden yapılır; oyun kodu
 TDK'yı bilmez. Birincil kaynak `sozluk.gov.tr/gts` (Node yerleşik `fetch`,

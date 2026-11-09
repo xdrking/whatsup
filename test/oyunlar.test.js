@@ -10,21 +10,6 @@ const { tahminDogruMu } = await import('../games/kimim.js')
 const { soruUret } = await import('../games/duello.js')
 const { emojiTahminDogruMu, kalip } = await import('../games/emoji.js')
 const { tahminEt, maske } = await import('../games/adamasmaca.js')
-const { SERI_SINIRI, seriIzinli, seriIlerlet } = await import('../games/kelime.js')
-
-test('kelime: art arda 10 kelime, başkası yazınca sıfırlanır', () => {
-  let seri = null
-  for (let i = 0; i < SERI_SINIRI; i++) {
-    assert.ok(seriIzinli(seri, 'a'))
-    seri = seriIlerlet(seri, 'a')
-  }
-  assert.equal(seriIzinli(seri, 'a'), false)
-  assert.ok(seriIzinli(seri, 'b'))
-  seri = seriIlerlet(seri, 'b')
-  assert.ok(seriIzinli(seri, 'a'))
-  assert.deepEqual(seriIlerlet(seri, 'a'), { jid: 'a', adet: 1 })
-})
-
 test('quiz: harf, numara ve şık metni kabul edilir', () => {
   const secenekler = ['Ankara', 'İstanbul', '3,14', 'Ağrı Dağı']
   assert.equal(secenekIndeksi('a', secenekler), 0)
