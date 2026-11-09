@@ -135,7 +135,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 |---|---|---|
 | `lib/contacts.js` | JID → pushName | bellek + `data/stats.db` (kalıcı) |
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
-| `lib/outgoing.js` | botun kendi gönderdiği son mesaj id'leri | bellek (süreçle ölür) |
+| `lib/outgoing.js` | botun kendi gönderdiği son 300 mesajın id'si ve gövdesi | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
 | `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.hilo`, `.kule`, `.yarış`, `.vs`, `.evlen` teklifi, `.dava`, `.vampir`…) | bellek (süreçle ölür) |
 | `games/wordle.js` | grubun bugünkü wordle tahtası (tahmin satırları) | bellek (süreçle ölür) |
@@ -153,7 +153,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
-Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe.
+Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe. Tek istisna botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz.
 
 ### Komut sözleşmesi
 

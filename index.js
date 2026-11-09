@@ -11,7 +11,7 @@ import makeWASocket, {
 import qrcode from 'qrcode-terminal'
 import logger, { baileysLogger } from './lib/logger.js'
 import { handleMessage } from './lib/handler.js'
-import { trackOutgoing } from './lib/outgoing.js'
+import { gonderilenMesaj, trackOutgoing } from './lib/outgoing.js'
 import { loadCommands } from './commands/index.js'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
@@ -46,6 +46,8 @@ async function connect() {
     logger: baileysLogger,
     browser: Browsers.macOS('Desktop'),
     markOnlineOnConnect: false,
+    // Alıcı mesajı çözemeyip yeniden isterse gövde buradan verilir; yoksa "Bu mesaj bekleniyor" kalır.
+    getMessage: async (key) => gonderilenMesaj(key.id),
   })
 
   // Gönderilen mesajların id'sini not eder; handler botun kendi yanıtlarını
