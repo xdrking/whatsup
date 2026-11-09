@@ -310,7 +310,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 45 (tamam):** `.servet`, `.kumarkarnem`, `.tabu`. Ayrıntı aşağıda.
 - **Faz 46 (tamam):** `.vampir`. Ayrıntı aşağıda.
 - **Faz 47 (tamam):** `.pet`. Ayrıntı aşağıda.
-- **Faz 48+:** yeni komutlar, her biri ayrı adım
+- **Faz 48 (tamam):** sıfır atma betiği. Ayrıntı aşağıda.
+- **Faz 49+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1113,6 +1114,12 @@ Kurallar `lib/pet.js`'te saftır, yazma `lib/stats.js`'in sonundaki pet bölüm�
 - **Kaçma:** tokluk sıfıra indikten 48 saat sonra hayvan kaçar, satır sahibinin ilk `.pet` okumasında silinir. Ücret geri gelmez.
 - **Ekonomi:** hayvan ve mama `kurOlcegi()` ile doğrusal büyür, ücret yanar (market gibi). Hediye `oyunOdulu()`'dür, kurun kareköküyle büyür: düşük kurda hediye mamadan fazla XP getirebilir, yüksek kurda hayvan XP yakar. Hediye için tokluk ve mutluluk 30'un üstünde olmalı, günde bir kez alınır.
 - `son_oyun`/`son_hediye` 0 "hiç" demektir, bekleme denetimi onu atlar.
+
+### Faz 48 — Sıfır atma
+
+`scripts/sifir-at.js` tek seferliktir, bot sahibi elle ve **bot kapalıyken** çalıştırır: XP cinsinden her tutarı 1000'e böler (`lib/sifirAt.js:SIFIR_AT_SUTUNLARI`). Argümansız önizler, `--uygula` önce `data/yedek/sifir-at-oncesi-*.db` yedeği alır, sonra tek transaction'da yazar; grup id verilirse yalnızca o grup. Coin, mülk adedi ve hisse fiyatı bölünmez: kur paradan hesaplandığı için kendiliğinden düşer, hissede pay adedi bölünür. Level XP'den hesaplandığı için düşer. Yeni bir XP sütunu eklenirse listeye yazılır, `test/sifirat.test.js` listedeki sütunların şemada olduğunu denetler.
+
+**Enflasyonu durdurmaz**, yalnızca rakamları küçültür: maaş ve kira kurla doğrusal büyüdüğü için para kendini besler.
 
 ## Elle Doğrulama
 
