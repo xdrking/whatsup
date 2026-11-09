@@ -1,4 +1,5 @@
 import { trLower } from '../lib/turkishWords.js'
+import { makamRehberi } from '../lib/devlet.js'
 
 // .help başlıkları ve sırası. Komut dosyasındaki `category` alanı buradaki kodlardan
 // biri olmalı. `adlar`, `.help <kategori>` yazımlarıdır.
@@ -21,7 +22,7 @@ export default {
   name: 'help',
   aliases: ['yardim', 'yardım', 'menu', 'komutlar'],
   description: 'Komut menüsünü, bir bölümü ya da tek komutun ayrıntısını gösterir',
-  usage: '.help  —  .help oyun  —  .help sticker  —  .help tümü',
+  usage: '.help  —  .help oyun  —  .help sticker  —  .help başkan  —  .help tümü',
   category: 'araç',
   ownerOnly: false,
 
@@ -58,6 +59,13 @@ export default {
     if (bolum) {
       const ayniAd = commands.get(istek)?.name === istek ? [`\`${prefix}${istek}\` komutu için: \`${prefix}help ${prefix}${istek}\``] : []
       await yaz([bolum.baslik, '', ...bolum.komutlar.map(satir), '', ...ayniAd, `Ayrıntı: \`${prefix}help <komut>\``].join('\n'))
+      return
+    }
+
+    // Makam adı `.seçim`'in alias'ı olan `başkan`'ı ezer: makam sahibi görevini okusun (bot sahibinin isteği).
+    const rehber = makamRehberi(istek)
+    if (rehber) {
+      await yaz(rehber)
       return
     }
 

@@ -190,6 +190,7 @@ export default {
 `.help` yalnızca komut adlarını yazan kısa menüdür: WhatsApp'ta 100 satırlık liste okunmuyordu.
 Açıklamalar `.help <bölüm>` ve `.help tümü`'dedir. Bölüm adı komutla çakışırsa (`.help grup`) bölüm kazanır,
 komut `.help .grup` ile açılır.
+Makam adları (`.help başkan`, `.help adalet`, `.help makamlar`) makamın görev metnini açar (`lib/devlet.js:makamRehberi`), `başkan` alias'ı olan `.seçim`'i ezer.
 `createDatasetCommand` ile üretilen havuz komutları varsayılan olarak `eğlence`'dir.
 
 `details` yalnızca kullanımı tek satıra sığmayan komutlara yazılır (`.tts`, `.efekt`,
@@ -1248,3 +1249,4 @@ Kurallar `lib/devlet.js` ve `lib/secim.js`'te saftır, yazma `lib/stats.js`'tedi
 93. `.seçim aday adalet` → "seçim başladı", başkası `.seçim oy adalet @kişi`; 30 dk sonra bot sonucu kendiliğinden yazar ve kazananı etiketler; açık seçim yokken `.seçim oy` → "açık seçim yok"; `.bakan tutukla @x` → 1 saat hapis, ikincisi "yarın"; İçişleri `.bakan af @x` → çıkar
 94. Seçilmiş başkan yokken `.hazine` başkanı sahip yazar; `.hazine ver @kişi 1000` → kasa azalır; dördüncü kişi "yarın"; limit üstü → kalanı yazar; sıradan üye → "yalnızca başkan"
 95. Sahip özelden `.darbe <grup id>` → grupta herkes etiketlenir, üyelere özelden mesaj gelir; `destek` yanıtı ✅ alır; 10 dk sonra sonuç, `.seçim aday` → "askıda"; grupta `.darbe` → hiç tepki yok; `.help darbe` → yok; `.darbe bitir <grup id>` → seçim açılır
+96. `.help savunma` → Savunma Bakanı'nın görevi; `.help başkan` → `.faizkararı` ve `.hazine ver`; `.help makamlar` → dört makam

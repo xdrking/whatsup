@@ -151,3 +151,17 @@ test('darbe akışı: duyuru, özel mesaj, yanıtla oy, süre sonunda sonuç', a
   assert.equal(xp(chatJid, 'a@lid'), 10_500)
   assert.equal(xp(chatJid, 'b@lid'), 4000)
 })
+
+test('makamRehberi: her makamın görevi, makamlar listesi, bilinmeyen null', async () => {
+  const { makamRehberi, MAKAMLAR } = await import('../lib/devlet.js')
+  for (const m of MAKAMLAR) {
+    for (const ad of m.adlar) assert.ok(makamRehberi(ad).includes(m.ad), ad)
+  }
+  assert.ok(makamRehberi('Başkan').includes('.faizkararı'))
+  assert.ok(makamRehberi('adalet').includes('%20'))
+  assert.ok(makamRehberi('savunma').includes('24 saat'))
+  const hepsi = makamRehberi('makamlar')
+  for (const m of MAKAMLAR) assert.ok(hepsi.includes(m.ad))
+  assert.equal(makamRehberi('sticker'), null)
+  assert.equal(makamRehberi(''), null)
+})
