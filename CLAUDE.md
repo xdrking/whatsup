@@ -148,6 +148,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | coin bakiyesi, toplu soygun hakkı, sigorta, mülkler, günlük kur | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | hapis, seçim ve başkan, evlilik, meslek, çete | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | `.pet` evcil hayvanlar | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -308,7 +309,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 44 (tamam):** yazılı tutarlar (`50 milyon`) ve `.devret hepsi`. Komut sözleşmesindeki `args` maddesine işlendi.
 - **Faz 45 (tamam):** `.servet`, `.kumarkarnem`, `.tabu`. Ayrıntı aşağıda.
 - **Faz 46 (tamam):** `.vampir`. Ayrıntı aşağıda.
-- **Faz 47+:** yeni komutlar, her biri ayrı adım
+- **Faz 47 (tamam):** `.pet`. Ayrıntı aşağıda.
+- **Faz 48+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1099,6 +1101,19 @@ Kurallar `lib/vampir.js`'te saftır, akış `games/vampir.js`'tedir. Veritabanı
 - **Oylama** son gündüz mesajına yanıttır, `setLastMessage` oyda çağrılmaz. Tek başına en çok oyu alan asılır, beraberlikte ya da pas oyları yetişince kimse asılmaz: rastgele asmak masumu zarla öldürmek olurdu. Vampir oyları bölünürse kurban berabere kalanlardan çekilir.
 - **Kazanma:** vampir kalmazsa köy, vampirler kalan köylülere yetişirse vampirler. Ölüler dahil kazanan takımın herkesi ödül alır, vampirin ödülü büyüktür. `.oyunbitir` ve zaman aşımı ödülsüzdür, rolleri açıklar.
 
+### Faz 47 — `.pet`
+
+```
+pet(chat_jid, user_jid, tur, ad, tokluk, mutluluk, guncelleme ms, pet_xp, son_oyun ms, son_hediye ms, dogum ms)   PK(chat_jid,user_jid)
+```
+
+Kurallar `lib/pet.js`'te saftır, yazma `lib/stats.js`'in sonundaki pet bölümündedir (`petIslem` tek transaction). Kişi başı bir hayvan, tür `kod` ile yazılır, `TURLER` anahtarları değiştirilmez.
+
+- **Zamanla azalma saklanmaz:** tokluk ve mutluluk `guncelleme` anındaki değerdir, `durum()` her okumada hesaplar (banka faizi gibi). Bot kendiliğinden yazmadığı için arka plan işi yoktur.
+- **Kaçma:** tokluk sıfıra indikten 48 saat sonra hayvan kaçar, satır sahibinin ilk `.pet` okumasında silinir. Ücret geri gelmez.
+- **Ekonomi:** hayvan ve mama `kurOlcegi()` ile doğrusal büyür, ücret yanar (market gibi). Hediye `oyunOdulu()`'dür, kurun kareköküyle büyür: düşük kurda hediye mamadan fazla XP getirebilir, yüksek kurda hayvan XP yakar. Hediye için tokluk ve mutluluk 30'un üstünde olmalı, günde bir kez alınır.
+- `son_oyun`/`son_hediye` 0 "hiç" demektir, bekleme denetimi onu atlar.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1206,3 +1221,4 @@ Kurallar `lib/vampir.js`'te saftır, akış `games/vampir.js`'tedir. Veritabanı
 89. `.slot 100` ve `.mayın 100` sonrası `.kumarkarnem` → iki oyun ayrı satırda, en büyük vurgun ve kasaya kaptırılan yazılır
 90. `.tabu` → kart özelden gelir, grupta tabu mesajı; anlatan yasaklı sözcüğü yanıtlarsa "TABU!"; başkası kelimeyi yanıtlarsa ikisi de XP alır; anlatan `pas` → yeni kart özelden
 91. `.vampir` → 4 kişi `katıl`, kuran `başla`; herkese rol özelden gelir; grupta `.vampir öldür 2` → "özelden yaz"; vampir özelden öldürünce sabah ölen ve rolü yazar; gündüz oylamasında herkes oy verince sonuç hemen gelir; vampir asılınca köy XP alır
+92. `.pet sahiplen kedi Pamuk` → XP düşer, `.pet` kartı gösterir; hemen `.pet besle` → "tok"; `.pet oyna` iki kez → ikincisi kalan süreyi yazar; `.pet hediye` → XP gelir, ikincisi bekletir; `.pet @kişi` başkasının kartını açar
