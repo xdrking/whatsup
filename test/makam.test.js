@@ -61,23 +61,29 @@ test('bakan: her bakanlığın ayrı seçimi, yetki günde bir', () => {
   assert.equal(hapisDurumu(chatJid, 'k', P + 3), null)
 })
 
-test('hazine: başkan günde 3 kişiye, toplam piyasanın %10\'u, kendine yok', () => {
-  const chatJid = ayarla({ a: 50_000, b: 25_000, c: 25_000, d: 1, e: 1, [BOT]: 1_000_000 })
-  // Piyasa 100.002 XP: limit 10.000.
+test('hazine: başkan günde 10 kişiye, kişi başı anlık piyasanın %20\'si, kendine yok', () => {
+  const uyeler = { a: 50_000, b: 25_000, c: 25_000, [BOT]: 10_000_000 }
+  for (let i = 0; i < 10; i++) uyeler[`k${i}`] = 1
+  const chatJid = ayarla(uyeler)
+  // Piyasa 100.010 XP: kişi başı sınır 20.002.
   assert.deepEqual(hazineAktar({ chatJid, userJid: 'b', hedef: 'c', miktar: 10, now: T }), { degil: true })
   assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'o', miktar: 10, sahip: true, now: T }), { kendine: true })
 
-  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'b', miktar: 4000, sahip: true, now: T }), { miktar: 4000, kalan: 6000, kisi: 1 })
-  assert.equal(xp(chatJid, 'b'), 29_000)
-  hazineAktar({ chatJid, userJid: 'o', hedef: 'c', miktar: 1000, sahip: true, now: T })
-  hazineAktar({ chatJid, userJid: 'o', hedef: 'd', miktar: 1000, sahip: true, now: T })
-  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'e', miktar: 1, sahip: true, now: T }), { kisiSiniri: true })
-  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'b', miktar: 4001, sahip: true, now: T }), { limit: 10_000, kalan: 4000 })
-  assert.equal(hazineDurumu({ chatJid, now: T }).kullanilan, 6000)
-  assert.equal(xp(chatJid, BOT), 994_000)
+  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'b', miktar: 15_000, sahip: true, now: T }), { miktar: 15_000, kalan: 5002, kisi: 1 })
+  assert.equal(xp(chatJid, 'b'), 40_000)
+  // Piyasa büyüdü (115.010): sınır 23.002, b'ye kalan 8.002.
+  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'b', miktar: 9000, sahip: true, now: T }), { limit: 23_002, kalan: 8002 })
+  assert.equal(hazineAktar({ chatJid, userJid: 'o', hedef: 'c', miktar: 20_000, sahip: true, now: T }).kisi, 2)
+
+  for (let i = 0; i < 8; i++) hazineAktar({ chatJid, userJid: 'o', hedef: `k${i}`, miktar: 1, sahip: true, now: T })
+  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'k9', miktar: 1, sahip: true, now: T }), { kisiSiniri: true })
+  const d = hazineDurumu({ chatJid, now: T })
+  assert.equal(d.kullanilan, 35_008)
+  assert.equal(d.kisiler.length, 10)
+  assert.equal(xp(chatJid, BOT), 10_000_000 - 35_008)
 
   // Ertesi gün sayaç sıfırlanır.
-  assert.equal(hazineAktar({ chatJid, userJid: 'o', hedef: 'e', miktar: 1, sahip: true, now: T + 24 * SAAT }).kisi, 1)
+  assert.equal(hazineAktar({ chatJid, userJid: 'o', hedef: 'k9', miktar: 1, sahip: true, now: T + 24 * SAAT }).kisi, 1)
 })
 
 test('darbe: yönetim hemen geçer, seçim askıda, muhalife el konur, destekçi ödül alır', () => {

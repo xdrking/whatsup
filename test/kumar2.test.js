@@ -131,26 +131,38 @@ test('bot hesabı: bota karşı kaybedilen XP bot numarasının satırına gider
   bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 0 }) })
   assert.equal(getStats(chatJid, bot).xp, 105)
 
+  // Kazanç hazineden çıkar.
   bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 2 }) })
-  assert.equal(getStats(chatJid, bot).xp, 105)
+  assert.equal(getStats(chatJid, bot).xp, 5)
 
   xpCek({ chatJid, userJid: 'a', miktar: 50 })
   kumarOde({ chatJid, userJid: 'a', bahis: 50, odeme: 0 })
-  assert.equal(getStats(chatJid, bot).xp, 155)
+  assert.equal(getStats(chatJid, bot).xp, 55)
 
   xpCek({ chatJid, userJid: 'a', miktar: 50 })
   kumarOde({ chatJid, userJid: 'a', bahis: 50, odeme: 50 })
-  assert.equal(getStats(chatJid, bot).xp, 155)
+  assert.equal(getStats(chatJid, bot).xp, 55)
 
-  bahisOyna({ chatJid, userJid: bot, miktar: 55, cevir: () => ({ carpan: 0 }) })
-  assert.equal(getStats(chatJid, bot).xp, 100)
+  xpCek({ chatJid, userJid: 'a', miktar: 50 })
+  kumarOde({ chatJid, userJid: 'a', bahis: 50, odeme: 100 })
+  assert.equal(getStats(chatJid, bot).xp, 5)
+
+  // Hazine yetmezse kalan basılır: oyuncu yine tamamını alır, kasa sıfırın altına inmez.
+  const once = getStats(chatJid, 'a').xp
+  bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 2 }) })
+  assert.equal(getStats(chatJid, 'a').xp, once + 100)
+  assert.equal(getStats(chatJid, bot).xp, 0)
+
+  addXp({ chatJid, userJid: bot, amount: 100 })
+  bahisOyna({ chatJid, userJid: bot, miktar: 50, cevir: () => ({ carpan: 0 }) })
+  assert.equal(getStats(chatJid, bot).xp, 50)
 
   addXp({ chatJid, userJid: 'b', amount: 100 })
   vsOyna({ chatJid, a: 'a', b: 'b', miktar: 10, sec: () => 'a' })
   piyangoBilet({ chatJid, userJid: 'a', miktar: 10 })
   piyangoBilet({ chatJid, userJid: 'b', miktar: 10 })
   piyangoCek({ chatJid, sec: () => 'b' })
-  assert.equal(getStats(chatJid, bot).xp, 100)
+  assert.equal(getStats(chatJid, bot).xp, 50)
 
   botHesabiniTani(null)
 })

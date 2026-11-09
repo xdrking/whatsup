@@ -315,11 +315,16 @@ test('mülk: coinle alınır, kira birikir, 24 saatte durur, satınca %90 döner
   assert.deepEqual(mulkAl({ chatJid, userJid, mulk: ev, now: T }), { bakiye: 0, adet: 1 })
 
   assert.equal(mulkDurumu({ chatJid, userJid, now: T + 3 * SAAT })[0].kira, 900_000)
+  // Kira hazineden çıkar, yetmeyeni basılır.
+  addXp({ chatJid, userJid: BOT, amount: 500_000 })
   assert.deepEqual(kiraTopla({ chatJid, userJid, now: T + 3 * SAAT }), { kira: 900_000, xp: 900_000 })
+  assert.equal(getStats(chatJid, BOT).xp, 0)
   assert.equal(kiraTopla({ chatJid, userJid, now: T + 3 * SAAT }).kira, 0)
 
+  addXp({ chatJid, userJid: BOT, amount: 1_000_000 })
   const s = mulkSat({ chatJid, userJid, mulk: ev, now: T + 4 * SAAT })
   assert.deepEqual(s, { kazanc: 13_500_000, kira: 300_000, xp: 14_700_000 })
+  assert.equal(getStats(chatJid, BOT).xp, 700_000)
   assert.equal(mulkDurumu({ chatJid, userJid, now: T }).length, 0)
   assert.deepEqual(mulkSat({ chatJid, userJid, mulk: ev, now: T }), { yok: true })
 })

@@ -11,11 +11,12 @@ const KAPALI = '🏦 Hazine şu an kapalı, sonra dene.'
 export default {
   name: 'hazine',
   aliases: [],
-  description: 'Başkan: hazineden üyelere XP aktarır',
+  description: 'Hazine: başkan üyelere XP aktarır, kumar ve kira buradan ödenir',
   usage: '.hazine  —  .hazine ver @kişi <miktar>',
   details: [
-    `Başkan günde en çok ${HAZINE_KISI} kişiye aktarır, toplam günün açılışındaki piyasanın %${HAZINE_YUZDESI}'unu geçemez.`,
+    `Başkan günde en çok ${HAZINE_KISI} kişiye aktarır, bir kişiye günde o anki piyasanın %${HAZINE_YUZDESI}'sinden fazlasını veremez.`,
     'Başkan kendine aktaramaz. Hazine botun kasasıdır, `.tüik`\'te görünür.',
+    'Kumar kazançları ve kiralar hazineden ödenir, yetmezse yeni para basılır. Kumar kayıpları ve vergiler hazineye girer.',
   ],
   category: 'ekonomi',
   cooldown: 5,
@@ -37,7 +38,8 @@ export default {
           '',
           `🏛️ Başkan: ${baskan ? displayName(baskan) : 'yok'}${d.darbe ? ' 🪖' : ''}`,
           `💰 Kasa: ${binlik(d.kasa)} XP`,
-          `📤 Bugün aktarılan: ${binlik(d.kullanilan)} / ${binlik(d.limit)} XP (${d.kisiler.length}/${HAZINE_KISI} kişi)`,
+          `📤 Kişi başı sınır: ${binlik(d.limit)} XP (piyasanın %${HAZINE_YUZDESI}'si, anlık)`,
+          `📊 Bugün aktarılan: ${binlik(d.kullanilan)} XP (${d.kisiler.length}/${HAZINE_KISI} kişi)`,
           ...(d.kisiler.length ? [`👥 ${d.kisiler.map(displayName).join(', ')}`] : []),
         ].join('\n'))
       }
@@ -55,10 +57,10 @@ export default {
       if (s.kendine) return await yaz('🏦 Başkan kendine aktaramaz.')
       if (s.kisiSiniri) return await yaz(`🏦 Bugün ${HAZINE_KISI} kişiye aktardın, yarın tekrar.`)
       if (s.kasaYetersiz) return await yaz(`🏦 Hazinede o kadar yok: ${binlik(s.kasa)} XP`)
-      if (s.limit !== undefined) return await yaz(`🏦 Günlük sınır ${binlik(s.limit)} XP, kalan ${binlik(s.kalan)} XP.`)
+      if (s.limit !== undefined) return await yaz(`🏦 Bir kişiye günlük sınır ${binlik(s.limit)} XP, bu kişiye kalan ${binlik(s.kalan)} XP.`)
 
       await yaz(
-        `🏦 Hazineden ${mentionOf(hedef)} kişisine *${binlik(s.miktar)} XP* aktarıldı.\n📤 Bugün kalan: ${binlik(s.kalan)} XP  •  ${s.kisi}/${HAZINE_KISI} kişi`,
+        `🏦 Hazineden ${mentionOf(hedef)} kişisine *${binlik(s.miktar)} XP* aktarıldı.\n📤 Bu kişiye bugün kalan: ${binlik(s.kalan)} XP  •  ${s.kisi}/${HAZINE_KISI} kişi`,
         [hedef],
       )
     } catch (err) {
