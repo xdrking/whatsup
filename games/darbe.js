@@ -8,6 +8,7 @@ import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, darbeSonuc } from '../lib/stats.js'
 import { displayName, mentionOf } from '../lib/target.js'
 import logger from '../lib/logger.js'
+import { sulyYaz } from '../lib/kripto.js'
 
 // Özel mesajlar arasında beklenir: kısa sürede çok kişiye yazmak numarayı ban riskine sokar.
 const DM_ARASI_MS = 3000
@@ -21,7 +22,7 @@ const bekle = (ms) => new Promise((r) => setTimeout(r, ms))
 function tehdit(odul) {
   return [
     `✅ Destek verenlere hazineden *${binlik(odul)} XP* ödül verilecektir.`,
-    `❌ Destek vermeyenlerin banka ve cüzdanlarının %${DARBE_YUZDE.banka}'ına, coinlerinin %${DARBE_YUZDE.coin}'ına ve mülklerinin yarısına el konulacaktır.`,
+    `❌ Destek vermeyenlerin banka ve cüzdanlarının %${DARBE_YUZDE.banka}'ına, coinlerinin ve Suly'lerinin %${DARBE_YUZDE.coin}'ına ve mülklerinin yarısına el konulacaktır.`,
   ]
 }
 
@@ -46,6 +47,7 @@ function cezaSatiri(c) {
   if (c.banka) parcalar.push(`banka ${binlik(c.banka)}`)
   if (c.cuzdan) parcalar.push(`cüzdan ${binlik(c.cuzdan)}`)
   if (c.coin) parcalar.push(`${c.coin} coin`)
+  if (c.suly) parcalar.push(`${sulyYaz(c.suly)} Suly`)
   for (const m of c.mulkler) parcalar.push(`${m.adet} ${MULKLER.find((x) => x.kod === m.kod)?.ad ?? m.kod}`)
   return `• ${displayName(c.jid)}: ${parcalar.length ? parcalar.join(', ') : 'el konacak bir şeyi yoktu'}`
 }

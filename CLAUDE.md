@@ -150,6 +150,8 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | hapis, seçim, başkan ve bakanlar, hazine aktarımı, evlilik, meslek, çete | `data/stats.db` (kalıcı) |
 | `games/darbe.js` | süren darbenin oyları | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | `.pet` evcil hayvanlar | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | `.kripto` Suly bakiyeleri ve son Bitcoin fiyatı | `data/stats.db` (kalıcı) |
+| `lib/kripto.js` | son çekilen Bitcoin fiyatı (60 sn) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
@@ -315,7 +317,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 47 (tamam):** `.pet`. Ayrıntı aşağıda.
 - **Faz 48 (tamam):** sıfır atma betiği. Ayrıntı aşağıda.
 - **Faz 49 (tamam):** `.seçim` geri döndü, bakanlıklar, `.hazine`, gizli `.darbe`. Ayrıntı aşağıda.
-- **Faz 50+:** yeni komutlar, her biri ayrı adım
+- **Faz 50 (tamam):** `.kripto` ve Suly. Ayrıntı aşağıda.
+- **Faz 51+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -358,7 +361,7 @@ kaç kez çağrılırsa çağrılsın aynı söz döner.
 `.ship` yüzdesi iki JID'in **sıralanmış** çiftinden FNV-1a hash ile üretilir:
 sıra değişse de sonuç aynıdır ve bot yeniden başlayınca değişmez.
 
-`.meme`, `.hava`, `.deprem`, `.döviz` ve `.namaz` dış servise bağlı komutlardır
+`.meme`, `.hava`, `.deprem`, `.döviz`, `.namaz` ve `.kripto` dış servise bağlı komutlardır
 (son dördü `lib/http.js:getJson` kullanır). Zaman aşımı verilir
 (`AbortSignal.timeout`), NSFW işaretli gönderi atlanır, servis düşükse
 kullanıcıya "meme servisi şu an cevap vermiyor" yazılır — bot çökmez.
@@ -1136,7 +1139,24 @@ Kurallar `lib/devlet.js` ve `lib/secim.js`'te saftır, yazma `lib/stats.js`'tedi
 - **Başkan:** günde bir `.faizkararı` (`karar_gun`), sahip sınırsız. `.hazine ver`: günde en çok 10 kişi, kişi başı **anlık piyasanın %20'si** (`hazineLimiti(paraArzi)`), kendine yok. Günün açılışı değil anlık piyasa: hiperenflasyonda açılış çok geride kalıyordu. Her aktarım piyasayı büyüttüğü için sınır gün içinde artar. Hazinenin yüzdesi değildir: hazine piyasadan kat kat büyük olduğu için kur bir günde katlanırdı (bot sahibinin kararı). Sahip `.hazine ver`'i başkan gibi kullanır. `.teşvik` ve `.haciz` yalnızca sahibindir.
 - **Bakanlar:** yetki günde bir, para basmaz: İçişleri `af` (hapis satırını siler), Adalet `tutukla` (1 saat, kefalet soygundaki gibi), Savunma `kalkan` (24 saat, `market.kalkan_until`). Hedef engeli hakkı yakmaz.
 - **`.darbe` (gizli):** `hidden: true`, `ownerOnly`, yalnızca özelden; grupta yazılırsa iz bırakmadan düşer (`.xpver` gibi). `.help`'te görünmez, satılmaz. Rehberi `details`'tedir: `.help darbe` yalnızca sahip özelden yazınca açılır, grupta ve başkasına "böyle bir komut yok" der (`commands/help.js:sahibeOzel`, `details` taşıyan gizli komutlar için). `.darbe <grup id>` yönetimi **hemen** sahibe verir (`makam.kalici = 1`), başkan seçimi askıya alınır; bakanlıklar sürer. `.darbe bitir <grup id>` askıyı kaldırır, başkan yenisi seçilene kadar sahiptir.
-- **Darbe akışı** (`games/darbe.js`): oyun yuvasını tutmaz, `.oyunbitir` durduramaz. Grupta herkes etiketlenir, her üyeye özelden yazılır (aralarında 3 sn, numara biliniyorsa numaraya). Duyuru mesajına `destek`/`karşı` yanıtı oydur, son yanıt geçerli, tepki emojisiyle onaylanır. Kanca `lib/handler.js`'te oyun kancasından öncedir ve susturulmuş grupta da çalışır. 10 dk sonra `darbeSonuc()`: destekçiye 1 coinin XP karşılığı hazineden (yetmezse azı), **destek vermeyen herkese** (karşı ve sessiz) banka ve cüzdanın %60'ı hazineye, coinin %60'ı ve mülklerin yarısı (aşağı yuvarlanır) yanar. Sigorta ve kalkan korumaz. Bot yeniden başlarsa yönetim sahipte kalır, ceza ve ödül işlenmez.
+- **Darbe akışı** (`games/darbe.js`): oyun yuvasını tutmaz, `.oyunbitir` durduramaz. Grupta herkes etiketlenir, her üyeye özelden yazılır (aralarında 3 sn, numara biliniyorsa numaraya). Duyuru mesajına `destek`/`karşı` yanıtı oydur, son yanıt geçerli, tepki emojisiyle onaylanır. Kanca `lib/handler.js`'te oyun kancasından öncedir ve susturulmuş grupta da çalışır. 10 dk sonra `darbeSonuc()`: destekçiye 1 coinin XP karşılığı hazineden (yetmezse azı), **destek vermeyen herkese** (karşı ve sessiz) banka ve cüzdanın %60'ı hazineye, coinin ve Suly'nin %60'ı ve mülklerin yarısı (aşağı yuvarlanır) yanar. Sigorta ve kalkan korumaz. Bot yeniden başlarsa yönetim sahipte kalır, ceza ve ödül işlenmez.
+
+### Faz 50 — `.kripto` ve Suly
+
+```
+kripto(chat_jid, user_jid, birim)          PK(chat_jid,user_jid)
+kripto_fiyat(sembol, usd, zaman ms)        PK(sembol)
+```
+
+Kurallar `lib/kripto.js`'te, yazma `lib/stats.js`'in sonundaki kripto bölümündedir. Suly gerçek Bitcoin'in dolar fiyatına endekslidir (bot sahibinin kararı).
+
+- **Birim:** 1 Suly = 100.000.000 `birim` (satoshi gibi), tam sayı saklanır. Miktar en çok 8 ondalıktır, virgül ve nokta ikisi de ondalıktır. Miktar `args`'tan değil ham `text`'ten okunur (`miktarMetni`): `miktarlariCoz` "0.001"i binlik sanıp 1 yapardı.
+- **Fiyat:** Coinbase, düşerse Binance (BTCUSDT), API key yok, 60 sn bellekte. Fiyat alınamazsa alım satım ve haciz yapılmaz, `.kripto` son bilinen fiyatı "alım satım kapalı" notuyla gösterir. Bayat fiyatla işlem yapılmaz: gerçek fiyatı gören kişi bayat fiyattan alıp satardı.
+- **XP fiyatı:** `usd × kur / REFERANS_KUR` (bot sahibinin kararı, market fiyatları gibi kurla büyür). Kur `kriptoKuru()`: günün kaydı, yoksa son kayıt. Anlık kur kullanılmaz: kur arzdan, arz Suly'den hesaplanır, birbirini çağırırdı. Alışta ücret yukarı, satışta ödeme aşağı yuvarlanır.
+- **Piyasa:** Suly `paraArzi`'ne son işlem fiyatıyla (`kripto_fiyat`) girer (bot sahibinin kararı). Girmeseydi Suly alıp kuru düşüren kişi ucuza coin alır, Suly'yi satıp kuru geri çıkarırdı. Alışta ödenen XP yanar, satışta basılır; arz değişmez. Bot Suly tutmaz.
+- **Satış:** %1 kesinti hazineye (`kasayaYatir`). Kesinti kaldırılmamalı: fiyat herkese açık, dakikalık oynama bedava kâr olurdu.
+- **Haciz:** yalnızca sahibin `.haciz @kişi suly <miktar|hepsi>`'i alır (bot sahibinin kararı), kesintisiz değer hazineye girer. `.hacizall`, soygun, bakanlar ve sigorta Suly'ye dokunmaz. Darbe %60'ını yakar.
+- Borçlu (`borcluMu`) alamaz, Suly varken `.iflas` reddedilir: Suly tahsilata girmediği için borçtan kaçış olurdu. `.servet` satış değeriyle sayar. Panele eklenmedi. Sıfır atma Suly'ye dokunmaz: XP fiyatı kurla kendiliğinden düşer.
 
 ## Elle Doğrulama
 
@@ -1250,3 +1270,4 @@ Kurallar `lib/devlet.js` ve `lib/secim.js`'te saftır, yazma `lib/stats.js`'tedi
 94. Seçilmiş başkan yokken `.hazine` başkanı sahip yazar; `.hazine ver @kişi 1000` → kasa azalır; on birinci kişi "yarın"; kişi başı limit üstü → o kişiye kalanı yazar; `.bahis` kazanınca `.hazine` kasası kazanç kadar azalır; sıradan üye → "yalnızca başkan"
 95. Sahip özelden `.darbe <grup id>` → grupta herkes etiketlenir, üyelere özelden mesaj gelir; `destek` yanıtı ✅ alır; 10 dk sonra sonuç, `.seçim aday` → "askıda"; grupta `.darbe` → hiç tepki yok; sahip özelden `.help darbe` → rehber, grupta ya da başkası yazınca → yok; `.darbe bitir <grup id>` → seçim açılır
 96. `.help savunma` → Savunma Bakanı'nın görevi; `.help başkan` → `.faizkararı` ve `.hazine ver`; `.help makamlar` → dört makam
+97. `.kripto` → Suly'nin dolar fiyatı ve XP karşılığı; `.kripto al suly 0.001` → XP düşer, `.kripto` 0,001 gösterir; `.kripto al suly 0,000000001` → kullanım; `.kripto sat suly hepsi` → %1 kesintiyle XP gelir; Suly varken eksi cüzdanla `.iflas` → "önce sat"; sahip `.haciz @kişi suly hepsi` → Suly kasaya; `.hacizall` Suly'ye dokunmaz

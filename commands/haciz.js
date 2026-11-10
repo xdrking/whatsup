@@ -2,7 +2,8 @@ import logger from '../lib/logger.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { miktarCoz } from '../lib/kumar.js'
 import { mulkBul } from '../lib/mulk.js'
-import { bankaDurumu, botHesabiMi, hacizEt, mulkHaciz } from '../lib/stats.js'
+import { btcFiyati, SULY, sulyCoz, sulyYaz } from '../lib/kripto.js'
+import { bankaDurumu, botHesabiMi, hacizEt, kriptoHaciz, mulkHaciz } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -12,11 +13,11 @@ export default {
   name: 'haciz',
   aliases: [],
   description: 'Kişinin parasını botun bankasına aktarır, yetmezse eksiye düşürür',
-  usage: '.haciz @kişi <miktar|hepsi|yarısı|mülk>',
+  usage: '.haciz @kişi <miktar|hepsi|yarısı|mülk>  —  .haciz @kişi suly <miktar|hepsi>',
   category: 'ekonomi',
   ownerOnly: true,
 
-  async execute({ sock, msg, args, from, parsed }) {
+  async execute({ sock, msg, args, text, from, parsed }) {
     const yaz = (text, mentions = []) => sock.sendMessage(from, { text, mentions }, { quoted: msg })
 
     try {
@@ -31,6 +32,26 @@ export default {
       const hedef = uyeKimligiBul(metadata, hedefHam)
       if (!hedef) return await yaz('❌ Bu kişi grupta bulunamadı.')
       if (botHesabiMi(hedef)) return await yaz('🤖 Botun hesabına haciz konmaz.')
+
+      // Suly'yi yalnızca bu komut alır (bot sahibinin kararı). Miktar ham metinden okunur: "0.001" 1 olmasın.
+      if (SULY.adlar.includes(miktarArg.toLocaleLowerCase('tr'))) {
+        const kelimeler = String(text || '').split(/\s+/).map((k) => k.toLocaleLowerCase('tr'))
+        const ham = kelimeler[kelimeler.findIndex((k) => SULY.adlar.includes(k)) + 1] || 'hepsi'
+        const hepsi = ['hepsi', 'tümü', 'tumu'].includes(ham)
+        const birim = hepsi ? null : sulyCoz(ham)
+        if (!hepsi && !birim) return await yaz('Kullanım: `.haciz @kişi suly <miktar|hepsi>`')
+
+        const fiyat = await btcFiyati()
+        if (!fiyat) return await yaz('⚖️ Bitcoin fiyatı şu an alınamıyor, Suly haczedilemez.')
+
+        const k = kriptoHaciz({ chatJid: from, userJid: hedef, birim, usd: fiyat.usd })
+        if (!k || k.kapali) return await yaz(KAPALI)
+        if (k.yok) return await yaz(`⚖️ ${mentionOf(hedef)} kişisinde Suly yok.`, [hedef])
+        return await yaz(
+          `⚖️ *Haciz* — ${mentionOf(hedef)}: ${sulyYaz(k.alinan)} Suly alındı, ${sulyYaz(k.kalan)} kaldı.\n🏦 Kasaya giren: ${sayi.format(k.kasaya)} XP`,
+          [hedef],
+        )
+      }
 
       const mulk = mulkBul(miktarArg)
       if (mulk) {

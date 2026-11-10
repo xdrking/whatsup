@@ -33,7 +33,7 @@ test('makam adları ve darbe yanıtları', () => {
   assert.equal(darbeOyu('KARŞI'), 'karsi')
   assert.equal(darbeOyu('belki'), null)
   assert.deepEqual(darbeCezasi({ banka: 1000, cuzdan: -50, coin: 5, mulkler: [{ kod: 'ev', adet: 1 }, { kod: 'villa', adet: 3 }] }),
-    { banka: 600, cuzdan: 0, coin: 3, mulkler: [{ kod: 'villa', adet: 1 }] })
+    { banka: 600, cuzdan: 0, coin: 3, suly: 0, mulkler: [{ kod: 'villa', adet: 1 }] })
 })
 
 test('bakan: her bakanlığın ayrı seçimi, yetki günde bir', () => {

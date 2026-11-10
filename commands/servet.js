@@ -4,6 +4,7 @@ import { botHesabiMi, servetDurumu, servetSiralama } from '../lib/stats.js'
 import { displayName, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
+import { sulyYaz } from '../lib/kripto.js'
 
 export default {
   name: 'servet',
@@ -47,6 +48,7 @@ export default {
         ...satir('👛', 'Cüzdan', Math.max(0, s.cuzdan)),
         ...satir('🏦', 'Banka', s.banka),
         ...(s.coinAdet ? [`🪙 Coin: ${binlik(s.coinAdet)} adet ≈ ${binlik(s.coin)} XP`] : []),
+        ...(s.kriptoBirim ? [`🟠 Suly: ${sulyYaz(s.kriptoBirim)} ≈ ${binlik(s.kripto)} XP`] : []),
         ...satir('🏠', 'Mülk ve kira', s.mulk),
         ...satir('📈', 'Hisse', s.borsa),
         ...satir('💼', 'Yatırım', s.yatirim),

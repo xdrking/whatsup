@@ -30,6 +30,7 @@ export default {
       if (s.borcYok) return await yaz('⚖️ Cüzdanın ekside değil, iflas edemezsin.')
       if (s.portfoy) return await yaz('⚖️ Önce hisselerini sat: `.borsa sat <hisse> hepsi`')
       if (s.coin) return await yaz('⚖️ Önce coinlerini boz: `.coinmarket sat <adet>`')
+      if (s.kripto) return await yaz('⚖️ Önce Suly\'lerini sat: `.kripto sat suly hepsi`')
       if (s.mulk) return await yaz('⚖️ Önce mülklerini sat: `.mülk sat <mülk>`')
       if (s.cete) return await yaz('⚖️ Önce çete kasasını boşalt: `.çete çek <miktar>`')
       if (s.yatirim) return await yaz('⚖️ Önce yatırımının sonuçlanmasını bekle: `.yatırım`')
