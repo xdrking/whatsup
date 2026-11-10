@@ -95,18 +95,14 @@ test('haciz değeri kasaya geçirir, iflas Suly varken reddedilir, servet sayar'
   assert.ok(kriptoHaciz({ chatJid, userJid: 'a@s', usd: USD, now: T }).yok)
 })
 
-test('darbe destek vermeyenin bütün Suly\'sine el koyar, değeri hazineye girer', () => {
+test('darbe destek vermeyenin Suly\'sinin %60\'ı bot hesabına geçer', () => {
   const chatJid = yeniGrup()
   xpVer(chatJid, 'a@s', 1_000_000_000)
   kriptoAl({ chatJid, userJid: 'a@s', birim: BIRIM, usd: USD, now: T })
-  const cuzdan = getStats(chatJid, 'a@s').xp
-  const kasa = ekonomiDurumu({ chatJid, now: T }).kasa
-  const deger = sulyDegeri(BIRIM, USD, kriptoDurumu({ chatJid, userJid: 'a@s', now: T }).kur)
   const s = darbeSonuc({ chatJid, destekciler: [], muhalifler: ['a@s'], odul: 0, now: T })
-  assert.equal(s.ceza[0].suly, BIRIM)
-  assert.equal(s.ceza[0].kasaya, cuzdan + deger)
-  assert.equal(kriptoDurumu({ chatJid, userJid: 'a@s', now: T }).birim, 0)
-  assert.equal(ekonomiDurumu({ chatJid, now: T }).kasa, kasa + cuzdan + deger)
+  assert.equal(s.ceza[0].suly, 0.6 * BIRIM)
+  assert.equal(kriptoDurumu({ chatJid, userJid: 'a@s', now: T }).birim, 0.4 * BIRIM)
+  assert.equal(kriptoDurumu({ chatJid, userJid: BOT, now: T }).birim, 0.6 * BIRIM)
 })
 
 // Cüzdanı eksiye indirir: xpAyarla sıfırın altına inmediği için doğrudan yazılır.

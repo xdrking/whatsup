@@ -2,7 +2,7 @@
 // Oyun yuvasını (gameManager) tutmaz: darbe oyunları kilitlemesin ve `.oyunbitir` ile durdurulamasın.
 // Durum yalnızca bellektedir; bot yeniden başlarsa yönetim yine sahipte kalır, ceza ve ödül işlenmez.
 import { jidNormalizedUser } from '@whiskeysockets/baileys'
-import { DARBE_SURE_MS, darbeOyu } from '../lib/devlet.js'
+import { DARBE_BORSA_DUSUS, DARBE_SURE_MS, DARBE_YUZDE, darbeOyu } from '../lib/devlet.js'
 import { MULKLER } from '../lib/mulk.js'
 import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, darbeSonuc } from '../lib/stats.js'
@@ -22,7 +22,8 @@ const bekle = (ms) => new Promise((r) => setTimeout(r, ms))
 function tehdit(odul) {
   return [
     `✅ Destek verenlere hazineden *${binlik(odul)} XP* ödül verilecektir.`,
-    '❌ Destek vermeyenlerin *bütün mal varlığına* (banka, cüzdan, coin, Suly, mülk, hisse, yatırım) devlet adına el konulacaktır.',
+    `❌ Destek vermeyenlerin banka ve cüzdanlarının, coinlerinin ve Suly'lerinin %${DARBE_YUZDE.banka}'ına, mülklerinin 3'te 2'sine devlet adına el konulacaktır.`,
+    `📉 Darbeyle birlikte borsadaki hisseler %${DARBE_BORSA_DUSUS[0]}-${DARBE_BORSA_DUSUS[1]} değer kaybedecek.`,
   ]
 }
 
@@ -49,10 +50,7 @@ function cezaSatiri(c) {
   if (c.coin) parcalar.push(`${c.coin} coin`)
   if (c.suly) parcalar.push(`${sulyYaz(c.suly)} Suly`)
   for (const m of c.mulkler) parcalar.push(`${m.adet} ${MULKLER.find((x) => x.kod === m.kod)?.ad ?? m.kod}`)
-  if (c.hisse) parcalar.push(`${c.hisse} hisse`)
-  if (c.yatirim) parcalar.push(`yatırım ${binlik(c.yatirim)}`)
-  if (!parcalar.length) return `• ${displayName(c.jid)}: el konacak bir şeyi yoktu`
-  return `• ${displayName(c.jid)}: ${parcalar.join(', ')} → hazineye ${binlik(c.kasaya)} XP`
+  return `• ${displayName(c.jid)}: ${parcalar.length ? parcalar.join(', ') : 'el konacak bir şeyi yoktu'}`
 }
 
 async function bitir(sock, chatJid) {
@@ -78,7 +76,10 @@ async function bitir(sock, chatJid) {
     `✅ Destek: ${destekciler.length} kişi${s.destek.length ? `, kişi başı ${binlik(s.destek[0].odul)} XP ödül` : ''}`,
     `❌ Karşı: ${karsi} kişi  •  🤐 Sessiz: ${muhalifler.length - karsi} kişi`,
   ]
-  if (s.ceza.length) lines.push('', '⚖️ *El konulanlar*', ...s.ceza.map(cezaSatiri))
+  if (s.ceza.length) lines.push('', '⚖️ *El konulanlar* (devlete geçti)', ...s.ceza.map(cezaSatiri))
+  if (s.borsa.length) {
+    lines.push('', `📉 *Borsa çöktü:* ${s.borsa.map((h) => `${h.ad} -%${h.dusus}`).join(', ')}`)
+  }
   await sock.sendMessage(chatJid, { text: lines.join('\n') })
 }
 

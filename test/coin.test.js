@@ -10,7 +10,7 @@ const { binlik } = await import('../lib/sayi.js')
 const { sonucSatirlari } = await import('../lib/kumar.js')
 const { KORUNMA_MS } = await import('../lib/soygun.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, oyunOdulu, oyunTutari, recordMessage, sezonDurumu, sigortaBitisi, xpDevret, marketAl, marketDurumu, marketFiyati, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
+  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, darbeSonuc, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, oyunOdulu, oyunTutari, recordMessage, sezonDurumu, sigortaBitisi, xpDevret, marketAl, marketDurumu, marketFiyati, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
 } = await import('../lib/stats.js')
 const { URUNLER } = await import('../lib/market.js')
 const { kiraHesapla, KIRA_AZAMI_SAAT, mulkBul } = await import('../lib/mulk.js')
@@ -394,4 +394,26 @@ test('.tüik uyarıları: gün içi değişim ve düşük bozdurma', async () =>
   const normal = uyariSatirlari({ arz: 100, anlik: 90, kur: 1_000_000, bozdurmaKur: 1_000_000 })
   assert.equal(normal.length, 1)
   assert.match(normal[0], /−%10/)
+})
+
+test('darbe: coinin %60\'ı ve mülklerin 3\'te 2\'si bot hesabına geçer, kira eski sahibinde kalır', () => {
+  const chatJid = yeniGrup()
+  const userJid = 'a@s'
+  coinVer(chatJid, userJid, 15 + 15 + 10)
+  mulkAl({ chatJid, userJid, mulk: mulkBul('ev'), now: T })
+  mulkAl({ chatJid, userJid, mulk: mulkBul('ev'), now: T })
+  const once = coinDurumu(chatJid, userJid).bakiye
+  const xpOnce = getStats(chatJid, userJid).xp
+
+  const s = darbeSonuc({ chatJid, destekciler: [], muhalifler: [userJid], odul: 0, now: T + SAAT })
+  assert.equal(s.ceza[0].coin, Math.floor(once * 0.6))
+  assert.equal(coinDurumu(chatJid, userJid).bakiye, once - Math.floor(once * 0.6))
+  assert.equal(coinDurumu(chatJid, BOT).bakiye, Math.floor(once * 0.6))
+  assert.deepEqual(s.ceza[0].mulkler, [{ kod: 'ev', adet: 1 }])
+  assert.equal(mulkDurumu({ chatJid, userJid, now: T + SAAT })[0].adet, 1)
+  assert.equal(mulkDurumu({ chatJid, userJid: BOT, now: T + SAAT })[0].adet, 1)
+  assert.equal(mulkDurumu({ chatJid, userJid: BOT, now: T + SAAT })[0].kira, 0)
+  // Kalan evin kirası sahibinde birikmeye devam eder; cüzdan %60 düşer.
+  assert.ok(mulkDurumu({ chatJid, userJid, now: T + SAAT })[0].kira > 0)
+  assert.equal(getStats(chatJid, userJid).xp, xpOnce - Math.floor(Math.max(0, xpOnce) * 0.6))
 })
