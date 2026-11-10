@@ -2,7 +2,9 @@ import { binlik } from '../lib/sayi.js'
 import { requireGroup } from '../lib/group.js'
 import {
   argumanlariAyir, CRASH_DONUS, CRASH_EN_AZ, CRASH_EN_COK, crashHedefCoz, crashUc, kumarOyna, MIN_BAHIS, MIN_KUMAR_BAKIYESI,
+  SAHIP_CRASH_ARALIK, SAHIP_CRASH_TABAN,
 } from '../lib/kumar.js'
+import { kumarOyunSayisi } from '../lib/stats.js'
 
 /** Roketin yolu: patlama noktasına kadar birkaç ara çarpan. */
 function ucus(nokta, hedef) {
@@ -31,7 +33,7 @@ export default {
   cooldown: 5,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed }) {
+  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     const { miktar, secim } = argumanlariAyir(args)
@@ -45,11 +47,14 @@ export default {
       return
     }
 
+    const sahipTuru = isOwner && (kumarOyunSayisi(from, sender, 'crash') + 1) % SAHIP_CRASH_ARALIK === 0
+
     await kumarOyna({
       oyun: 'crash',
       sock, msg, from, sender,
+      sahip: isOwner,
       miktarArg: miktar,
-      cevir: () => crashUc(hedef),
+      cevir: () => crashUc(hedef, undefined, sahipTuru ? SAHIP_CRASH_TABAN : 0),
       anlat: (s) => [
         `🚀 *CRASH*  •  hedef ${s.hedef}x`,
         '',

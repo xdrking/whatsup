@@ -23,7 +23,7 @@ export default {
   cooldown: 5,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed }) {
+  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     const { miktar, secim: secimArg } = argumanlariAyir(args)
@@ -40,6 +40,7 @@ export default {
     await kumarOyna({
       oyun: 'rulet',
       sock, msg, from, sender,
+      sahip: isOwner,
       miktarArg: miktar,
       cevir: () => ruletCevir(secim),
       anlat: (s) => [

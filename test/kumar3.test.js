@@ -90,3 +90,13 @@ test('yarış: şanslar toplamı 100, her atın beklenen dönüşü aynı', () =
   assert.equal(kazananSec(() => 0), 0)
   assert.equal(kazananSec(() => 99), ATLAR.length - 1)
 })
+
+test('sahip şansı: kaybeden çekiliş yeniden atılır, kazanan dokunulmaz', async () => {
+  const { sahipSansi, SAHIP_SANSI, SAHIP_CRASH_TABAN } = await import('../lib/kumar.js')
+  const sirali = (...c) => { let i = 0; return () => ({ carpan: c[i++] }) }
+  assert.equal(sahipSansi(sirali(2, 0), () => 0)().carpan, 2)
+  assert.equal(sahipSansi(sirali(0, 2), () => 0)().carpan, 2)
+  assert.equal(sahipSansi(sirali(0, 2), () => SAHIP_SANSI * 100)().carpan, 0)
+  assert.equal(crashNoktasi(() => CRASH_UZAY - 1, SAHIP_CRASH_TABAN), SAHIP_CRASH_TABAN)
+  assert.ok(crashNoktasi(() => 0, SAHIP_CRASH_TABAN) > SAHIP_CRASH_TABAN)
+})

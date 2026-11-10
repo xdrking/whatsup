@@ -25,7 +25,7 @@ export default {
   cooldown: 5,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed }) {
+  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     const { miktar, secim } = argumanlariAyir(args)
@@ -38,6 +38,7 @@ export default {
     await kumarOyna({
       oyun: 'plinko',
       sock, msg, from, sender,
+      sahip: isOwner,
       miktarArg: miktar,
       cevir: () => plinkoAt(risk),
       anlat: (s) => [
