@@ -5,6 +5,7 @@ import {
   SAHIP_CRASH_ARALIK, SAHIP_CRASH_TABAN,
 } from '../lib/kumar.js'
 import { kumarOyunSayisi } from '../lib/stats.js'
+import { sansAcikMi } from '../lib/sahipSans.js'
 
 /** Roketin yolu: patlama noktasına kadar birkaç ara çarpan. */
 function ucus(nokta, hedef) {
@@ -47,7 +48,7 @@ export default {
       return
     }
 
-    const sahipTuru = isOwner && (kumarOyunSayisi(from, sender, 'crash') + 1) % SAHIP_CRASH_ARALIK === 0
+    const sahipTuru = isOwner && sansAcikMi() && (kumarOyunSayisi(from, sender, 'crash') + 1) % SAHIP_CRASH_ARALIK === 0
 
     await kumarOyna({
       oyun: 'crash',
