@@ -33,7 +33,7 @@ test('makam adları ve darbe yanıtları', () => {
   assert.equal(darbeOyu('KARŞI'), 'karsi')
   assert.equal(darbeOyu('belki'), null)
   assert.deepEqual(darbeCezasi({ banka: 1000, cuzdan: -50, coin: 5, mulkler: [{ kod: 'ev', adet: 1 }, { kod: 'villa', adet: 3 }] }),
-    { banka: 600, cuzdan: 0, coin: 3, suly: 0, mulkler: [{ kod: 'villa', adet: 1 }] })
+    { banka: 1000, cuzdan: 0, coin: 5, suly: 0, mulkler: [{ kod: 'ev', adet: 1 }, { kod: 'villa', adet: 3 }] })
 })
 
 test('bakan: her bakanlığın ayrı seçimi, yetki günde bir', () => {
@@ -99,9 +99,10 @@ test('darbe: yönetim hemen geçer, seçim askıda, muhalife el konur, destekçi
   const cuzdan = xp(chatJid, 'm')
   const s = darbeSonuc({ chatJid, destekciler: ['d'], muhalifler: ['m', BOT], odul: 1000, now: T })
   assert.equal(s.ceza.length, 1)
-  assert.equal(s.ceza[0].banka, 3000)
-  assert.equal(xp(chatJid, 'm'), cuzdan - Math.floor(cuzdan * 0.6))
-  assert.equal(bankaBakiyesi(chatJid, 'm'), 2000)
+  assert.equal(s.ceza[0].banka, 5000)
+  assert.equal(s.ceza[0].kasaya, 5000 + cuzdan)
+  assert.equal(xp(chatJid, 'm'), 0)
+  assert.equal(bankaBakiyesi(chatJid, 'm'), 0)
   assert.equal(xp(chatJid, 'd'), 1100)
 
   // Geçen haftanın adayı oy almış olsa da başkanlık darbede değişmez.
@@ -155,7 +156,8 @@ test('darbe akışı: duyuru, özel mesaj, yanıtla oy, süre sonunda sonuç', a
   const sonuc = gidenler.at(-1).icerik.text
   assert.match(sonuc, /DARBE TAMAMLANDI/)
   assert.equal(xp(chatJid, 'a@lid'), 10_500)
-  assert.equal(xp(chatJid, 'b@lid'), 4000)
+  assert.equal(xp(chatJid, 'b@lid'), 0)
+  assert.match(sonuc, /hazineye 10.000 XP/)
 })
 
 test('makamRehberi: her makamın görevi, makamlar listesi, bilinmeyen null', async () => {

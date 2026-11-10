@@ -2,7 +2,7 @@
 // Oyun yuvasını (gameManager) tutmaz: darbe oyunları kilitlemesin ve `.oyunbitir` ile durdurulamasın.
 // Durum yalnızca bellektedir; bot yeniden başlarsa yönetim yine sahipte kalır, ceza ve ödül işlenmez.
 import { jidNormalizedUser } from '@whiskeysockets/baileys'
-import { DARBE_SURE_MS, DARBE_YUZDE, darbeOyu } from '../lib/devlet.js'
+import { DARBE_SURE_MS, darbeOyu } from '../lib/devlet.js'
 import { MULKLER } from '../lib/mulk.js'
 import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, darbeSonuc } from '../lib/stats.js'
@@ -22,7 +22,7 @@ const bekle = (ms) => new Promise((r) => setTimeout(r, ms))
 function tehdit(odul) {
   return [
     `✅ Destek verenlere hazineden *${binlik(odul)} XP* ödül verilecektir.`,
-    `❌ Destek vermeyenlerin banka ve cüzdanlarının %${DARBE_YUZDE.banka}'ına, coinlerinin ve Suly'lerinin %${DARBE_YUZDE.coin}'ına ve mülklerinin yarısına el konulacaktır.`,
+    '❌ Destek vermeyenlerin *bütün mal varlığına* (banka, cüzdan, coin, Suly, mülk, hisse, yatırım) devlet adına el konulacaktır.',
   ]
 }
 
@@ -49,7 +49,10 @@ function cezaSatiri(c) {
   if (c.coin) parcalar.push(`${c.coin} coin`)
   if (c.suly) parcalar.push(`${sulyYaz(c.suly)} Suly`)
   for (const m of c.mulkler) parcalar.push(`${m.adet} ${MULKLER.find((x) => x.kod === m.kod)?.ad ?? m.kod}`)
-  return `• ${displayName(c.jid)}: ${parcalar.length ? parcalar.join(', ') : 'el konacak bir şeyi yoktu'}`
+  if (c.hisse) parcalar.push(`${c.hisse} hisse`)
+  if (c.yatirim) parcalar.push(`yatırım ${binlik(c.yatirim)}`)
+  if (!parcalar.length) return `• ${displayName(c.jid)}: el konacak bir şeyi yoktu`
+  return `• ${displayName(c.jid)}: ${parcalar.join(', ')} → hazineye ${binlik(c.kasaya)} XP`
 }
 
 async function bitir(sock, chatJid) {
@@ -60,7 +63,7 @@ async function bitir(sock, chatJid) {
   const destekciler = state.uyeler.filter((j) => state.oylar.get(j) === 'destek')
   const muhalifler = state.uyeler.filter((j) => state.oylar.get(j) !== 'destek')
   const karsi = muhalifler.filter((j) => state.oylar.get(j) === 'karsi').length
-  const s = darbeSonuc({ chatJid, destekciler, muhalifler, odul: state.odul, sahip: state.sahip })
+  const s = darbeSonuc({ chatJid, destekciler, muhalifler, odul: state.odul })
   if (!s) {
     await sock.sendMessage(chatJid, { text: '🪖 Darbe sonucu işlenemedi. Yönetim yine de el değiştirdi.' })
     return
