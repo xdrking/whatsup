@@ -95,13 +95,14 @@ test('haciz değeri kasaya geçirir, iflas Suly varken reddedilir, servet sayar'
   assert.ok(kriptoHaciz({ chatJid, userJid: 'a@s', usd: USD, now: T }).yok)
 })
 
-test('darbe destek vermeyenin Suly\'sinin %60\'ını yakar', () => {
+test('darbe destek vermeyenin Suly\'sinin %60\'ına darbeci el koyar', () => {
   const chatJid = yeniGrup()
   xpVer(chatJid, 'a@s', 1_000_000_000)
   kriptoAl({ chatJid, userJid: 'a@s', birim: BIRIM, usd: USD, now: T })
-  const s = darbeSonuc({ chatJid, destekciler: [], muhalifler: ['a@s'], odul: 0, now: T })
+  const s = darbeSonuc({ chatJid, destekciler: [], muhalifler: ['a@s'], odul: 0, sahip: 'sahip@s', now: T })
   assert.equal(s.ceza[0].suly, 0.6 * BIRIM)
   assert.equal(kriptoDurumu({ chatJid, userJid: 'a@s', now: T }).birim, 0.4 * BIRIM)
+  assert.equal(kriptoDurumu({ chatJid, userJid: 'sahip@s', now: T }).birim, 0.6 * BIRIM)
 })
 
 // Cüzdanı eksiye indirir: xpAyarla sıfırın altına inmediği için doğrudan yazılır.

@@ -60,7 +60,7 @@ async function bitir(sock, chatJid) {
   const destekciler = state.uyeler.filter((j) => state.oylar.get(j) === 'destek')
   const muhalifler = state.uyeler.filter((j) => state.oylar.get(j) !== 'destek')
   const karsi = muhalifler.filter((j) => state.oylar.get(j) === 'karsi').length
-  const s = darbeSonuc({ chatJid, destekciler, muhalifler, odul: state.odul })
+  const s = darbeSonuc({ chatJid, destekciler, muhalifler, odul: state.odul, sahip: state.sahip })
   if (!s) {
     await sock.sendMessage(chatJid, { text: '🪖 Darbe sonucu işlenemedi. Yönetim yine de el değiştirdi.' })
     return
