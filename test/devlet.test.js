@@ -73,15 +73,15 @@ test('teşvik: aktif üyelere eşit, artık kasada kalır, bot ve eskiler alamaz
   assert.deepEqual(tesvikDagit({ chatJid, uyeler: ['eski@s'], miktar: 10, now: T }), { kimseYok: true })
 })
 
-test('teşvik önce botun bankasından çıkar', () => {
+test('teşvik önce botun cüzdanından, sonra bankasından çıkar', () => {
   const chatJid = yeniGrup()
   xpVer(chatJid, BOT, 1000)
   bankaYatir({ chatJid, userJid: BOT, miktar: 600, now: T })
   recordMessage({ chatJid, userJid: 'a@s', type: 'conversation', at: T })
 
   tesvikDagit({ chatJid, uyeler: ['a@s'], miktar: 800, now: T })
-  assert.equal(bankaBakiyesi(chatJid, BOT), 0)
-  assert.equal(getStats(chatJid, BOT).xp, 200)
+  assert.equal(getStats(chatJid, BOT).xp, 0)
+  assert.equal(bankaBakiyesi(chatJid, BOT), 200)
 })
 
 test('bot servet vergisinden muaftır', () => {

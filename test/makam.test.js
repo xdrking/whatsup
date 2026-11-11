@@ -127,8 +127,8 @@ test('hazine: başkan günde 10 kişiye, kişi başı anlık piyasanın %20\'si,
 
   assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'b', miktar: 15_000, sahip: true, now: T }), { miktar: 15_000, kalan: 5002, kisi: 1 })
   assert.equal(xp(chatJid, 'b'), 40_000)
-  // Piyasa büyüdü (115.010): sınır 23.002, b'ye kalan 8.002.
-  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'b', miktar: 9000, sahip: true, now: T }), { limit: 23_002, kalan: 8002 })
+  // Piyasa 115.010'a çıktı ama bugünkü aktarım düşülür: sınır yine 20.002, b'ye kalan 5.002.
+  assert.deepEqual(hazineAktar({ chatJid, userJid: 'o', hedef: 'b', miktar: 9000, sahip: true, now: T }), { limit: 20_002, kalan: 5002 })
   assert.equal(hazineAktar({ chatJid, userJid: 'o', hedef: 'c', miktar: 20_000, sahip: true, now: T }).kisi, 2)
 
   for (let i = 0; i < 8; i++) hazineAktar({ chatJid, userJid: 'o', hedef: `k${i}`, miktar: 1, sahip: true, now: T })
@@ -140,6 +140,20 @@ test('hazine: başkan günde 10 kişiye, kişi başı anlık piyasanın %20\'si,
 
   // Ertesi gün sayaç sıfırlanır.
   assert.equal(hazineAktar({ chatJid, userJid: 'o', hedef: 'k9', miktar: 1, sahip: true, now: T + 24 * SAAT }).kisi, 1)
+})
+
+test('hazine: aktarım sınırı kendi aktarımıyla büyümez, 10 alıcıyla piyasa en çok 3 katına çıkar', () => {
+  const uyeler = { [BOT]: 1_000_000_000 }
+  for (let i = 0; i < 10; i++) uyeler[`k${i}`] = 10_000
+  const chatJid = ayarla(uyeler)
+  // Eskiden sınır her aktarımla büyüdüğü için tur tur verilerek 5+ alıcıyla kasa bir günde boşalıyordu.
+  for (let tur = 0; tur < 20; tur++) {
+    for (let i = 0; i < 10; i++) {
+      const s = hazineAktar({ chatJid, userJid: 'o', hedef: `k${i}`, miktar: 1, sahip: true, now: T })
+      if (s?.kalan) hazineAktar({ chatJid, userJid: 'o', hedef: `k${i}`, miktar: s.kalan, sahip: true, now: T })
+    }
+  }
+  assert.ok(hazineDurumu({ chatJid, now: T }).kullanilan <= 2 * 100_000)
 })
 
 test('darbe: yönetim hemen geçer, seçim askıda, muhalife el konur, destekçi ödül alır', () => {
