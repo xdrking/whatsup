@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Kişisel, eğlence amaçlı bir WhatsApp botu. Tek bir arkadaş grubunda kullanılır.
 
 - **Ticari değil.** Ücretli özellik, müşteri, SLA yok.
-- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz. Tek istisna sahibin `.darbe`'sidir: grup üyelerine özelden yazar (bot sahibinin kararı, ban riski bilerek kabul edildi, Faz 49).
+- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz. İstisnalar sahibin `.darbe`'si (grup üyelerine özelden yazar, Faz 49) ve susturulduğu halde yazmaya devam edene özelden giden uyarıdır (Faz 54); ikisi de bot sahibinin kararıdır, ban riski bilerek kabul edildi.
 - Kod kalitesi hedefi: bir kişinin altı ay sonra okuyup anlayabileceği sadelik. Üretim ölçekli soyutlama, DI container, mikroservis vb. **istenmiyor**.
 
 ## Stack
@@ -155,6 +155,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/sahipSans.js` | sahibin gizli kumar şansı açık mı (`.şans`) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/uyeSustur.js` | `.sustur` ile susturulan üyeler ve bitişleri (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
+| `lib/uyeSustur.js` | susturulan üyenin silinen mesaj sayısı | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
 Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe. Tek istisna botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz.
@@ -323,7 +324,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 51 (tamam):** `.mülk devret` ve `.sustur`. Ayrıntı aşağıda.
 - **Faz 52 (tamam):** `.kayyum`, Dışişleri ve ambargo, bakanlara günde 5 hak. Ayrıntı aşağıda.
 - **Faz 53 (tamam):** günlük kumar kazanç tavanı. Ayrıntı aşağıda.
-- **Faz 54+:** yeni komutlar, her biri ayrı adım
+- **Faz 54 (tamam):** susturmayı dinlemeyenin varlığına el konur. Ayrıntı aşağıda.
+- **Faz 55+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1196,6 +1198,14 @@ Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile k
 - Tavan günün ilk kumarında sabitlenir: kazanç piyasayı büyüttüğü için kayan tavan hiç dolmazdı.
 - Dolunca `kumarYasagi()` İstanbul gece yarısını döner, bütün kumar komutları kendiliğinden kapanır. Sahip muaf değildir, bot hesabı muaftır.
 
+### Faz 54 — Susturmayı dinlemeyene el koyma
+
+`.sustur` komutunun parçası değildir, `lib/spamCeza.js`'te ayrı bir özelliktir; `lib/handler.js` susturulan üyenin mesajını sildikten sonra `susturmaIhlali()` çağırır. Silinen mesajlar `lib/uyeSustur.js:ihlalSay()` ile sayılır (yalnızca bellek, yeniden başlatmada sıfırlanır; `.sustur` ve `.sustur kaldır` da sıfırlar).
+
+- `UYARI_ESIGI`'nci (3) silinen mesajda kişiye özelden "`CEZA_ARALIGI` (3) mesaj daha yazarsan tüm mal varlığının yarısına el koyarım" yazılır. Numara biliniyorsa numarasına gider (`.tabu` gibi).
+- 3 mesaj daha yazarsa `spamElKoy()` her şeyin yarısını alır (`SPAM_YUZDE`): banka ve cüzdan hazineye, coin, Suly ve mülklerin yarısı (aşağı yuvarlanır, en pahalıdan) bot hesabına. Darbeyle aynı yoldur (`varlikElKoy`). Eksi cüzdan alınmaz, sigorta ve kalkan korumaz. Sonuç özelden yazılır, gruba duyurulmaz.
+- Sonra sayım sıfırlanır, yazmaya devam ederse döngü baştan başlar (yeni uyarı, yeni ceza).
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1314,3 +1324,4 @@ Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile k
 100. Başkan `.kayyum dışişleri @mert` → eski bakan görevden alınır, Mert bakan; `.seçim aday dışişleri` → "kayyumla yönetiliyor"; `.seçim` hükümette "(kayyum)" yazar; sıradan üye `.kayyum` → "yalnızca başkan"; `.kayyum kaldır dışişleri` → seçim açılır
 101. Adalet Bakanı `.bakan tutukla` beş kişiye → her mesajda kalan hak, altıncısı "yarın"; Dışişleri `.bakan ambargo @x` → x `.devret` ve `.coindevret` yazınca "ambargodasın"
 102. Bir günde piyasanın %50'sinden fazla kumar kazanan → son kazancın fazlası "kasada kaldı" yazar, sonraki `.bahis` "kumar yasağın var" der; ertesi gün açılır
+103. `.sustur @kişi` sonra kişi 3 mesaj yazar → özelden "3 mesaj daha yazarsan" uyarısı gelir; 3 mesaj daha → özelden el konulanlar listesi gelir, `.servet`'i yarıya iner, `.top`'ta bot artar; `.sustur kaldır @kişi` → sayım sıfırlanır
