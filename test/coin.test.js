@@ -10,7 +10,7 @@ const { binlik } = await import('../lib/sayi.js')
 const { sonucSatirlari } = await import('../lib/kumar.js')
 const { KORUNMA_MS } = await import('../lib/soygun.js')
 const {
-  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, darbeSonuc, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDurumu, mulkHaciz, mulkSat, oyunOdulu, oyunTutari, recordMessage, sezonDurumu, sigortaBitisi, xpDevret, marketAl, marketDurumu, marketFiyati, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
+  addXp, bankaBakiyesi, bankaYatir, botHesabiniTani, carkDurumu, coinAl, coinDurumu, coinMarketAl, coinSat, darbeSonuc, ekonomiDurumu, getLeaderboard, getStats, hacizEt, iflasEt, kiraTopla, krediCek, mulkAl, mulkDevret, mulkDurumu, mulkHaciz, mulkSat, oyunOdulu, oyunTutari, recordMessage, sezonDurumu, sigortaBitisi, xpDevret, marketAl, marketDurumu, marketFiyati, odulKoy, odulListesi, soygunYap, topluHaciz, topluSoygun,
 } = await import('../lib/stats.js')
 const { URUNLER } = await import('../lib/market.js')
 const { kiraHesapla, KIRA_AZAMI_SAAT, mulkBul } = await import('../lib/mulk.js')
@@ -416,4 +416,31 @@ test('darbe: coinin %60\'ı ve mülklerin 3\'te 2\'si bot hesabına geçer, kira
   // Kalan evin kirası sahibinde birikmeye devam eder; cüzdan %60 düşer.
   assert.ok(mulkDurumu({ chatJid, userJid, now: T + SAAT })[0].kira > 0)
   assert.equal(getStats(chatJid, userJid).xp, xpOnce - Math.floor(Math.max(0, xpOnce) * 0.6))
+})
+
+test('mülk devri: adet geçer, son tanede birikmiş kira verene ödenir, borçlu veremez', () => {
+  const chatJid = yeniGrup()
+  const ev = mulkBul('ev')
+  xpVer(chatJid, 'a@s', 100_000_000)
+  coinAl({ chatJid, userJid: 'a@s', adet: 30, now: T })
+  mulkAl({ chatJid, userJid: 'a@s', mulk: ev, now: T })
+  mulkAl({ chatJid, userJid: 'a@s', mulk: ev, now: T })
+
+  assert.deepEqual(mulkDevret({ chatJid, kaynak: 'a@s', hedef: 'b@s', mulk: ev, adet: 3, now: T }), { yetersiz: true, adet: 2 })
+
+  const bir = mulkDevret({ chatJid, kaynak: 'a@s', hedef: 'b@s', mulk: ev, adet: 1, now: T + 3 * 3600_000 })
+  assert.equal(bir.kaynakAdet, 1)
+  assert.equal(bir.hedefAdet, 1)
+  assert.equal(bir.kira, 0)
+
+  const once = getStats(chatJid, 'a@s').xp
+  const son = mulkDevret({ chatJid, kaynak: 'a@s', hedef: 'b@s', mulk: ev, adet: 1, now: T + 5 * 3600_000 })
+  assert.equal(son.kaynakAdet, 0)
+  assert.equal(son.hedefAdet, 2)
+  assert.ok(son.kira > 0)
+  assert.equal(getStats(chatJid, 'a@s').xp, once + son.kira)
+  assert.equal(mulkDurumu({ chatJid, userJid: 'a@s', now: T + 5 * 3600_000 }).length, 0)
+
+  hacizEt({ chatJid, userJid: 'b@s', miktar: 1, now: T + 5 * 3600_000 })
+  assert.deepEqual(mulkDevret({ chatJid, kaynak: 'b@s', hedef: 'a@s', mulk: ev, now: T + 5 * 3600_000 }), { borclu: true })
 })

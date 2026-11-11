@@ -154,6 +154,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/kripto.js` | son çekilen Bitcoin fiyatı (60 sn) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/sahipSans.js` | sahibin gizli kumar şansı açık mı (`.şans`) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/uyeSustur.js` | `.sustur` ile susturulan üyeler ve bitişleri (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 
 Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe. Tek istisna botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz.
@@ -208,7 +209,7 @@ Sahip kontrolü `parsed.senderPn` ile yapılır, `parsed.sender` ile **değil**.
 
 WhatsApp bazen numarayı hiç vermez (LID'li hesaptan **özel sohbet**: `senderPn` de "...@lid" olur). Bu durumda sahip `.env`'deki `OWNER_LID` (virgülle ayrılmış liste, `@lid` eki isteğe bağlı) ile tanınır; eşleşme yalnızca `sender` gerçekten "...@lid" ise yapılır. Değer log'daki "Yetkisiz komut denemesi" satırından ya da grupta `.id` çıktısından alınır.
 
-Grup admini kontrolü `lib/group.js:senderIsAdmin()` ile yapılır (`.oyunbitir`, `.sus`, `.konuş`).
+Grup admini kontrolü `lib/group.js:senderIsAdmin()` ile yapılır (`.oyunbitir`, `.sus`, `.konuş`, `.sustur`).
 
 JID karşılaştırırken `jidNormalizedUser()` kullan. Baileys yeni sürümlerde grup katılımcısını LID (`@lid`) olarak verebilir; ham string eşitliği (`===`) güvenilir değildir.
 
@@ -319,7 +320,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 48 (tamam):** sıfır atma betiği. Ayrıntı aşağıda.
 - **Faz 49 (tamam):** `.seçim` geri döndü, bakanlıklar, `.hazine`, gizli `.darbe`. Ayrıntı aşağıda.
 - **Faz 50 (tamam):** `.kripto` ve Suly. Ayrıntı aşağıda.
-- **Faz 51+:** yeni komutlar, her biri ayrı adım
+- **Faz 51 (tamam):** `.mülk devret` ve `.sustur`. Ayrıntı aşağıda.
+- **Faz 52+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1160,6 +1162,15 @@ Kurallar `lib/kripto.js`'te, yazma `lib/stats.js`'in sonundaki kripto bölümün
 - **Haciz:** yalnızca sahibin `.haciz @kişi suly <miktar|hepsi>`'i alır (bot sahibinin kararı), kesintisiz değer hazineye girer. `.hacizall`, soygun, bakanlar ve sigorta Suly'ye dokunmaz. Darbe %60'ını bot hesabına geçirir; bot Suly'si `paraArzi`'ne girmez (bot parası gibi).
 - Borçlu (`borcluMu`) alamaz, Suly varken `.iflas` reddedilir: Suly tahsilata girmediği için borçtan kaçış olurdu. `.servet` satış değeriyle sayar. Panele eklenmedi. Sıfır atma Suly'ye dokunmaz: XP fiyatı kurla kendiliğinden düşer.
 
+### Faz 51 — `.mülk devret` ve `.sustur`
+
+```
+susturulan_uye(chat_jid, user_jid, bitis ms)   PK(chat_jid,user_jid)
+```
+
+- **`.mülk devret @kişi <mülk> [adet]`:** `mulkDevret()` tek transaction'dır. Birikmiş kira verende kalır: son tanesi giderse kira ona ödenir (hazineden, `kiraTopla` gibi), alan kirayı devir anından biriktirir. Borçlu (`borcluMu`) veremez, yoksa mülk arkadaşa aktarılıp `.iflas` ile borçtan kaçılırdı. Bota verilmez. Adet en çok 4 hanedir, elle yazılmış numara adet sanılmasın.
+- **`.sustur @kişi [dakika]`:** admin ve sahip içindir. Susturulan üyenin her mesajını `lib/handler.js` istatistikten **önce** `{ delete: msg.key }` ile siler: mesaj sayılmaz, komutu çalışmaz. Silmek için bot grupta admin olmalı, komut bunu baştan denetler; sonradan adminlik alınırsa silme yalnızca loglanır. Dakika verilmezse kaldırılana kadar sürer (`bitis = 0`), süre dolunca ilk mesajda kendiliğinden düşer, bot kendiliğinden duyurmaz. Bot sahibi ve bot susturulamaz, admini yalnızca sahip susturur. Kişi LID ya da numarayla gelebildiği için `sender` ve `senderPn` ikisine de bakılır. `.sus` (grubu susturma) ile karışmaz; susturulmuş grupta da silme sürer.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1273,3 +1284,5 @@ Kurallar `lib/kripto.js`'te, yazma `lib/stats.js`'in sonundaki kripto bölümün
 95. Sahip özelden `.darbe <grup id>` → grupta herkes etiketlenir, üyelere özelden mesaj gelir; `destek` yanıtı ✅ alır; 10 dk sonra sonuç, `.seçim aday` → "askıda"; grupta `.darbe` → hiç tepki yok; sahip özelden `.help darbe` → rehber, grupta ya da başkası yazınca → yok; `.darbe bitir <grup id>` → seçim açılır
 96. `.help savunma` → Savunma Bakanı'nın görevi; `.help başkan` → `.faizkararı` ve `.hazine ver`; `.help makamlar` → dört makam
 97. `.kripto` → Suly'nin dolar fiyatı ve XP karşılığı; `.kripto al suly 0.001` → XP düşer, `.kripto` 0,001 gösterir; `.kripto al suly 0,000000001` → kullanım; `.kripto sat suly hepsi` → %1 kesintiyle XP gelir; Suly varken eksi cüzdanla `.iflas` → "önce sat"; sahip `.haciz @kişi suly hepsi` → Suly kasaya; `.hacizall` Suly'ye dokunmaz
+98. `.mülk devret @kişi ev` → ev geçer, iki adet yazılır; son evde birikmiş kira verene ödenir; borçluyken → reddedilir; `@bot` → reddedilir
+99. Bot admin değilken `.sustur @kişi` → "beni admin yapın"; admin yapılınca `.sustur @kişi 1` → kişinin mesajları silinir, `.stats`'ı artmaz; 1 dk sonra mesajı kalır; sıradan üye `.sustur` → reddedilir; `.sustur kaldır @kişi` → açılır; `.sustur @sahip` → reddedilir
