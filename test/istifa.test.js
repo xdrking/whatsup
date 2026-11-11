@@ -48,4 +48,8 @@ test('coindevret: toplam coin değişmez, fazlası ve borçlu reddedilir', () =>
   assert.ok(krediCek({ chatJid, userJid: 'b', miktar: 1000, now: T }))
   assert.deepEqual(coinDevret({ chatJid, kaynak: 'b', hedef: 'a', adet: 1, now: T }), { borclu: true })
   assert.equal(coinDurumu(chatJid, 'b').bakiye, 2)
+
+  // Sahibin başkası adına devri borç engeline takılmaz, bot da alabilir.
+  assert.deepEqual(coinDevret({ chatJid, kaynak: 'b', hedef: BOT, adet: 1, sahipDevri: true, now: T }), { kaynakBakiye: 1, hedefBakiye: 1 })
+  assert.equal(coinDurumu(chatJid, BOT).bakiye, 1)
 })
