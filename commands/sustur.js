@@ -17,24 +17,24 @@ export default {
   description: 'Üyeyi susturur, bot mesajlarını siler (admin)',
   usage: '.sustur @kişi [dakika]  —  .sustur kaldır @kişi  —  .sustur liste',
   details: [
-    'Yalnızca grup adminleri ve bot sahibi kullanabilir. Botun grupta admin olması gerekir.',
+    'Yalnızca grup adminleri kullanabilir. Botun grupta admin olması gerekir.',
     '`.sustur @ali` — Ali\'nin her mesajını bot siler, kaldırılana kadar. `.sustur @ali 30` — 30 dakika.',
     'Susturulan kişinin komutları da çalışmaz, mesajları istatistiğe sayılmaz.',
     '`.sustur kaldır @ali` ya da `.susturkaldır @ali` açar. `.sustur liste` susturulanları yazar.',
-    'Bot sahibi ve bot susturulamaz. Bir admini yalnızca bot sahibi susturabilir.',
+    'Bot sahibi, bot ve adminler susturulamaz. Botu susturmak için `.sus`.',
   ],
   category: 'grup',
   cooldown: 3,
   ownerOnly: false,
 
-  async execute({ sock, msg, args, from, sender, parsed, isOwner }) {
+  async execute({ sock, msg, args, from, sender, parsed }) {
     const yaz = (text, mentions = []) => sock.sendMessage(from, { text, mentions }, { quoted: msg })
 
     try {
       const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
       if (!metadata) return
 
-      if (!isOwner && !isGroupAdmin(metadata, sender)) return await yaz('🔇 Üyeleri yalnızca grup adminleri susturabilir.')
+      if (!isGroupAdmin(metadata, sender)) return await yaz('🔇 Üyeleri yalnızca grup adminleri susturabilir.')
 
       const komut = trLower(parsed.body.trim().split(/\s+/)[0] || '')
       const islem = trLower(args[0] || '')
@@ -59,10 +59,10 @@ export default {
       }
 
       const botKimlikleri = [sock.user?.id, sock.user?.lid].filter(Boolean).map((j) => jidNormalizedUser(j))
-      if (botKimlikleri.includes(hedef)) return await yaz('🤖 Kendimi susturamam.')
+      if (botKimlikleri.includes(hedef)) return await yaz('🤖 Beni susturmak için `.sus` yazın.')
       if (hedef === sahipUyeKimligi(metadata)) return await yaz('👑 Bot sahibi susturulamaz.')
       if (hedef === sender) return await yaz('❌ Kendini susturamazsın.')
-      if (!isOwner && isGroupAdmin(metadata, hedef)) return await yaz('❌ Bir admini yalnızca bot sahibi susturabilir.')
+      if (isGroupAdmin(metadata, hedef)) return await yaz('❌ Adminler susturulamaz.')
       // Admin değilse WhatsApp silmeyi reddeder; susturma işe yaramaz görünmesin.
       if (!botKimlikleri.some((j) => isGroupAdmin(metadata, j))) return await yaz('❌ Mesaj silebilmem için önce beni grupta admin yapın.')
 
