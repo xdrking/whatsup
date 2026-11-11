@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
-const { gonderilenMesaj, sentByBot, trackOutgoing } = await import('../lib/outgoing.js')
+const { KAYIP_MESAJ, gonderilenMesaj, sentByBot, trackOutgoing } = await import('../lib/outgoing.js')
 
 test('gönderilen mesaj tanınır, gövdesi yeniden gönderim için durur, 300\'den eskisi düşer', async () => {
   let n = 0
@@ -13,10 +13,10 @@ test('gönderilen mesaj tanınır, gövdesi yeniden gönderim için durur, 300\'
   await sock.sendMessage('a@s.whatsapp.net', { text: 'rolün: vampir' })
   assert.equal(sentByBot('id1'), true)
   assert.deepEqual(gonderilenMesaj('id1'), { conversation: 'rolün: vampir' })
-  assert.equal(gonderilenMesaj('yok'), undefined)
+  assert.deepEqual(gonderilenMesaj('yok'), KAYIP_MESAJ)
 
   for (let i = 0; i < 300; i++) await sock.sendMessage('a@s.whatsapp.net', { text: String(i) })
   assert.equal(sentByBot('id1'), false)
-  assert.equal(gonderilenMesaj('id1'), undefined)
+  assert.deepEqual(gonderilenMesaj('id1'), KAYIP_MESAJ)
   assert.equal(sentByBot('id301'), true)
 })
