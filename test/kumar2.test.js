@@ -71,7 +71,7 @@ test('kazı: kart sonucu ödülle tutar, beklenen dönüş %90-100', () => {
 test('kasaya alınan bahis geri ödenir, karneye net yazılır', () => {
   const k = { chatJid: 'k1@g.us', userJid: 'u@lid' }
   addXp({ ...k, amount: 100 })
-  // Günlük kumar tavanı piyasanın %10'u: piyasa küçük kalırsa kazanç kırpılırdı.
+  // Günlük kumar tavanı piyasanın %50'si: piyasa küçük kalırsa kazanç kırpılırdı.
   addXp({ chatJid: k.chatJid, userJid: 'zengin@lid', amount: 1_000_000 })
 
   assert.deepEqual(xpCek({ ...k, miktar: 150 }), { yetersiz: true, xp: 100 })
@@ -194,13 +194,13 @@ test('bot hesabı: banka kesintisi, servet vergisi ve borsa komisyonu bota gider
   botHesabiniTani(null)
 })
 
-test('günlük kumar tavanı: piyasanın %10\'unu aşan kazanç kasada kalır, kumar yarına kapanır', () => {
+test('günlük kumar tavanı: piyasanın yarısını aşan kazanç kasada kalır, kumar yarına kapanır', () => {
   const chatJid = 'tavan@g.us'
   const userJid = 'kumarbaz@lid'
   const now = Date.UTC(2026, 10, 11, 9) // İstanbul 12:00
   addXp({ chatJid, userJid, amount: 1000 })
   addXp({ chatJid, userJid: 'diger@lid', amount: 9000 })
-  // Piyasa 10.000, tavan 1.000.
+  // Piyasa 10.000, tavan 5.000.
 
   const ilk = bahisOyna({ chatJid, userJid, miktar: 600, cevir: () => ({ carpan: 2 }), at: now })
   assert.equal(ilk.fark, 600)
@@ -210,9 +210,10 @@ test('günlük kumar tavanı: piyasanın %10\'unu aşan kazanç kasada kalır, k
   // Kayıp net'i düşürür, kaybedilen geri kazanılabilir.
   bahisOyna({ chatJid, userJid, miktar: 100, cevir: () => ({ carpan: 0 }), at: now })
 
-  const ikinci = bahisOyna({ chatJid, userJid, miktar: 1000, cevir: () => ({ carpan: 2 }), at: now })
-  assert.ok(ikinci.kesilen > 0)
-  assert.equal(ikinci.fark + ikinci.kesilen, 1000)
+  // Net 500, kalan 4.500: 6.000'lik kazancın 1.500'ü kasada kalır.
+  const ikinci = bahisOyna({ chatJid, userJid, miktar: 1500, cevir: () => ({ carpan: 5 }), at: now })
+  assert.equal(ikinci.fark, 4500)
+  assert.equal(ikinci.kesilen, 1500)
   assert.equal(kumarYasagi(chatJid, userJid, now), Date.UTC(2026, 10, 11, 21)) // İstanbul gece yarısı
 
   // Ertesi gün tavan sıfırlanır.

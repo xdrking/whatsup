@@ -1190,7 +1190,7 @@ ambargo(chat_jid, user_jid, bitis ms)             PK(chat_jid,user_jid)
 kumar_gun(chat_jid, user_jid, day, net, tavan)   PK(chat_jid,user_jid)
 ```
 
-Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile kasadan 1 trilyon çekip kuru şişirdi (bot sahibinin kararı). Kişinin bota karşı oyunlardan (`bahisOyna`, `kumarOde`) günlük net kazancı `KUMAR_GUNLUK_TAVAN` (anlık piyasanın %10'u) ile sınırlıdır. `.vs` ve `.piyango` girmez, orada para kasadan çıkmaz.
+Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile kasadan 1 trilyon çekip kuru şişirdi (bot sahibinin kararı). Kişinin bota karşı oyunlardan (`bahisOyna`, `kumarOde`) günlük net kazancı `KUMAR_GUNLUK_TAVAN` (anlık piyasanın %50'si, %10 az bulundu) ile sınırlıdır. `.vs` ve `.piyango` girmez, orada para kasadan çıkmaz.
 
 - Tavanı aşan kazanç ödenmez, kasada kalır (`kumarTavaniUygula`), mesaj bunu yazar. Kayıp net'i düşürür.
 - Tavan günün ilk kumarında sabitlenir: kazanç piyasayı büyüttüğü için kayan tavan hiç dolmazdı.
@@ -1313,4 +1313,4 @@ Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile k
 99. Bot admin değilken `.sustur @kişi` → "beni admin yapın"; admin yapılınca `.sustur @kişi 1` → kişinin mesajları silinir, `.stats`'ı artmaz; 1 dk sonra mesajı kalır; sıradan üye `.sustur` → reddedilir; `.sustur kaldır @kişi` → açılır; `.sustur @sahip` → reddedilir
 100. Başkan `.kayyum dışişleri @mert` → eski bakan görevden alınır, Mert bakan; `.seçim aday dışişleri` → "kayyumla yönetiliyor"; `.seçim` hükümette "(kayyum)" yazar; sıradan üye `.kayyum` → "yalnızca başkan"; `.kayyum kaldır dışişleri` → seçim açılır
 101. Adalet Bakanı `.bakan tutukla` beş kişiye → her mesajda kalan hak, altıncısı "yarın"; Dışişleri `.bakan ambargo @x` → x `.devret` ve `.coindevret` yazınca "ambargodasın"
-102. Bir günde piyasanın %10'undan fazla kumar kazanan → son kazancın fazlası "kasada kaldı" yazar, sonraki `.bahis` "kumar yasağın var" der; ertesi gün açılır
+102. Bir günde piyasanın %50'sinden fazla kumar kazanan → son kazancın fazlası "kasada kaldı" yazar, sonraki `.bahis` "kumar yasağın var" der; ertesi gün açılır
