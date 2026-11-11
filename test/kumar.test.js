@@ -64,6 +64,8 @@ test('bahisOyna: yetersiz XP çekiliş yapmaz, kazanç ve kayıp yazılır', () 
   const chatJid = 'g@g.us'
   const userJid = 'u@s.whatsapp.net'
   addXp({ chatJid, userJid, amount: 100 })
+  // Günlük kumar tavanı piyasanın %10'u: piyasa küçük kalırsa kazanç kırpılırdı.
+  addXp({ chatJid, userJid: 'zengin@s.whatsapp.net', amount: 1_000_000 })
 
   let cekildi = false
   const yok = bahisOyna({ chatJid, userJid, miktar: 150, cevir: () => { cekildi = true; return { carpan: 2 } } })

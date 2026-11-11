@@ -13,6 +13,7 @@ const { HISSELER } = await import('../lib/borsa.js')
 const {
   addXp, bahisOyna, bankaCek, bankaYatir, borsaAl, borsaSat, botHesabiMi, botHesabiniTani, getStats, kumarOde,
   recordMessage, kumarSiralama, piyangoBilet, piyangoCek, vsOyna, xpCek,
+  kumarYasagi,
 } = await import('../lib/stats.js')
 
 const el = (...d) => d.map((deger) => ({ deger, renk: '♠' }))
@@ -70,10 +71,12 @@ test('kazı: kart sonucu ödülle tutar, beklenen dönüş %90-100', () => {
 test('kasaya alınan bahis geri ödenir, karneye net yazılır', () => {
   const k = { chatJid: 'k1@g.us', userJid: 'u@lid' }
   addXp({ ...k, amount: 100 })
+  // Günlük kumar tavanı piyasanın %10'u: piyasa küçük kalırsa kazanç kırpılırdı.
+  addXp({ chatJid: k.chatJid, userJid: 'zengin@lid', amount: 1_000_000 })
 
   assert.deepEqual(xpCek({ ...k, miktar: 150 }), { yetersiz: true, xp: 100 })
   assert.deepEqual(xpCek({ ...k, miktar: 60 }), { yetersiz: false, xp: 40 })
-  assert.deepEqual(kumarOde({ ...k, bahis: 60, odeme: 120 }), { xp: 160, fark: 60 })
+  assert.deepEqual(kumarOde({ ...k, bahis: 60, odeme: 120 }), { xp: 160, fark: 60, kesilen: 0 })
   assert.deepEqual(kumarSiralama(k.chatJid).kazananlar, [{ user_jid: 'u@lid', net: 60, games: 1 }])
 })
 
@@ -189,4 +192,29 @@ test('bot hesabı: banka kesintisi, servet vergisi ve borsa komisyonu bota gider
   assert.equal(getStats(chatJid, bot).xp, 20_050 + alis.komisyon + satis.komisyon)
 
   botHesabiniTani(null)
+})
+
+test('günlük kumar tavanı: piyasanın %10\'unu aşan kazanç kasada kalır, kumar yarına kapanır', () => {
+  const chatJid = 'tavan@g.us'
+  const userJid = 'kumarbaz@lid'
+  const now = Date.UTC(2026, 10, 11, 9) // İstanbul 12:00
+  addXp({ chatJid, userJid, amount: 1000 })
+  addXp({ chatJid, userJid: 'diger@lid', amount: 9000 })
+  // Piyasa 10.000, tavan 1.000.
+
+  const ilk = bahisOyna({ chatJid, userJid, miktar: 600, cevir: () => ({ carpan: 2 }), at: now })
+  assert.equal(ilk.fark, 600)
+  assert.equal(ilk.kesilen, 0)
+  assert.equal(kumarYasagi(chatJid, userJid, now), 0)
+
+  // Kayıp net'i düşürür, kaybedilen geri kazanılabilir.
+  bahisOyna({ chatJid, userJid, miktar: 100, cevir: () => ({ carpan: 0 }), at: now })
+
+  const ikinci = bahisOyna({ chatJid, userJid, miktar: 1000, cevir: () => ({ carpan: 2 }), at: now })
+  assert.ok(ikinci.kesilen > 0)
+  assert.equal(ikinci.fark + ikinci.kesilen, 1000)
+  assert.equal(kumarYasagi(chatJid, userJid, now), Date.UTC(2026, 10, 11, 21)) // İstanbul gece yarısı
+
+  // Ertesi gün tavan sıfırlanır.
+  assert.equal(kumarYasagi(chatJid, userJid, Date.UTC(2026, 10, 11, 21, 1)), 0)
 })

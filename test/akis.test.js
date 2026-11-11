@@ -88,6 +88,7 @@ test('blackjack: bahis baştan düşer, başkası oynayamaz, .oyunbitir iade etm
   do {
     t = kur()
     addXp({ chatJid: t.from, userJid: A, amount: 600 })
+    addXp({ chatJid: t.from, userJid: 'zengin@s.whatsapp.net', amount: 1_000_000 })
     await t.komut(blackjack, A, ['100'])
   } while (!getGame(t.from))
 

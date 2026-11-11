@@ -73,7 +73,7 @@ function sonuclandir(state, sebep) {
 
   const lines = ['🃏 *BLACKJACK*', '', ...masa(state, false), '']
   if (sebep) lines.push(sebep)
-  if (s) lines.push(...sonucSatirlari({ once: s.xp - s.fark, xp: s.xp, fark: s.fark }))
+  if (s) lines.push(...sonucSatirlari({ once: s.xp - s.fark, xp: s.xp, fark: s.fark, kesilen: s.kesilen }))
   else lines.push('❌ Sonuç yazılamadı.')
   return { text: lines.join('\n') }
 }

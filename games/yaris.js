@@ -59,7 +59,7 @@ function kostur(state) {
     const odeme = b.at === kazanan ? Math.floor(b.miktar * oran) : 0
     const s = kumarOde({ oyun: 'yarış', chatJid: state.chatJid, userJid: jid, bahis: b.miktar, odeme })
     if (!s) satirlar.push(`${mentionOf(jid)}: ❌ sonuç yazılamadı`)
-    else if (s.fark > 0) satirlar.push(`✅ ${mentionOf(jid)}: *+${binlik(s.fark)} XP*`)
+    else if (s.fark > 0) satirlar.push(`✅ ${mentionOf(jid)}: *+${binlik(s.fark)} XP*${s.kesilen ? ` (günlük tavan, ${binlik(s.kesilen)} XP kasada kaldı)` : ''}`)
     else satirlar.push(`❌ ${mentionOf(jid)}: ${binlik(s.fark)} XP`)
   }
 

@@ -143,7 +143,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.günlük` son alınan gün + seri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.çark` hak penceresi ve aktif oyun XP bonusu | `data/stats.db` (kalıcı) |
-| `lib/db.js` + `lib/stats.js` | kumar karnesi (toplam ve oyun başına) ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | kumar karnesi (toplam ve oyun başına), günlük kumar tavanı ve `.piyango` biletleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.görev` ilerlemesi, `.market` unvan/kalkan, `.soygun` hak/korunma, `.ödül` | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kredi` açık borçları | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | coin bakiyesi, toplu soygun hakkı, sigorta, mülkler, günlük kur | `data/stats.db` (kalıcı) |
@@ -322,7 +322,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 50 (tamam):** `.kripto` ve Suly. Ayrıntı aşağıda.
 - **Faz 51 (tamam):** `.mülk devret` ve `.sustur`. Ayrıntı aşağıda.
 - **Faz 52 (tamam):** `.kayyum`, Dışişleri ve ambargo, bakanlara günde 5 hak. Ayrıntı aşağıda.
-- **Faz 53+:** yeni komutlar, her biri ayrı adım
+- **Faz 53 (tamam):** günlük kumar kazanç tavanı. Ayrıntı aşağıda.
+- **Faz 54+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1183,6 +1184,18 @@ ambargo(chat_jid, user_jid, bitis ms)             PK(chat_jid,user_jid)
 - **Günlük hak:** her bakanlık günde `BAKAN_GUNLUK` (5) kez kullanılır, sayaç `bakan_hak`'tadır (bot sahibinin kararı). Sayaç kişiye bağlıdır: makama yeni gelen sıfırdan başlar. `makam.karar_gun` artık yalnızca başkanın `.faizkararı`'dır.
 - **Dışişleri (`ambargo`):** hedef 24 saat `.devret`, `.coindevret`, `.mülk devret` yapamaz (`ambargoBitisi`, gönderen tarafta denetlenir). Sahibin başkası adına devri (`sahipDevri`) muaftır. Alması engellenmez. `.tefeci`, `.çete yatır`, `.ödül` ambargoya girmez.
 
+### Faz 53 — Günlük kumar tavanı
+
+```
+kumar_gun(chat_jid, user_jid, day, net, tavan)   PK(chat_jid,user_jid)
+```
+
+Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile kasadan 1 trilyon çekip kuru şişirdi (bot sahibinin kararı). Kişinin bota karşı oyunlardan (`bahisOyna`, `kumarOde`) günlük net kazancı `KUMAR_GUNLUK_TAVAN` (anlık piyasanın %10'u) ile sınırlıdır. `.vs` ve `.piyango` girmez, orada para kasadan çıkmaz.
+
+- Tavanı aşan kazanç ödenmez, kasada kalır (`kumarTavaniUygula`), mesaj bunu yazar. Kayıp net'i düşürür.
+- Tavan günün ilk kumarında sabitlenir: kazanç piyasayı büyüttüğü için kayan tavan hiç dolmazdı.
+- Dolunca `kumarYasagi()` İstanbul gece yarısını döner, bütün kumar komutları kendiliğinden kapanır. Sahip muaf değildir, bot hesabı muaftır.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1300,3 +1313,4 @@ ambargo(chat_jid, user_jid, bitis ms)             PK(chat_jid,user_jid)
 99. Bot admin değilken `.sustur @kişi` → "beni admin yapın"; admin yapılınca `.sustur @kişi 1` → kişinin mesajları silinir, `.stats`'ı artmaz; 1 dk sonra mesajı kalır; sıradan üye `.sustur` → reddedilir; `.sustur kaldır @kişi` → açılır; `.sustur @sahip` → reddedilir
 100. Başkan `.kayyum dışişleri @mert` → eski bakan görevden alınır, Mert bakan; `.seçim aday dışişleri` → "kayyumla yönetiliyor"; `.seçim` hükümette "(kayyum)" yazar; sıradan üye `.kayyum` → "yalnızca başkan"; `.kayyum kaldır dışişleri` → seçim açılır
 101. Adalet Bakanı `.bakan tutukla` beş kişiye → her mesajda kalan hak, altıncısı "yarın"; Dışişleri `.bakan ambargo @x` → x `.devret` ve `.coindevret` yazınca "ambargodasın"
+102. Bir günde piyasanın %10'undan fazla kumar kazanan → son kazancın fazlası "kasada kaldı" yazar, sonraki `.bahis` "kumar yasağın var" der; ertesi gün açılır
