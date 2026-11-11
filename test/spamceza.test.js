@@ -6,7 +6,7 @@ process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
 const { spamCezasi } = await import('../lib/devlet.js')
-const { CEZA_ARALIGI, UYARI_ESIGI, ihlalAsamasi, susturmaIhlali } = await import('../lib/spamCeza.js')
+const { CEZA_ARALIGI, DM_ARALIGI_MS, UYARI_ESIGI, dmIzni, ihlalAsamasi, susturmaIhlali } = await import('../lib/spamCeza.js')
 const { addXp, botHesabiniTani, coinAl, coinDurumu, getStats, spamElKoy } = await import('../lib/stats.js')
 const { uyeSustur, uyeSerbest } = await import('../lib/uyeSustur.js')
 
@@ -44,7 +44,7 @@ test('spamElKoy: cüzdanın yarısı hazineye, coinin yarısı bota geçer', () 
   assert.equal(spamElKoy({ chatJid, userJid: BOT }), null)
 })
 
-test('susturmaIhlali: uyarı özelden gider, üç mesaj sonra el konur, sayım yeniden başlar', async () => {
+test('susturmaIhlali: uyarı özelden gider, üç mesaj sonra el konur, 10 dk dolmadan ikinci özel mesaj gitmez', async () => {
   const chatJid = 'spam2@g.us'
   const u = 'yazan@lid'
   const pn = '905551112233@s.whatsapp.net'
@@ -61,18 +61,25 @@ test('susturmaIhlali: uyarı özelden gider, üç mesaj sonra el konur, sayım y
   assert.equal(giden[0].jid, pn)
   assert.match(giden[0].text, /yarısına el koyarım/)
 
+  // El konur, ama uyarıdan bu yana 10 dk geçmediği için özel mesaj gitmez.
   for (let i = 0; i < CEZA_ARALIGI; i++) await yaz()
-  assert.equal(giden.length, 2)
-  assert.match(giden[1].text, /el konuldu/)
+  assert.equal(giden.length, 1)
   assert.equal(getStats(chatJid, u).xp, 500)
 
   // Sayım sıfırlandı: bir sonraki uyarı yine UYARI_ESIGI mesaj sonra.
   for (let i = 0; i < UYARI_ESIGI - 1; i++) await yaz()
-  assert.equal(giden.length, 2)
+  assert.equal(giden.length, 1)
 
   // Susturma kaldırılınca sayım da gider.
   uyeSerbest(chatJid, u)
   uyeSustur(chatJid, u)
   await yaz()
-  assert.equal(giden.length, 2)
+  assert.equal(giden.length, 1)
+})
+
+test('susturma özel mesajı kişi başı 10 dakikada bir', () => {
+  assert.equal(dmIzni('g|a', 0), true)
+  assert.equal(dmIzni('g|a', DM_ARALIGI_MS - 1), false)
+  assert.equal(dmIzni('g|b', 1), true)
+  assert.equal(dmIzni('g|a', DM_ARALIGI_MS), true)
 })

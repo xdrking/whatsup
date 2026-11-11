@@ -1206,6 +1206,7 @@ Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile k
 - `UYARI_ESIGI`'nci (3) silinen mesajda kişiye özelden "`CEZA_ARALIGI` (3) mesaj daha yazarsan tüm mal varlığının yarısına el koyarım" yazılır. Numara biliniyorsa numarasına gider (`.tabu` gibi).
 - 3 mesaj daha yazarsa `spamElKoy()` her şeyin yarısını alır (`SPAM_YUZDE`): banka ve cüzdan hazineye, coin, Suly ve mülklerin yarısı (aşağı yuvarlanır, en pahalıdan) bot hesabına. Darbeyle aynı yoldur (`varlikElKoy`). Eksi cüzdan alınmaz, sigorta ve kalkan korumaz. Sonuç özelden yazılır, gruba duyurulmaz.
 - Sonra sayım sıfırlanır, yazmaya devam ederse döngü baştan başlar (yeni uyarı, yeni ceza).
+- **Özel mesaj kişi başı 10 dakikada birdir** (`DM_ARALIGI_MS`, `dmIzni`): el koyma sürer, yalnızca mesaj atlanır. 150 mesajlık spam kişiye art arda 50 özel mesaj attırmıştı; alıcının telefonu çözemeyip yeniden istedikçe Signal oturumları bozuldu, bot `Bad MAC` yüzünden hiçbir mesajı okuyamaz oldu. Bu sınır kaldırılmaz.
 
 ### Faz 55 — Panelin eksik kartları
 
