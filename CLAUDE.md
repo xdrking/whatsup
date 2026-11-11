@@ -325,7 +325,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 52 (tamam):** `.kayyum`, Dışişleri ve ambargo, bakanlara günde 5 hak. Ayrıntı aşağıda.
 - **Faz 53 (tamam):** günlük kumar kazanç tavanı. Ayrıntı aşağıda.
 - **Faz 54 (tamam):** susturmayı dinlemeyenin varlığına el konur. Ayrıntı aşağıda.
-- **Faz 55+:** yeni komutlar, her biri ayrı adım
+- **Faz 55 (tamam):** panelin eksik kartları. Ayrıntı aşağıda.
+- **Faz 56+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1061,7 +1062,7 @@ Kurallar `lib/hapis.js`, `lib/secim.js`, `lib/evlilik.js`, `lib/meslek.js`, `lib
 - **`.istifa`:** satır silinmez, `kod` `ISSIZ` olur (`meslekIstifa`): silinseydi istifa edip hemen yeni meslek seçerek 24 saatlik değişim beklemesi atlanırdı. Kariyerli meslekte istifa kariyeri bitirir (`meslek_biten`) ve satırı siler, süresi dolan kariyer gibi yeni meslek hemen seçilir.
 - **`.çete`:** kasa faiz almaz, vergi, soygun ve hacizden muaftır. Bu yüzden yatırırken %5 kesilir ve bota gider, borçlu yatıramaz, kasası dolu lider `.iflas` edemez. Kasa `paraArzi`'ne girer, yoksa yatırmak kuru düşürürdü. Sıralama üyelerin `sezon` puanı toplamıdır, ödül `sezonDurumu()` kapanışında puanlar silinmeden yazılır.
 - **`.dava`:** `.anket` oyları okunamadığı için oylama yanıt tabanlıdır, `setLastMessage` oyda çağrılmaz (`.açıkartırma` gibi). Taraflar oy veremez. Kaybeden öder, davacı da. Miktar sanığın cüzdanının %25'iyle sınırlıdır, çoğunluk tek oylamayla birini sıfırlayamasın. Harç peşin bota gider, `.oyunbitir` dahil hiçbir durumda iade edilmez. Borçlu taraf kabul edilmez, kapanışta da denetlenir: dava para kaçırma yolu olmasın.
-- **Panel:** grup sayfasında Çeteler, Hapishane, Evlilikler, Meslekler, kişi sayfasında Hayat kartı vardır. Veri yoksa kart çıkmaz. Tablolar bot yeni sürümle açılmadan yoktur, `toplumTablolariVar()` bu yüzden vardır. Seçim panele eklenmedi.
+- **Panel:** grup sayfasında Çeteler, Hapishane, Evlilikler, Meslekler, kişi sayfasında Hayat kartı vardır. Veri yoksa kart çıkmaz. Tablolar bot yeni sürümle açılmadan yoktur, `toplumTablolariVar()` bu yüzden vardır. Hükümet kartı Faz 55'tedir.
 - **`.özet`:** yeni tablo yoktur. Mesajlar `gecmis`'ten son 7 gündür, gece kuşu ve kumar tüm zamanlardır, çünkü o tablolar haftalık tutulmaz. Çıktı bunu ayrı başlıkla yazar.
 
 ### Faz 41 — Piyasa olayları, `.yatırım`, `.tefeci`
@@ -1164,7 +1165,7 @@ Kurallar `lib/kripto.js`'te, yazma `lib/stats.js`'in sonundaki kripto bölümün
 - **Piyasa:** Suly `paraArzi`'ne son işlem fiyatıyla (`kripto_fiyat`) girer (bot sahibinin kararı). Girmeseydi Suly alıp kuru düşüren kişi ucuza coin alır, Suly'yi satıp kuru geri çıkarırdı. Alışta ödenen XP yanar, satışta basılır; arz değişmez. Bot Suly'yi yalnızca darbeden alır, onunki sayılmaz.
 - **Satış:** %1 kesinti hazineye (`kasayaYatir`). Kesinti kaldırılmamalı: fiyat herkese açık, dakikalık oynama bedava kâr olurdu.
 - **Haciz:** yalnızca sahibin `.haciz @kişi suly <miktar|hepsi>`'i alır (bot sahibinin kararı), kesintisiz değer hazineye girer. `.hacizall`, soygun, bakanlar ve sigorta Suly'ye dokunmaz. Darbe %60'ını bot hesabına geçirir; bot Suly'si `paraArzi`'ne girmez (bot parası gibi).
-- Borçlu (`borcluMu`) alamaz, Suly varken `.iflas` reddedilir: Suly tahsilata girmediği için borçtan kaçış olurdu. `.servet` satış değeriyle sayar. Panele eklenmedi. Sıfır atma Suly'ye dokunmaz: XP fiyatı kurla kendiliğinden düşer.
+- Borçlu (`borcluMu`) alamaz, Suly varken `.iflas` reddedilir: Suly tahsilata girmediği için borçtan kaçış olurdu. `.servet` satış değeriyle sayar. Panelde Suly kartı vardır (Faz 55). Sıfır atma Suly'ye dokunmaz: XP fiyatı kurla kendiliğinden düşer.
 
 ### Faz 51 — `.mülk devret` ve `.sustur`
 
@@ -1205,6 +1206,16 @@ Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile k
 - `UYARI_ESIGI`'nci (3) silinen mesajda kişiye özelden "`CEZA_ARALIGI` (3) mesaj daha yazarsan tüm mal varlığının yarısına el koyarım" yazılır. Numara biliniyorsa numarasına gider (`.tabu` gibi).
 - 3 mesaj daha yazarsa `spamElKoy()` her şeyin yarısını alır (`SPAM_YUZDE`): banka ve cüzdan hazineye, coin, Suly ve mülklerin yarısı (aşağı yuvarlanır, en pahalıdan) bot hesabına. Darbeyle aynı yoldur (`varlikElKoy`). Eksi cüzdan alınmaz, sigorta ve kalkan korumaz. Sonuç özelden yazılır, gruba duyurulmaz.
 - Sonra sayım sıfırlanır, yazmaya devam ederse döngü baştan başlar (yeni uyarı, yeni ceza).
+
+### Faz 55 — Panelin eksik kartları
+
+Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()` ile sorulur: tablo yoksa boş döner, eski veritabanında panel çökmez.
+
+- **Hazine:** panel WhatsApp'a bağlanmadığı için bot hesabını bilmez; bot kimliğini `ayar.bot_jid`'e yazar (`botHesabiniTani`). Grup sayfasında kasa, bot cüzdanı, coini ve mülkü, bugünkü maaş, toplam vergi ve bugünkü `.hazine ver` aktarımları. Sıralamada bot "🤖 Hazine" yazar, rekorlara girmez.
+- **Grup:** Hükümet (makamlar, darbe ya da kayyum, açık seçimler ve adayların oyu), Kumarhane (en çok kazanan ve kaybeden 3), vergi rekortmenleri, 🟠 Suly (son işlem fiyatı, sahipler), bugünün wordle'ı, evcil hayvanlar (kaçanlar hariç), Cezalılar (`.sustur` ve ambargo). Borçlulara açık tefeci borçları eklendi. Yeni rekorlar: coin baronu, emlak kralı.
+- **Servet** artık `.servet` gibi coin, Suly, mülk (toplanmamış kira dahil) ve yatırımı da sayar. Panel anlık kuru hesaplamaz: coin ve mülk son `ekonomi` kaydının kuruyla `bozdurmaDegeri`, Suly `sulySatisDegeri` ile sayılır. Servet çubuğu bu parçaları da çizer.
+- **Kişi:** Varlıklar (coin, Suly, mülkler, yatırım, ödenen vergi), Borç ve alacak (kredi, tefeci borcu, verdiği tefeci borçları), kumar karnesinde oyun dökümü (`kumar_oyun`), Hayat kartında makam, susturma, ambargo, kalkan, sigorta ve pet.
+- Fiyat grafiğinde `.vuru` dikdörtgenine `fill="transparent"`, yazılara `font-size` özniteliği verildi: stil yüklenmezse grafik siyah dikdörtgen ve dev yazıya dönüyordu (`test/panelhata/` ekran görüntüsü). CSP öznitelikleri engellemez, yalnızca satır içi `style`'ı engeller.
 
 ## Elle Doğrulama
 
@@ -1325,3 +1336,4 @@ Darbeden sonra kasa piyasadan kat kat büyüdü, bir üye bir gecede hi-lo ile k
 101. Adalet Bakanı `.bakan tutukla` beş kişiye → her mesajda kalan hak, altıncısı "yarın"; Dışişleri `.bakan ambargo @x` → x `.devret` ve `.coindevret` yazınca "ambargodasın"
 102. Bir günde piyasanın %50'sinden fazla kumar kazanan → son kazancın fazlası "kasada kaldı" yazar, sonraki `.bahis` "kumar yasağın var" der; ertesi gün açılır
 103. `.sustur @kişi` sonra kişi 3 mesaj yazar → özelden "3 mesaj daha yazarsan" uyarısı gelir; 3 mesaj daha → özelden el konulanlar listesi gelir, `.servet`'i yarıya iner, `.top`'ta bot artar; `.sustur kaldır @kişi` → sayım sıfırlanır
+104. Panelde grup sayfası → Hükümet, Hazine, Kumarhane, Suly, Cezalılar kartları; bot sıralamada "🤖 Hazine"; kişi sayfası → Varlıklar, Borç ve alacak, kumar oyun dökümü; servet coin ve mülkü sayar

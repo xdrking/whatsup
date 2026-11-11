@@ -150,9 +150,71 @@ function podyum(chatJid, ilkUc, alan) {
 }
 
 function borcDurumu(b) {
-  if (b.gecti) return 'Vadesi geçti, ilk mesajında tahsil edilir'
-  return b.vade ? `Kredi · vade ${tarih.format(b.vade)}` : 'Eksi bakiye'
+  const tur = b.tefeci !== undefined ? `Tefeci${b.tefeci ? ` (${adi(b.tefeci)})` : ''}` : 'Kredi'
+  if (b.gecti) return `${tur} · vadesi geçti, ilk mesajında tahsil edilir`
+  return b.vade ? `${tur} · vade ${tarih.format(b.vade)}` : 'Eksi bakiye'
 }
+
+/** Üyeye bağlanan liste satırı; üye gruptan çıkmışsa "Eski üye" yazar. */
+function uyeSatiri(chatJid, jid, uye, alt, deger, degerAlt = '') {
+  return h`<a class="satir" href="${kisiLink(chatJid, jid)}">
+    ${uye ? avatar(uye) : ''}
+    <span class="ad"><strong>${uye ? adi(uye) : 'Eski üye'}</strong>${alt ? h`<small>${alt}</small>` : ''}</span>
+    ${deger === '' ? '' : h`<span class="deger">${deger}${degerAlt ? h`<small>${degerAlt}</small>` : ''}</span>`}
+  </a>`
+}
+
+const duzSatir = (ad, deger, alt = '') =>
+  h`<div class="satir"><span class="ad"><strong>${ad}</strong>${alt ? h`<small>${alt}</small>` : ''}</span><span class="deger">${deger}</span></div>`
+
+const bitisYaz = (bitis) => (bitis ? `${tarih.format(bitis)}'e kadar` : 'Kaldırılana kadar')
+
+function hazineKarti(chatJid, hz) {
+  return h`<section class="kart liste">
+    <h2>Hazine <small>bot hesabı</small></h2>
+    ${duzSatir('Kasa', sayi.format(hz.banka), 'Botun bankası')}
+    ${duzSatir('Bot cüzdanı', sayi.format(hz.cuzdan))}
+    ${hz.coin ? duzSatir('Bot coini', sayi.format(hz.coin)) : ''}
+    ${hz.mulkDeger ? duzSatir('Bot mülkleri', sayi.format(hz.mulkDeger), 'Satış değeri') : ''}
+    ${duzSatir('Bugün ödenen maaş', sayi.format(hz.maas))}
+    ${duzSatir('Toplanan vergi', sayi.format(hz.vergi), 'Kayıt başladığından beri')}
+    ${hz.aktarimlar.length ? h`<h3>Bugünkü hazine aktarımları</h3>${hz.aktarimlar.map((a) => uyeSatiri(chatJid, a.user_jid, a.uye, '', sayi.format(a.miktar)))}` : ''}
+  </section>`
+}
+
+function hukumetKarti(chatJid, satirlar) {
+  return h`<section class="kart liste"><h2>Hükümet</h2>${satirlar.map((m) => h`
+    ${m.user_jid
+    ? uyeSatiri(chatJid, m.user_jid, m.uye, `${m.ad}${m.askida ? (m.kod === 'baskan' ? ' · darbe' : ' · kayyum') : ''}`, '')
+    : duzSatir(m.ad, '', m.kod === 'baskan' ? 'Seçilmiş başkan yok, bot sahibi yönetir' : 'Boş')}
+    ${m.secim ? h`<div class="satir alt-satir"><span class="ad"><small>🗳️ Seçim sürüyor · ${tarih.format(m.secim.bitis)}'de kapanır</small></span></div>
+      ${m.secim.adaylar.map((a) => uyeSatiri(chatJid, a.user_jid, a.uye, 'Aday', sayi.format(a.oy), 'oy'))}` : ''}`)}
+  </section>`
+}
+
+function kumarKarti(chatJid, kt) {
+  if (!kt.kazananlar.length && !kt.kaybedenler.length) return ''
+  return h`<section class="kart liste"><h2>Kumarhane</h2>
+    ${kt.kazananlar.length ? h`<h3>En çok kazananlar</h3>${kt.kazananlar.map((u) => uyeSatiri(chatJid, u.user_jid, u, '', h`<span class="artis">+${sayi.format(u.kumarNet)}</span>`))}` : ''}
+    ${kt.kaybedenler.length ? h`<h3>En çok kaybedenler</h3>${kt.kaybedenler.map((u) => uyeSatiri(chatJid, u.user_jid, u, '', h`<span class="dusus">−${sayi.format(u.kumarZarar)}</span>`))}` : ''}
+  </section>`
+}
+
+function kriptoKarti(chatJid, k) {
+  return h`<section class="kart liste"><h2>🟠 Suly</h2>
+    ${duzSatir('1 Suly', sayi.format(k.xp), `$${sayi.format(Math.round(k.usd))} · son işlem fiyatı`)}
+    ${k.sahipler.map((u) => uyeSatiri(chatJid, u.user_jid, u, 'Suly', sulyMetni(u.suly)))}
+  </section>`
+}
+
+const sulyMetni = (birim) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 8 }).format(birim / 100_000_000)
+
+function petKarti(chatJid, petler) {
+  return h`<section class="kart liste"><h2>Evcil hayvanlar</h2>${petler.map((p) =>
+    uyeSatiri(chatJid, p.user_jid, p.uye, `${p.tur} ${p.ad} · tokluk ${p.tokluk} · mutluluk ${p.mutluluk}`, sayi.format(p.seviye), 'seviye'))}
+  </section>`
+}
+
 
 function ekonomiKarti(chatJid, e) {
   return h`<section class="kart liste">
@@ -196,10 +258,16 @@ function toplumKartlari(chatJid, t) {
     <div class="satir"><span class="ad"><strong>${m.ad}</strong></span><span class="deger">${sayi.format(m.adet)}</span></div>`)}</section>` : ''}`
 }
 
-function hayatKarti(chatJid, y) {
-  if (!y.meslek && !y.es && !y.cete && !y.hapis) return ''
+function hayatKarti(chatJid, y, v) {
+  if (!y.meslek && !y.es && !y.cete && !y.hapis && !y.makam?.length && !y.sustur && !y.ambargo && !v.pet && !v.kalkan && !v.sigorta) return ''
 
   return h`<section class="kart liste"><h2>Hayat</h2>
+    ${(y.makam ?? []).map((m) => duzSatir(m, '', 'Makam'))}
+    ${y.sustur ? duzSatir('🔇 Susturuldu', '', bitisYaz(y.sustur.bitis)) : ''}
+    ${y.ambargo ? duzSatir('🌍 Ambargoda', '', bitisYaz(y.ambargo.bitis)) : ''}
+    ${v.kalkan ? duzSatir('🛡️ Soygun kalkanı', '', bitisYaz(v.kalkan)) : ''}
+    ${v.sigorta ? duzSatir('📄 Haciz sigortası', '', bitisYaz(v.sigorta)) : ''}
+    ${v.pet ? duzSatir(`${v.pet.tur} ${v.pet.ad}`, `${sayi.format(v.pet.seviye)}`, `Tokluk ${v.pet.tokluk} · mutluluk ${v.pet.mutluluk} · seviye`) : ''}
     ${y.hapis ? h`<div class="satir"><span class="ad"><strong>🚔 Hapiste</strong><small>Çıkış ${tarih.format(y.hapis.bitis)}</small></span><span class="deger">${sayi.format(y.hapis.kefalet)}<small>kefalet</small></span></div>` : ''}
     ${y.meslek ? h`<div class="satir"><span class="ad"><strong>${y.meslek}</strong><small>Meslek</small></span></div>` : ''}
     ${y.cete ? h`<div class="satir"><span class="ad"><strong>🏴 ${y.cete.ad}</strong><small>${y.cete.lider ? 'Lider' : 'Üye'}</small></span><span class="deger">${sayi.format(y.cete.kasa)}<small>kasa</small></span></div>` : ''}
@@ -219,7 +287,7 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
 <a class="satir" href="${kisiLink(chatJid, u.user_jid)}">
   <span class="sira">${i + ilkUc.length + 1}</span>
   ${avatar(u)}
-  <span class="ad"><strong>${adi(u)}</strong><small>Seviye ${u.seviye}${u.unvan ? ` · ${u.unvan}` : ''}</small></span>
+  <span class="ad"><strong>${adi(u)}</strong><small>${u.bot ? '🤖 Hazine · ' : ''}Seviye ${u.seviye}${u.unvan ? ` · ${u.unvan}` : ''}</small></span>
   <span class="deger">${sayi.format(u[g.alan])}</span>
 </a>`)
 
@@ -253,6 +321,12 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
       <span class="deger">${sayi.format(b.borc)}</span>
     </a>`)}</section>` : ''}
 
+  ${g.kumarTop ? kumarKarti(chatJid, g.kumarTop) : ''}
+
+  ${g.vergiTop.length ? h`<section class="kart liste"><h2>Vergi rekortmenleri</h2>${g.vergiTop.map((v) => uyeSatiri(chatJid, v.user_jid, v.uye, '', sayi.format(v.toplam)))}</section>` : ''}
+
+  ${g.cezalilar.length ? h`<section class="kart liste"><h2>Cezalılar</h2>${g.cezalilar.map((c) => uyeSatiri(chatJid, c.user_jid, c.uye, `${c.tur} · ${bitisYaz(c.bitis)}`, ''))}</section>` : ''}
+
   ${g.rekorlar.length ? h`<section class="kart"><h2>Grup rekorları</h2><div class="rekorlar">${g.rekorlar.map((r) => h`
     <a class="rekor" href="${kisiLink(chatJid, r.uye.user_jid)}">
       <small>${r.etiket}</small>
@@ -262,9 +336,21 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
 </div>
 
 <div class="yan">
+  ${g.hukumet.length ? hukumetKarti(chatJid, g.hukumet) : ''}
+
+  ${g.hazine ? hazineKarti(chatJid, g.hazine) : ''}
+
   ${g.ekonomi ? ekonomiKarti(chatJid, g.ekonomi) : ''}
 
+  ${g.kripto ? kriptoKarti(chatJid, g.kripto) : ''}
+
+  ${g.wordle ? h`<section class="kart liste"><h2>Bugünün wordle'ı</h2>
+    ${g.wordle.cozen ? uyeSatiri(chatJid, g.wordle.cozen.user_jid, g.wordle.cozen, 'Bildi', sayi.format(g.wordle.toplam), 'tahmin') : duzSatir('Henüz bilen yok', sayi.format(g.wordle.toplam), 'tahmin')}
+  </section>` : ''}
+
   ${toplumKartlari(chatJid, g.toplum)}
+
+  ${g.petler.length ? petKarti(chatJid, g.petler) : ''}
 
   <section class="kart"><h2>Son 30 gün</h2>${gunGrafigi(g.gunlukMesaj)}</section>
 
@@ -375,9 +461,9 @@ function fiyatGrafigi(noktalar, tur, aralik, { sinif, genislik, yukseklik }) {
   return h`<svg class="fiyat-grafik ${sinif} ${yon}" viewBox="0 0 ${genislik} ${yukseklik}" role="img" aria-label="${ozet}">
     <defs><linearGradient id="${gradyan}" x1="0" y1="0" x2="0" y2="1"><stop class="dolgu-ust" offset="0"/><stop class="dolgu-alt" offset="1"/></linearGradient></defs>
     ${fiyatCizgileri.map((f) => h`<line class="izgara" x1="${sol}" x2="${sag}" y1="${y(f).toFixed(1)}" y2="${y(f).toFixed(1)}"/>
-      <text class="eksen" x="${sag + 8}" y="${(y(f) + 4).toFixed(1)}">${ondalik.format(f)}</text>`)}
+      <text class="eksen" font-size="11" x="${sag + 8}" y="${(y(f) + 4).toFixed(1)}">${ondalik.format(f)}</text>`)}
     ${zamanlar.map((z) => h`<line class="izgara" x1="${z.px.toFixed(1)}" x2="${z.px.toFixed(1)}" y1="${ust}" y2="${alt}"/>
-      <text class="eksen orta" x="${z.px.toFixed(1)}" y="${yukseklik - 8}">${z.yazi}</text>`)}
+      <text class="eksen orta" font-size="11" x="${z.px.toFixed(1)}" y="${yukseklik - 8}">${z.yazi}</text>`)}
     ${tur === 'mum'
     ? dilimler.map((m) => {
       const merkez = x(m.saat + aralik.mum / 2)
@@ -393,11 +479,11 @@ function fiyatGrafigi(noktalar, tur, aralik, { sinif, genislik, yukseklik }) {
       <polyline class="hat" points="${noktaYazi(p)}"/>`)}
     <line class="son-cizgi" x1="${sol}" x2="${sag}" y1="${y(son).toFixed(1)}" y2="${y(son).toFixed(1)}"/>
     <rect class="son-kutu" x="${sag + 2}" y="${(y(son) - 10).toFixed(1)}" width="52" height="20" rx="4"/>
-    <text class="son-yazi" x="${sag + 6}" y="${(y(son) + 4).toFixed(1)}">${iki.format(son)}</text>
+    <text class="son-yazi" font-size="11" x="${sag + 6}" y="${(y(son) + 4).toFixed(1)}">${iki.format(son)}</text>
     ${dilimler.map((m, i) => {
     const bas = x(Math.max(m.saat, t0))
     const bit = i + 1 < dilimler.length ? x(dilimler[i + 1].saat) : sag
-    return h`<rect class="vuru" x="${bas.toFixed(1)}" y="${ust}" width="${Math.max(bit - bas, 1).toFixed(1)}" height="${alt - ust}"><title>${tamBicim(m.saat)} · Açılış ${iki.format(m.acilis)} · Yüksek ${iki.format(m.yuksek)} · Düşük ${iki.format(m.dusuk)} · Kapanış ${iki.format(m.kapanis)}</title></rect>`
+    return h`<rect class="vuru" fill="transparent" x="${bas.toFixed(1)}" y="${ust}" width="${Math.max(bit - bas, 1).toFixed(1)}" height="${alt - ust}"><title>${tamBicim(m.saat)} · Açılış ${iki.format(m.acilis)} · Yüksek ${iki.format(m.yuksek)} · Düşük ${iki.format(m.dusuk)} · Kapanış ${iki.format(m.kapanis)}</title></rect>`
   })}
   </svg>`
 }
@@ -458,7 +544,10 @@ ${yeterli ? h`<section class="kutular">
 
 function servetCubugu(k) {
   // Eksi cüzdan çubukta çizilemez, oranlar artı kısımlardan hesaplanır.
-  const parcalar = [['cuzdan', 'Cüzdan', k.xp], ['banka', 'Banka', k.bakiye], ['portfoy', 'Portföy', k.portfoy]]
+  const parcalar = [
+    ['cuzdan', 'Cüzdan', k.xp], ['banka', 'Banka', k.bakiye], ['portfoy', 'Portföy', k.portfoy],
+    ['coin', 'Coin', k.coinDeger], ['suly', 'Suly', k.sulyDeger], ['mulk', 'Mülk', k.mulkDeger], ['yatirim', 'Yatırım', k.yatirim],
+  ]
     .filter(([, , n]) => n > 0)
   const toplam = parcalar.reduce((t, [, , n]) => t + n, 0)
   if (!toplam) return ''
@@ -472,6 +561,27 @@ function servetCubugu(k) {
   })
   return h`<svg class="servet" viewBox="0 0 100 6" preserveAspectRatio="none" role="img" aria-label="Servet dağılımı">${dilimler}</svg>
   <div class="anahtar">${parcalar.map(([sinif, ad, n]) => h`<span class="${sinif}">${ad} ${yuzde.format(n / toplam)}</span>`)}</div>`
+}
+
+function varlikKarti(v) {
+  if (!v.coin && !v.suly && !v.mulkler.length && !v.yatirim && !v.vergi) return ''
+  return h`<section class="kart liste"><h2>Varlıklar</h2>
+    ${v.coin ? duzSatir(`🪙 ${sayi.format(v.coin)} coin`, sayi.format(v.coinDeger), 'Bozdurma değeri') : ''}
+    ${v.suly ? duzSatir(`🟠 ${sulyMetni(v.suly)} Suly`, sayi.format(v.sulyDeger), 'Satış değeri') : ''}
+    ${v.mulkler.map((m) => duzSatir(m.ad, sayi.format(m.adet), 'adet'))}
+    ${v.mulkler.length ? duzSatir('Mülklerin değeri', sayi.format(v.mulkDeger), 'Satış değeri ve toplanmamış kira') : ''}
+    ${v.yatirim ? duzSatir(`📈 Yatırım · ${v.yatirim.risk}`, sayi.format(v.yatirim.miktar), `Bitiş ${tarih.format(v.yatirim.bitis)}`) : ''}
+    ${v.vergi ? duzSatir('🧾 Ödenen vergi', sayi.format(v.vergi), 'Kayıt başladığından beri') : ''}
+  </section>`
+}
+
+function borcKarti(chatJid, v) {
+  if (!v.kredi && !v.tefeci && !v.alacaklar.length) return ''
+  return h`<section class="kart liste"><h2>Borç ve alacak</h2>
+    ${v.kredi ? duzSatir('💳 Kredi', h`<span class="dusus">${sayi.format(v.kredi.borc)}</span>`, `Vade ${tarih.format(v.kredi.vade)}`) : ''}
+    ${v.tefeci ? uyeSatiri(chatJid, v.tefeci.alacakli, v.tefeci.uye, `Tefeci borcu · vade ${tarih.format(v.tefeci.vade)}`, h`<span class="dusus">${sayi.format(v.tefeci.borc)}</span>`) : ''}
+    ${v.alacaklar.map((a) => uyeSatiri(chatJid, a.borclu, a.uye, `Alacak · vade ${tarih.format(a.vade)}`, h`<span class="artis">${sayi.format(a.borc)}</span>`))}
+  </section>`
 }
 
 export function kisiSayfasi(chatJid, k) {
@@ -515,11 +625,19 @@ export function kisiSayfasi(chatJid, k) {
     <div class="satir"><span class="ad"><strong>Net</strong><small>${sayi.format(k.kumar.games)} oyun</small></span><span class="deger ${kumarNet >= 0 ? 'artis' : 'dusus'}">${kumarNet >= 0 ? '+' : '−'}${sayi.format(Math.abs(kumarNet))}</span></div>
     <div class="satir"><span class="ad"><strong>Kazanılan</strong></span><span class="deger">${sayi.format(k.kumar.won)}</span></div>
     <div class="satir"><span class="ad"><strong>Kaybedilen</strong></span><span class="deger">${sayi.format(k.kumar.lost)}</span></div>
+    ${k.kumarOyunlari.length ? h`<h3>Oyunlar</h3>${k.kumarOyunlari.map((o) => {
+    const net = o.won - o.lost
+    return duzSatir(o.oyun, h`<span class="${net >= 0 ? 'artis' : 'dusus'}">${net >= 0 ? '+' : '−'}${sayi.format(Math.abs(net))}</span>`, `${sayi.format(o.games)} oyun`)
+  })}` : ''}
   </section>` : ''}
 </div>
 
 <div class="yan">
-  ${hayatKarti(chatJid, k.hayat)}
+  ${hayatKarti(chatJid, k.hayat, k.varlik)}
+
+  ${varlikKarti(k.varlik)}
+
+  ${borcKarti(chatJid, k.varlik)}
 
   <section class="kart"><h2>Rozetler <small>${kazanilan.length}/${k.rozetler.length}</small></h2>
     <div class="etiketler">${k.rozetler.map((r) => h`<span class="${r.kazanildi ? 'var' : 'yok'}" title="${r.aciklama}">${r.ad}</span>`)}</div>

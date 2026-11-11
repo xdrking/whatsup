@@ -350,3 +350,57 @@ test('rekorlar ve rozetler: en yüksek kişi çıkar, sıfır rekor gösterilmez
   assert.equal(rekor('En şanslı'), undefined)
   assert.ok(veri.kisi(GRUP, 'a@lid').rozetler.length > 0)
 })
+
+test('eksik kartlar: hazine, hükümet, kumarhane, Suly, pet, cezalılar, varlık ve borç görünür', async () => {
+  const grup = 'devlet@g.us'
+  const now = Date.now()
+  const db = getDb()
+  const BOT = '905550000000@s.whatsapp.net'
+  db.prepare("INSERT OR REPLACE INTO ayar (anahtar, deger) VALUES ('bot_jid', ?)").run(BOT)
+  const uye = db.prepare('INSERT INTO stats (chat_jid, user_jid, xp) VALUES (?, ?, ?)')
+  uye.run(grup, BOT, 777)
+  uye.run(grup, 'baskan@lid', 1000)
+  uye.run(grup, 'kumarbaz@lid', 2000)
+  db.prepare("INSERT INTO isimler VALUES ('baskan@lid', 'Başkan Bey', 1), ('kumarbaz@lid', 'Mert', 1)").run()
+  db.prepare('INSERT INTO banka (chat_jid, user_jid, bakiye) VALUES (?, ?, ?)').run(grup, BOT, 123_456)
+  db.prepare('INSERT INTO ekonomi (chat_jid, day, arz, kur) VALUES (?, ?, ?, ?)').run(grup, '2026-06-01', 100_000_000, 1_000_000)
+  db.prepare("INSERT INTO makam (chat_jid, makam, user_jid, kalici) VALUES (?, 'baskan', 'baskan@lid', 1)").run(grup)
+  db.prepare("INSERT INTO makam_secim (chat_jid, makam, baslangic) VALUES (?, 'adalet', ?)").run(grup, now)
+  db.prepare("INSERT INTO makam_aday (chat_jid, secim, makam, user_jid, oy, sira) VALUES (?, ?, 'adalet', 'kumarbaz@lid', 3, 1)").run(grup, String(now))
+  db.prepare('INSERT INTO kumar (chat_jid, user_jid, won, lost, games) VALUES (?, ?, 5000, 1000, 10)').run(grup, 'kumarbaz@lid')
+  db.prepare("INSERT INTO kumar_oyun (chat_jid, user_jid, oyun, won, lost, games) VALUES (?, ?, 'hilo', 5000, 1000, 10)").run(grup, 'kumarbaz@lid')
+  db.prepare('INSERT INTO coin (chat_jid, user_jid, bakiye, toplu_hak) VALUES (?, ?, 3, 0)').run(grup, 'kumarbaz@lid')
+  db.prepare("INSERT INTO mulk (chat_jid, user_jid, kod, adet, kira_saat) VALUES (?, ?, 'otel', 1, 0)").run(grup, 'kumarbaz@lid')
+  db.prepare("INSERT OR REPLACE INTO kripto_fiyat (sembol, usd, zaman) VALUES ('BTC', 100000, ?)").run(now)
+  db.prepare('INSERT INTO kripto (chat_jid, user_jid, birim) VALUES (?, ?, 50000000)').run(grup, 'kumarbaz@lid')
+  db.prepare("INSERT INTO pet (chat_jid, user_jid, tur, ad, tokluk, mutluluk, guncelleme, dogum) VALUES (?, ?, 'kedi', 'Pamuk', 80, 80, ?, ?)").run(grup, 'kumarbaz@lid', now, now)
+  db.prepare('INSERT INTO susturulan_uye (chat_jid, user_jid, bitis) VALUES (?, ?, 0)').run(grup, 'kumarbaz@lid')
+  db.prepare("INSERT INTO tefeci (chat_jid, borclu, alacakli, anapara, borc, saat, vade, durum) VALUES (?, 'kumarbaz@lid', 'baskan@lid', 100, 150, 1, ?, 'acik')").run(grup, now + 3_600_000)
+
+  const g = veri.grup(grup, 'xp', now)
+  assert.equal(g.hazine.banka, 123_456)
+  assert.equal(g.hukumet.find((m) => m.kod === 'baskan').askida, true)
+  assert.equal(g.hukumet.find((m) => m.kod === 'adalet').secim.adaylar[0].oy, 3)
+  assert.equal(g.kumarTop.kazananlar[0].user_jid, 'kumarbaz@lid')
+  assert.equal(g.rekorlar.some((r) => r.uye.bot), false)
+  const mert = g.uyeler.find((u) => u.user_jid === 'kumarbaz@lid')
+  // 3 coin %90'la 2,7 milyon, otel 250 coin %90'la 225 milyon; Suly 0,5 × 100.000$ × kur/2,3m %99.
+  assert.equal(mert.coinDeger, 2_700_000)
+  assert.equal(mert.mulkDeger, 225_000_000)
+  assert.ok(mert.sulyDeger > 0)
+  assert.equal(mert.servet, 2000 + 2_700_000 + 225_000_000 + mert.sulyDeger)
+
+  const Cookie = await cerezAl('8.8.8.2')
+  const html = await (await fetch(`${adres}/grup?id=${encodeURIComponent(grup)}`, { headers: { Cookie } })).text()
+  for (const parca of ['Hazine', '123.456', 'Hükümet', 'Başkan Bey', 'darbe', 'Seçim sürüyor', 'Kumarhane', 'Suly', 'Pamuk', 'Cezalılar', 'Tefeci']) {
+    assert.ok(html.includes(parca), parca)
+  }
+
+  const kisi = await (await fetch(`${adres}/kisi?grup=${encodeURIComponent(grup)}&id=kumarbaz%40lid`, { headers: { Cookie } })).text()
+  for (const parca of ['Varlıklar', '3 coin', '🏨 Otel', '0,5 Suly', 'Borç ve alacak', 'Tefeci borcu', 'hilo', 'Susturuldu', 'Pamuk']) {
+    assert.ok(kisi.includes(parca), parca)
+  }
+  const baskan = await (await fetch(`${adres}/kisi?grup=${encodeURIComponent(grup)}&id=baskan%40lid`, { headers: { Cookie } })).text()
+  assert.ok(baskan.includes('🏛️ Başkan'))
+  assert.ok(baskan.includes('Alacak'))
+})

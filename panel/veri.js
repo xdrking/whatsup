@@ -8,8 +8,14 @@ import { istanbulDay } from '../lib/dataset.js'
 import { SETLER } from '../lib/kart.js'
 import { FAIZ_YUZDESI } from '../lib/banka.js'
 import { borcIslet, krediFaizi } from '../lib/kredi.js'
+import { bozdurmaDegeri, COIN_TABAN } from '../lib/coin.js'
+import { MAKAMLAR } from '../lib/devlet.js'
+import { SULY, sulyFiyati, sulySatisDegeri } from '../lib/kripto.js'
 import { MESLEKLER, meslekKoduyla } from '../lib/meslek.js'
 import { MULKLER } from '../lib/mulk.js'
+import { durum as petDurumu, kactiMi, seviye as petSeviyesi, TURLER } from '../lib/pet.js'
+import { RISKLER } from '../lib/yatirim.js'
+import { SECIM_SURE_MS } from '../lib/secim.js'
 import { ROZETLER } from '../lib/rozet.js'
 import { haftaAnahtari } from '../lib/sezon.js'
 import { seviye, seviyeIlerlemesi } from '../lib/stats.js'
@@ -46,6 +52,8 @@ const REKORLAR = [
   { etiket: '🔥 En uzun seri', alan: 'seri', birim: 'gün' },
   { etiket: '🍀 En şanslı', alan: 'kumarNet', birim: 'XP kâr' },
   { etiket: '💸 En çok batan', alan: 'kumarZarar', birim: 'XP zarar' },
+  { etiket: '🪙 Coin baronu', alan: 'coin', birim: 'coin' },
+  { etiket: '🏘️ Emlak kralı', alan: 'mulkDeger', birim: 'XP mülk' },
 ]
 
 /** Son `GRAFIK_GUNU` günün dizisi; verisi olmayan gün 0'dır. */
@@ -68,12 +76,51 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     return dizi
   }
 
+  // Panel botun şemasını kuramaz: bot yeni sürümle açılmadan yeni tablolar yoktur.
+  const tablolar = () => new Set(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((r) => r.name))
+  const tum = (tablo, sql, ...p) => (tablolar().has(tablo) ? db.prepare(sql).all(...p) : [])
+  const tek = (tablo, sql, ...p) => (tablolar().has(tablo) ? db.prepare(sql).get(...p) ?? null : null)
+
+  /** Hazine bot hesabıdır; bot kimliğini `ayar`'a yazar (`botHesabiniTani`). */
+  const botJid = () => tek('ayar', "SELECT deger FROM ayar WHERE anahtar = 'bot_jid'")?.deger ?? ''
+
+  /** Son kaydedilen günün kuru: panel anlık kuru hesaplamaz, servet bugünün açılış kuruyla sayılır. */
+  const gunKuru = (chatJid) => tek('ekonomi', 'SELECT kur FROM ekonomi WHERE chat_jid = ? ORDER BY day DESC LIMIT 1', chatJid)?.kur ?? COIN_TABAN
+  const btcUsd = () => tek('kripto_fiyat', 'SELECT usd FROM kripto_fiyat WHERE sembol = ?', SULY.sembol)?.usd ?? 0
+
+  /** Kişi başı coin, Suly, mülk ve yatırım; `.servet` gibi bugün nakde çevrilse ne edeceği. */
+  function varliklar(chatJid) {
+    const kur = gunKuru(chatJid)
+    const usd = btcUsd()
+    const harita = new Map()
+    const al = (jid) => {
+      if (!harita.has(jid)) harita.set(jid, { coin: 0, coinDeger: 0, suly: 0, sulyDeger: 0, mulkDeger: 0, yatirim: 0 })
+      return harita.get(jid)
+    }
+    for (const c of tum('coin', 'SELECT user_jid, bakiye FROM coin WHERE chat_jid = ?', chatJid)) {
+      Object.assign(al(c.user_jid), { coin: c.bakiye, coinDeger: bozdurmaDegeri(c.bakiye, kur) })
+    }
+    for (const k of tum('kripto', 'SELECT user_jid, birim FROM kripto WHERE chat_jid = ?', chatJid)) {
+      Object.assign(al(k.user_jid), { suly: k.birim, sulyDeger: usd ? sulySatisDegeri(k.birim, usd, kur) : 0 })
+    }
+    for (const m of tum('mulk', 'SELECT user_jid, kod, adet, bekleyen FROM mulk WHERE chat_jid = ?', chatJid)) {
+      const mulk = MULKLER.find((x) => x.kod === m.kod)
+      if (mulk) al(m.user_jid).mulkDeger += m.adet * bozdurmaDegeri(mulk.fiyat, kur) + m.bekleyen
+    }
+    for (const y of tum('yatirim', 'SELECT user_jid, miktar FROM yatirim WHERE chat_jid = ?', chatJid)) {
+      al(y.user_jid).yatirim = y.miktar
+    }
+    return harita
+  }
+
   function uyeler(chatJid, now) {
     const portfoyler = new Map(db.prepare(`
       SELECT p.user_jid, SUM(p.adet * b.fiyat) AS deger
       FROM portfoy p JOIN borsa b ON b.chat_jid = p.chat_jid AND b.hisse = p.hisse
       WHERE p.chat_jid = ? GROUP BY p.user_jid
     `).all(chatJid).map((r) => [r.user_jid, Math.floor(r.deger)]))
+    const diger = varliklar(chatJid)
+    const bot = botJid()
 
     return db.prepare(`
       SELECT s.user_jid, s.messages, s.stickers, s.voices, s.xp, s.last_seen,
@@ -89,10 +136,13 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
       WHERE s.chat_jid = @chat
     `).all({ chat: chatJid, dun: istanbulDay(new Date(now - GUN_MS)) }).map((u) => {
       const portfoy = portfoyler.get(u.user_jid) ?? 0
+      const v = diger.get(u.user_jid) ?? { coin: 0, coinDeger: 0, suly: 0, sulyDeger: 0, mulkDeger: 0, yatirim: 0 }
       return {
         ...u,
+        ...v,
+        bot: u.user_jid === bot,
         portfoy,
-        servet: u.xp + u.bakiye + portfoy,
+        servet: u.xp + u.bakiye + portfoy + v.coinDeger + v.sulyDeger + v.mulkDeger + v.yatirim,
         seviye: seviye(u.xp),
         seri: u.seri ?? 0,
         kumarNet: Math.max(u.net, 0),
@@ -169,7 +219,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
 
   /** Kişi sayfasının Hayat kartı; hiçbiri yoksa alanlar boştur. */
   function hayat(chatJid, userJid, liste, now) {
-    if (!toplumTablolariVar()) return {}
+    if (!toplumTablolariVar()) return { makam: [] }
 
     const es = db.prepare('SELECT es_jid, tarih FROM evlilik WHERE chat_jid = ? AND user_jid = ?').get(chatJid, userJid)
     const hapis = db.prepare('SELECT bitis, kefalet FROM hapis WHERE chat_jid = ? AND user_jid = ? AND bitis > ?').get(chatJid, userJid, now)
@@ -180,12 +230,111 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     `).get({ chat: chatJid, user: userJid })
     const kod = db.prepare('SELECT kod FROM meslek WHERE chat_jid = ? AND user_jid = ?').get(chatJid, userJid)?.kod
 
+    const makam = tum('makam', 'SELECT makam, kalici FROM makam WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
+      .map((m) => `${MAKAMLAR.find((x) => x.kod === m.makam)?.ad ?? m.makam}${m.kalici && m.makam !== 'baskan' ? ' (kayyum)' : ''}`)
+    const sustur = tek('susturulan_uye', 'SELECT bitis FROM susturulan_uye WHERE chat_jid = ? AND user_jid = ? AND (bitis = 0 OR bitis > ?)', chatJid, userJid, now)
+    const ambargo = tek('ambargo', 'SELECT bitis FROM ambargo WHERE chat_jid = ? AND user_jid = ? AND bitis > ?', chatJid, userJid, now)
+
     return {
       es: es ? { ...es, uye: liste.find((u) => u.user_jid === es.es_jid) ?? null } : null,
       hapis: hapis ?? null,
       cete: cete ?? null,
       meslek: meslekKoduyla(kod)?.ad ?? null,
+      makam,
+      sustur: sustur ?? null,
+      ambargo: ambargo ?? null,
     }
+  }
+
+  /** Hazine: botun bankası ve cüzdanı, bugünkü maaş ve aktarımlar, toplam vergi. */
+  function hazine(chatJid, liste, now) {
+    const bot = liste.find((u) => u.bot)
+    if (!bot) return null
+    const gun = istanbulDay(new Date(now))
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    return {
+      banka: bot.bakiye,
+      cuzdan: bot.xp,
+      coin: bot.coin,
+      mulkDeger: bot.mulkDeger,
+      maas: tek('maas_gun', 'SELECT toplam FROM maas_gun WHERE chat_jid = ? AND day = ?', chatJid, gun)?.toplam ?? 0,
+      vergi: tek('vergi', 'SELECT COALESCE(SUM(toplam), 0) AS t FROM vergi WHERE chat_jid = ?', chatJid)?.t ?? 0,
+      aktarimlar: tum('hazine_aktarim', 'SELECT user_jid, miktar FROM hazine_aktarim WHERE chat_jid = ? AND day = ? ORDER BY miktar DESC', chatJid, gun)
+        .map((a) => ({ ...a, uye: adlar.get(a.user_jid) ?? null })),
+    }
+  }
+
+  /** Makamlar ve açık seçimler. Oy gizlidir ama adayın oy sayısı tutulur, `.seçim` de yazar. */
+  function hukumet(chatJid, liste, now) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const makamlar = new Map(tum('makam', 'SELECT makam, user_jid, kalici FROM makam WHERE chat_jid = ?', chatJid).map((m) => [m.makam, m]))
+    const secimler = new Map(tum('makam_secim', 'SELECT makam, baslangic FROM makam_secim WHERE chat_jid = ?', chatJid).map((s) => [s.makam, s]))
+    const adaylar = (makam, secim) => tum('makam_aday', 'SELECT user_jid, oy FROM makam_aday WHERE chat_jid = ? AND makam = ? AND secim = ? ORDER BY oy DESC, sira', chatJid, makam, String(secim))
+      .map((a) => ({ ...a, uye: adlar.get(a.user_jid) ?? null }))
+
+    const satirlar = MAKAMLAR.map((m) => {
+      const kayit = makamlar.get(m.kod)
+      const secim = secimler.get(m.kod)
+      const acik = secim && now < secim.baslangic + SECIM_SURE_MS
+      return {
+        kod: m.kod,
+        ad: m.ad,
+        user_jid: kayit?.user_jid ?? null,
+        uye: kayit ? adlar.get(kayit.user_jid) ?? null : null,
+        askida: Boolean(kayit?.kalici),
+        secim: acik ? { bitis: secim.baslangic + SECIM_SURE_MS, adaylar: adaylar(m.kod, secim.baslangic) } : null,
+      }
+    })
+    return satirlar.some((s) => s.user_jid || s.secim) ? satirlar : []
+  }
+
+  function kumarTop(chatJid, liste) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const insanlar = liste.filter((u) => !u.bot && (u.kumarNet || u.kumarZarar)).map((u) => ({ ...u, uye: adlar.get(u.user_jid) }))
+    return {
+      kazananlar: insanlar.filter((u) => u.kumarNet > 0).toSorted((a, b) => b.kumarNet - a.kumarNet).slice(0, 3),
+      kaybedenler: insanlar.filter((u) => u.kumarZarar > 0).toSorted((a, b) => b.kumarZarar - a.kumarZarar).slice(0, 3),
+    }
+  }
+
+  function kripto(chatJid, liste) {
+    const usd = btcUsd()
+    if (!usd) return null
+    const sahipler = liste.filter((u) => u.suly > 0 && !u.bot).toSorted((a, b) => b.suly - a.suly).slice(0, 5)
+    return { usd, xp: Math.floor(sulyFiyati(usd, gunKuru(chatJid))), sahipler }
+  }
+
+  function petler(chatJid, liste, now) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    return tum('pet', 'SELECT * FROM pet WHERE chat_jid = ? ORDER BY pet_xp DESC', chatJid).filter((p) => !kactiMi(p, now)).map((p) => {
+      const d = petDurumu(p, now)
+      const tur = TURLER[p.tur]
+      return { user_jid: p.user_jid, uye: adlar.get(p.user_jid) ?? null, ad: p.ad, tur: tur ? `${tur.emoji} ${tur.ad}` : p.tur, seviye: petSeviyesi(p.pet_xp), tokluk: Math.round(d.tokluk), mutluluk: Math.round(d.mutluluk) }
+    })
+  }
+
+  /** Susturulan ve ambargolu üyeler; süresi dolan kayıtlar bot ilk mesajda silene kadar tabloda kalır. */
+  function cezalilar(chatJid, liste, now) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const uye = (jid) => adlar.get(jid) ?? null
+    return [
+      ...tum('susturulan_uye', 'SELECT user_jid, bitis FROM susturulan_uye WHERE chat_jid = ? AND (bitis = 0 OR bitis > ?)', chatJid, now)
+        .map((s) => ({ ...s, uye: uye(s.user_jid), tur: '🔇 Susturuldu' })),
+      ...tum('ambargo', 'SELECT user_jid, bitis FROM ambargo WHERE chat_jid = ? AND bitis > ?', chatJid, now)
+        .map((a) => ({ ...a, uye: uye(a.user_jid), tur: '🌍 Ambargo' })),
+    ]
+  }
+
+  function vergiTop(chatJid, liste) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    return tum('vergi', 'SELECT user_jid, toplam FROM vergi WHERE chat_jid = ? AND toplam > 0 ORDER BY toplam DESC LIMIT 5', chatJid)
+      .map((v) => ({ ...v, uye: adlar.get(v.user_jid) ?? null }))
+  }
+
+  function wordle(chatJid, liste, now) {
+    const w = tek('wordle_grup', 'SELECT day, toplam, cozen FROM wordle_grup WHERE chat_jid = ?', chatJid)
+    if (!w || w.day !== istanbulDay(new Date(now))) return null
+    return { toplam: w.toplam, cozen: w.cozen ? liste.find((u) => u.user_jid === w.cozen) ?? null : null }
   }
 
   function borclular(chatJid, liste, now) {
@@ -204,8 +353,45 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
       })
     const eksiler = liste.filter((u) => u.xp < 0)
       .map((u) => ({ user_jid: u.user_jid, uye: u, borc: -u.xp, vade: 0, gecti: false }))
+    const tefeciler = tum('tefeci', "SELECT borclu, alacakli, borc, vade FROM tefeci WHERE chat_jid = ? AND durum = 'acik'", chatJid)
+      .map((t) => ({ user_jid: t.borclu, uye: adlar.get(t.borclu) ?? null, borc: t.borc, vade: t.vade, gecti: now >= t.vade, tefeci: adlar.get(t.alacakli) ?? null }))
 
-    return [...krediler, ...eksiler].toSorted((a, b) => b.borc - a.borc)
+    return [...krediler, ...tefeciler, ...eksiler].toSorted((a, b) => b.borc - a.borc)
+  }
+
+  /** Kişi sayfasının Varlıklar ve Borçlar kartı. */
+  function kisiVarliklari(chatJid, userJid, uye, liste, now) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const yatirim = tek('yatirim', 'SELECT miktar, risk, bitis FROM yatirim WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
+    const t = tek('tefeci', "SELECT alacakli, borc, vade FROM tefeci WHERE chat_jid = ? AND borclu = ? AND durum = 'acik'", chatJid, userJid)
+    const k = tek('kredi', 'SELECT borc, faiz_saat, vade FROM kredi WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
+    const saat = Math.floor(now / SAAT_MS)
+    const pet = tek('pet', 'SELECT * FROM pet WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
+    const kalkan = tek('market', 'SELECT kalkan_until FROM market WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)?.kalkan_until ?? 0
+    const sigorta = tek('sigorta', 'SELECT bitis FROM sigorta WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)?.bitis ?? 0
+
+    return {
+      coin: uye.coin,
+      coinDeger: uye.coinDeger,
+      suly: uye.suly,
+      sulyDeger: uye.sulyDeger,
+      mulkler: tum('mulk', 'SELECT kod, adet FROM mulk WHERE chat_jid = ? AND user_jid = ? AND adet > 0', chatJid, userJid)
+        .map((m) => ({ ad: MULKLER.find((x) => x.kod === m.kod)?.ad ?? m.kod, adet: m.adet })),
+      mulkDeger: uye.mulkDeger,
+      yatirim: yatirim ? { ...yatirim, risk: RISKLER[yatirim.risk]?.ad ?? yatirim.risk } : null,
+      kredi: k ? { borc: borcIslet(k.borc, Math.max(0, Math.min(saat, Math.floor(k.vade / SAAT_MS)) - k.faiz_saat), krediFaizi(bankaFaizi(chatJid))), vade: k.vade } : null,
+      tefeci: t ? { ...t, uye: adlar.get(t.alacakli) ?? null } : null,
+      alacaklar: tum('tefeci', "SELECT borclu, borc, vade FROM tefeci WHERE chat_jid = ? AND alacakli = ? AND durum = 'acik'", chatJid, userJid)
+        .map((a) => ({ ...a, uye: adlar.get(a.borclu) ?? null })),
+      vergi: tek('vergi', 'SELECT toplam FROM vergi WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)?.toplam ?? 0,
+      kalkan: kalkan > now ? kalkan : 0,
+      sigorta: sigorta > now ? sigorta : 0,
+      pet: pet && !kactiMi(pet, now) ? (() => {
+        const d = petDurumu(pet, now)
+        const tur = TURLER[pet.tur]
+        return { ad: pet.ad, tur: tur ? `${tur.emoji} ${tur.ad}` : pet.tur, seviye: petSeviyesi(pet.pet_xp), tokluk: Math.round(d.tokluk), mutluluk: Math.round(d.mutluluk) }
+      })() : null,
+    }
   }
 
   return {
@@ -244,10 +430,20 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         borclular: borclular(chatJid, liste, now),
         ekonomi: ekonomi(chatJid, liste),
         toplum: toplum(chatJid, liste, now),
+        hazine: hazine(chatJid, liste, now),
+        hukumet: hukumet(chatJid, liste, now),
+        kumarTop: kumarTop(chatJid, liste),
+        vergiTop: vergiTop(chatJid, liste),
+        kripto: kripto(chatJid, liste),
+        petler: petler(chatJid, liste, now),
+        cezalilar: cezalilar(chatJid, liste, now),
+        wordle: wordle(chatJid, liste, now),
         saatler: saatler('chat_jid = ?', chatJid),
         gunlukMesaj: gunler(db.prepare('SELECT gun, SUM(mesaj) AS n FROM gecmis WHERE chat_jid = ? GROUP BY gun').all(chatJid), now),
         rekorlar: REKORLAR.flatMap((r) => {
-          const uye = liste.reduce((en, u) => (u[r.alan] > en[r.alan] ? u : en))
+          const insanlar = liste.filter((u) => !u.bot)
+          if (!insanlar.length) return []
+          const uye = insanlar.reduce((en, u) => (u[r.alan] > en[r.alan] ? u : en))
           return uye[r.alan] > 0 ? [{ ...r, uye, deger: uye[r.alan] }] : []
         }),
         borsa: HISSELER.flatMap((h) => (fiyatlar.has(h.kod)
@@ -310,6 +506,8 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         xpGecmisi: gecmis.slice(-GRAFIK_GUNU).map((g) => g.xp),
         rozetler: ROZETLER.map((r) => ({ ad: r.ad, aciklama: r.aciklama, kazanildi: r.deger(rozetVerisi) >= r.hedef })),
         kumar: db.prepare('SELECT won, lost, games FROM kumar WHERE chat_jid = ? AND user_jid = ?').get(chatJid, userJid) ?? null,
+        kumarOyunlari: tum('kumar_oyun', 'SELECT oyun, won, lost, games FROM kumar_oyun WHERE chat_jid = ? AND user_jid = ? ORDER BY won - lost DESC', chatJid, userJid),
+        varlik: kisiVarliklari(chatJid, userJid, uye, liste, now),
         sampiyonluk: db.prepare('SELECT kez FROM sampiyon WHERE chat_jid = ? AND user_jid = ?').get(chatJid, userJid)?.kez ?? 0,
         hisseler: db.prepare(`
           SELECT p.hisse, p.maliyet, p.adet * b.fiyat AS deger
