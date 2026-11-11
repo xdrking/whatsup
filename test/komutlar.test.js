@@ -45,6 +45,7 @@ test('.help menüsü kısa kalır, görünen her komutu yazar, gizliyi yazmaz', 
   assert.ok(menu.split('\n').length < 45)
   for (const c of tekil.filter((k) => !k.hidden && !k.ownerOnly)) assert.ok(menu.includes(`.${c.name}`), c.name)
   assert.ok(!menu.includes('.xpver'))
+  assert.ok(!menu.includes('.coinver'))
   assert.ok(!menu.includes('.haciz '))
 })
 
@@ -58,6 +59,7 @@ test('.help bölümü: açıklama yazar, aynı adlı komuta yol gösterir', asyn
   assert.ok((await help(['tümü'])).includes('`.soygun` —'))
   assert.match(await help(['xpver'], true), /diye bir komut yok/)
   assert.match(await help(['xpver'], true, false), /diye bir komut yok/)
+  assert.match(await help(['coinver'], true), /diye bir komut yok/)
 })
 
 test('.help darbe: rehber yalnızca sahibe ve özelden açılır', async () => {

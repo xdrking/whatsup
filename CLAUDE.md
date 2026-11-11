@@ -326,7 +326,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 53 (tamam):** günlük kumar kazanç tavanı. Ayrıntı aşağıda.
 - **Faz 54 (tamam):** susturmayı dinlemeyenin varlığına el konur. Ayrıntı aşağıda.
 - **Faz 55 (tamam):** panelin eksik kartları. Ayrıntı aşağıda.
-- **Faz 56+:** yeni komutlar, her biri ayrı adım
+- **Faz 56 (tamam):** `.coinver`. Ayrıntı aşağıda.
+- **Faz 57+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1218,6 +1219,10 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 - **Kişi:** Varlıklar (coin, Suly, mülkler, yatırım, ödenen vergi), Borç ve alacak (kredi, tefeci borcu, verdiği tefeci borçları), kumar karnesinde oyun dökümü (`kumar_oyun`), Hayat kartında makam, susturma, ambargo, kalkan, sigorta ve pet.
 - Fiyat grafiğinde `.vuru` dikdörtgenine `fill="transparent"`, yazılara `font-size` özniteliği verildi: stil yüklenmezse grafik siyah dikdörtgen ve dev yazıya dönüyordu (`test/panelhata/` ekran görüntüsü). CSP öznitelikleri engellemez, yalnızca satır içi `style`'ı engeller.
 
+### Faz 56 — `.coinver`
+
+`.xpver`'in coin hali (`commands/coinver.js`, `lib/stats.js:coinAyarla()`): `ownerOnly`, `hidden`, yalnızca özelden, grupta iz bırakmadan düşer. Numara ve grup ayrıştırması `xpver.js`'ten alınır, üye `uyeKimligiBul()` ile bulunur. Eksi adet coin alır, bakiye sıfırın altına inmez. Basılan coin bozdurulunca XP olur, kuru doğrudan etkilemez (coin `paraArzi`'ne girmez).
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1338,3 +1343,4 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 102. Bir günde piyasanın %50'sinden fazla kumar kazanan → son kazancın fazlası "kasada kaldı" yazar, sonraki `.bahis` "kumar yasağın var" der; ertesi gün açılır
 103. `.sustur @kişi` sonra kişi 3 mesaj yazar → özelden "3 mesaj daha yazarsan" uyarısı gelir; 3 mesaj daha → özelden el konulanlar listesi gelir, `.servet`'i yarıya iner, `.top`'ta bot artar; `.sustur kaldır @kişi` → sayım sıfırlanır
 104. Panelde grup sayfası → Hükümet, Hazine, Kumarhane, Suly, Cezalılar kartları; bot sıralamada "🤖 Hazine"; kişi sayfası → Varlıklar, Borç ve alacak, kumar oyun dökümü; servet coin ve mülkü sayar
+105. Sahip özelden `.coinver <grup id> <numara> 5` → onay gelir, kişi `.coinmarket`'te 5 coin görür; `-10` → bakiye 0; grupta yazılırsa hiç tepki yok; `.help coinver` → yok

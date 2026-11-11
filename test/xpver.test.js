@@ -58,3 +58,13 @@ test('sahip: numarayla ya da OWNER_LID ile tanınır', async () => {
     delete process.env.OWNER_LID
   }
 })
+
+test('.coinver: coin verir, alır, sıfırın altına indirmez', async () => {
+  const { coinAyarla, coinDurumu } = await import('../lib/stats.js')
+  const chat = 'coinver@g.us'
+  const u = '905550000009@s.whatsapp.net'
+  assert.deepEqual(coinAyarla({ chatJid: chat, userJid: u, adet: 5 }), { once: 0, bakiye: 5 })
+  assert.deepEqual(coinAyarla({ chatJid: chat, userJid: u, adet: -2 }), { once: 5, bakiye: 3 })
+  assert.deepEqual(coinAyarla({ chatJid: chat, userJid: u, adet: -10 }), { once: 3, bakiye: 0 })
+  assert.equal(coinDurumu(chat, u).bakiye, 0)
+})

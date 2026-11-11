@@ -193,6 +193,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.haciz @kişi ev` | **Yalnızca owner.** Kişinin bir mülkünü alır, değeri kasaya girer |
 | `.haciz @kişi 2000` | **Yalnızca owner.** Önce bankadan, yetmezse cüzdandan alıp botun bankasına aktarır. Onlar da yetmezse kalanı cüzdana eksi yazar, eksi kısım kasaya girmez. `hepsi` ve `yarısı` banka hesabına göredir. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
 | `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
+| `.coinver <grup id> <numara ya da @lid id> <adet>` | **Yalnızca owner, yalnızca özelden.** `.xpver` gibi, coin verir/alır (`-2`); bakiye sıfırın altına inmez, grupta yazılırsa yok sayılır |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.
 XP: mesaj +1, sticker +2, ses +2 (spam'e karşı cooldown'lu), `.günlük` 20-50 (seri 7. günde
