@@ -1,3 +1,4 @@
+import { ambargoMesaji } from '../lib/devlet.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { botHesabiMi, coinDevret } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
@@ -37,6 +38,7 @@ export default {
 
       const s = coinDevret({ chatJid: from, kaynak: sender, hedef, adet })
       if (!s) return await yaz('❌ Coin şu an gönderilemiyor.')
+      if (s.ambargo) return await yaz(ambargoMesaji(s.ambargo))
       if (s.borclu) return await yaz('💳 Kredi borcun ya da eksi cüzdanın varken coin gönderilemez.')
       if (s.yetersiz) return await yaz(`❌ O kadar coinin yok. Coinin: ${s.bakiye}`)
 

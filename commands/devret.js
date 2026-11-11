@@ -1,3 +1,4 @@
+import { ambargoMesaji } from '../lib/devlet.js'
 import { binlik } from '../lib/sayi.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { botHesabiMi, getStats, xpDevret } from '../lib/stats.js'
@@ -93,6 +94,11 @@ export default {
       const sonuc = xpDevret({ chatJid: from, kaynak, hedef, miktar, sahipDevri: isOwner && kaynak !== sender })
       if (!sonuc) {
         await yaz('❌ XP şu an devredilemiyor.')
+        return
+      }
+
+      if (sonuc.ambargo) {
+        await yaz(kaynak === sender ? ambargoMesaji(sonuc.ambargo) : `🌍 ${mentionOf(kaynak)} ambargoda.`, [kaynak])
         return
       }
 

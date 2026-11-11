@@ -321,7 +321,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 49 (tamam):** `.seçim` geri döndü, bakanlıklar, `.hazine`, gizli `.darbe`. Ayrıntı aşağıda.
 - **Faz 50 (tamam):** `.kripto` ve Suly. Ayrıntı aşağıda.
 - **Faz 51 (tamam):** `.mülk devret` ve `.sustur`. Ayrıntı aşağıda.
-- **Faz 52+:** yeni komutlar, her biri ayrı adım
+- **Faz 52 (tamam):** `.kayyum`, Dışişleri ve ambargo, bakanlara günde 5 hak. Ayrıntı aşağıda.
+- **Faz 53+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1141,8 +1142,8 @@ Kurallar `lib/devlet.js` ve `lib/secim.js`'te saftır, yazma `lib/stats.js`'tedi
 
 - **Seçim:** her makamın (başkan, İçişleri, Adalet, Savunma) ayrı seçimi vardır. Makama ilk aday olan seçimi başlatır (`makam_secim`), sandık **30 dakika** sonra kapanır (`SECIM_SURE_MS`, bot sahibinin kararı: haftalık seçimi grup bekleyemiyordu). `secim` sütunu seçimin başlangıcıdır (ms, metin). En çok oy alan (en az 1) kazanır, eşitlikte önce aday olan; kazanan **yenisi seçilene kadar** makamda kalır, oy çıkmazsa makam değişmez. Kapanış her seçim okumasında `secimKapat`'tadır; ayrıca `games/secim.js` adaylıkta kurulan zamanlayıcıyla sonucu gruba yazar (susturulmuş grupta yazmaz). Bot yeniden başlarsa zamanlayıcı ölür, sonuç bir sonraki `.seçim`'de görünür. Oy gizlidir: kimin verdiği tutulur, kime verdiği tutulmaz. Seçim başına tek oy, oy satın alınamaz. Haftalık sürümden kalan `hafta` sütunları taşınırken bekleyen seçim ilk adaylık anında (`sira`) başlamış sayılır. Eski tek makamlı tablolar (`baskan`, `secim_*`) taşınmadan silinir: ilk başkan bot sahibidir (bot sahibinin kararı). Başkan satırı yokken başkan sahiptir, bunu komut katmanı `sahipUyeKimligi()` ile gösterir, veritabanına yazılmaz.
 - **Başkan:** günde bir `.faizkararı` (`karar_gun`), sahip sınırsız. `.hazine ver`: günde en çok 10 kişi, kişi başı **anlık piyasanın %20'si** (`hazineLimiti(paraArzi)`), kendine yok. Günün açılışı değil anlık piyasa: hiperenflasyonda açılış çok geride kalıyordu. Her aktarım piyasayı büyüttüğü için sınır gün içinde artar. Hazinenin yüzdesi değildir: hazine piyasadan kat kat büyük olduğu için kur bir günde katlanırdı (bot sahibinin kararı). Sahip `.hazine ver`'i başkan gibi kullanır. `.teşvik` ve `.haciz` yalnızca sahibindir.
-- **Bakanlar:** yetki günde bir, para basmaz: İçişleri `af` (hapis satırını siler), Adalet `tutukla` (1 saat, kefalet soygundaki gibi), Savunma `kalkan` (24 saat, `market.kalkan_until`). Hedef engeli hakkı yakmaz.
-- **`.darbe` (gizli):** `hidden: true`, `ownerOnly`, yalnızca özelden; grupta yazılırsa iz bırakmadan düşer (`.xpver` gibi). `.help`'te görünmez, satılmaz. Rehberi `details`'tedir: `.help darbe` yalnızca sahip özelden yazınca açılır, grupta ve başkasına "böyle bir komut yok" der (`commands/help.js:sahibeOzel`, `details` taşıyan gizli komutlar için). `.darbe <grup id>` yönetimi **hemen** sahibe verir (`makam.kalici = 1`), başkan seçimi askıya alınır; bakanlıklar sürer. `.darbe bitir <grup id>` askıyı kaldırır, başkan yenisi seçilene kadar sahiptir.
+- **Bakanlar:** yetki günde 5 (Faz 52), para basmaz: İçişleri `af` (hapis satırını siler), Adalet `tutukla` (1 saat, kefalet soygundaki gibi), Savunma `kalkan` (24 saat, `market.kalkan_until`). Hedef engeli hakkı yakmaz.
+- **`.darbe` (gizli):** `hidden: true`, `ownerOnly`, yalnızca özelden; grupta yazılırsa iz bırakmadan düşer (`.xpver` gibi). `.help`'te görünmez, satılmaz. Rehberi `details`'tedir: `.help darbe` yalnızca sahip özelden yazınca açılır, grupta ve başkasına "böyle bir komut yok" der (`commands/help.js:sahibeOzel`, `details` taşıyan gizli komutlar için). `.darbe <grup id>` yönetimi **hemen** sahibe verir (`makam.kalici = 1`), başkan seçimi askıya alınır; bakanlıklar sürer. `.darbe bitir <grup id>` bütün askıları (kayyumlar dahil) kaldırır, başkan yenisi seçilene kadar sahiptir.
 - **Darbe akışı** (`games/darbe.js`): oyun yuvasını tutmaz, `.oyunbitir` durduramaz. Grupta herkes etiketlenir, her üyeye özelden yazılır (aralarında 3 sn, numara biliniyorsa numaraya). Duyuru mesajına `destek`/`karşı` yanıtı oydur, son yanıt geçerli, tepki emojisiyle onaylanır. Kanca `lib/handler.js`'te oyun kancasından öncedir ve susturulmuş grupta da çalışır. 10 dk sonra `darbeSonuc()`: destekçiye 1 coinin XP karşılığı hazineden (yetmezse azı), **destek vermeyen herkesten** (karşı ve sessiz) bot hesabına geçer, hiçbir şey yanmaz (bot sahibinin kararı): banka ve cüzdanın %60'ı hazineye (botun bankası), coinin ve Suly'nin %60'ı botun coin ve Suly bakiyesine, mülklerin toplam adedinin 3'te 2'si (aşağı yuvarlanır, en pahalıdan başlanır) botun mülküne. Birikmiş kira eski sahibinde kalır, bot kirayı alındığı andan biriktirir (toplayan olmadığı için 24 saatte durur). Ardından borsa bugüne getirilir ve her hisse %45-55 düşer (`DARBE_BORSA_DUSUS`); düşüş yalnızca bir kez, darbede uygulanır, sonrası yine yönsüz yürüyüştür. Eksi cüzdan alınmaz. Sigorta ve kalkan korumaz. Bot yeniden başlarsa yönetim sahipte kalır, ceza ve ödül işlenmez.
 
 ### Faz 50 — `.kripto` ve Suly
@@ -1170,6 +1171,17 @@ susturulan_uye(chat_jid, user_jid, bitis ms)   PK(chat_jid,user_jid)
 
 - **`.mülk devret @kişi <mülk> [adet]`:** `mulkDevret()` tek transaction'dır. Birikmiş kira verende kalır: son tanesi giderse kira ona ödenir (hazineden, `kiraTopla` gibi), alan kirayı devir anından biriktirir. Borçlu (`borcluMu`) veremez, yoksa mülk arkadaşa aktarılıp `.iflas` ile borçtan kaçılırdı. Bota verilmez. Adet en çok 4 hanedir, elle yazılmış numara adet sanılmasın.
 - **`.sustur @kişi [dakika]`:** yalnızca grup adminleri içindir, sahip de admin değilse kullanamaz (bot sahibinin kararı). Susturulan üyenin her mesajını `lib/handler.js` istatistikten **önce** `{ delete: msg.key }` ile siler: mesaj sayılmaz, komutu çalışmaz. Silmek için bot grupta admin olmalı, komut bunu baştan denetler; sonradan adminlik alınırsa silme yalnızca loglanır. Dakika verilmezse kaldırılana kadar sürer (`bitis = 0`), süre dolunca ilk mesajda kendiliğinden düşer, bot kendiliğinden duyurmaz. Bot sahibi, bot ve adminler susturulamaz; botu susturmak `.sus`'un işidir. Kişi LID ya da numarayla gelebildiği için `sender` ve `senderPn` ikisine de bakılır. `.sus` (grubu susturma) ile karışmaz; susturulmuş grupta da silme sürer.
+
+### Faz 52 — Kayyum, Dışişleri, günde 5 hak
+
+```
+bakan_hak(chat_jid, makam, user_jid, day, adet)   PK(chat_jid,makam)
+ambargo(chat_jid, user_jid, bitis ms)             PK(chat_jid,user_jid)
+```
+
+- **`.kayyum <bakanlık> @kişi`:** başkan kullanır, sahip başkan sayılır (`.hazine` gibi, bot sahibinin kararı). `kayyumAta()` makamı hemen hedefe verir, `makam.kalici = 1` yazar: kalici artık her makamda "seçim askıda" demektir (başkanda darbe, bakanlıkta kayyum). Açık seçim iptal olur, adaylık ve oy ücretleri yanar. Eski bakan sıradan üye olur. `.kayyum kaldır <bakanlık>` askıyı kaldırır, kayyum yenisi seçilene kadar kalır. Başkanlığa kayyum atanmaz.
+- **Günlük hak:** her bakanlık günde `BAKAN_GUNLUK` (5) kez kullanılır, sayaç `bakan_hak`'tadır (bot sahibinin kararı). Sayaç kişiye bağlıdır: makama yeni gelen sıfırdan başlar. `makam.karar_gun` artık yalnızca başkanın `.faizkararı`'dır.
+- **Dışişleri (`ambargo`):** hedef 24 saat `.devret`, `.coindevret`, `.mülk devret` yapamaz (`ambargoBitisi`, gönderen tarafta denetlenir). Sahibin başkası adına devri (`sahipDevri`) muaftır. Alması engellenmez. `.tefeci`, `.çete yatır`, `.ödül` ambargoya girmez.
 
 ## Elle Doğrulama
 
@@ -1286,3 +1298,5 @@ susturulan_uye(chat_jid, user_jid, bitis ms)   PK(chat_jid,user_jid)
 97. `.kripto` → Suly'nin dolar fiyatı ve XP karşılığı; `.kripto al suly 0.001` → XP düşer, `.kripto` 0,001 gösterir; `.kripto al suly 0,000000001` → kullanım; `.kripto sat suly hepsi` → %1 kesintiyle XP gelir; Suly varken eksi cüzdanla `.iflas` → "önce sat"; sahip `.haciz @kişi suly hepsi` → Suly kasaya; `.hacizall` Suly'ye dokunmaz
 98. `.mülk devret @kişi ev` → ev geçer, iki adet yazılır; son evde birikmiş kira verene ödenir; borçluyken → reddedilir; `@bot` → reddedilir
 99. Bot admin değilken `.sustur @kişi` → "beni admin yapın"; admin yapılınca `.sustur @kişi 1` → kişinin mesajları silinir, `.stats`'ı artmaz; 1 dk sonra mesajı kalır; sıradan üye `.sustur` → reddedilir; `.sustur kaldır @kişi` → açılır; `.sustur @sahip` → reddedilir
+100. Başkan `.kayyum dışişleri @mert` → eski bakan görevden alınır, Mert bakan; `.seçim aday dışişleri` → "kayyumla yönetiliyor"; `.seçim` hükümette "(kayyum)" yazar; sıradan üye `.kayyum` → "yalnızca başkan"; `.kayyum kaldır dışişleri` → seçim açılır
+101. Adalet Bakanı `.bakan tutukla` beş kişiye → her mesajda kalan hak, altıncısı "yarın"; Dışişleri `.bakan ambargo @x` → x `.devret` ve `.coindevret` yazınca "ambargodasın"

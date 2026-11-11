@@ -9,7 +9,7 @@ import { secimSonucunuZamanla } from '../games/secim.js'
 import logger from '../lib/logger.js'
 
 const KAPALI = '🗳️ Sandıklar şu an kapalı, sonra dene.'
-const ASKIDA = '🪖 Başkanlık seçimi askıya alındı.'
+const askida = (makam) => (makam.kod === 'baskan' ? '🪖 Başkanlık seçimi askıya alındı.' : `🪖 ${makam.ad} kayyumla yönetiliyor, seçim askıda.`)
 const MAKAM_LISTESI = MAKAMLAR.map((m) => m.adlar[0]).join(', ')
 const SURE_DK = SECIM_SURE_MS / 60_000
 const kalanDk = (bitis) => Math.max(1, Math.ceil((bitis - Date.now()) / 60_000))
@@ -25,7 +25,7 @@ async function oyKullan({ yaz, args, from, sender, parsed, metadata }) {
 
   const s = oyVer({ chatJid: from, secmen: sender, aday, makam: makam.kod })
   if (!s) return yaz(KAPALI)
-  if (s.askida) return yaz(ASKIDA)
+  if (s.askida) return yaz(askida(makam))
   if (s.secimYok) return yaz(`🗳️ ${makam.ad} için açık seçim yok. Başlatmak için: \`.seçim aday ${makam.adlar[0]}\``)
   if (s.adayDegil) return yaz(`🗳️ ${mentionOf(aday)} ${makam.ad} adayı değil.`, [aday])
   if (s.zaten) return yaz(`🗳️ ${makam.ad} seçiminde oyunu kullandın.`)
@@ -65,7 +65,7 @@ export default {
         if (!makam) return await yaz(`🗳️ Böyle bir makam yok. Makamlar: ${MAKAM_LISTESI}`)
         const s = adayOl({ chatJid: from, userJid: sender, makam: makam.kod })
         if (!s) return await yaz(KAPALI)
-        if (s.askida) return await yaz(ASKIDA)
+        if (s.askida) return await yaz(askida(makam))
         if (s.zaten) return await yaz(`🗳️ Zaten ${makam.ad} adayısın.`)
         if (s.yetersiz) return await yaz(`🗳️ Adaylık ${binlik(s.ucret)} XP, cüzdanında ${binlik(s.xp)} XP var.`)
         secimSonucunuZamanla({ sock, chatJid: from, makam: makam.kod, bitis: s.bitis })
@@ -88,13 +88,13 @@ export default {
       lines.push('🏛️ *Hükümet*')
       for (const m of s.makamlar) {
         const kisi = m.sahip ?? (m.kod === 'baskan' ? sahip : null)
-        lines.push(`${makamKoduyla(m.kod).ad}: ${kisi ? displayName(kisi) : 'boş'}`)
+        lines.push(`${makamKoduyla(m.kod).ad}: ${kisi ? displayName(kisi) : 'boş'}${m.askida && m.kod !== 'baskan' ? ' (kayyum)' : ''}`)
       }
 
       lines.push('', '🗳️ *Açık seçimler*')
       let acikVar = false
       for (const m of MAKAMLAR) {
-        if (m.kod === 'baskan' && s.darbe) {
+        if (s.makamlar.find((x) => x.kod === m.kod)?.askida) {
           lines.push('', `${m.ad}: askıda`)
           continue
         }

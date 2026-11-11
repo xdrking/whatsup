@@ -54,7 +54,7 @@ export default {
       if (bitirilecek) {
         const s = darbeBitir({ chatJid: grup })
         if (s === null) return await yaz('❌ Veritabanına ulaşılamadı.')
-        return await yaz(s ? '🕊️ Darbe bitti: başkanlık sende kalır, seçimler yeniden açıldı.' : 'Bu grupta darbe yok.')
+        return await yaz(s ? '🕊️ Darbe bitti: başkanlık ve kayyumlar yerinde kalır, bütün seçimler yeniden açıldı.' : 'Bu grupta darbe yok.')
       }
 
       if (darbeSuruyor(grup)) return await yaz('🪖 Bu grupta darbe zaten sürüyor.')

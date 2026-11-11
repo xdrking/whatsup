@@ -6,9 +6,10 @@ process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
 const { darbeCezasi, darbeOyu, makamBul } = await import('../lib/devlet.js')
+const { mulkBul } = await import('../lib/mulk.js')
 const {
   adayOl, bakanYetkisi, bankaBakiyesi, bankaYatir, baskanMi, botHesabiniTani, darbeBaslat, darbeBitir, darbeSonuc,
-  getStats, hapisDurumu, hazineAktar, hazineDurumu, makamMi, oyVer, secimDurumu, xpAyarla,
+  coinDevret, getStats, hapisDurumu, hazineAktar, hazineDurumu, kayyumAta, kayyumKaldir, makamMi, mulkDevret, oyVer, secimDurumu, xpAyarla, xpDevret,
 } = await import('../lib/stats.js')
 
 const SAAT = 3_600_000
@@ -39,7 +40,7 @@ test('makam adları ve darbe yanıtları', () => {
     [{ kod: 'villa', adet: 1 }, { kod: 'ev', adet: 1 }])
 })
 
-test('bakan: her bakanlığın ayrı seçimi, yetki günde bir', () => {
+test('bakan: her bakanlığın ayrı seçimi, yetki günde 5', () => {
   const chatJid = ayarla({ a: 50_000, b: 50_000, c: 1000, k: 10_000 })
   adayOl({ chatJid, userJid: 'a', makam: 'adalet', now: T })
   adayOl({ chatJid, userJid: 'b', makam: 'icisleri', now: T })
@@ -57,11 +58,63 @@ test('bakan: her bakanlığın ayrı seçimi, yetki günde bir', () => {
   assert.deepEqual(bakanYetkisi({ chatJid, userJid: 'b', makam: 'icisleri', hedef: 'k', now: P }), { hapisteDegil: true })
   const t = bakanYetkisi({ chatJid, userJid: 'a', makam: 'adalet', hedef: 'k', now: P })
   assert.equal(t.tutuklama.bitis, P + SAAT)
+  assert.equal(t.kalan, 4)
   assert.ok(hapisDurumu(chatJid, 'k', P + 1))
+  // Zaten hapisteki hedef hakkı yakmaz.
+  assert.deepEqual(bakanYetkisi({ chatJid, userJid: 'a', makam: 'adalet', hedef: 'k', now: P + 1 }), { zatenHapiste: true })
+  for (const [i, hedef] of ['x1', 'x2', 'x3', 'x4'].entries()) {
+    assert.equal(bakanYetkisi({ chatJid, userJid: 'a', makam: 'adalet', hedef, now: P + 1 }).kalan, 3 - i)
+  }
   assert.deepEqual(bakanYetkisi({ chatJid, userJid: 'a', makam: 'adalet', hedef: 'c', now: P + 1 }), { bugunVar: true })
+  assert.equal(bakanYetkisi({ chatJid, userJid: 'a', makam: 'adalet', hedef: 'c', now: P + 24 * SAAT }).kalan, 4)
 
-  assert.deepEqual(bakanYetkisi({ chatJid, userJid: 'b', makam: 'icisleri', hedef: 'k', now: P + 2 }), { af: true })
+  assert.deepEqual(bakanYetkisi({ chatJid, userJid: 'b', makam: 'icisleri', hedef: 'k', now: P + 2 }), { af: true, kalan: 4 })
   assert.equal(hapisDurumu(chatJid, 'k', P + 3), null)
+})
+
+test('kayyum: bakan görevden alınır, seçim askıya girer, kaldırılınca açılır; yeni bakanın hakkı tam', () => {
+  const chatJid = ayarla({ ali: 50_000, veli: 50_000, mert: 1000, c: 1000 })
+  adayOl({ chatJid, userJid: 'ali', makam: 'disisleri', now: T })
+  oyVer({ chatJid, secmen: 'c', aday: 'ali', makam: 'disisleri', now: T })
+  const P = T + HAFTA
+  secimDurumu({ chatJid, userJid: 'c', now: P })
+  assert.equal(makamMi(chatJid, 'ali', 'disisleri', P), true)
+  for (const h of ['h1', 'h2', 'h3', 'h4', 'h5']) bakanYetkisi({ chatJid, userJid: 'ali', makam: 'disisleri', hedef: h, now: P })
+
+  adayOl({ chatJid, userJid: 'veli', makam: 'disisleri', now: P })
+  assert.deepEqual(kayyumAta({ chatJid, makam: 'disisleri', hedef: 'mert', now: P + 1 }), { onceki: 'ali', iptal: true })
+  assert.deepEqual(kayyumAta({ chatJid, makam: 'disisleri', hedef: 'mert', now: P + 1 }), { zaten: true })
+  assert.deepEqual(kayyumAta({ chatJid, makam: 'baskan', hedef: 'mert', now: P + 1 }), { degil: true })
+  assert.equal(makamMi(chatJid, 'ali', 'disisleri', P + 2), false)
+  assert.equal(makamMi(chatJid, 'mert', 'disisleri', P + 2), true)
+  assert.deepEqual(bakanYetkisi({ chatJid, userJid: 'ali', makam: 'disisleri', hedef: 'x', now: P + 2 }), { degil: true })
+  assert.equal(bakanYetkisi({ chatJid, userJid: 'mert', makam: 'disisleri', hedef: 'x', now: P + 2 }).kalan, 4)
+
+  assert.deepEqual(adayOl({ chatJid, userJid: 'veli', makam: 'disisleri', now: P + 3 }), { askida: true })
+  assert.equal(secimDurumu({ chatJid, userJid: 'c', now: P + 3 }).makamlar.find((m) => m.kod === 'disisleri').askida, true)
+
+  assert.deepEqual(kayyumKaldir({ chatJid, makam: 'disisleri' }), { sahip: 'mert' })
+  assert.deepEqual(kayyumKaldir({ chatJid, makam: 'disisleri' }), { kayyumYok: true })
+  assert.equal(adayOl({ chatJid, userJid: 'veli', makam: 'disisleri', now: P + 4 }).basladi, true)
+  assert.equal(makamMi(chatJid, 'mert', 'disisleri', P + 5), true)
+})
+
+test('ambargo: 24 saat XP, coin ve mülk gönderilemez; sahip devri muaf; darbe bitince kayyum kalkar', () => {
+  const chatJid = ayarla({ d: 1000, z: 50_000, y: 0 })
+  kayyumAta({ chatJid, makam: 'disisleri', hedef: 'd', now: T })
+  const a = bakanYetkisi({ chatJid, userJid: 'd', makam: 'disisleri', hedef: 'z', now: T })
+  assert.equal(a.ambargo, T + 24 * SAAT)
+  assert.deepEqual(bakanYetkisi({ chatJid, userJid: 'd', makam: 'disisleri', hedef: 'z', now: T + 1 }), { zatenAmbargo: T + 24 * SAAT })
+
+  assert.ok(xpDevret({ chatJid, kaynak: 'z', hedef: 'y', miktar: 10, now: T + 2 }).ambargo)
+  assert.equal(xpDevret({ chatJid, kaynak: 'z', hedef: 'y', miktar: 10, sahipDevri: true, now: T + 2 }).yetersiz, false)
+  assert.ok(coinDevret({ chatJid, kaynak: 'z', hedef: 'y', adet: 1, now: T + 2 }).ambargo)
+  assert.ok(mulkDevret({ chatJid, kaynak: 'z', hedef: 'y', mulk: mulkBul('ev'), now: T + 2 }).ambargo)
+  assert.deepEqual(coinDevret({ chatJid, kaynak: 'z', hedef: 'y', adet: 1, now: T + 25 * SAAT }), { yetersiz: true, bakiye: 0 })
+
+  darbeBaslat({ chatJid, userJid: 'o', now: T })
+  assert.equal(darbeBitir({ chatJid }), true)
+  assert.deepEqual(kayyumKaldir({ chatJid, makam: 'disisleri' }), { kayyumYok: true })
 })
 
 test('hazine: başkan günde 10 kişiye, kişi başı anlık piyasanın %20\'si, kendine yok', () => {

@@ -1,5 +1,6 @@
 import { requireGroup, requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { BOZDURMA_YUZDESI } from '../lib/coin.js'
+import { ambargoMesaji } from '../lib/devlet.js'
 import { KIRA_AZAMI_SAAT, MULKLER, mulkBul } from '../lib/mulk.js'
 import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, kiraTopla, mulkAl, mulkDevret, mulkDurumu, mulkSat } from '../lib/stats.js'
@@ -28,6 +29,7 @@ async function devret({ sock, msg, from, sender, args, parsed, yaz }) {
 
   const s = mulkDevret({ chatJid: from, kaynak: sender, hedef, mulk, adet })
   if (!s) return await yaz(KAPALI)
+  if (s.ambargo) return await yaz(ambargoMesaji(s.ambargo))
   if (s.borclu) return await yaz('💳 Kredi borcun ya da eksi cüzdanın varken mülk devredilemez.')
   if (s.yetersiz) return await yaz(`🏠 O kadar ${mulk.ad} yok. Sende: ${s.adet}`)
 

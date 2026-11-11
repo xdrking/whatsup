@@ -1,5 +1,5 @@
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
-import { MAKAMLAR, TUTUKLAMA_SAATI, yetkiyleMakam } from '../lib/devlet.js'
+import { AMBARGO_MS, BAKAN_GUNLUK, MAKAMLAR, TUTUKLAMA_SAATI, yetkiyleMakam } from '../lib/devlet.js'
 import { binlik } from '../lib/sayi.js'
 import { bakanYetkisi, botHesabiMi, secimDurumu } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
@@ -12,10 +12,10 @@ export default {
   name: 'bakan',
   aliases: ['bakanlık', 'bakanlik'],
   description: 'Bakanlar ve bakanlık yetkileri',
-  usage: '.bakan  —  .bakan af|tutukla|kalkan @kişi',
+  usage: '.bakan  —  .bakan af|tutukla|kalkan|ambargo @kişi',
   details: [
     ...BAKANLIKLAR.map((m) => `${m.ad}: \`.bakan ${m.yetki} @kişi\`, ${m.aciklama}.`),
-    'Bakanlar `.seçim` ile seçilir, yetki günde bir kez kullanılır.',
+    `Bakanlar \`.seçim\` ile seçilir ya da başkan \`.kayyum\` ile atar. Yetki günde ${BAKAN_GUNLUK} kez kullanılır.`,
   ],
   category: 'toplum',
   cooldown: 5,
@@ -34,8 +34,8 @@ export default {
         if (!s) return await yaz('🏛️ Bakanlıklar şu an kapalı.')
         const lines = ['🏛️ *Bakanlar*', '']
         for (const m of BAKANLIKLAR) {
-          const sahip = s.makamlar.find((x) => x.kod === m.kod)?.sahip
-          lines.push(`${m.ad}: ${sahip ? displayName(sahip) : 'boş'}`, `   \`.bakan ${m.yetki} @kişi\` — ${m.aciklama}`)
+          const { sahip, askida } = s.makamlar.find((x) => x.kod === m.kod) ?? {}
+          lines.push(`${m.ad}: ${sahip ? displayName(sahip) : 'boş'}${askida ? ' (kayyum)' : ''}`, `   \`.bakan ${m.yetki} @kişi\` — ${m.aciklama}`)
         }
         lines.push('', 'Bakan olmak için: `.seçim aday <makam>`')
         return await yaz(lines.join('\n'))
@@ -50,19 +50,24 @@ export default {
       const s = bakanYetkisi({ chatJid: from, userJid: sender, makam: makam.kod, hedef })
       if (!s) return await yaz('🏛️ Bakanlık şu an kapalı, sonra dene.')
       if (s.degil) return await yaz(`🏛️ Bu yetki yalnızca ${makam.ad}'nın.`)
-      if (s.bugunVar) return await yaz('🏛️ Yetkini bugün kullandın, yarın tekrar.')
+      if (s.bugunVar) return await yaz(`🏛️ Bugünkü ${BAKAN_GUNLUK} hakkını kullandın, yarın tekrar.`)
       if (s.hapisteDegil) return await yaz(`🚔 ${mentionOf(hedef)} hapiste değil.`, [hedef])
+      if (s.zatenAmbargo) return await yaz(`🌍 ${mentionOf(hedef)} zaten ambargoda.`, [hedef])
       if (s.zatenHapiste) return await yaz(`⚖️ ${mentionOf(hedef)} zaten hapiste.`, [hedef])
 
-      if (s.af) return await yaz(`🚔 ${makam.ad} ${mentionOf(sender)}, ${mentionOf(hedef)} için af çıkardı. Özgürsün!`, [sender, hedef])
+      const hak = `\n(Bugün kalan hakkın: ${s.kalan})`
+      if (s.af) return await yaz(`🚔 ${makam.ad} ${mentionOf(sender)}, ${mentionOf(hedef)} için af çıkardı. Özgürsün!${hak}`, [sender, hedef])
+      if (s.ambargo) {
+        return await yaz(`🌍 ${makam.ad} ${mentionOf(sender)}, ${mentionOf(hedef)} kişisine ${AMBARGO_MS / 3_600_000} saat ambargo koydu: para ve mülk gönderemez.${hak}`, [sender, hedef])
+      }
       if (s.tutuklama) {
         return await yaz(
           `⚖️ ${makam.ad} ${mentionOf(sender)}, ${mentionOf(hedef)} hakkında tutuklama kararı verdi: ${TUTUKLAMA_SAATI} saat hapis.\n` +
-            `Kefalet: ${binlik(s.tutuklama.kefalet)} XP (\`.kefalet @kişi\`)`,
+            `Kefalet: ${binlik(s.tutuklama.kefalet)} XP (\`.kefalet @kişi\`)${hak}`,
           [sender, hedef],
         )
       }
-      await yaz(`🛡️ ${makam.ad} ${mentionOf(sender)}, ${mentionOf(hedef)} kişisini 24 saat soygunlara karşı korumaya aldı.`, [sender, hedef])
+      await yaz(`🛡️ ${makam.ad} ${mentionOf(sender)}, ${mentionOf(hedef)} kişisini 24 saat soygunlara karşı korumaya aldı.${hak}`, [sender, hedef])
     } catch (err) {
       logger.error({ err, from }, '.bakan başarısız')
       await yaz('🏛️ Bir şeyler ters gitti.').catch((e) => logger.error({ err: e }, '.bakan hata mesajı gönderilemedi'))
