@@ -1,5 +1,6 @@
-// Panelde oynanan kumar. Kurallar ve XP yazımı WhatsApp'takiyle aynı yoldan geçer
-// (`bahisOyna`, `xpCek`, `kumarOde`): tavan, 500 XP şartı, yasaklar, karne ve hazine ortaktır.
+// Panelde oynanan kumar. XP yazımı WhatsApp'takiyle aynı yoldan geçer (`bahisOyna`, `xpCek`,
+// `kumarOde`): 500 XP şartı, karne ve hazine ortaktır. Panelde kumar yasağı yoktur (bot sahibinin
+// kararı): iflas, hapis ve günlük tavan yalnızca WhatsApp komutlarını kapatır, panel kazancı tavana yazılmaz.
 // Çok adımlı oyunların eli yalnızca panelin belleğindedir: panel yeniden başlarsa yarım
 // eldeki bahis yanar (WhatsApp'taki gibi). Gruptaki oyun yuvasını tutmaz.
 import logger from '../lib/logger.js'
@@ -9,7 +10,7 @@ import {
 } from '../lib/kumar.js'
 import { miktarlariCoz } from '../lib/sayi.js'
 import { getDb } from '../lib/db.js'
-import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, kumarOde, kumarYasagi, xpCek } from '../lib/stats.js'
+import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, kumarOde, xpCek } from '../lib/stats.js'
 import { desteKur, elDegeri, odemeCarpani } from '../games/blackjack.js'
 import { KUTU, mayinCarpani, mayinKur } from '../games/mayin.js'
 import { KAT, kuleCarpani, kuleKur, ZORLUK, zorlukCoz } from '../games/kule.js'
@@ -67,15 +68,15 @@ export const COK_OYUNLAR = {
  * Kayıp ve kazanç hazineye (bot hesabına) yazılır; panel WhatsApp'a bağlanmadığı için
  * bot kimliğini botun yazdığı `ayar` kaydından öğrenir. Kayıt yoksa kumar kapalıdır.
  */
-function hazineyiTani() {
+export function hazineyiTani() {
   const jid = getDb()?.prepare("SELECT deger FROM ayar WHERE anahtar = 'bot_jid'").get()?.deger
   if (jid && !botHesabiMi(jid)) botHesabiniTani({ id: jid })
   return Boolean(jid)
 }
-const HAZINE_YOK = 'Kumarhane kapalı: bot henüz hiç bağlanmadı.'
+export const HAZINE_YOK = 'Kumarhane kapalı: bot henüz hiç bağlanmadı.'
 
 /** "50 milyon", "50m", "hepsi" → miktarCoz'un okuyacağı tek kelime. */
-function miktarMetni(ham) {
+export function miktarMetni(ham) {
   const kelimeler = String(ham ?? '').trim().split(/\s+/).filter(Boolean)
   return kelimeler.length ? miktarlariCoz(kelimeler).join('') : ''
 }
@@ -95,11 +96,11 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     return true
   }
 
-  /** Bakiye, yasak ve miktar; oynanamıyorsa `hata`. */
+  /** Bakiye ve miktar; oynanamıyorsa `hata`. */
   function giris(h, miktarHam) {
     if (!hazineyiTani()) return { hata: HAZINE_YOK }
     const { xp } = getStats(h.chat, h.user)
-    const engel = kumarEngeli(xp, kumarYasagi(h.chat, h.user))
+    const engel = kumarEngeli(xp)
     if (engel) return { hata: engel }
     const cozum = miktarCoz(miktarMetni(miktarHam), xp)
     if (cozum.hata) return { hata: cozum.hata.replace(/`/g, '') }
@@ -118,7 +119,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     const g = giris(h, miktar)
     if (g.hata) return sonucYaz(k, { oyun, hata: g.hata })
 
-    const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: g.miktar, cevir: hazir.cevir, oyun })
+    const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: g.miktar, cevir: hazir.cevir, oyun, tavansiz: true })
     if (!s) return sonucYaz(k, { oyun, hata: 'Kumarhane şu an kapalı, sonra dene.' })
     if (s.yetersiz) return sonucYaz(k, { oyun, hata: 'O kadar XP\'n yok.' })
     sonucYaz(k, { oyun, bahis: g.miktar, sonuc: s.sonuc, once: s.once, xp: s.xp, fark: s.fark, kesilen: s.kesilen })
@@ -130,7 +131,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     el.bitti = true
     temizle(el.zaman)
     eller.delete(k)
-    const s = kumarOde({ oyun: el.oyun, chatJid: el.chat, userJid: el.user, bahis: el.bahis, odeme })
+    const s = kumarOde({ oyun: el.oyun, chatJid: el.chat, userJid: el.user, bahis: el.bahis, odeme, tavansiz: true })
     if (!s) {
       logger.error({ chat: el.chat, oyun: el.oyun }, 'Panel kumar ödemesi yazılamadı')
       return sonucYaz(k, { oyun: el.oyun, hata: 'Sonuç yazılamadı.', el: gorunum(el, true) })
@@ -320,11 +321,10 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
   function durum(h) {
     const k = anahtar(h)
     const { xp } = getStats(h.chat, h.user)
-    const yasak = kumarYasagi(h.chat, h.user)
     const el = eller.get(k)
     const sonuc = sonuclar.get(k) ?? null
     sonuclar.delete(k)
-    return { xp, yasakBitis: yasak > saat() ? yasak : 0, el: el ? gorunum(el) : null, sonuc }
+    return { xp, el: el ? gorunum(el) : null, sonuc }
   }
 
   return { tekOyna, basla, hamle, durum }

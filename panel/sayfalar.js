@@ -46,8 +46,11 @@ function avatar(u, boyut = '') {
   return h`<span class="avatar a${fnv1a(u.user_jid) % AVATAR_RENGI} ${boyut}" aria-hidden="true">${harf}</span>`
 }
 
-/** `kumarhane`: oyun sayfası; ek stil ve oyun.js (ses, animasyon) yüklenir. Satır içi betik yoktur. */
-export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik, kumarhane = false } = {}) {
+/**
+ * `kumarhane`: oyun sayfası; ek stil ve oyun.js (ses, animasyon) yüklenir. Satır içi betik yoktur.
+ * `yan`: yan menü; telefonda `menu-ac` onay kutusuyla açılan çekmecedir, betik gerekmez.
+ */
+export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik, kumarhane = false, yan = null } = {}) {
   return h`<!doctype html>
 <html lang="tr">
 <head>
@@ -60,12 +63,15 @@ export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik,
 ${kumarhane ? h`<link rel="stylesheet" href="/kumarhane.css?v=${KUMARHANE_SURUMU}">
 <script src="/oyun.js?v=${KUMARHANE_SURUMU}" defer></script>` : ''}
 </head>
-<body${kumarhane ? h` class="kumarhane"` : ''}>
+<body${kumarhane ? h` class="kumarhane${yan ? ' yanli' : ''}"` : ''}>
+${yan ? h`<input type="checkbox" id="menu-ac" class="menu-kutu" aria-label="Menüyü aç ya da kapat">` : ''}
 <header class="ust">
+  ${yan ? h`<label for="menu-ac" class="menu-dugme" aria-hidden="true">☰</label>` : ''}
   ${geri ? h`<a class="geri" href="${geri}" aria-label="Geri">‹</a>` : ''}
   <h1>${ust}</h1>
   ${cikis ? h`<form method="post" action="/cikis"><button class="sessiz">Çıkış</button></form>` : ''}
 </header>
+${yan ? h`${yan}<label for="menu-ac" class="perde" aria-hidden="true"></label>` : ''}
 <main>${icerik}</main>
 </body>
 </html>`.metin

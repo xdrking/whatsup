@@ -8,7 +8,9 @@ import { getStats } from '../lib/stats.js'
 import { girisHesaplari, panelHesaplari } from '../lib/panelHesap.js'
 import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru, sifreHashle } from './guvenlik.js'
 import { kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
-import { grupSecimi, kumarhane } from './oyunSayfalari.js'
+import { hesapMotoru } from './hesap.js'
+import { bankaSayfasi, coinSayfasi, HESAP_SAYFALARI, hesapSayfasi } from './hesapSayfalari.js'
+import { grupSecimi, hesapLink, lobi, oyunLink, oyunSayfasi, oyunVar } from './oyunSayfalari.js'
 import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisiSayfasi } from './sayfalar.js'
 import { sonYedek } from './yedek.js'
 
@@ -60,7 +62,7 @@ function bekleMetni(ms) {
 }
 
 /** @param {{ sifreHash: string, veri: object, yedekKlasoru: string }} ayar */
-export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru() }) {
+export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru() }) {
   const sinir = denemeSiniri()
   const oturum = oturumlar()
   // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.
@@ -129,36 +131,49 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     const yol = `${yontem} ${url.pathname}`
     const hesapBul = (chat) => hesaplar.find((r) => r.chat_jid === chat)
 
-    if (yol === 'GET /oyun') {
+    const HESAP_CIZIMI = { hesap: hesapSayfasi, banka: bankaSayfasi, coin: coinSayfasi }
+    const hesapSayfa = yontem === 'GET' ? HESAP_SAYFALARI.find((ad) => url.pathname === `/oyun/${ad}`) : null
+
+    if (yol === 'GET /oyun' || hesapSayfa) {
       const chat = url.searchParams.get('grup') ?? (hesaplar.length === 1 ? hesaplar[0].chat_jid : '')
       const hesap = hesapBul(chat)
       if (!hesap) {
+        if (hesapSayfa) return yonlendir(res, '/oyun')
         const adlar = grupAdlari()
         return gonder(res, 200, grupSecimi(hesaplar.map((r) => ({
           chat: r.chat_jid, ad: adlar.get(r.chat_jid) ?? '', xp: getStats(r.chat_jid, r.user_jid).xp,
         }))))
       }
-      return gonder(res, 200, kumarhane({
-        chat,
-        grupAdi: grupAdlari().get(chat) ?? '',
-        cokGrup: hesaplar.length > 1,
-        durum: kumar.durum({ chat, user: hesap.user_jid }),
-      }))
+      const kim = { chat, user: hesap.user_jid }
+      const cokGrup = hesaplar.length > 1
+      if (hesapSayfa) return gonder(res, 200, HESAP_CIZIMI[hesapSayfa]({ chat, cokGrup, durum: hesapIsleri.durum(kim) }))
+
+      const oyun = url.searchParams.get('oyun') ?? ''
+      const durum = kumar.durum(kim)
+      if (oyunVar(oyun)) return gonder(res, 200, oyunSayfasi({ chat, oyun, cokGrup, durum }))
+      return gonder(res, 200, lobi({ chat, grupAdi: grupAdlari().get(chat) ?? '', cokGrup, durum }))
     }
 
-    if (yol === 'POST /oyun/oyna' || yol === 'POST /oyun/hamle') {
+    if (yol === 'POST /oyun/oyna' || yol === 'POST /oyun/hamle' || yol === 'POST /oyun/islem') {
       const form = await govdeOku(req)
       if (!form) return gonder(res, 413, hataSayfasi('İstek çok büyük.'))
       const chat = form.get('grup') ?? ''
       const hesap = hesapBul(chat)
       if (!hesap) return yonlendir(res, '/oyun')
-
       const kim = { chat, user: hesap.user_jid }
+
+      if (yol === 'POST /oyun/islem') {
+        hesapIsleri.islem(kim, { islem: form.get('islem') ?? '', miktar: form.get('tutar') ?? '' })
+        const donus = HESAP_SAYFALARI.find((ad) => ad === form.get('sayfa')) ?? 'hesap'
+        return yonlendir(res, hesapLink(chat, donus))
+      }
+
       const alanlar = { oyun: form.get('oyun') ?? '', miktar: form.get('miktar') ?? '', secim: form.get('secim') ?? '', hamle: form.get('hamle') ?? '' }
       if (yol === 'POST /oyun/hamle') kumar.hamle(kim, alanlar)
       else if (Object.hasOwn(TEK, alanlar.oyun)) kumar.tekOyna(kim, alanlar)
       else kumar.basla(kim, alanlar)
-      return yonlendir(res, `/oyun?grup=${encodeURIComponent(chat)}`)
+      // Yanıt oyunun kendi sayfasına döner; bilinmeyen oyun adı lobiye düşer.
+      return yonlendir(res, oyunLink(chat, oyunVar(alanlar.oyun) ? alanlar.oyun : ''))
     }
 
     return yonlendir(res, '/oyun')

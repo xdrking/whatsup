@@ -6,8 +6,9 @@ import { COK_OYUNLAR, TEK_OYUNLAR } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
-const saatBicimi = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit' })
-const oyunLink = (chat) => `/oyun?grup=${encodeURIComponent(chat)}`
+/** Lobi; `oyun` verilirse o oyunun sayfası. */
+export const oyunLink = (chat, oyun = '') => `/oyun?grup=${encodeURIComponent(chat)}${oyun ? `&oyun=${encodeURIComponent(oyun)}` : ''}`
+export const hesapLink = (chat, sayfa) => `/oyun/${sayfa}?grup=${encodeURIComponent(chat)}`
 const OYUN_ADI = { ...TEK_OYUNLAR, ...COK_OYUNLAR }
 const oyunTanimi = (oyun) => (Object.hasOwn(OYUN_ADI, oyun) ? OYUN_ADI[oyun] : null)
 const virgul = (x) => String(x).replace('.', ',')
@@ -27,10 +28,75 @@ export function grupSecimi(gruplar) {
 
 const gizli = (chat) => h`<input type="hidden" name="grup" value="${chat}">`
 
+const secenekler = (dugmeler) => h`<div class="secenekler">${dugmeler.map(([deger, etiket, sinif = '']) =>
+  h`<button name="secim" value="${deger}" class="${sinif}">${etiket}</button>`)}</div>`
+
+const RULET_SECIMLERI = [['kırmızı', '🔴 Kırmızı · 2x'], ['siyah', '⚫ Siyah · 2x'], ['tek', 'Tek · 2x'], ['çift', 'Çift · 2x'],
+  ...Array.from({ length: 37 }, (_, n) => [String(n), `Sayı ${n} · 36x`])]
+
+/** Lobideki kutu ve oyun sayfasındaki bahis formu aynı tanımdan çıkar. */
+const VITRIN = {
+  slot: { aciklama: 'Üçlü 3x-50x, ikili 1,5x', etiket: 'JACKPOT 50x', govde: () => h`<button class="buyuk-dugme">ÇEVİR</button>` },
+  kazı: { aciklama: '3 aynı sembol 1x-50x', etiket: '50x', govde: () => h`<button class="buyuk-dugme">KAZI</button>` },
+  blackjack: { aciklama: 'Kazanç 2x, blackjack 2,5x', govde: () => h`<button class="buyuk-dugme">MASAYA OTUR</button>` },
+  hilo: { aciklama: 'Yüksek mi düşük mü, 1000x tavan', etiket: '1000x', govde: () => h`<button class="buyuk-dugme">KART AÇ</button>` },
+  rulet: {
+    aciklama: 'Avrupa ruleti, tek sıfır', etiket: '36x',
+    govde: () => h`<label class="alan"><small>Nereye</small><select name="secim">${RULET_SECIMLERI.map(([d, e]) => h`<option value="${d}">${e}</option>`)}</select></label><button class="buyuk-dugme">ÇEVİR</button>`,
+  },
+  bahis: { aciklama: 'Bilirsen 2x', govde: () => secenekler([['yazı', 'Yazı'], ['tura', 'Tura']]) },
+  crash: {
+    aciklama: 'Hedefe varırsa hedefin katı', etiket: '1000x',
+    govde: () => h`<label class="alan"><small>Hedef çarpan</small><input name="secim" value="2" inputmode="decimal" autocomplete="off" required></label><button class="buyuk-dugme">🚀 UÇUR</button>`,
+  },
+  plinko: { aciklama: 'Düşük 5x, orta 13x, yüksek 29x tavan', etiket: '29x', govde: () => secenekler([['düşük', 'Düşük'], ['orta', 'Orta'], ['yüksek', 'Yüksek', 'sicak']]) },
+  mayın: { aciklama: '12 kutu, 3 mayın, 211x tavan', etiket: '211x', govde: () => h`<button class="buyuk-dugme">TARLAYA GİR</button>` },
+  kule: { aciklama: '8 kat, tepe 245x', etiket: '245x', govde: () => secenekler([['kolay', 'Kolay'], ['orta', 'Orta'], ['zor', 'Zor', 'sicak']]) },
+}
+
+export const KATEGORILER = [
+  { ad: 'Slot ve kazı', ikon: '🎰', oyunlar: ['slot', 'kazı'] },
+  { ad: 'Kart ve masa', ikon: '🃏', oyunlar: ['blackjack', 'hilo', 'rulet', 'bahis'] },
+  { ad: 'Çarpan oyunları', ikon: '🚀', oyunlar: ['crash', 'plinko', 'mayın', 'kule'] },
+]
+
+export const oyunVar = (oyun) => Object.hasOwn(VITRIN, oyun)
+
+/**
+ * Yan menü: oyun kategorileri ve hesap bölümü. Telefonda çekmecedir, `kabuk` içindeki
+ * onay kutusuyla açılır (betik gerekmez); geniş ekranda hep açıktır.
+ */
+export function yanMenu({ chat, cokGrup, secili = '' }) {
+  const baglanti = (adres, anahtar, ikon, ad) =>
+    h`<a href="${adres}"${secili === anahtar ? h` class="secili" aria-current="page"` : ''}><span aria-hidden="true">${ikon}</span>${ad}</a>`
+  return h`<nav class="yan" aria-label="Kumarhane menüsü">
+  <div class="yan-marka">🎰 KUMARHANE</div>
+  ${baglanti(oyunLink(chat), 'lobi', '🏠', 'Lobi')}
+  ${KATEGORILER.map((k) => h`<h3>${k.ikon} ${k.ad}</h3>${k.oyunlar.map((o) => baglanti(oyunLink(chat, o), o, OYUN_ADI[o].ikon, OYUN_ADI[o].ad))}`)}
+  <h3>👤 Hesap</h3>
+  ${baglanti(hesapLink(chat, 'hesap'), 'hesap', '💎', 'Hesabım')}
+  ${baglanti(hesapLink(chat, 'banka'), 'banka', '🏦', 'Banka ve kredi')}
+  ${baglanti(hesapLink(chat, 'coin'), 'coin', '🪙', 'Coin ve mülk')}
+  ${cokGrup ? h`<h3>Grup</h3><a href="/oyun"><span aria-hidden="true">🔁</span>Grubu değiştir</a>` : ''}
+</nav>`
+}
+
+/** Bakiye başlığı. `dar`: oyun ve hesap sayfalarında tek satır. */
+export function kasa({ xp, grupAdi, dar = false }) {
+  return h`<section class="kasa${dar ? ' dar' : ''}">
+  ${dar ? '' : h`<div class="neon">KUMARHANE</div><small>${grupAdi || 'Grup'}</small>`}
+  <div class="bakiye"><span class="jeton" aria-hidden="true">🪙</span><span class="bakiye-sayi" data-xp="${xp}">${sayi.format(xp)}</span> <small>XP</small></div>
+  ${dar ? '' : h`<span class="durum-cip">${xp < 500 ? '⚠️ Kumar için en az 500 XP' : '🟢 Masalar açık'}</span>`}
+  <button type="button" class="ses-dugme" hidden aria-label="Sesi aç ya da kapat">🔊</button>
+</section>`
+}
+
 /** `tek`: tek düğmeli oyun; bahis alanı ile düğme yan yana durur, telefonda kart kısalır. */
-function oyunKarti(chat, oyun, varsayilan, govde, aciklama, etiket = '') {
+function oyunKarti(chat, oyun, varsayilan) {
   const t = OYUN_ADI[oyun]
-  const tek = govde.metin.startsWith('<button')
+  const { aciklama, etiket, govde } = VITRIN[oyun]
+  const icerik = govde()
+  const tek = icerik.metin.startsWith('<button')
   return h`<form class="masa-kart k-${oyun}${tek ? ' tek' : ''}" method="post" action="/oyun/oyna">
   ${gizli(chat)}<input type="hidden" name="oyun" value="${oyun}">
   <div class="masa-ust">
@@ -45,32 +111,20 @@ function oyunKarti(chat, oyun, varsayilan, govde, aciklama, etiket = '') {
     <button type="button" data-cip="iki">2x</button>
     <button type="button" data-cip="hepsi">Hepsi</button>
   </div>
-  ${govde}
+  ${icerik}
 </form>`
 }
 
-const secenekler = (dugmeler) => h`<div class="secenekler">${dugmeler.map(([deger, etiket, sinif = '']) =>
-  h`<button name="secim" value="${deger}" class="${sinif}">${etiket}</button>`)}</div>`
-
-function oyunlar(chat, v) {
-  const rulet = [['kırmızı', '🔴 Kırmızı · 2x'], ['siyah', '⚫ Siyah · 2x'], ['tek', 'Tek · 2x'], ['çift', 'Çift · 2x'],
-    ...Array.from({ length: 37 }, (_, n) => [String(n), `Sayı ${n} · 36x`])]
-  return h`<h2 class="bolum">🎰 Hızlı oyunlar</h2>
-<section class="oyunlar">
-${oyunKarti(chat, 'slot', v, h`<button class="buyuk-dugme">ÇEVİR</button>`, 'Üçlü 3x-50x, ikili 1,5x', 'JACKPOT 50x')}
-${oyunKarti(chat, 'rulet', v, h`<label class="alan"><small>Nereye</small><select name="secim">${rulet.map(([d, e]) => h`<option value="${d}">${e}</option>`)}</select></label><button class="buyuk-dugme">ÇEVİR</button>`, 'Avrupa ruleti, tek sıfır')}
-${oyunKarti(chat, 'crash', v, h`<label class="alan"><small>Hedef çarpan</small><input name="secim" value="2" inputmode="decimal" autocomplete="off" required></label><button class="buyuk-dugme">🚀 UÇUR</button>`, 'Hedefe varırsa hedefin katı', '1000x')}
-${oyunKarti(chat, 'plinko', v, secenekler([['düşük', 'Düşük'], ['orta', 'Orta'], ['yüksek', 'Yüksek', 'sicak']]), 'Düşük 5x, orta 13x, yüksek 29x tavan')}
-${oyunKarti(chat, 'kazı', v, h`<button class="buyuk-dugme">KAZI</button>`, '3 aynı sembol 1x-50x')}
-${oyunKarti(chat, 'bahis', v, secenekler([['yazı', 'Yazı'], ['tura', 'Tura']]), 'Bilirsen 2x')}
-</section>
-<h2 class="bolum">🃏 Masa oyunları</h2>
-<section class="oyunlar masalar">
-${oyunKarti(chat, 'blackjack', v, h`<button class="buyuk-dugme">MASAYA OTUR</button>`, 'Kazanç 2x, blackjack 2,5x')}
-${oyunKarti(chat, 'mayın', v, h`<button class="buyuk-dugme">TARLAYA GİR</button>`, '12 kutu, 3 mayın, 211x tavan')}
-${oyunKarti(chat, 'kule', v, secenekler([['kolay', 'Kolay'], ['orta', 'Orta'], ['zor', 'Zor', 'sicak']]), '8 kat, tepe 245x', '245x')}
-${oyunKarti(chat, 'hilo', v, h`<button class="buyuk-dugme">KART AÇ</button>`, 'Yüksek mi düşük mü, 1000x tavan')}
-</section>`
+const oyunKutusu = (chat, oyun) => {
+  const t = OYUN_ADI[oyun]
+  const { aciklama, etiket } = VITRIN[oyun]
+  return h`<a class="oyun-kutu k-${oyun}" href="${oyunLink(chat, oyun)}">
+  ${etiket ? h`<span class="rozet">${etiket}</span>` : ''}
+  <span class="kutu-ikon" aria-hidden="true">${t.ikon}</span>
+  <strong>${t.ad}</strong>
+  <small>${aciklama}</small>
+  <span class="oyna">OYNA</span>
+</a>`
 }
 
 const hamleDugmesi = (deger, etiket, sinif = '', kapali = false) =>
@@ -83,7 +137,7 @@ const kart = (k, i, kapali = false) =>
   h`<span class="oyun-kart d${Math.min(i + 1, 9)}${kapali ? ' kapali' : kirmiziKart(k) ? ' kirmizi' : ''}">${kapali ? '' : k}</span>`
 
 function elCizimi(chat, el, bitti = false) {
-  const form = (icerik) => (bitti ? icerik : h`<form method="post" action="/oyun/hamle">${gizli(chat)}${icerik}</form>`)
+  const form = (icerik) => (bitti ? icerik : h`<form method="post" action="/oyun/hamle">${gizli(chat)}<input type="hidden" name="oyun" value="${el.oyun}">${icerik}</form>`)
   const sure = bitti ? '' : h`<p class="not orta">Bahis <strong>${sayi.format(el.bahis)} XP</strong> · ${Math.ceil(el.kalanMs / 60_000)} dk hamle yapmazsan el kendiliğinden kapanır</p>`
   const uyari = el.uyari ? h`<p class="hata">${el.uyari}</p>` : ''
   const cek = () => hamleDugmesi('çek', `💰 ÇEK · ${sayi.format(Math.floor(el.bahis * el.carpan))} XP`, 'cek')
@@ -182,28 +236,42 @@ function sonucKarti(chat, s) {
     ${s.sebep ? h`<p class="orta">${s.sebep}</p>` : ''}
     ${buyuk ? h`<p class="pankart">BÜYÜK KAZANÇ</p>` : ''}
     <p class="fark">${ozet}</p>
-    ${s.kesilen ? h`<p class="hata">Günlük kumar tavanı doldu: ${sayi.format(s.kesilen)} XP kasada kaldı. Kumar yarına kadar kapalı.</p>` : ''}
     <p class="not orta">${sayi.format(s.once)} → ${sayi.format(s.xp)} XP</p>
   </div>
 </section>`
 }
 
-export function kumarhane({ chat, grupAdi, cokGrup, durum }) {
-  const { xp, yasakBitis, el, sonuc } = durum
-  const varsayilan = sonuc?.bahis ? String(sonuc.bahis) : ''
-  const durumMetni = yasakBitis ? '🚫 Kumar yasağı' : xp < 500 ? '⚠️ 500 XP altı' : '🟢 Masalar açık'
-  const t = el && OYUN_ADI[el.oyun]
+const acikElKarti = (chat, el) => {
+  const t = OYUN_ADI[el.oyun]
+  return h`<section id="acik-el" class="sonuc acik-el" data-oyun="${el.oyun}"><h2>${t.ikon} ${t.ad}</h2>${elCizimi(chat, el)}</section>`
+}
 
+const altNot = h`<p class="not orta alt-not">Panel ile WhatsApp aynı XP'yi kullanır. Gerçek para yoktur.</p>`
+
+export function lobi({ chat, grupAdi, cokGrup, durum }) {
+  const { xp, el, sonuc } = durum
+  const t = el && OYUN_ADI[el.oyun]
   return kabuk('Kumarhane', h`
-<section class="kasa">
-  <div class="neon">KUMARHANE</div>
-  <small>${grupAdi || 'Grup'}</small>
-  <div class="bakiye"><span class="jeton" aria-hidden="true">🪙</span><span class="bakiye-sayi" data-xp="${xp}">${sayi.format(xp)}</span> <small>XP</small></div>
-  <span class="durum-cip${yasakBitis ? ' yasakli' : ''}">${durumMetni}${yasakBitis ? ` · ${saatBicimi.format(yasakBitis)}'e kadar` : ''}</span>
-  <button type="button" class="ses-dugme" hidden aria-label="Sesi aç ya da kapat">🔊</button>
-</section>
+${kasa({ xp, grupAdi })}
 ${sonucKarti(chat, sonuc)}
-${el ? h`<section id="acik-el" class="sonuc acik-el" data-oyun="${el.oyun}"><h2>${t.ikon} ${t.ad}</h2>${elCizimi(chat, el)}</section>` : oyunlar(chat, varsayilan)}
-<p class="not orta alt-not">Panel ile WhatsApp aynı XP'yi kullanır. Günlük kazanç tavanı ve yasaklar ortaktır. Gerçek para yoktur.</p>
-${cokGrup ? h`<p class="not orta"><a href="/oyun">Grubu değiştir</a></p>` : ''}`, { ust: '🎰 Kumarhane', kumarhane: true })
+${el ? h`<a class="devam" href="${oyunLink(chat, el.oyun)}">${t.ikon} Açık ${t.ad} elin var · <strong>devam et ›</strong></a>` : ''}
+${KATEGORILER.map((k) => h`<h2 class="bolum">${k.ikon} ${k.ad}</h2>
+<section class="vitrin">${k.oyunlar.map((o) => oyunKutusu(chat, o))}</section>`)}
+${altNot}`, { ust: '🎰 Kumarhane', kumarhane: true, yan: yanMenu({ chat, cokGrup, secili: 'lobi' }) })
+}
+
+/** Tek oyunun sayfası. Başka oyunda açık el varsa bahis formu yerine o ele bağlantı çıkar. */
+export function oyunSayfasi({ chat, oyun, cokGrup, durum }) {
+  const { xp, el, sonuc } = durum
+  const t = OYUN_ADI[oyun]
+  const baska = el && el.oyun !== oyun ? OYUN_ADI[el.oyun] : null
+  const masa = baska
+    ? h`<a class="devam" href="${oyunLink(chat, el.oyun)}">${baska.ikon} Önce açık ${baska.ad} elini bitir · <strong>ele dön ›</strong></a>`
+    : el ? acikElKarti(chat, el)
+      : h`<section class="oyunlar tekli">${oyunKarti(chat, oyun, sonuc?.bahis ? String(sonuc.bahis) : '')}</section>`
+  return kabuk(t.ad, h`
+${kasa({ xp, dar: true })}
+${sonucKarti(chat, sonuc)}
+${masa}
+${altNot}`, { ust: `${t.ikon} ${t.ad}`, kumarhane: true, yan: yanMenu({ chat, cokGrup, secili: oyun }) })
 }

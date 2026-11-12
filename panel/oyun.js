@@ -254,7 +254,7 @@
     })
   }
 
-  function sayfayiDegistir(html, hamleSonrasi) {
+  function sayfayiDegistir(html, hamleSonrasi, adres) {
     const belge = new DOMParser().parseFromString(html, 'text/html')
     const govde = belge.querySelector('main')
     if (!govde) {
@@ -266,7 +266,11 @@
     document.querySelector('main').replaceWith(document.adoptNode(govde))
     hazirla()
     bakiyeSay(eskiXp, canlandir(hamleSonrasi))
-    const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el')
+    const bildirim = document.getElementById('bildirim')
+    if (bildirim?.classList.contains('oldu')) sesler.para()
+    else if (bildirim) sesler.kaybet()
+    history.replaceState(null, '', adres)
+    const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el') ?? document.getElementById('bildirim')
     hedef?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
@@ -284,19 +288,19 @@
     const hamle = yol === '/oyun/hamle'
 
     document.body.classList.add('bekliyor')
-    if (!hamle) beklemeGoster(String(veri.get('oyun') ?? ''))
+    if (yol === '/oyun/oyna') beklemeGoster(String(veri.get('oyun') ?? ''))
     const baslangic = performance.now()
     try {
       const yanit = await fetch(form.action, { method: 'POST', body: new URLSearchParams(veri), credentials: 'same-origin' })
-      if (!yanit.ok || new URL(yanit.url).pathname !== '/oyun') {
+      if (!yanit.ok || !/^\/oyun(\/|$)/.test(new URL(yanit.url).pathname)) {
         location.href = yanit.url
         return
       }
       const html = await yanit.text()
       // Makara biraz dönsün: yanıt çok hızlı gelirse bekleme görünmeden biter.
-      const bekle = Math.max(0, (hamle ? 0 : 500) - (performance.now() - baslangic))
+      const bekle = Math.max(0, (yol === '/oyun/oyna' ? 500 : 0) - (performance.now() - baslangic))
       await new Promise((tamam) => setTimeout(tamam, bekle))
-      sayfayiDegistir(html, hamle)
+      sayfayiDegistir(html, hamle, yanit.url)
     } catch (err) {
       console.error('Hamle gönderilemedi', err)
       location.reload()

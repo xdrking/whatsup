@@ -159,6 +159,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/panelHesap.js` | panel oyuncu hesapları (`.panel kayıt`) | `data/stats.db` (kalıcı) |
 | `panel/kumar.js` | paneldeki açık blackjack/mayın/kule/hi-lo eli ve son sonuç | panel belleği (panelle ölür) |
+| `panel/hesap.js` | paneldeki son hesap işleminin bildirimi | panel belleği (panelle ölür) |
 
 Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe. Tek istisna botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
 
@@ -332,7 +333,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 57 (tamam):** `.kumaraf`. Ayrıntı aşağıda.
 - **Faz 58 (tamam):** panelde kumar ve `.panel`. Ayrıntı aşağıda.
 - **Faz 59 (tamam):** kumarhane görünümü, ses ve animasyon. Faz 58 bölümüne işlendi.
-- **Faz 60+:** yeni komutlar, her biri ayrı adım
+- **Faz 60 (tamam):** kumarhanede yan menü, oyun başına sayfa, hesap bölümü; panelde kumar yasağı yok. Ayrıntı aşağıda.
+- **Faz 61+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1257,6 +1259,23 @@ Bot sahibinin kararıyla panel salt okunur olmaktan çıktı: grup üyeleri kuma
 - **Duyarlı düzen:** ölçüler `clamp()` iledir, 320 px'te yatay taşma olmamalı. Tek düğmeli oyunlarda (`.masa-kart.tek`) bahis alanı ile düğme yan yanadır. Kart üstüne gelme efekti yalnızca `@media (hover: hover)` içindedir, telefonda dokununca yapışıp kalıyordu.
 - **`panel/oyun.js`:** CSP `script-src 'self'; connect-src 'self'` yalnızca bu dosya içindir, satır içi betik yasak kalır. Formu `fetch` ile gönderir, gelen sayfanın `<main>`'ini yerine koyar; hata olursa sayfayı yeniler. Betik yoksa formlar normal çalışır, bu korunmalı. Sesler Web Audio ile üretilir, ses dosyası yoktur; tarayıcı sesi tıklamadan sonra açtığı için bağlam form gönderiminde kurulur. Ses tercihi yalnızca `localStorage`'dadır. Sesin zamanlaması CSS animasyonuna bağlıdır (`canlandir`): biri değişirse öbürü de değişir.
 
+### Faz 60 — Kumarhane düzeni, hesap bölümü, panelde yasak yok
+
+Bot sahibinin isteğiyle kumarhane gerçek bir oyun sitesi gibi düzenlendi ve WhatsApp'taki para komutları panele taşındı. Panele betik yazılabilir (bot sahibinin kararı); satır içi betik ve stil yine yasaktır, CSP değişmedi.
+
+```
+panel/hesap.js           hesap işlemleri: banka, kredi, coin, günlük, çalış, kira
+panel/hesapSayfalari.js  hesap bölümünün HTML'i
+```
+
+- **Sayfalar:** `/oyun?grup=` lobi (kategorili oyun kutuları), `/oyun?grup=&oyun=` tek oyunun sayfası, `/oyun/hesap|banka|coin` hesap bölümü. Oyun ve kategori tanımları `panel/oyunSayfalari.js:VITRIN` ve `KATEGORILER`'dedir; yeni oyun ikisine de yazılır. `POST /oyun/oyna` ve `/oyun/hamle` oyunun kendi sayfasına döner, hamle formu bu yüzden `oyun` alanını taşır.
+- **Yan menü** (`yanMenu`) `kabuk`'un `yan` seçeneğiyle `<main>`'in dışına çizilir: `oyun.js` yalnızca `<main>`'i değiştirir. Telefonda `menu-ac` onay kutusuyla açılan çekmecedir, betik gerekmez; 960 px üstünde sabittir.
+- **Açık el** hangi sayfada olursa olsun tektir. Başka oyunun sayfasında bahis formu yerine ele dönen bağlantı çıkar, lobide de aynı bağlantı vardır.
+- **Hesap işlemleri** (`POST /oyun/islem`) kural kopyalamaz, komutların çağırdığı `lib/stats.js` fonksiyonlarını çağırır (`bankaYatir`, `bankaCek`, `krediCek`, `krediOde`, `coinAl`, `coinSat`, `claimDaily`, `calis`, `kiraTopla`). İşlem adı `Object.hasOwn` ile denetlenir. Sonuç bir kez gösterilir (`bildirim`). Tutar alanının adı `tutar`'dır: `oyun.js` `miktar` adlı bahis alanlarını birbirine eşitler.
+- Hesap sayfası açılınca faiz ve kira işlenir (`bankaDurumu`, `mulkDurumu`), `.banka` ve `.mülk` yazmak gibi. Servet `servetDurumu` ile hesaplanır, yazmaz.
+- Meslek seçimi, market, mülk alım satımı, borsa, Suly, soygun ve grup oyunları panelde yoktur, WhatsApp'ta kalır.
+- **Panelde kumar yasağı yoktur (bot sahibinin kararı, "enflasyon umrumuzda değil"):** `panel/kumar.js` `kumarYasagi()` çağırmaz; iflas, hapis ve dolan günlük tavan yalnızca WhatsApp komutlarını kapatır. `bahisOyna` ve `kumarOde` panelden `tavansiz: true` ile çağrılır: kazanç kırpılmaz ve `kumar_gun.net`'e yazılmaz, yani panel kazancı WhatsApp'taki tavanı da doldurmaz. 500 XP şartı (`kumarEngeli`) panelde de geçerlidir. Faz 53 ve Faz 58'deki "tavan ve yasaklar ortaktır" notları panel için artık geçerli değildir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1380,3 +1399,6 @@ Bot sahibinin kararıyla panel salt okunur olmaktan çıktı: grup üyeleri kuma
 105. Sahip özelden `.coinver <grup id> <numara> 5` → onay gelir, kişi `.coinmarket`'te 5 coin görür; `-10` → bakiye 0; grupta yazılırsa hiç tepki yok; `.help coinver` → yok
 106. Tavanı dolduran kişiye İçişleri Bakanı `.kumaraf @kişi` → yasak kalkar, kalan hak 4 yazar, `.bahis` çalışır; tavanı dolduran sahip etiketsiz `.kumaraf` → kendi yasağı kalkar; sıradan üye → "yalnızca İçişleri Bakanı"; yasaksız kişiye → "takılmamış", hak yanmaz; sahip için kalan hak yazmaz
 107. Bota özelden `.panel kayıt deneme-sifre` → giriş adları yazılır; grupta yazılırsa → kaydedilmez. Panelde numarayla girince yalnızca kumarhane açılır, `/grup` kumarhaneye döner; slot oynayınca WhatsApp'ta `.profil` aynı XP'yi gösterir; mayında kutu açılır, `çek` öder; kişi gruptan atılınca sayfa yenilenince giriş ekranına düşer; numara alanı boş + yönetici şifresi → eski panel
+108. Panelde oyuncu girişi → lobi kategorili; telefonda ☰ yan menüyü açar, bilgisayarda menü hep açık; Slot'a tıklayınca oyun kendi sayfasında açılır. Mayın eli açıkken Crash sayfası → "önce elini bitir" bağlantısı
+109. Panelde Banka ve kredi → `100 bin` yatır → bildirim gelir, WhatsApp'ta `.banka` aynı bakiyeyi gösterir; Hesabım → net servet `.servet` ile aynı; günlük ödül ikinci kez → "zaten aldın"
+110. WhatsApp'ta `.bahis` "kumar yasağın var" diyen kişi panelde oynayabilir; panelde büyük kazanç WhatsApp'taki tavanı doldurmaz

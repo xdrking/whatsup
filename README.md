@@ -690,13 +690,23 @@ Panelde sıralama, borçlular, grup rekorları, son 30 günün grafiği, borsa f
 
 ### Panelde kumar
 
-Grup üyeleri paneldeki kumarhanede WhatsApp'taki kumar oyunlarını oynar: bahis, slot, rulet, kazı, plinko, crash, blackjack, mayın, kule, hi-lo. XP aynı veritabanından gelir ve gider; günlük tavan, 500 XP şartı, iflas ve hapis yasağı, karne ve hazine iki tarafta ortaktır. Grup oyunları (`.yarış`, `.vs`, `.piyango`) yalnızca WhatsApp'tadır.
+Grup üyeleri paneldeki kumarhanede WhatsApp'taki kumar oyunlarını oynar: bahis, slot, rulet, kazı, plinko, crash, blackjack, mayın, kule, hi-lo. XP aynı veritabanından gelir ve gider; 500 XP şartı, karne ve hazine iki tarafta ortaktır. **Panelde kumar yasağı yoktur:** günlük tavan, iflas ve hapis yasağı yalnızca WhatsApp komutlarını kapatır, panel kazancı tavana sayılmaz. Grup oyunları (`.yarış`, `.vs`, `.piyango`) yalnızca WhatsApp'tadır.
 
 1. Bota **özelden** `.panel kayıt <şifre>` yaz (en az 8 karakter). Bot, botun olduğu gruplarda üye misin diye bakar ve hesabını açar. Aynı komut şifreyi değiştirir, eski oturumlar kapanır. Mesajı sonra silmen iyi olur.
 2. Panelde **Numara ya da LID** alanına numaranı (905…) ya da LID'ini, altına şifreni yaz.
 3. Gruptan çıkan ya da atılanın hesabı kendiliğinden kapanır. `.panel sil` hesabı elle kapatır.
 
 Yönetici girişi değişmedi: numara alanını boş bırakıp panel şifresini yaz. Oyuncular yalnızca kumarhaneyi görür, istatistik sayfalarını yönetici görür.
+
+Kumarhanede yan menü vardır (telefonda ☰ ile açılır): oyunlar kategorilere ayrılır, her oyun kendi sayfasında açılır. **Hesap** bölümünden WhatsApp'a dönmeden şunlar yapılır:
+
+| Sayfa | Yapılanlar | WhatsApp karşılığı |
+|---|---|---|
+| Hesabım | Servet dökümü, günlük ödül, çalış, kira topla | `.servet`, `.günlük`, `.çalış`, `.mülk topla` |
+| Banka ve kredi | Yatır, çek, kredi çek, kredi öde | `.banka`, `.kredi` |
+| Coin ve mülk | Coin al, coin bozdur, mülk listesi | `.coinmarket coin`, `.coinmarket sat`, `.mülk` |
+
+Meslek seçimi, market, mülk alım satımı, borsa ve grup oyunları WhatsApp'ta kalır.
 
 Blackjack, mayın, kule ve hi-lo'da 3 dakika hamle yapılmazsa el kapanır (blackjack "dur", ötekiler "çek" sayılır). Panel yeniden başlatılırsa yarım eldeki bahis yanar.
 
