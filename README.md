@@ -256,6 +256,52 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 
 Bota karşı oynanan kumarda kaybedilen XP, banka kesintisi, servet vergisi ve borsa komisyonu QR ile bağlı numaranın hesabına gider. `.vs` ve `.piyango` hariçtir, oradaki kayıp diğer oyuncuya geçer. Bakiye yalnızca `.top`'ta görünür.
 
+#### Kazanma şansları
+
+"Geri dönüş" uzun vadede basılan her 100 XP'nin kaç XP olarak geri geldiğidir; 100'ün altındaki kısım kasanın payıdır. Oranlar koddaki sabitlerden hesaplanmıştır (`lib/kumar.js`, `games/`), oyunlar değişirse bu tablo da güncellenmelidir.
+
+| Oyun | Kazanma şansı | Ödeme | Geri dönüş |
+|---|---|---|---|
+| `.bahis` | %50 | 2x | %100 |
+| `.rulet` renk / tek-çift | %48,6 (18/37, sıfır kaybettirir) | 2x | %97,3 |
+| `.rulet` sayı | %2,7 (1/37) | 36x | %97,3 |
+| `.slot` | %54,1 (ikili %48,8, üçlü %5,3) | ikili 1,5x, üçlü 3x-50x | %96,4 |
+| `.kazı` | %37,6 | 1x-50x | %95 |
+| `.plinko` | kutuya göre (aşağıda) | düşük 0,6x-5x, orta 0,4x-13x, yüksek 0,2x-29x | %96,3 / %96,7 / %96,9 |
+| `.crash` | hedefe göre: 0,96 ÷ hedef (2x %48, 10x %9,6, 100x %0,96) | hedef | %96 |
+| `.blackjack` | ~%44 kazanç, ~%8,5 beraberlik (iyi oyunla) | 2x, blackjack 2,5x | ~%98 (iyi oyunla) |
+| `.mayın` | her kutu açtıkça düşer (aşağıda) | 1,28x-211,2x | %96 |
+| `.kule` | katta kolay %75, orta %66,7, zor %50 | tepe 9,58x / 24,6x / 245,76x | %96 |
+| `.hilo` | karta göre: kart ÷ 13 (düşük) ya da (14 − kart) ÷ 13 (yüksek), eşit kart tutar | her tahmin 0,97 ÷ şans, en çok 1000x | %97 (her tahmin) |
+| `.yarış` | atın şansı (aşağıda) | 2,74x-12x | %96 |
+| `.vs` | %50 | rakibin bahsi | %100, kasa yok |
+| `.piyango` | yatırdığın ÷ havuz | havuzun tamamı | %100, kasa yok |
+
+**Blackjack:** tek deste, her elde yeniden karılır, krupiye 17'de durur. Bölme ve ikiye katlama yok. Oran 2 milyon elin "13-16'da krupiyenin açık kartı 2-6 ise dur, yoksa çek" stratejisiyle benzetiminden çıktı; rastgele oynayan daha az alır.
+
+**Mayın** (12 kutu, 3 mayın): çarpan kaçıncı kutuda çekersen ona göredir.
+
+| Açılan kutu | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|
+| O kutuya varma şansı | %75 | %54,5 | %38,2 | %25,5 | %15,9 | %9,1 | %4,5 | %1,8 | %0,45 |
+| Çarpan | 1,28x | 1,76x | 2,51x | 3,77x | 6,03x | 10,56x | 21,12x | 52,8x | 211,2x |
+
+**Kule** (8 kat): tepeye çıkma şansı kolay %10, orta %3,9, zor %0,39.
+
+**Plinko** (8 sıra): top kutulara 1-8-28-56-70-56-28-8-1 / 256 oranında düşer, yani kenar kutular %0,39, orta kutu %27,3'tür. Üç riskte de 1x'in üstünde ödeyen kutuya düşme şansı %28,9'dur.
+
+**Yarış:**
+
+| At | Kazanma şansı | Oran |
+|---|---|---|
+| Gülbatur | %35 | 2,74x |
+| Karayel | %25 | 3,84x |
+| Şimşek | %20 | 4,8x |
+| Tosun | %12 | 8x |
+| Kara Kartal | %8 | 12x |
+
+Bota karşı oyunlarda bir günde kazanılabilecek net XP, piyasanın yarısıyla sınırlıdır; dolunca kumar gece yarısına kadar kapanır (`.kumaraf` açar).
+
 ### Görev, market, soygun
 
 | Komut | Yapar |
