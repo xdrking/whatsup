@@ -172,6 +172,14 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
 .sonuc[data-oyun="plinko"].kazandi, .sonuc[data-oyun="plinko"].kaybetti, .sonuc[data-oyun="plinko"].buyuk { animation-delay: 0s, 1.7s; }
 .sonuc[data-oyun="crash"].kazandi, .sonuc[data-oyun="crash"].kaybetti, .sonuc[data-oyun="crash"].buyuk { animation-delay: 0s, 1.85s; }
 .kumarhane .fark { font-size: clamp(1.6rem, 7.5vw, 2.3rem); font-weight: 900; font-variant-numeric: tabular-nums; animation: buyu .6s var(--yay) backwards; animation-delay: inherit; }
+.kat { justify-self: center; margin: 0 auto .3rem; padding: .2rem .9rem; border-radius: 999px; width: fit-content; font-weight: 900; font-size: 1.15rem; color: #2a1a00;
+  background: linear-gradient(180deg, var(--altin2), var(--altin)); box-shadow: 0 0 18px rgb(245 197 66 / .4); }
+/* Ödeme tablosu (slot, kazı kazan) */
+.odeme-tablosu { max-width: 34rem; margin: 0 auto 1rem; padding: .8rem 1rem; border-radius: 16px; background: rgb(255 255 255 / .04); border: 1px solid rgb(139 92 246 / .22); }
+.odeme-tablosu h3 { margin: 0 0 .5rem; font-size: .8rem; letter-spacing: .06em; color: var(--altin); }
+.odeme-tablosu ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.2rem, 1fr)); gap: .35rem .8rem; margin: 0; padding: 0; list-style: none; }
+.odeme-tablosu li { display: flex; justify-content: space-between; gap: .5rem; font-size: .9rem; }
+.odeme-tablosu li strong { color: var(--altin2); font-variant-numeric: tabular-nums; }
 .kumarhane .kazandi .fark { color: var(--yesil); text-shadow: 0 0 18px rgb(77 255 154 / .55); }
 .kumarhane .kaybetti .fark { color: #ff8a8a; }
 .pankart {
@@ -215,12 +223,7 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
 .makara.donuyor .serit { animation: hizli .42s linear infinite; filter: blur(2.2px); }
 @keyframes hizli { from { transform: translateY(0); } to { transform: translateY(-30rem); } } /* 6 sembol × 5rem: döngü dikişsiz */
 .kazandi .slot-makine { animation: makine-parla 1.1s 2.1s ease-in-out 2; }
-/* Ödeme çizgisi ve yanıp sönen makine ışıkları */
-.makaralar { position: relative; }
-.makaralar::after {
-  content: ""; position: absolute; inset: 50% .2rem auto; height: 2px; translate: 0 -1px; pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgb(255 77 148 / .85) 12%, rgb(255 77 148 / .85) 88%, transparent); box-shadow: 0 0 8px rgb(255 77 148 / .8);
-}
+/* Yanıp sönen makine ışıkları */
 .slot-makine { position: relative; padding-top: clamp(1.1rem, 4.5vw, 1.4rem); }
 .slot-makine::before {
   content: ""; position: absolute; inset: .35rem 1rem auto; height: .4rem; border-radius: 999px;

@@ -84,6 +84,7 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   const al = async (yol) => (await fetch(adres + yol, { headers: { Cookie } })).text()
   const g = encodeURIComponent(GRUP)
   assert.ok((await al(`/oyun?grup=${g}&oyun=crash`)).includes('Hedef çarpan'))
+  assert.ok((await al(`/oyun?grup=${g}&oyun=slot`)).includes('ÖDEME TABLOSU'))
   assert.ok((await al(`/oyun/hesap?grup=${g}`)).includes('Net servet'))
   assert.ok((await al(`/oyun/coin?grup=${g}`)).includes('Anlık kur'))
 

@@ -1,7 +1,7 @@
 // Panel kumarhanesinin HTML'i. Her hamle bir form gönderimidir; oyun.js varsa formu sayfa
 // yenilemeden gönderir, ses çalar. Animasyonlar CSS'tedir, betik olmadan da oynar.
 // Satır içi `style` CSP'ye takılır: gecikme ve konumlar sınıflarla verilir (d1, d2…).
-import { PLINKO_RISK, renk, SEMBOLLER } from '../lib/kumar.js'
+import { IKILI_CARPAN, KAZI_ODULLERI, PLINKO_RISK, renk, SEMBOLLER } from '../lib/kumar.js'
 import { COK_OYUNLAR, TEK_OYUNLAR } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
 
@@ -251,10 +251,20 @@ function sonucKarti(chat, s) {
   <div class="gecikmeli">
     ${s.sebep ? h`<p class="orta">${s.sebep}</p>` : ''}
     ${buyuk ? h`<p class="pankart">BÜYÜK KAZANÇ</p>` : ''}
+    ${s.fark > 0 && !s.el && s.sonuc?.carpan ? h`<p class="kat">${virgul(s.sonuc.carpan)}x</p>` : ''}
     <p class="fark">${ozet}</p>
     <p class="not orta">${sayi.format(s.once)} → ${sayi.format(s.xp)} XP</p>
   </div>
 </section>`
+}
+
+/** Hangi sembol kaç kat öder; değerler oyunun kendi tablosundan okunur, elle yazılmaz. */
+function odemeTablosu(oyun) {
+  const satirlar = oyun === 'slot'
+    ? [...SEMBOLLER.map((x) => [`${x.s}${x.s}${x.s}`, x.uclu]), ['İkili', IKILI_CARPAN]]
+    : oyun === 'kazı' ? KAZI_ODULLERI.map((o) => [`${o.s}${o.s}${o.s}`, o.carpan]) : null
+  if (!satirlar) return ''
+  return h`<section class="odeme-tablosu"><h3>ÖDEME TABLOSU</h3><ul>${satirlar.map(([ad, c]) => h`<li><span>${ad}</span><strong>${virgul(c)}x</strong></li>`)}</ul></section>`
 }
 
 const acikElKarti = (chat, el) => {
@@ -297,5 +307,6 @@ export function oyunSayfasi({ chat, oyun, cokGrup, durum }) {
 ${kasa({ xp, dar: true })}
 ${sonucKarti(chat, sonuc)}
 ${masa}
+${odemeTablosu(oyun)}
 ${altNot}`, { ust: `${t.ikon} ${t.ad}`, kumarhane: true, yan: yanMenu({ chat, cokGrup, secili: oyun }) })
 }

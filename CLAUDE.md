@@ -1295,6 +1295,7 @@ Yalnızca paneldedir (`panel/kumar.js:blackjackHamle`); WhatsApp'taki `.blackjac
 
 - **Bekleme kutusu** (`oyun.js:beklemeGoster`) gelecek sonuç kartıyla aynı yerde ve ölçüdedir: eski `#sonuc`'un yerine geçer, başlığı ve sonuç yazısı kadar boşluğu (`.bekleme-bosluk`) vardır. Önceden eski sonuç ile dönen makine birlikte görünüyor, yanıt gelince makine aşağı zıplayıp kart yeniden açılıyordu. Sonuç bekleme kutusunun yerine geliyorsa `main.yerinde` yazılır, kartın giriş animasyonu (`--giris`) kapanır; makara şeridi bulanık başlar ki geçişte net kare görünmesin. `.bekleme-bosluk` yüksekliği sonuç yazısı değişirse onunla değişir.
 - **Vurgun şeridi:** lobide `kumar_oyun.en_buyuk`'tan grubun en büyük tek el kazançları kayar (`panel/kumar.js:buyukVurgunlar`), bot yoktur. Ad `isimler`'den gelir, `h` kaçırır. Liste dikişsiz dönsün diye iki kez yazılır.
+- **Çarpan rozeti ve ödeme tablosu:** tek adımlı oyunda kazanılınca sonuç kartı çarpanı (`.kat`) yazar. Slot ve kazı kazan sayfasındaki ödeme tablosu `SEMBOLLER`, `IKILI_CARPAN` ve `KAZI_ODULLERI`'nden üretilir, elle yazılmaz. Slottaki ödeme çizgisi bot sahibinin isteğiyle kaldırıldı.
 - **Alt menü** (`.alt-menu`) telefonda sabittir, 960 px üstünde gizlenir; `yanMenu` ile birlikte `<main>`'in dışında çizilir.
 
 ## Elle Doğrulama
