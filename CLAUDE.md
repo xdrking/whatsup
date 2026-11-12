@@ -334,7 +334,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 58 (tamam):** panelde kumar ve `.panel`. Ayrıntı aşağıda.
 - **Faz 59 (tamam):** kumarhane görünümü, ses ve animasyon. Faz 58 bölümüne işlendi.
 - **Faz 60 (tamam):** kumarhanede yan menü, oyun başına sayfa, hesap bölümü; panelde kumar yasağı yok. Ayrıntı aşağıda.
-- **Faz 61+:** yeni komutlar, her biri ayrı adım
+- **Faz 61 (tamam):** panel blackjack'inde çift, böl, sigorta, teslim. Ayrıntı aşağıda.
+- **Faz 62+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1276,6 +1277,19 @@ panel/hesapSayfalari.js  hesap bölümünün HTML'i
 - Meslek seçimi, market, mülk alım satımı, borsa, Suly, soygun ve grup oyunları panelde yoktur, WhatsApp'ta kalır.
 - **Panelde kumar yasağı yoktur (bot sahibinin kararı, "enflasyon umrumuzda değil"):** `panel/kumar.js` `kumarYasagi()` çağırmaz; iflas, hapis ve dolan günlük tavan yalnızca WhatsApp komutlarını kapatır. `bahisOyna` ve `kumarOde` panelden `tavansiz: true` ile çağrılır: kazanç kırpılmaz ve `kumar_gun.net`'e yazılmaz, yani panel kazancı WhatsApp'taki tavanı da doldurmaz. 500 XP şartı (`kumarEngeli`) panelde de geçerlidir. Faz 53 ve Faz 58'deki "tavan ve yasaklar ortaktır" notları panel için artık geçerli değildir.
 
+### Faz 61 — Panel blackjack'i: çift, böl, sigorta, teslim
+
+Yalnızca paneldedir (`panel/kumar.js:blackjackHamle`); WhatsApp'taki `.blackjack` hâlâ `kart`/`dur`'dur, çünkü orada her hamle bir yanıt mesajıdır. El artık `el.eller` dizisidir (bölününce iki el), `el.aktif` sıradaki eldir.
+
+- **Ek bahis** (çift, böl, sigorta) `ekBahis()` ile o an cüzdandan çekilir; XP yetmezse hamle reddedilir, el bozulmaz. `el.bahis` toplam yatırılandır ve `kumarOde`'ye o gider, `el.taban` masaya oturulan tutardır (sonraki elin bahis alanı bununla dolar).
+- **Çift:** yalnızca iki kartlı elde, bahis ikiye katlanır, tek kart gelir, el kapanır. Bölünmüş elde de yapılır.
+- **Böl:** aynı puanlı iki kart (10, J, Q, K eşittir), el başına bir kez. Bölünen aslara birer kart gelir ve eller kapanır. Bölünen elde 21 doğal blackjack sayılmaz, 2x öder (`bjElOdemesi`): sayılsaydı as bölmek 2,5x basardı.
+- **Sigorta:** krupiyenin açık kartı as ise ilk hamleden önce sorulur (`sigortaSor`), tutarı bahsin yarısıdır, krupiye blackjack yaparsa 3 katı döner.
+- **Krupiye kapalı karta bakar:** açık kart 10'luksa el başlarken, as ise sigorta kararından sonra. Blackjack'i varsa el hemen biter; bakmasaydı çift ve böl parası baştan kaybedilmiş ele yatırılırdı.
+- **Teslim:** yalnızca ilk hamlede, bahsin yarısı geri döner.
+- Süre dolunca açık bütün eller "dur" sayılır, sorulan sigorta alınmamış sayılır.
+- Sayfa yalnızca yapılabilecek hamlenin düğmesini çizer (`gorunum`'daki `cift`, `bol`, `teslim`); denetim yine motordadır. Testler `kumarMotoru({ deste })` ile sabit deste verir, kartlar dizinin sonundan çekilir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1402,3 +1416,4 @@ panel/hesapSayfalari.js  hesap bölümünün HTML'i
 108. Panelde oyuncu girişi → lobi kategorili; telefonda ☰ yan menüyü açar, bilgisayarda menü hep açık; Slot'a tıklayınca oyun kendi sayfasında açılır. Mayın eli açıkken Crash sayfası → "önce elini bitir" bağlantısı
 109. Panelde Banka ve kredi → `100 bin` yatır → bildirim gelir, WhatsApp'ta `.banka` aynı bakiyeyi gösterir; Hesabım → net servet `.servet` ile aynı; günlük ödül ikinci kez → "zaten aldın"
 110. WhatsApp'ta `.bahis` "kumar yasağın var" diyen kişi panelde oynayabilir; panelde büyük kazanç WhatsApp'taki tavanı doldurmaz
+111. Panelde blackjack: iki kartla ✖️2 ÇİFT → bahis katlanır, tek kart gelir, el biter; 8-8 gelince ✂️ BÖL → iki el yan yana, sıradaki el çerçeveli; krupiyenin açık kartı as → önce sigorta sorulur; 🏳️ TESLİM → bahsin yarısı döner; XP yetmezken çift → "XP'n yetmiyor", el sürer

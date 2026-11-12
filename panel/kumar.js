@@ -22,6 +22,25 @@ const ARALIK_MS = 700
 
 const dogalMi = (el) => el.length === 2 && elDegeri(el) === 21
 const kartMetni = (k) => `${k.deger}${k.renk}`
+const kartPuani = (k) => (k.deger === 'A' ? 11 : ['J', 'Q', 'K'].includes(k.deger) ? 10 : Number(k.deger))
+
+/**
+ * Tek blackjack elinin ödemesi. Bölünen elde 21 doğal blackjack sayılmaz, 2x öder (masa kuralı).
+ * Teslim bahsin yarısını geri verir.
+ */
+export function bjElOdemesi(h, krupiye, bolundu) {
+  if (h.teslim) return Math.floor(h.bahis / 2)
+  if (!bolundu) return Math.floor(h.bahis * odemeCarpani(h.kartlar, krupiye))
+  const o = elDegeri(h.kartlar)
+  const kd = elDegeri(krupiye)
+  if (o > 21 || dogalMi(krupiye)) return 0
+  if (kd > 21 || o > kd) return h.bahis * 2
+  return o === kd ? h.bahis : 0
+}
+
+/** Bölme: aynı puanlı iki kart (10, J, Q, K birbirine eşittir), el başına bir kez. */
+export const bjBolunebilir = (el) =>
+  el.eller.length === 1 && el.eller[0].kartlar.length === 2 && kartPuani(el.eller[0].kartlar[0]) === kartPuani(el.eller[0].kartlar[1])
 
 /** Tek adımlı oyunlar: `secim` formdan gelir, `cevir` bahisOyna'ya verilir. */
 export const TEK_OYUNLAR = {
@@ -81,7 +100,8 @@ export function miktarMetni(ham) {
   return kelimeler.length ? miktarlariCoz(kelimeler).join('') : ''
 }
 
-export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle = clearTimeout } = {}) {
+/** `deste`: testte sabit deste vermek içindir; kartlar dizinin sonundan çekilir. */
+export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle = clearTimeout, deste = desteKur } = {}) {
   const eller = new Map() // anahtar → çok adımlı oyunun durumu
   const sonuclar = new Map() // anahtar → son sonuç, bir kez gösterilir
   const sonIslem = new Map()
@@ -136,7 +156,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
       logger.error({ chat: el.chat, oyun: el.oyun }, 'Panel kumar ödemesi yazılamadı')
       return sonucYaz(k, { oyun: el.oyun, hata: 'Sonuç yazılamadı.', el: gorunum(el, true) })
     }
-    sonucYaz(k, { oyun: el.oyun, bahis: el.bahis, sebep, el: gorunum(el, true), once: s.xp - s.fark, xp: s.xp, fark: s.fark, kesilen: s.kesilen })
+    sonucYaz(k, { oyun: el.oyun, bahis: el.bahis, taban: el.taban, sebep, el: gorunum(el, true), once: s.xp - s.fark, xp: s.xp, fark: s.fark, kesilen: s.kesilen })
   }
 
   function nakitCek(k, el, sebep) {
@@ -146,11 +166,87 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     kapat(k, el, Math.floor(el.bahis * c), `${sebep} (${c}x)`)
   }
 
+  /** Bütün elleri kapatır: krupiye çeker, eller ve sigorta ödenir. Açık kalan el "dur" sayılır. */
   function blackjackBitir(k, el, sebep) {
-    if (elDegeri(el.oyuncu) <= 21 && !dogalMi(el.oyuncu)) {
-      while (elDegeri(el.krupiye) < 17) el.krupiye.push(el.deste.pop())
+    el.sigortaSor = false
+    const bolundu = el.eller.length > 1
+    const bekleyen = el.eller.some((h) => !h.teslim && elDegeri(h.kartlar) <= 21 && (bolundu || !dogalMi(h.kartlar)))
+    if (bekleyen) while (elDegeri(el.krupiye) < 17) el.krupiye.push(el.deste.pop())
+    const eller = el.eller.reduce((t, h) => t + bjElOdemesi(h, el.krupiye, bolundu), 0)
+    // Sigorta 2'ye 1 öder: krupiye blackjack yaptıysa sigorta parası üç katıyla döner.
+    const sigorta = el.sigorta && dogalMi(el.krupiye) ? el.sigorta * 3 : 0
+    kapat(k, el, eller + sigorta, sebep)
+  }
+
+  /** Çift, böl ve sigorta için cüzdandan ek bahis alır; yetmezse `false`. */
+  function ekBahis(el, miktar) {
+    const cekim = xpCek({ chatJid: el.chat, userJid: el.user, miktar })
+    if (!cekim || cekim.yetersiz) return false
+    el.bahis += miktar
+    return true
+  }
+
+  /** Sıradaki açık ele geçer; kalmadıysa krupiye oynar. */
+  function bjIlerle(k, el, sebep = '') {
+    const sira = el.eller.findIndex((h) => !h.bitti)
+    if (sira === -1) return blackjackBitir(k, el, sebep)
+    el.aktif = sira
+    return sureKur(k, el)
+  }
+
+  function blackjackHamle(k, el, secim, uyar) {
+    const h = el.eller[el.aktif]
+
+    if (el.sigortaSor) {
+      if (secim === 'sigorta') {
+        const tutar = Math.floor(el.taban / 2)
+        if (!tutar || !ekBahis(el, tutar)) return uyar('Sigorta için XP\'n yetmiyor.')
+        el.sigorta = tutar
+      } else if (secim !== 'devam') return uyar('Sigorta al ya da sigortasız devam et.')
+      el.sigortaSor = false
+      if (dogalMi(el.krupiye)) return blackjackBitir(k, el, '🂡 Krupiyenin blackjack\'i çıktı.')
+      if (dogalMi(h.kartlar)) return blackjackBitir(k, el, '🎉 Blackjack!')
+      return sureKur(k, el)
     }
-    kapat(k, el, Math.floor(el.bahis * odemeCarpani(el.oyuncu, el.krupiye)), sebep)
+
+    if (secim === 'dur') {
+      h.bitti = true
+      return bjIlerle(k, el)
+    }
+    if (secim === 'kart') {
+      h.kartlar.push(el.deste.pop())
+      const deger = elDegeri(h.kartlar)
+      if (deger < 21) return sureKur(k, el)
+      h.bitti = true
+      return bjIlerle(k, el, deger > 21 && el.eller.length === 1 ? '💥 21\'i geçtin!' : '')
+    }
+    if (secim === 'çift') {
+      if (h.kartlar.length !== 2) return uyar('Çift yalnızca ilk iki kartla yapılır.')
+      if (!ekBahis(el, h.bahis)) return uyar('Çift için XP\'n yetmiyor.')
+      h.bahis *= 2
+      h.cift = true
+      h.kartlar.push(el.deste.pop())
+      h.bitti = true
+      return bjIlerle(k, el, elDegeri(h.kartlar) > 21 && el.eller.length === 1 ? '💥 Çift bastın, 21\'i geçtin!' : '')
+    }
+    if (secim === 'böl') {
+      if (!bjBolunebilir(el)) return uyar('Yalnızca aynı değerde iki kart bölünür, bir kez.')
+      if (!ekBahis(el, h.bahis)) return uyar('Bölmek için XP\'n yetmiyor.')
+      // Bölünen aslara birer kart verilir ve eller kapanır (masa kuralı).
+      const as = h.kartlar[0].deger === 'A'
+      el.eller = h.kartlar.map((kart) => {
+        const kartlar = [kart, el.deste.pop()]
+        return { kartlar, bahis: h.bahis, bitti: as || elDegeri(kartlar) === 21 }
+      })
+      return bjIlerle(k, el)
+    }
+    if (secim === 'teslim') {
+      if (el.eller.length > 1 || h.kartlar.length !== 2) return uyar('Teslim yalnızca ilk hamlede olur.')
+      h.teslim = true
+      h.bitti = true
+      return blackjackBitir(k, el, '🏳️ Teslim oldun, bahsin yarısı geri döndü.')
+    }
+    return uyar('Kart, dur, çift, böl ya da teslim.')
   }
 
   // Süre dolunca el WhatsApp'taki gibi kapanır: blackjack `dur`, ötekiler `çek` sayılır.
@@ -184,9 +280,14 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
 
     const el = { oyun, chat: h.chat, user: h.user, bahis: g.miktar, bitti: false, uyari: '' }
     if (oyun === 'blackjack') {
-      el.deste = desteKur()
-      el.oyuncu = [el.deste.pop(), el.deste.pop()]
+      el.deste = deste()
+      el.taban = g.miktar
+      el.eller = [{ kartlar: [el.deste.pop(), el.deste.pop()], bahis: g.miktar, bitti: false }]
       el.krupiye = [el.deste.pop(), el.deste.pop()]
+      el.aktif = 0
+      el.sigorta = 0
+      // Krupiyenin açık kartı as ise önce sigorta sorulur, sonra kapalı karta bakılır.
+      el.sigortaSor = el.krupiye[0].deger === 'A'
     } else if (oyun === 'mayın') {
       el.mayinlar = mayinKur()
       el.acilanlar = []
@@ -201,7 +302,11 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     }
     eller.set(k, el)
     sureKur(k, el)
-    if (oyun === 'blackjack' && dogalMi(el.oyuncu)) blackjackBitir(k, el, '🎉 Blackjack!')
+    if (oyun === 'blackjack' && !el.sigortaSor) {
+      // Krupiye kapalı karta bakar: blackjack'i varsa el hemen biter, çift ve böl parası yanmaz.
+      if (dogalMi(el.krupiye)) blackjackBitir(k, el, '🂡 Krupiyenin blackjack\'i çıktı.')
+      else if (dogalMi(el.eller[0].kartlar)) blackjackBitir(k, el, '🎉 Blackjack!')
+    }
   }
 
   function hamle(h, { hamle: ham }) {
@@ -215,13 +320,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
       el.uyari = metin
     }
 
-    if (el.oyun === 'blackjack') {
-      if (secim === 'dur') return blackjackBitir(k, el)
-      if (secim !== 'kart') return uyar('Kart çek ya da dur.')
-      el.oyuncu.push(el.deste.pop())
-      if (elDegeri(el.oyuncu) >= 21) return blackjackBitir(k, el, elDegeri(el.oyuncu) > 21 ? '💥 21\'i geçtin!' : '')
-      return sureKur(k, el)
-    }
+    if (el.oyun === 'blackjack') return blackjackHamle(k, el, secim, uyar)
 
     if (secim === 'çek') return nakitCek(k, el, '💰 Parayı çektin')
 
@@ -267,8 +366,21 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     if (el.oyun === 'blackjack') {
       return {
         ...g,
-        oyuncu: el.oyuncu.map(kartMetni),
-        oyuncuDeger: elDegeri(el.oyuncu),
+        eller: el.eller.map((h, i) => ({
+          kartlar: h.kartlar.map(kartMetni),
+          deger: elDegeri(h.kartlar),
+          bahis: h.bahis,
+          aktif: !acik && !el.sigortaSor && i === el.aktif,
+          cift: Boolean(h.cift),
+          teslim: Boolean(h.teslim),
+        })),
+        sigortaSor: !acik && el.sigortaSor,
+        sigorta: el.sigorta,
+        sigortaTutari: Math.floor(el.taban / 2),
+        // Sayfa yalnızca yapılabilecek hamlelerin düğmesini çizer.
+        cift: el.eller[el.aktif].kartlar.length === 2,
+        bol: bjBolunebilir(el),
+        teslim: el.eller.length === 1 && el.eller[0].kartlar.length === 2,
         krupiye: acik ? el.krupiye.map(kartMetni) : [kartMetni(el.krupiye[0]), '🂠'],
         krupiyeDeger: acik ? elDegeri(el.krupiye) : null,
       }

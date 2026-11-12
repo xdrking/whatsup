@@ -189,3 +189,91 @@ test('hesap motoru: günlük ödül bir kez, olmayan coin bozdurulmaz', () => {
   hm.islem(kim, { islem: 'coin-sat', miktar: '1' })
   assert.ok(hm.durum(kim).bildirim.hata.includes('coinin yok'))
 })
+
+// Sabit deste: sırayla oyuncu, oyuncu, krupiye (açık), krupiye (kapalı), sonra çekilenler.
+function bjMasa(kartlar, xp = 100000) {
+  const user = `bj${Math.random()}@lid`
+  db.prepare('INSERT INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, ?, 0, 0, 0, ?, 1)').run(GRUP, user, xp)
+  let simdi = 20_000_000
+  const m = kumarMotoru({
+    saat: () => simdi,
+    zamanlayici: () => {},
+    temizle: () => {},
+    deste: () => kartlar.map((deger) => ({ deger, renk: '♠' })).reverse(),
+  })
+  const kim = { chat: GRUP, user }
+  m.basla(kim, { oyun: 'blackjack', miktar: '1000' })
+  const hamle = (ad) => {
+    simdi += 1000
+    m.hamle(kim, { hamle: ad })
+    return m.durum(kim)
+  }
+  return { m, kim, hamle, xp: () => getStats(GRUP, user).xp }
+}
+
+test('blackjack çift: bahis ikiye katlanır, tek kart çekilir, el kapanır', () => {
+  const t = bjMasa(['5', '6', '9', '8', '10'])
+  assert.equal(t.xp(), 99000)
+  const d = t.hamle('çift')
+  assert.equal(d.el, null)
+  assert.equal(d.sonuc.bahis, 2000)
+  assert.equal(d.sonuc.fark, 2000)
+  assert.equal(t.xp(), 102000)
+
+  // Üç kartla çift olmaz, XP yetmezse de olmaz.
+  const u = bjMasa(['2', '3', '9', '8', '2', '10'])
+  u.hamle('kart')
+  assert.ok(u.hamle('çift').el.uyari.includes('ilk iki kart'))
+  const fakir = bjMasa(['5', '6', '9', '8', '10'], 1500)
+  assert.ok(fakir.hamle('çift').el.uyari.includes('yetmiyor'))
+  assert.equal(fakir.xp(), 500)
+})
+
+test('blackjack böl: iki el ayrı oynanır, 21 doğal sayılmaz', () => {
+  // 8-8 bölünür: ilk el 8+3 → kart 10 = 21, ikinci el 8+10 = 18 dur; krupiye 9+8 = 17.
+  const t = bjMasa(['8', '8', '9', '8', '3', '10', '10'])
+  const bolundu = t.hamle('böl')
+  assert.equal(bolundu.el.eller.length, 2)
+  assert.equal(t.xp(), 98000)
+  assert.equal(bolundu.el.bol, false)
+  const ilk = t.hamle('kart')
+  assert.equal(ilk.el.eller[1].aktif, true)
+  const son = t.hamle('dur')
+  assert.equal(son.el, null)
+  assert.equal(son.sonuc.fark, 2000)
+  assert.equal(t.xp(), 102000)
+
+  // As bölünce birer kart gelir, el hemen biter; A+K blackjack değil 2x öder.
+  const as = bjMasa(['A', 'A', '9', '8', 'K', '5'])
+  const d = as.hamle('böl')
+  assert.equal(d.el, null)
+  assert.equal(d.sonuc.fark, 0) // A+K kazanır (+1000), A+5 = 16 kaybeder (-1000)
+
+  const farkli = bjMasa(['8', '9', '9', '8'])
+  assert.ok(farkli.hamle('böl').el.uyari.includes('aynı değerde'))
+})
+
+test('blackjack sigorta ve teslim', () => {
+  // Açık kart as, kapalı kart K: sigorta 500 tutar, 1500 döner; ana bahis yanar.
+  const t = bjMasa(['10', '9', 'A', 'K'])
+  assert.equal(t.m.durum(t.kim).el.sigortaSor, true)
+  const d = t.hamle('sigorta')
+  assert.equal(d.el, null)
+  assert.equal(d.sonuc.fark, 0)
+  assert.equal(t.xp(), 100000)
+
+  // Sigortasız devam: krupiyede blackjack yoksa oyun sürer.
+  const u = bjMasa(['10', '9', 'A', '6', '10'])
+  const devam = u.hamle('devam')
+  assert.equal(devam.el.sigortaSor, false)
+  assert.equal(u.hamle('dur').sonuc.fark, 1000) // krupiye A+6 = 17, 19 kazanır
+
+  // Açık kart 10, kapalı as: krupiye bakar, el hamle yapılmadan biter.
+  const bakti = bjMasa(['10', '9', 'K', 'A'])
+  assert.equal(bakti.m.durum(bakti.kim).el, null)
+  assert.equal(bakti.xp(), 99000)
+
+  const teslim = bjMasa(['10', '6', '10', '9'])
+  assert.equal(teslim.hamle('teslim').sonuc.fark, -500)
+  assert.equal(teslim.xp(), 99500)
+})

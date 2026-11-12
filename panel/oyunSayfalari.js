@@ -38,7 +38,7 @@ const RULET_SECIMLERI = [['kırmızı', '🔴 Kırmızı · 2x'], ['siyah', '⚫
 const VITRIN = {
   slot: { aciklama: 'Üçlü 3x-50x, ikili 1,5x', etiket: 'JACKPOT 50x', govde: () => h`<button class="buyuk-dugme">ÇEVİR</button>` },
   kazı: { aciklama: '3 aynı sembol 1x-50x', etiket: '50x', govde: () => h`<button class="buyuk-dugme">KAZI</button>` },
-  blackjack: { aciklama: 'Kazanç 2x, blackjack 2,5x', govde: () => h`<button class="buyuk-dugme">MASAYA OTUR</button>` },
+  blackjack: { aciklama: 'Çift, böl, sigorta, teslim', etiket: '2,5x', govde: () => h`<button class="buyuk-dugme">MASAYA OTUR</button>` },
   hilo: { aciklama: 'Yüksek mi düşük mü, 1000x tavan', etiket: '1000x', govde: () => h`<button class="buyuk-dugme">KART AÇ</button>` },
   rulet: {
     aciklama: 'Avrupa ruleti, tek sıfır', etiket: '36x',
@@ -144,14 +144,22 @@ function elCizimi(chat, el, bitti = false) {
   const carpanRozeti = el.carpan ? h`<p class="canli-carpan">${virgul(el.carpan)}x</p>` : ''
 
   if (el.oyun === 'blackjack') {
+    const cok = el.eller.length > 1
+    const elKutusu = (o, i) => h`<div class="el${o.aktif ? ' aktif' : ''}"><small>${cok ? `${i + 1}. el` : 'Sen'} · <strong>${o.deger}</strong>${cok || o.cift ? h` · ${sayi.format(o.bahis)} XP` : ''}${o.cift ? ' · ÇİFT' : ''}${o.teslim ? ' · TESLİM' : ''}</small>
+    <p class="kartlar">${o.kartlar.map((k, j) => kart(k, j))}</p></div>`
+    const dugmeler = el.sigortaSor
+      ? h`<p class="not orta">Krupiyenin açık kartı as. Sigorta ${sayi.format(el.sigortaTutari)} XP tutar, krupiye blackjack yaparsa 2'ye 1 öder.</p>
+<div class="secenekler">${hamleDugmesi('sigorta', '☂️ SİGORTA AL')}${hamleDugmesi('devam', 'SİGORTASIZ DEVAM', 'ikincil')}</div>`
+      : h`<div class="secenekler">${hamleDugmesi('kart', '🂠 KART')}${hamleDugmesi('dur', '✋ DUR', 'ikincil')}
+  ${el.cift ? hamleDugmesi('çift', '✖️2 ÇİFT', 'sicak') : ''}${el.bol ? hamleDugmesi('böl', '✂️ BÖL', 'sicak') : ''}${el.teslim ? hamleDugmesi('teslim', '🏳️ TESLİM', 'ikincil') : ''}</div>`
     return h`${sure}
 <div class="kece">
   <div class="el"><small>Krupiye${el.krupiyeDeger !== null ? h` · <strong>${el.krupiyeDeger}</strong>` : ''}</small>
     <p class="kartlar">${el.krupiye.map((k, i) => kart(k, i, k === '🂠'))}</p></div>
-  <div class="el"><small>Sen · <strong>${el.oyuncuDeger}</strong></small>
-    <p class="kartlar">${el.oyuncu.map((k, i) => kart(k, i))}</p></div>
+  <div class="eller${cok ? ' cift-el' : ''}">${el.eller.map(elKutusu)}</div>
+  ${el.sigorta ? h`<p class="not orta">☂️ Sigorta: ${sayi.format(el.sigorta)} XP</p>` : ''}
 </div>${uyari}
-${bitti ? '' : form(h`<div class="secenekler">${hamleDugmesi('kart', '🂠 KART')}${hamleDugmesi('dur', '✋ DUR', 'ikincil')}</div>`)}`
+${bitti ? '' : form(dugmeler)}`
   }
 
   if (el.oyun === 'mayın') {
@@ -268,7 +276,7 @@ export function oyunSayfasi({ chat, oyun, cokGrup, durum }) {
   const masa = baska
     ? h`<a class="devam" href="${oyunLink(chat, el.oyun)}">${baska.ikon} Önce açık ${baska.ad} elini bitir · <strong>ele dön ›</strong></a>`
     : el ? acikElKarti(chat, el)
-      : h`<section class="oyunlar tekli">${oyunKarti(chat, oyun, sonuc?.bahis ? String(sonuc.bahis) : '')}</section>`
+      : h`<section class="oyunlar tekli">${oyunKarti(chat, oyun, sonuc?.bahis ? String(sonuc.taban ?? sonuc.bahis) : '')}</section>`
   return kabuk(t.ad, h`
 ${kasa({ xp, dar: true })}
 ${sonucKarti(chat, sonuc)}

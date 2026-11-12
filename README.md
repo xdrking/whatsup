@@ -708,6 +708,15 @@ Kumarhanede yan menü vardır (telefonda ☰ ile açılır): oyunlar kategoriler
 
 Meslek seçimi, market, mülk alım satımı, borsa ve grup oyunları WhatsApp'ta kalır.
 
+Paneldeki blackjack'te `kart` ve `dur` dışında gerçek masa hamleleri de vardır (WhatsApp'taki `.blackjack` yalnızca kart ve dur'dur):
+
+| Hamle | Ne zaman | Ne yapar |
+|---|---|---|
+| ✖️2 Çift | Elde iki kart varken | Bahsi ikiye katlar, tek kart çeker, el kapanır |
+| ✂️ Böl | İki kart aynı değerdeyse (10, J, Q, K eşit), bir kez | Bahis kadar daha yatırılır, iki el ayrı oynanır. Bölünen elde 21 blackjack sayılmaz, 2x öder |
+| ☂️ Sigorta | Krupiyenin açık kartı as ise | Bahsin yarısı tutar, krupiye blackjack yaparsa 2'ye 1 öder |
+| 🏳️ Teslim | Yalnızca ilk hamlede | Bahsin yarısı geri döner |
+
 Blackjack, mayın, kule ve hi-lo'da 3 dakika hamle yapılmazsa el kapanır (blackjack "dur", ötekiler "çek" sayılır). Panel yeniden başlatılırsa yarım eldeki bahis yanar.
 
 Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
