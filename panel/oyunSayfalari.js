@@ -42,12 +42,12 @@ const VITRIN = {
   hilo: { aciklama: 'Yüksek mi düşük mü, 1000x tavan', etiket: '1000x', govde: () => h`<button class="buyuk-dugme">KART AÇ</button>` },
   rulet: {
     aciklama: 'Avrupa ruleti, tek sıfır', etiket: '36x',
-    govde: () => h`<label class="alan"><small>Nereye</small><select name="secim">${RULET_SECIMLERI.map(([d, e]) => h`<option value="${d}">${e}</option>`)}</select></label><button class="buyuk-dugme">ÇEVİR</button>`,
+    govde: (secim) => h`<label class="alan"><small>Nereye</small><select name="secim">${RULET_SECIMLERI.map(([d, e]) => h`<option value="${d}"${d === secim ? h` selected` : ''}>${e}</option>`)}</select></label><button class="buyuk-dugme">ÇEVİR</button>`,
   },
   bahis: { aciklama: 'Bilirsen 2x', govde: () => secenekler([['yazı', 'Yazı'], ['tura', 'Tura']]) },
   crash: {
     aciklama: 'Hedefe varırsa hedefin katı', etiket: '1000x',
-    govde: () => h`<label class="alan"><small>Hedef çarpan</small><input name="secim" value="2" inputmode="decimal" autocomplete="off" required></label><button class="buyuk-dugme">🚀 UÇUR</button>`,
+    govde: (secim) => h`<label class="alan"><small>Hedef çarpan</small><input name="secim" value="${secim || '2'}" inputmode="decimal" autocomplete="off" required></label><button class="buyuk-dugme">🚀 UÇUR</button>`,
   },
   plinko: { aciklama: 'Düşük 5x, orta 13x, yüksek 29x tavan', etiket: '29x', govde: () => secenekler([['düşük', 'Düşük'], ['orta', 'Orta'], ['yüksek', 'Yüksek', 'sicak']]) },
   mayın: { aciklama: '12 kutu, 3 mayın, 211x tavan', etiket: '211x', govde: () => h`<button class="buyuk-dugme">TARLAYA GİR</button>` },
@@ -92,10 +92,11 @@ export function kasa({ xp, grupAdi, dar = false }) {
 }
 
 /** `tek`: tek düğmeli oyun; bahis alanı ile düğme yan yana durur, telefonda kart kısalır. */
-function oyunKarti(chat, oyun, varsayilan) {
+/** `secim`: son oynanan seçim (crash hedefi, rulet); form onunla dolar, her elde yeniden yazılmasın. */
+function oyunKarti(chat, oyun, varsayilan, secim = '') {
   const t = OYUN_ADI[oyun]
   const { aciklama, etiket, govde } = VITRIN[oyun]
-  const icerik = govde()
+  const icerik = govde(secim)
   const tek = icerik.metin.startsWith('<button')
   return h`<form class="masa-kart k-${oyun}${tek ? ' tek' : ''}" method="post" action="/oyun/oyna">
   ${gizli(chat)}<input type="hidden" name="oyun" value="${oyun}">
@@ -276,7 +277,7 @@ export function oyunSayfasi({ chat, oyun, cokGrup, durum }) {
   const masa = baska
     ? h`<a class="devam" href="${oyunLink(chat, el.oyun)}">${baska.ikon} Önce açık ${baska.ad} elini bitir · <strong>ele dön ›</strong></a>`
     : el ? acikElKarti(chat, el)
-      : h`<section class="oyunlar tekli">${oyunKarti(chat, oyun, sonuc?.bahis ? String(sonuc.taban ?? sonuc.bahis) : '')}</section>`
+      : h`<section class="oyunlar tekli">${oyunKarti(chat, oyun, String(sonuc?.taban ?? sonuc?.bahis ?? sonuc?.yazilan ?? ''), sonuc?.oyun === oyun ? sonuc.secim ?? '' : '')}</section>`
   return kabuk(t.ad, h`
 ${kasa({ xp, dar: true })}
 ${sonucKarti(chat, sonuc)}

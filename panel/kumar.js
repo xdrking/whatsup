@@ -129,6 +129,8 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
 
   function tekOyna(h, { oyun, miktar, secim }) {
     const k = anahtar(h)
+    // Form aynı bahis ve seçimle yeniden çizilsin diye sonuç (hata dahil) yazılanı taşır.
+    const sonucYaz = (anahtarAdi, sonuc) => sonuclar.set(anahtarAdi, { yazilan: String(miktar ?? ''), secim: String(secim ?? ''), ...sonuc })
     const tanim = Object.hasOwn(TEK_OYUNLAR, oyun) ? TEK_OYUNLAR[oyun] : null
     if (!tanim) return sonucYaz(k, { hata: 'Böyle bir oyun yok.' })
     if (!hizKontrol(k)) return

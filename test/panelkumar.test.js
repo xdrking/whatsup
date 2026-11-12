@@ -98,6 +98,16 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   await post('/oyun/islem', { grup: GRUP, sayfa: 'hesap', islem: 'constructor' }, Cookie)
   assert.ok((await al(`/oyun/hesap?grup=${g}`)).includes('Böyle bir işlem yok.'))
 
+  // Crash hedefi ve rulet seçimi elden sonra formda kalır, varsayılana dönmez.
+  await new Promise((r) => setTimeout(r, 800))
+  const crash = await post('/oyun/oyna', { grup: GRUP, oyun: 'crash', miktar: '1000', secim: '100' }, Cookie)
+  const crashSayfa = await al(new URL(crash.headers.get('location'), adres).pathname + new URL(crash.headers.get('location'), adres).search)
+  assert.ok(crashSayfa.includes('name="secim" value="100"'))
+  await new Promise((r) => setTimeout(r, 800))
+  await post('/oyun/oyna', { grup: GRUP, oyun: 'rulet', miktar: '1000', secim: '17' }, Cookie)
+  assert.ok((await al(`/oyun?grup=${g}&oyun=rulet`)).includes('<option value="17" selected>'))
+  await new Promise((r) => setTimeout(r, 800))
+
   const oyna = await post('/oyun/oyna', { grup: GRUP, oyun: 'slot', miktar: '1000' }, Cookie)
   assert.equal(oyna.status, 303)
   assert.equal(oyna.headers.get('location'), `/oyun?grup=${g}&oyun=slot`)
