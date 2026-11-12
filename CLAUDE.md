@@ -1129,7 +1129,7 @@ Kurallar `lib/pet.js`'te saftır, yazma `lib/stats.js`'in sonundaki pet bölüm�
 
 ### Faz 48 — Sıfır atma
 
-`scripts/sifir-at.js` tek seferliktir, bot sahibi elle ve **bot kapalıyken** çalıştırır: XP cinsinden her tutarı 1000'e böler (`lib/sifirAt.js:SIFIR_AT_SUTUNLARI`). Argümansız önizler, `--uygula` önce `data/yedek/sifir-at-oncesi-*.db` yedeği alır, sonra tek transaction'da yazar; grup id verilirse yalnızca o grup. Coin, mülk adedi ve hisse fiyatı bölünmez: kur paradan hesaplandığı için kendiliğinden düşer, hissede pay adedi bölünür. Level XP'den hesaplandığı için düşer. Yeni bir XP sütunu eklenirse listeye yazılır, `test/sifirat.test.js` listedeki sütunların şemada olduğunu denetler.
+`scripts/sifir-at.js` tek seferliktir, bot sahibi elle ve **bot kapalıyken** çalıştırır: XP cinsinden her tutarı 1000'e böler (`lib/sifirAt.js:SIFIR_AT_SUTUNLARI`). Argümansız önizler, `--uygula` önce `data/yedek/sifir-at-oncesi-*.db` yedeği alır, sonra tek transaction'da yazar; grup id verilirse yalnızca o grup. Coin, mülk adedi ve hisse fiyatı bölünmez: kur paradan hesaplandığı için kendiliğinden düşer, hissede pay adedi bölünür. Level XP'den hesaplandığı için düşer. `--bolen=10` bir sıfır atar, `--bot-haric` botun cüzdanını ve bankasını (hazine) bölmez (bot sahibinin kararı, `ayar.bot_jid`'den okunur); botun öteki satırları (mülk kirası, karne) yine bölünür. Bot hariç tutulunca hazine piyasaya göre büyür. Yeni bir XP sütunu eklenirse listeye yazılır, `test/sifirat.test.js` listedeki sütunların şemada olduğunu denetler.
 
 **Enflasyonu durdurmaz**, yalnızca rakamları küçültür: maaş ve kira kurla doğrusal büyüdüğü için para kendini besler.
 
