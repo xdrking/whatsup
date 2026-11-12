@@ -1226,7 +1226,7 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 
 ### Faz 57 — `.kumaraf`
 
-`.kumaraf @kişi` günlük kumar tavanını (Faz 53) dolduranın yasağını kaldırır (`lib/stats.js:kumarAffet()`). Yalnızca bot sahibi ve İçişleri Bakanı kullanır (bot sahibinin kararı). Bakan için `.bakan af` ile aynı `bakan_hak` sayacını harcar, sahip sınırsızdır. Yasak `kumar_gun.net` sıfırlanarak kalkar, tavan aynı kalır: net silinmeseydi tavan dolu olduğu için her kazanç kasada kalırdı. Yani af kişiye o gün bir tavan daha açar. Tavana takılmamış hedef hak yakmaz. İflas ve hapis yasağına dokunmaz, hapis `.bakan af`'ın işidir.
+`.kumaraf @kişi` günlük kumar tavanını (Faz 53) dolduranın yasağını kaldırır (`lib/stats.js:kumarAffet()`). Etiket yoksa yazan kendini affeder (WhatsApp kendini etiketlemeye izin vermiyor). Yalnızca bot sahibi ve İçişleri Bakanı kullanır (bot sahibinin kararı). Bakan için `.bakan af` ile aynı `bakan_hak` sayacını harcar, sahip sınırsızdır. Yasak `kumar_gun.net` sıfırlanarak kalkar, tavan aynı kalır: net silinmeseydi tavan dolu olduğu için her kazanç kasada kalırdı. Yani af kişiye o gün bir tavan daha açar. Tavana takılmamış hedef hak yakmaz. İflas ve hapis yasağına dokunmaz, hapis `.bakan af`'ın işidir.
 
 ## Elle Doğrulama
 
@@ -1349,4 +1349,4 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 103. `.sustur @kişi` sonra kişi 3 mesaj yazar → özelden "3 mesaj daha yazarsan" uyarısı gelir; 3 mesaj daha → özelden el konulanlar listesi gelir, `.servet`'i yarıya iner, `.top`'ta bot artar; `.sustur kaldır @kişi` → sayım sıfırlanır
 104. Panelde grup sayfası → Hükümet, Hazine, Kumarhane, Suly, Cezalılar kartları; bot sıralamada "🤖 Hazine"; kişi sayfası → Varlıklar, Borç ve alacak, kumar oyun dökümü; servet coin ve mülkü sayar
 105. Sahip özelden `.coinver <grup id> <numara> 5` → onay gelir, kişi `.coinmarket`'te 5 coin görür; `-10` → bakiye 0; grupta yazılırsa hiç tepki yok; `.help coinver` → yok
-106. Tavanı dolduran kişiye İçişleri Bakanı `.kumaraf @kişi` → yasak kalkar, kalan hak 4 yazar, `.bahis` çalışır; sıradan üye → "yalnızca İçişleri Bakanı"; yasaksız kişiye → "takılmamış", hak yanmaz; sahip için kalan hak yazmaz
+106. Tavanı dolduran kişiye İçişleri Bakanı `.kumaraf @kişi` → yasak kalkar, kalan hak 4 yazar, `.bahis` çalışır; tavanı dolduran sahip etiketsiz `.kumaraf` → kendi yasağı kalkar; sıradan üye → "yalnızca İçişleri Bakanı"; yasaksız kişiye → "takılmamış", hak yanmaz; sahip için kalan hak yazmaz

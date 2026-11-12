@@ -8,10 +8,11 @@ export default {
   name: 'kumaraf',
   aliases: ['kumarafı', 'kumarafi'],
   description: 'Günlük kumar tavanını dolduran kişinin kumar yasağını kaldırır',
-  usage: '.kumaraf @kişi',
+  usage: '.kumaraf @kişi | .kumaraf (kendine)',
   details: [
     'Yalnızca bot sahibi ve İçişleri Bakanı kullanır.',
     'Günde piyasanın yarısını kumardan kazanan gece yarısına kadar kumar oynayamaz. `.kumaraf @kişi` bu yasağı kaldırır, kişinin bugünkü tavanı baştan dolar.',
+    'Kimse etiketlenmezse yazan kendini affeder: WhatsApp kişinin kendini etiketlemesine izin vermiyor.',
     `İçişleri Bakanı için \`.bakan af\` ile aynı günlük hakkı harcar (günde ${BAKAN_GUNLUK}). İflas ve hapis yasağını kaldırmaz.`,
   ],
   category: 'toplum',
@@ -25,8 +26,7 @@ export default {
       const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
       if (!metadata) return
 
-      const [ham] = resolveTargets(parsed)
-      if (!ham) return await yaz('Kullanım: `.kumaraf @kişi`')
+      const [ham = sender] = resolveTargets(parsed)
       const hedef = uyeKimligiBul(metadata, ham)
       if (!hedef) return await yaz('❌ Bu kişi grupta bulunamadı.')
 
