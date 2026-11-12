@@ -64,8 +64,12 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   const sayfa = await fetch(`${adres}/oyun`, { headers: { Cookie } })
   assert.equal(sayfa.status, 200)
   const html = await sayfa.text()
-  assert.ok(html.includes('100.000 XP'))
-  assert.ok(!html.includes('<script'))
+  assert.ok(html.includes('100.000 <small>XP</small>'))
+  // Betik yalnızca panelin kendi dosyasıdır, satır içi betik yoktur.
+  assert.ok(html.includes('src="/oyun.js'))
+  assert.ok(!/<script(?![^>]*src=)/.test(html))
+  assert.ok(sayfa.headers.get('content-security-policy').includes("script-src 'self'"))
+  for (const dosya of ['/oyun.js', '/kumarhane.css']) assert.equal((await fetch(adres + dosya)).status, 200, dosya)
 
   for (const yol of ['/', `/grup?id=${encodeURIComponent(GRUP)}`, '/yedek']) {
     const y = await fetch(adres + yol, { redirect: 'manual', headers: { Cookie } })

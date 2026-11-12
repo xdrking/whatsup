@@ -6,7 +6,9 @@ import { oranYaz } from '../lib/banka.js'
 import { ARALIKLAR, SIRALAMALAR } from './veri.js'
 
 // Stil tarayıcıda önbelleklenir: adres içerikle değişmezse yeni HTML eski stille açılır.
-const STIL_SURUMU = fnv1a(readFileSync(new URL('./stil.css', import.meta.url), 'utf8'))
+const surum = (dosya) => fnv1a(readFileSync(new URL(dosya, import.meta.url), 'utf8'))
+const STIL_SURUMU = surum('./stil.css')
+const KUMARHANE_SURUMU = `${surum('./kumarhane.css')}-${surum('./oyun.js')}`
 
 class Ham {
   constructor(metin) {
@@ -44,7 +46,8 @@ function avatar(u, boyut = '') {
   return h`<span class="avatar a${fnv1a(u.user_jid) % AVATAR_RENGI} ${boyut}" aria-hidden="true">${harf}</span>`
 }
 
-export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik } = {}) {
+/** `kumarhane`: oyun sayfası; ek stil ve oyun.js (ses, animasyon) yüklenir. Satır içi betik yoktur. */
+export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik, kumarhane = false } = {}) {
   return h`<!doctype html>
 <html lang="tr">
 <head>
@@ -54,8 +57,10 @@ export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik 
 <meta name="robots" content="noindex">
 <title>${baslik}</title>
 <link rel="stylesheet" href="/stil.css?v=${STIL_SURUMU}">
+${kumarhane ? h`<link rel="stylesheet" href="/kumarhane.css?v=${KUMARHANE_SURUMU}">
+<script src="/oyun.js?v=${KUMARHANE_SURUMU}" defer></script>` : ''}
 </head>
-<body>
+<body${kumarhane ? h` class="kumarhane"` : ''}>
 <header class="ust">
   ${geri ? h`<a class="geri" href="${geri}" aria-label="Geri">‹</a>` : ''}
   <h1>${ust}</h1>

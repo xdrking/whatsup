@@ -331,7 +331,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 56 (tamam):** `.coinver`. Ayrıntı aşağıda.
 - **Faz 57 (tamam):** `.kumaraf`. Ayrıntı aşağıda.
 - **Faz 58 (tamam):** panelde kumar ve `.panel`. Ayrıntı aşağıda.
-- **Faz 59+:** yeni komutlar, her biri ayrı adım
+- **Faz 59 (tamam):** kumarhane görünümü, ses ve animasyon. Faz 58 bölümüne işlendi.
+- **Faz 60+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -954,12 +955,14 @@ panel/guvenlik.js  scrypt, deneme sınırı, oturumlar
 panel/veri.js      bütün sorgular
 panel/kumar.js     kumarhane: oyun eli ve XP yazımı (Faz 58)
 panel/oyunSayfalari.js  kumarhane HTML
+panel/kumarhane.css  kumarhane stili ve animasyonlar
+panel/oyun.js      kumarhane betiği: sayfa yenilemeden oynama, ses
 panel/sayfalar.js  HTML
 panel/yedek.js     günlük yedek
 ```
 
 - **HTML yalnızca `h` şablonuyla üretilir.** Değerleri o kaçırır. WhatsApp adını üye kendisi yazar,
-  elle birleştirilen HTML XSS açar. CSP de `script`'e kapalıdır: panelde JavaScript yoktur.
+  elle birleştirilen HTML XSS açar. CSP satır içi betiğe kapalıdır: tek betik kumarhanenin `panel/oyun.js` dosyasıdır (Faz 59), istatistik sayfalarında JavaScript yoktur.
 - **Panel yalnızca 127.0.0.1'i dinler**, dışarıya sunucudaki nginx açar, HTTPS'i certbot verir (`nginx-panel.conf.example`). `0.0.0.0` yapılmaz: gerçek IP
   `X-Forwarded-For`'dan okunduğu için doğrudan erişim deneme sınırını atlatırdı.
 - **Şifre elle seçilmez**, `npm run panel:sifre` 24 karakter üretir. `.env`'e yalnızca scrypt özeti girer.
@@ -1239,7 +1242,7 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 panel_hesap(chat_jid, user_jid, numara, lid, sifre, surum ms)   PK(chat_jid,user_jid)
 ```
 
-Bot sahibinin kararıyla panel salt okunur olmaktan çıktı: grup üyeleri kumar oyunlarını panelden de oynar. Faz 31'deki "JavaScript yok" ve CSP kuralları sürer: her hamle bir form gönderimidir, sonuç yönlendirmeden sonra bir kez gösterilir.
+Bot sahibinin kararıyla panel salt okunur olmaktan çıktı: grup üyeleri kumar oyunlarını panelden de oynar. Her hamle bir form gönderimidir, sonuç yönlendirmeden sonra bir kez gösterilir; `oyun.js` bunu sayfa yenilemeden yapar (Faz 59).
 
 - **Kayıt:** `.panel kayıt <şifre>` yalnızca özelden. Kimliği WhatsApp verir, kimse başkasının numarasıyla hesap açamaz. Bot `groupFetchAllParticipating()` ile kişinin üye olduğu grupları bulur, her grup için bir satır yazar (`user_jid` gruptaki üye kimliği, `numara`/`lid` giriş adı, rakamlar). Grupta yazılırsa şifre kaydedilmez, mesaj silinmeye çalışılır. Şifre `args`'tan değil `text`'ten okunur (`miktarlariCoz` "50m"i sayıya çevirirdi).
 - **Gruptan çıkan girmez:** `index.js` `group-participants.update`'te `remove` gelince satırı siler, bot çıkarılırsa grubun bütün satırlarını. Panel her istekte satırları yeniden okur, `surum` oturumdakiyle tutmazsa (şifre değişti) oturum düşer.
@@ -1248,6 +1251,8 @@ Bot sahibinin kararıyla panel salt okunur olmaktan çıktı: grup üyeleri kuma
 - **Çok adımlı el** panel belleğindedir, gruptaki oyun yuvasını tutmaz. 3 dk hamle gelmezse WhatsApp'taki gibi kapanır (blackjack `dur`, öteki `çek`). Panel yeniden başlarsa yarım bahis yanar. Açık el varken başka oyun açılmaz. Aynı kişinin iki işlemi arasında 700 ms olmalı: form iki kez gönderilmesin.
 - Oyun adı formdan gelir, `Object.hasOwn` ile denetlenir (`constructor` gibi adlar nesne alanı sayılmasın).
 - Sahip şansı panelde yoktur. `.yarış`, `.vs`, `.piyango` panelde yoktur.
+- **Görünüm (Faz 59, bot sahibinin isteği: grup aktif kalsın):** `panel/kumarhane.css` yalnızca `body.kumarhane`'yi etkiler. Animasyonlar CSS'tedir, betik olmadan da oynar; gecikmeler satır içi `style` yerine sınıflarla verilir (`d1…d9`, `m1…m3`), çünkü CSP satır içi stili engeller. Sonuç metni (`.gecikmeli`) animasyon bitince açılır, süreler oyuna göre CSS'tedir. Slot şeridi 15 semboldür, son sembol sonuçtur (`SERIT_UZUNLUGU`); uzunluk değişirse `@keyframes makara` da değişir.
+- **`panel/oyun.js`:** CSP `script-src 'self'; connect-src 'self'` yalnızca bu dosya içindir, satır içi betik yasak kalır. Formu `fetch` ile gönderir, gelen sayfanın `<main>`'ini yerine koyar; hata olursa sayfayı yeniler. Betik yoksa formlar normal çalışır, bu korunmalı. Sesler Web Audio ile üretilir, ses dosyası yoktur; tarayıcı sesi tıklamadan sonra açtığı için bağlam form gönderiminde kurulur. Ses tercihi yalnızca `localStorage`'dadır. Sesin zamanlaması CSS animasyonuna bağlıdır (`canlandir`): biri değişirse öbürü de değişir.
 
 ## Elle Doğrulama
 

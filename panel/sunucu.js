@@ -14,10 +14,15 @@ import { sonYedek } from './yedek.js'
 
 const CEREZ = '__Host-panel'
 const AZAMI_GOVDE = 1024
-const STIL = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'stil.css'))
+const KLASOR = path.dirname(fileURLToPath(import.meta.url))
+const STIL = readFileSync(path.join(KLASOR, 'stil.css'))
+const KUMARHANE_STIL = readFileSync(path.join(KLASOR, 'kumarhane.css'))
+const OYUN_BETIGI = readFileSync(path.join(KLASOR, 'oyun.js'))
 
 const GUVENLIK_BASLIKLARI = {
-  'Content-Security-Policy': "default-src 'none'; style-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+  // Betik yalnızca panelin kendi oyun.js dosyasıdır: satır içi betik yasak kalır, ad alanına
+  // yazılan <script> çalışmaz. connect-src oyun.js'in formu sayfa yenilemeden göndermesi içindir.
+  'Content-Security-Policy': "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
   'X-Robots-Tag': 'noindex',
@@ -221,6 +226,12 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
 
     if (yol === 'GET /stil.css') {
       return gonder(res, 200, STIL, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /kumarhane.css') {
+      return gonder(res, 200, KUMARHANE_STIL, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /oyun.js') {
+      return gonder(res, 200, OYUN_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
     }
 
     const jeton = cerezOku(req)
