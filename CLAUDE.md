@@ -335,7 +335,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 59 (tamam):** kumarhane görünümü, ses ve animasyon. Faz 58 bölümüne işlendi.
 - **Faz 60 (tamam):** kumarhanede yan menü, oyun başına sayfa, hesap bölümü; panelde kumar yasağı yok. Ayrıntı aşağıda.
 - **Faz 61 (tamam):** panel blackjack'inde çift, böl, sigorta, teslim. Ayrıntı aşağıda.
-- **Faz 62+:** yeni komutlar, her biri ayrı adım
+- **Faz 62 (tamam):** slot geçiş hatası, lobide vurgun şeridi, telefonda alt menü. Ayrıntı aşağıda.
+- **Faz 63+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1289,6 +1290,12 @@ Yalnızca paneldedir (`panel/kumar.js:blackjackHamle`); WhatsApp'taki `.blackjac
 - **Teslim:** yalnızca ilk hamlede, bahsin yarısı geri döner.
 - Süre dolunca açık bütün eller "dur" sayılır, sorulan sigorta alınmamış sayılır.
 - Sayfa yalnızca yapılabilecek hamlenin düğmesini çizer (`gorunum`'daki `cift`, `bol`, `teslim`); denetim yine motordadır. Testler `kumarMotoru({ deste })` ile sabit deste verir, kartlar dizinin sonundan çekilir.
+
+### Faz 62 — Slot geçişi, vurgun şeridi, alt menü
+
+- **Bekleme kutusu** (`oyun.js:beklemeGoster`) gelecek sonuç kartıyla aynı yerde ve ölçüdedir: eski `#sonuc`'un yerine geçer, başlığı ve sonuç yazısı kadar boşluğu (`.bekleme-bosluk`) vardır. Önceden eski sonuç ile dönen makine birlikte görünüyor, yanıt gelince makine aşağı zıplayıp kart yeniden açılıyordu. Sonuç bekleme kutusunun yerine geliyorsa `main.yerinde` yazılır, kartın giriş animasyonu (`--giris`) kapanır; makara şeridi bulanık başlar ki geçişte net kare görünmesin. `.bekleme-bosluk` yüksekliği sonuç yazısı değişirse onunla değişir.
+- **Vurgun şeridi:** lobide `kumar_oyun.en_buyuk`'tan grubun en büyük tek el kazançları kayar (`panel/kumar.js:buyukVurgunlar`), bot yoktur. Ad `isimler`'den gelir, `h` kaçırır. Liste dikişsiz dönsün diye iki kez yazılır.
+- **Alt menü** (`.alt-menu`) telefonda sabittir, 960 px üstünde gizlenir; `yanMenu` ile birlikte `<main>`'in dışında çizilir.
 
 ## Elle Doğrulama
 

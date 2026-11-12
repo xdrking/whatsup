@@ -206,7 +206,7 @@
   }
 
   /** Yanıt beklenirken dönen makara, çark ya da para gösterilir. */
-  function beklemeGoster(oyun) {
+  function beklemeGoster(oyun, baslik) {
     let gorsel = null
     if (oyun === 'slot') {
       gorsel = yeni('div', 'slot-makine')
@@ -230,11 +230,19 @@
       para.append(yeni('span', 'on', 'YAZI'), yeni('span', 'arka', 'TURA'))
       gorsel.append(para)
     }
-    if (!gorsel) return
-    const kutu = yeni('section', 'sonuc')
-    kutu.append(gorsel)
-    document.querySelector('.kasa')?.after(kutu)
-    kutu.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const eski = document.getElementById('sonuc')
+    if (!gorsel) {
+      eski?.classList.add('eskidi')
+      return
+    }
+    // Bekleme kutusu gelecek sonuç kartıyla aynı yerde ve aynı ölçüdedir: eski sonucun yerine
+    // geçer (iki makine yan yana görünmesin), başlığı ve sonuç yazısının boşluğu vardır
+    // (yanıt gelince makine zıplamasın).
+    const kutu = yeni('section', 'sonuc bekleme')
+    kutu.append(yeni('h2', '', baslik), gorsel, yeni('div', 'bekleme-bosluk'))
+    if (eski) eski.replaceWith(kutu)
+    else document.querySelector('.kasa')?.after(kutu)
+    kutu.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
 
   function sesDugmesi() {
@@ -263,6 +271,8 @@
     }
     const eskiXp = Number(document.querySelector('.bakiye-sayi')?.dataset.xp)
     govde.classList.add('degisti')
+    // Sonuç bekleme kutusunun yerine geliyorsa kart yeniden açılmaz, yalnızca makaralar durur.
+    if (document.querySelector('.sonuc.bekleme')) govde.classList.add('yerinde')
     document.querySelector('main').replaceWith(document.adoptNode(govde))
     hazirla()
     bakiyeSay(eskiXp, canlandir(hamleSonrasi))
@@ -271,7 +281,7 @@
     else if (bildirim) sesler.kaybet()
     history.replaceState(null, '', adres)
     const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el') ?? document.getElementById('bildirim')
-    hedef?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    hedef?.scrollIntoView({ behavior: 'smooth', block: govde.classList.contains('yerinde') ? 'nearest' : 'start' })
   }
 
   document.addEventListener('submit', async (olay) => {
@@ -288,7 +298,10 @@
     const hamle = yol === '/oyun/hamle'
 
     document.body.classList.add('bekliyor')
-    if (yol === '/oyun/oyna') beklemeGoster(String(veri.get('oyun') ?? ''))
+    if (yol === '/oyun/oyna') {
+      const ust = form.querySelector('.masa-ust')
+      beklemeGoster(String(veri.get('oyun') ?? ''), `${ust?.querySelector('.masa-ikon')?.textContent ?? ''} ${ust?.querySelector('strong')?.textContent ?? ''}`.trim())
+    }
     const baslangic = performance.now()
     try {
       const yanit = await fetch(form.action, { method: 'POST', body: new URLSearchParams(veri), credentials: 'same-origin' })

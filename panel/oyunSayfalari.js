@@ -78,6 +78,13 @@ export function yanMenu({ chat, cokGrup, secili = '' }) {
   ${baglanti(hesapLink(chat, 'banka'), 'banka', '🏦', 'Banka ve kredi')}
   ${baglanti(hesapLink(chat, 'coin'), 'coin', '🪙', 'Coin ve mülk')}
   ${cokGrup ? h`<h3>Grup</h3><a href="/oyun"><span aria-hidden="true">🔁</span>Grubu değiştir</a>` : ''}
+</nav>
+<nav class="alt-menu" aria-label="Kısa menü">
+  ${baglanti(oyunLink(chat), 'lobi', '🏠', 'Lobi')}
+  ${baglanti(oyunLink(chat, 'slot'), 'slot', '🎰', 'Slot')}
+  ${baglanti(oyunLink(chat, 'crash'), 'crash', '🚀', 'Crash')}
+  ${baglanti(hesapLink(chat, 'banka'), 'banka', '🏦', 'Banka')}
+  ${baglanti(hesapLink(chat, 'hesap'), 'hesap', '💎', 'Hesap')}
 </nav>`
 }
 
@@ -257,11 +264,19 @@ const acikElKarti = (chat, el) => {
 
 const altNot = h`<p class="not orta alt-not">Panel ile WhatsApp aynı XP'yi kullanır. Gerçek para yoktur.</p>`
 
-export function lobi({ chat, grupAdi, cokGrup, durum }) {
+/** Kayan şerit dikişsiz dönsün diye liste iki kez yazılır; ikinci kopya ekran okuyucudan gizlidir. */
+function vurgunSeridi(vurgunlar) {
+  if (!vurgunlar.length) return ''
+  const parca = (v) => h`<span>${oyunTanimi(v.oyun)?.ikon ?? '🎲'} ${v.ad} · <strong>+${sayi.format(v.kazanc)} XP</strong></span>`
+  return h`<div class="akis" aria-label="Büyük vurgunlar"><div class="akis-serit">${vurgunlar.map(parca)}<span aria-hidden="true">🏆</span>${vurgunlar.map(parca)}<span aria-hidden="true">🏆</span></div></div>`
+}
+
+export function lobi({ chat, grupAdi, cokGrup, durum, vurgunlar = [] }) {
   const { xp, el, sonuc } = durum
   const t = el && OYUN_ADI[el.oyun]
   return kabuk('Kumarhane', h`
 ${kasa({ xp, grupAdi })}
+${vurgunSeridi(vurgunlar)}
 ${sonucKarti(chat, sonuc)}
 ${el ? h`<a class="devam" href="${oyunLink(chat, el.oyun)}">${t.ikon} Açık ${t.ad} elin var · <strong>devam et ›</strong></a>` : ''}
 ${KATEGORILER.map((k) => h`<h2 class="bolum">${k.ikon} ${k.ad}</h2>

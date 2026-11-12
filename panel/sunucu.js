@@ -7,7 +7,7 @@ import logger from '../lib/logger.js'
 import { getStats } from '../lib/stats.js'
 import { girisHesaplari, panelHesaplari } from '../lib/panelHesap.js'
 import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru, sifreHashle } from './guvenlik.js'
-import { kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
+import { buyukVurgunlar, kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
 import { hesapMotoru } from './hesap.js'
 import { bankaSayfasi, coinSayfasi, HESAP_SAYFALARI, hesapSayfasi } from './hesapSayfalari.js'
 import { grupSecimi, hesapLink, lobi, oyunLink, oyunSayfasi, oyunVar } from './oyunSayfalari.js'
@@ -151,7 +151,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       const oyun = url.searchParams.get('oyun') ?? ''
       const durum = kumar.durum(kim)
       if (oyunVar(oyun)) return gonder(res, 200, oyunSayfasi({ chat, oyun, cokGrup, durum }))
-      return gonder(res, 200, lobi({ chat, grupAdi: grupAdlari().get(chat) ?? '', cokGrup, durum }))
+      return gonder(res, 200, lobi({ chat, grupAdi: grupAdlari().get(chat) ?? '', cokGrup, durum, vurgunlar: buyukVurgunlar(chat) }))
     }
 
     if (yol === 'POST /oyun/oyna' || yol === 'POST /oyun/hamle' || yol === 'POST /oyun/islem') {

@@ -80,6 +80,7 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
 
   // Lobi oyunları kategorili listeler, her oyunun ve hesabın kendi sayfası vardır.
   assert.ok(html.includes('class="yan"') && html.includes('Çarpan oyunları'))
+  assert.ok(html.includes('class="alt-menu"'))
   const al = async (yol) => (await fetch(adres + yol, { headers: { Cookie } })).text()
   const g = encodeURIComponent(GRUP)
   assert.ok((await al(`/oyun?grup=${g}&oyun=crash`)).includes('Hedef çarpan'))
@@ -120,6 +121,12 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   await new Promise((r) => setTimeout(r, 800))
   await post('/oyun/oyna', { grup: 'baska@g.us', oyun: 'slot', miktar: '1000' }, Cookie)
   assert.equal(getStats(GRUP, UYE).xp, xp)
+
+  // Lobi şeridi grubun en büyük vurgunlarını gösterir; ad kaçırılır.
+  db.prepare("INSERT OR REPLACE INTO isimler (user_jid, ad, guncelleme) VALUES (?, '<b>Ali</b>', 1)").run(UYE)
+  db.prepare("INSERT OR REPLACE INTO kumar_oyun (chat_jid, user_jid, oyun, won, lost, games, en_buyuk, en_kotu) VALUES (?, ?, 'kule', 1, 0, 1, 7500000, 0)").run(GRUP, UYE)
+  const lobiHtml = await al(`/oyun?grup=${g}`)
+  assert.ok(lobiHtml.includes('+7.500.000 XP') && lobiHtml.includes('&lt;b&gt;Ali&lt;/b&gt;'))
 
   panelUyeCikar(GRUP, [UYE])
   const atildi = await fetch(`${adres}/oyun`, { redirect: 'manual', headers: { Cookie } })

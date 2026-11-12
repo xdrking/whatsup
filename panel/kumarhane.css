@@ -12,8 +12,14 @@
   --kece2: #0a4630;
   --yumusak: cubic-bezier(.22, 1, .36, 1);
   --yay: cubic-bezier(.34, 1.4, .64, 1);
+  --giris: acil;
   background: #0b0812;
 }
+/* Sonuç bekleme kutusunun yerine geldiyse kart yeniden açılmaz (oyun.js `yerinde` yazar). */
+main.yerinde { --giris: yok; }
+@keyframes yok { from { opacity: 1; } }
+.sonuc.eskidi { opacity: .45; }
+.bekleme-bosluk { min-height: 4.6rem; }
 /* Ortam ışıkları: yavaşça süzülen renkli haleler. */
 .kumarhane::before {
   content: ""; position: fixed; inset: -20%; z-index: -1; pointer-events: none;
@@ -150,14 +156,14 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
   position: relative; overflow: hidden; display: grid; gap: .8rem; margin-bottom: 1.1rem; padding: clamp(.9rem, 4vw, 1.25rem);
   border-radius: 22px; text-align: center; background: linear-gradient(170deg, #201738, #120c1d);
   border: 1px solid rgb(139 92 246 / .32); box-shadow: 0 14px 36px rgb(0 0 0 / .45);
-  animation: acil .5s var(--yumusak) backwards;
-  transition: border-color .6s, box-shadow .6s;
+  animation: var(--giris) .5s var(--yumusak) backwards;
+  transition: border-color .6s, box-shadow .6s, opacity .3s;
 }
 .kumarhane .sonuc > * { position: relative; }
 .kumarhane .sonuc h2 { margin: 0; font-size: 1rem; color: var(--altin); }
-.kumarhane .sonuc.kazandi { animation: acil .5s var(--yumusak) backwards, hale-yesil 1.4s ease-out 1 forwards; }
-.kumarhane .sonuc.kaybetti { animation: acil .5s var(--yumusak) backwards, hale-kirmizi 1.2s ease-out 1 forwards; }
-.kumarhane .sonuc.buyuk { animation: acil .5s var(--yumusak) backwards, hale-altin 1.6s ease-in-out 3 forwards; }
+.kumarhane .sonuc.kazandi { animation: var(--giris) .5s var(--yumusak) backwards, hale-yesil 1.4s ease-out 1 forwards; }
+.kumarhane .sonuc.kaybetti { animation: var(--giris) .5s var(--yumusak) backwards, hale-kirmizi 1.2s ease-out 1 forwards; }
+.kumarhane .sonuc.buyuk { animation: var(--giris) .5s var(--yumusak) backwards, hale-altin 1.6s ease-in-out 3 forwards; }
 /* Hale, animasyon bitince yanar: sonuç önceden belli olmasın. */
 .sonuc[data-oyun="slot"].kazandi, .sonuc[data-oyun="slot"].kaybetti, .sonuc[data-oyun="slot"].buyuk { animation-delay: 0s, 2.1s; }
 .sonuc[data-oyun="bahis"].kazandi, .sonuc[data-oyun="bahis"].kaybetti { animation-delay: 0s, 1.45s; }
@@ -200,7 +206,7 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
 .m3 .serit { animation-duration: 2s; }
 /* 14 sembol × 5rem; sonda küçük bir yaylanmayla oturur. */
 @keyframes makara {
-  0% { transform: translateY(0); filter: blur(0); }
+  0% { transform: translateY(0); filter: blur(2.2px); }
   25% { filter: blur(2.2px); }
   70% { filter: blur(1px); }
   90% { transform: translateY(-70.55rem); filter: blur(0); }
@@ -209,6 +215,19 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
 .makara.donuyor .serit { animation: hizli .42s linear infinite; filter: blur(2.2px); }
 @keyframes hizli { from { transform: translateY(0); } to { transform: translateY(-30rem); } } /* 6 sembol × 5rem: döngü dikişsiz */
 .kazandi .slot-makine { animation: makine-parla 1.1s 2.1s ease-in-out 2; }
+/* Ödeme çizgisi ve yanıp sönen makine ışıkları */
+.makaralar { position: relative; }
+.makaralar::after {
+  content: ""; position: absolute; inset: 50% .2rem auto; height: 2px; translate: 0 -1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 77 148 / .85) 12%, rgb(255 77 148 / .85) 88%, transparent); box-shadow: 0 0 8px rgb(255 77 148 / .8);
+}
+.slot-makine { position: relative; padding-top: clamp(1.1rem, 4.5vw, 1.4rem); }
+.slot-makine::before {
+  content: ""; position: absolute; inset: .35rem 1rem auto; height: .4rem; border-radius: 999px;
+  background: radial-gradient(circle, #fff 0 28%, #ff4d94 30% 55%, transparent 58%) 0 0 / 1.1rem 100% repeat-x;
+  animation: isiklar 1s steps(2) infinite;
+}
+@keyframes isiklar { 50% { background-position-x: .55rem; filter: hue-rotate(60deg) brightness(1.2); } }
 
 /* Yazı-tura */
 .para-alan { perspective: 700px; display: grid; place-items: center; height: 7.5rem; }
@@ -405,6 +424,25 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
   .kumarhane .sonuc { max-width: 44rem; margin-inline: auto; }
 }
 
+/* Lobi: büyük vurgunlar şeridi */
+.akis { overflow: hidden; margin-bottom: 1rem; padding: .5rem 0; border-radius: 12px; background: rgb(0 0 0 / .35); border: 1px solid rgb(245 197 66 / .2);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.akis-serit { display: flex; gap: 1.6rem; width: max-content; animation: akis 38s linear infinite; }
+.akis-serit span { white-space: nowrap; font-size: .85rem; color: rgb(255 255 255 / .75); }
+.akis-serit strong { color: var(--yesil); font-variant-numeric: tabular-nums; }
+@keyframes akis { to { transform: translateX(-50%); } }
+
+/* Telefonda alt menü */
+.alt-menu {
+  position: fixed; inset: auto 0 0; z-index: 2; display: grid; grid-template-columns: repeat(5, 1fr);
+  padding: .3rem .3rem calc(.3rem + env(safe-area-inset-bottom)); background: color-mix(in srgb, #0b0812 92%, transparent);
+  border-top: 1px solid rgb(245 197 66 / .22); backdrop-filter: blur(12px);
+}
+.alt-menu a { display: grid; justify-items: center; gap: .05rem; padding: .3rem 0; border-radius: 10px; text-decoration: none; color: rgb(255 255 255 / .6); font-size: .68rem; font-weight: 600; }
+.alt-menu a span { font-size: 1.25rem; line-height: 1.2; }
+.alt-menu a.secili { color: var(--altin2); background: rgb(245 197 66 / .1); }
+.kumarhane.yanli main { padding-bottom: calc(5.2rem + env(safe-area-inset-bottom)); }
+
 /* ---- Yan menü: telefonda çekmece (menu-ac onay kutusu açar), geniş ekranda sabit ---- */
 .menu-kutu { position: absolute; opacity: 0; pointer-events: none; }
 .menu-dugme {
@@ -514,7 +552,8 @@ main.degisti .oyun-kutu { animation: none; }
 @media (min-width: 960px) {
   .kumarhane.yanli { padding-left: 15.5rem; }
   .yanli .yan { width: 15.5rem; transform: none; visibility: visible; box-shadow: none; }
-  .yanli .menu-dugme, .yanli .perde { display: none; }
+  .yanli .menu-dugme, .yanli .perde, .yanli .alt-menu { display: none; }
+  .kumarhane.yanli main { padding-bottom: 2rem; }
   .vitrin { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 

@@ -92,6 +92,23 @@ export function hazineyiTani() {
   if (jid && !botHesabiMi(jid)) botHesabiniTani({ id: jid })
   return Boolean(jid)
 }
+/** Lobideki şerit: grubun en büyük tek el kazançları (`.kumarkarnem`'deki "en büyük vurgun"). Bot yoktur. */
+export function buyukVurgunlar(chat, adet = 12) {
+  try {
+    const db = getDb()
+    if (!db) return []
+    const bot = db.prepare("SELECT deger FROM ayar WHERE anahtar = 'bot_jid'").get()?.deger ?? ''
+    return db.prepare(`
+      SELECT k.oyun, k.en_buyuk AS kazanc, COALESCE(i.ad, 'Oyuncu') AS ad
+      FROM kumar_oyun k LEFT JOIN isimler i ON i.user_jid = k.user_jid
+      WHERE k.chat_jid = ? AND k.user_jid != ? AND k.en_buyuk > 0
+      ORDER BY k.en_buyuk DESC LIMIT ?`).all(chat, bot, adet)
+  } catch (err) {
+    logger.error({ err, chat }, 'Büyük vurgunlar okunamadı')
+    return []
+  }
+}
+
 export const HAZINE_YOK = 'Kumarhane kapalı: bot henüz hiç bağlanmadı.'
 
 /** "50 milyon", "50m", "hepsi" → miktarCoz'un okuyacağı tek kelime. */
