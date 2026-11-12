@@ -676,7 +676,7 @@ medya ve dış servis komutları (`.sticker`, `.al`, `.tts`, `.efekt`, `.foto`, 
 
 ## Web paneli
 
-Herkesin adını ve istatistiğini gösteren şifreli panel. Bottan ayrı çalışır, numara ban yese de açılır, veriye yalnızca bakar.
+Herkesin adını ve istatistiğini gösteren şifreli panel. Bottan ayrı çalışır, numara ban yese de açılır. Grup üyeleri aynı adresten kumar da oynar (aşağıda).
 
 Sunucuda bir kez:
 
@@ -687,6 +687,18 @@ Sunucuda bir kez:
 5. `sudo certbot --nginx -d panel.alanadin.com --redirect` ile HTTPS sertifikasını al. Giriş ancak HTTPS'te çalışır.
 
 Panelde sıralama, borçlular, grup rekorları, son 30 günün grafiği, borsa fiyat çizgileri, kişi sayfasında seviye, rozet, servet dağılımı ve XP gelişimi var. Grafikler güncellemeden sonra birikmeye başlar; borsa çizgileri `.borsa` kullanıldıkça dolar.
+
+### Panelde kumar
+
+Grup üyeleri paneldeki kumarhanede WhatsApp'taki kumar oyunlarını oynar: bahis, slot, rulet, kazı, plinko, crash, blackjack, mayın, kule, hi-lo. XP aynı veritabanından gelir ve gider; günlük tavan, 500 XP şartı, iflas ve hapis yasağı, karne ve hazine iki tarafta ortaktır. Grup oyunları (`.yarış`, `.vs`, `.piyango`) yalnızca WhatsApp'tadır.
+
+1. Bota **özelden** `.panel kayıt <şifre>` yaz (en az 8 karakter). Bot, botun olduğu gruplarda üye misin diye bakar ve hesabını açar. Aynı komut şifreyi değiştirir, eski oturumlar kapanır. Mesajı sonra silmen iyi olur.
+2. Panelde **Numara ya da LID** alanına numaranı (905…) ya da LID'ini, altına şifreni yaz.
+3. Gruptan çıkan ya da atılanın hesabı kendiliğinden kapanır. `.panel sil` hesabı elle kapatır.
+
+Yönetici girişi değişmedi: numara alanını boş bırakıp panel şifresini yaz. Oyuncular yalnızca kumarhaneyi görür, istatistik sayfalarını yönetici görür.
+
+Blackjack, mayın, kule ve hi-lo'da 3 dakika hamle yapılmazsa el kapanır (blackjack "dur", ötekiler "çek" sayılır). Panel yeniden başlatılırsa yarım eldeki bahis yanar.
 
 Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
 

@@ -211,6 +211,59 @@ progress::-moz-progress-bar { background: linear-gradient(90deg, #1fb5a8, var(--
 
 .avatar.orta { width: 50px; height: 50px; font-size: 1.25rem; }
 
+/* Kumarhane */
+.not { color: var(--soluk); font-size: .85rem; }
+.orta { text-align: center; }
+.giris .not { text-align: center; margin-top: .25rem; }
+code { background: var(--yuzey2); padding: .1rem .35rem; border-radius: 6px; font-size: .85em; }
+.oyunlar { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; margin-bottom: 1rem; }
+.oyun { display: grid; gap: .6rem; align-content: start; }
+.oyun h2 { margin: 0; font-size: 1.05rem; }
+.alan { display: grid; gap: .25rem; }
+.alan input, .alan select {
+  width: 100%; min-height: 46px; padding: .6rem .8rem; border: 1px solid var(--cizgi); border-radius: 12px;
+  background: var(--zemin); color: var(--yazi); font: inherit;
+}
+.secenekler { display: flex; flex-wrap: wrap; gap: .5rem; }
+.secenekler button { flex: 1 1 8rem; width: auto; }
+button.ikincil { background: var(--yuzey2); color: var(--yazi); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+.sonuc { display: grid; gap: .7rem; margin-bottom: 1rem; text-align: center; }
+.sonuc h2 { margin: 0; }
+.sonuc.kazandi { border-color: var(--artis); background: color-mix(in srgb, var(--artis) 10%, var(--yuzey)); }
+.sonuc.kaybetti { border-color: var(--dusus); background: color-mix(in srgb, var(--dusus) 8%, var(--yuzey)); }
+.fark { font-size: 1.4rem; font-weight: 700; }
+.kazandi .fark { color: var(--artis); }
+.kaybetti .fark { color: var(--dusus); }
+.dev { font-size: 2.6rem; line-height: 1.2; font-weight: 700; }
+.makara { display: flex; justify-content: center; gap: .5rem; }
+.makara span { display: grid; place-items: center; width: 4.2rem; height: 4.2rem; border-radius: 14px; background: var(--yuzey2); }
+.top { display: inline-grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: 50%; color: #fff; }
+.top.kirmizi { background: #c62f3b; } .top.siyah { background: #1d2328; border: 2px solid var(--cizgi); } .top.yesil { background: #1f8a4c; }
+.izgara { display: grid; grid-template-columns: repeat(auto-fit, minmax(3rem, 1fr)); gap: .4rem; }
+.izgara.dort { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.izgara.uc { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 15rem; margin: 0 auto; }
+.hucre {
+  display: grid; place-items: center; min-height: 3.2rem; padding: 0; border-radius: 12px; font-size: 1.3rem;
+  background: var(--yuzey2); color: var(--yazi); border: 1px solid var(--cizgi);
+}
+button.hucre { background: color-mix(in srgb, var(--vurgu) 18%, var(--yuzey2)); }
+.hucre.acik { background: color-mix(in srgb, var(--artis) 25%, var(--yuzey2)); }
+.hucre.patlayan { background: color-mix(in srgb, var(--dusus) 35%, var(--yuzey2)); }
+.hucre.mayin { background: color-mix(in srgb, var(--dusus) 15%, var(--yuzey2)); }
+.kule { display: grid; gap: .35rem; }
+.kat { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); align-items: center; gap: .5rem; opacity: .7; }
+.kat.aktif { opacity: 1; }
+.kat small { text-align: right; font-variant-numeric: tabular-nums; }
+.kat .hucre { min-height: 2.6rem; }
+.masa { display: grid; gap: .6rem; }
+.kartlar { display: flex; justify-content: center; flex-wrap: wrap; gap: .4rem; margin-top: .3rem; }
+.kartlar span { display: grid; place-items: center; min-width: 3rem; height: 4.2rem; padding: 0 .4rem; border-radius: 10px; background: #f4f6f8; color: #111; font-size: 1.15rem; font-weight: 700; }
+.kartlar.buyuk span { min-width: 5rem; height: 7rem; font-size: 2rem; }
+.plinko { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: .2rem; }
+.plinko span { padding: .45rem 0; border-radius: 8px; background: var(--yuzey2); font-size: .72rem; font-variant-numeric: tabular-nums; }
+.plinko span.secili { background: var(--vurgu); color: #06240f; font-weight: 700; }
+
 @media (prefers-reduced-motion: reduce) {
   .basamak { transition: none; }
 }
@@ -221,4 +274,9 @@ progress::-moz-progress-bar { background: linear-gradient(90deg, #1fb5a8, var(--
   .fiyat-grafik.dar { display: none; }
   .ikili { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
   .rekorlar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .oyunlar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1000px) {
+  .oyunlar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

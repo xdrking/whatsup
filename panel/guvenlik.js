@@ -90,24 +90,37 @@ export function denemeSiniri({ saat = Date.now } = {}) {
 
 const ozet = (jeton) => createHash('sha256').update(jeton).digest('hex')
 
-/** Bellekte jetonun kendisi değil özeti durur. */
+/**
+ * Bellekte jetonun kendisi değil özeti durur. `veri` oturumun kime ait olduğudur:
+ * `{ tur: 'yonetici' }` ya da `{ tur: 'oyuncu', numara, lid, surum }`.
+ */
 export function oturumlar({ saat = Date.now } = {}) {
   const acik = new Map()
 
+  const oku = (jeton) => {
+    if (!jeton) return null
+    const o = acik.get(ozet(jeton))
+    return o && o.bitis > saat() ? o : null
+  }
+
   return {
-    ac() {
+    ac(veri = { tur: 'yonetici' }) {
       const simdi = saat()
-      for (const [anahtar, bitis] of acik) {
-        if (bitis <= simdi) acik.delete(anahtar)
+      for (const [anahtar, o] of acik) {
+        if (o.bitis <= simdi) acik.delete(anahtar)
       }
       const jeton = randomBytes(32).toString('base64url')
-      acik.set(ozet(jeton), simdi + OTURUM_MS)
+      acik.set(ozet(jeton), { bitis: simdi + OTURUM_MS, veri })
       return jeton
     },
 
     gecerli(jeton) {
-      if (!jeton) return false
-      return (acik.get(ozet(jeton)) ?? 0) > saat()
+      return Boolean(oku(jeton))
+    },
+
+    /** @returns {object | null} oturumun sahibi */
+    veri(jeton) {
+      return oku(jeton)?.veri ?? null
     },
 
     kapat(jeton) {

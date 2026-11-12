@@ -5,6 +5,7 @@ import makeWASocket, {
   Browsers,
   DisconnectReason,
   fetchLatestBaileysVersion,
+  jidNormalizedUser,
   makeCacheableSignalKeyStore,
   useMultiFileAuthState,
 } from '@whiskeysockets/baileys'
@@ -12,6 +13,7 @@ import qrcode from 'qrcode-terminal'
 import logger, { baileysLogger } from './lib/logger.js'
 import { handleMessage } from './lib/handler.js'
 import { gonderilenMesaj, trackOutgoing } from './lib/outgoing.js'
+import { panelGrupKapat, panelUyeCikar } from './lib/panelHesap.js'
 import { loadCommands } from './commands/index.js'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
@@ -90,6 +92,15 @@ async function connect() {
         connect().catch((err) => logger.error({ err }, 'Yeniden bağlanma başarısız'))
       }, delay)
     }
+  })
+
+  // Gruptan çıkan ya da atılan web panelinde oynayamaz; bot çıkarılırsa grubun bütün hesapları kapanır.
+  sock.ev.on('group-participants.update', ({ id, participants, action }) => {
+    if (action !== 'remove') return
+    const cikanlar = (participants || []).map((p) => jidNormalizedUser(typeof p === 'string' ? p : p?.id ?? ''))
+    const bot = [sock.user?.id, sock.user?.lid].filter(Boolean).map((j) => jidNormalizedUser(j))
+    if (cikanlar.some((j) => bot.includes(j))) panelGrupKapat(id)
+    else panelUyeCikar(id, cikanlar.filter(Boolean))
   })
 
   sock.ev.on('messages.upsert', async (event) => {

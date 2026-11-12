@@ -4,7 +4,11 @@ import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import logger from '../lib/logger.js'
-import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru } from './guvenlik.js'
+import { getStats } from '../lib/stats.js'
+import { girisHesaplari, panelHesaplari } from '../lib/panelHesap.js'
+import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru, sifreHashle } from './guvenlik.js'
+import { kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
+import { grupSecimi, kumarhane } from './oyunSayfalari.js'
 import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisiSayfasi } from './sayfalar.js'
 import { sonYedek } from './yedek.js'
 
@@ -51,9 +55,11 @@ function bekleMetni(ms) {
 }
 
 /** @param {{ sifreHash: string, veri: object, yedekKlasoru: string }} ayar */
-export function sunucuKur({ sifreHash, veri, yedekKlasoru }) {
+export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru() }) {
   const sinir = denemeSiniri()
   const oturum = oturumlar()
+  // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.
+  const sahteHash = sifreHashle('panel-sahte-sifre')
 
   const gonder = (res, kod, govde, basliklar = {}) => {
     res.writeHead(kod, {
@@ -80,14 +86,77 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru }) {
       return gonder(res, 429, girisSayfasi(bekleMetni(bekleMs)), { 'Retry-After': String(Math.ceil(bekleMs / 1000)) })
     }
 
-    if (!(await sifreDogru(form.get('sifre') ?? '', sifreHash))) {
-      logger.warn({ ip }, 'Panelde yanlış şifre')
-      return gonder(res, 401, girisSayfasi('Şifre yanlış.'))
+    const kimlik = (form.get('kimlik') ?? '').trim().slice(0, 40)
+    const sifre = form.get('sifre') ?? ''
+
+    // Kimlik boşsa yönetici girişidir (eski panel şifresi), doluysa oyuncu.
+    if (!kimlik) {
+      if (!(await sifreDogru(sifre, sifreHash))) {
+        logger.warn({ ip }, 'Panelde yanlış şifre')
+        return gonder(res, 401, girisSayfasi('Şifre yanlış.'))
+      }
+      sinir.basarili(ip)
+      logger.info({ ip }, 'Panele yönetici girişi yapıldı')
+      return yonlendir(res, '/', { 'Set-Cookie': cerez(oturum.ac({ tur: 'yonetici' }), OTURUM_SANIYE) })
+    }
+
+    const hesaplar = girisHesaplari(kimlik)
+    const hesap = hesaplar[0]
+    if (!(await sifreDogru(sifre, hesap?.sifre ?? (await sahteHash))) || !hesap) {
+      logger.warn({ ip }, 'Panelde yanlış oyuncu girişi')
+      return gonder(res, 401, girisSayfasi('Numara, LID ya da şifre yanlış.', kimlik))
     }
 
     sinir.basarili(ip)
-    logger.info({ ip }, 'Panele giriş yapıldı')
-    return yonlendir(res, '/', { 'Set-Cookie': cerez(oturum.ac(), OTURUM_SANIYE) })
+    logger.info({ ip }, 'Panele oyuncu girişi yapıldı')
+    const veriler = { tur: 'oyuncu', numara: hesap.numara, lid: hesap.lid, surum: hesap.surum }
+    return yonlendir(res, '/oyun', { 'Set-Cookie': cerez(oturum.ac(veriler), OTURUM_SANIYE) })
+  }
+
+  /** Oyuncunun hâlâ geçerli grup satırları: gruptan çıkan ya da şifresini değiştiren düşer. */
+  function oyuncuHesaplari(o) {
+    return panelHesaplari({ numara: o.numara, lid: o.lid }).filter((r) => r.surum === o.surum)
+  }
+
+  const grupAdlari = () => new Map(veri.gruplar().map((g) => [g.chat_jid, g.ad]))
+
+  async function oyuncuIsle(req, res, url, yontem, hesaplar) {
+    const yol = `${yontem} ${url.pathname}`
+    const hesapBul = (chat) => hesaplar.find((r) => r.chat_jid === chat)
+
+    if (yol === 'GET /oyun') {
+      const chat = url.searchParams.get('grup') ?? (hesaplar.length === 1 ? hesaplar[0].chat_jid : '')
+      const hesap = hesapBul(chat)
+      if (!hesap) {
+        const adlar = grupAdlari()
+        return gonder(res, 200, grupSecimi(hesaplar.map((r) => ({
+          chat: r.chat_jid, ad: adlar.get(r.chat_jid) ?? '', xp: getStats(r.chat_jid, r.user_jid).xp,
+        }))))
+      }
+      return gonder(res, 200, kumarhane({
+        chat,
+        grupAdi: grupAdlari().get(chat) ?? '',
+        cokGrup: hesaplar.length > 1,
+        durum: kumar.durum({ chat, user: hesap.user_jid }),
+      }))
+    }
+
+    if (yol === 'POST /oyun/oyna' || yol === 'POST /oyun/hamle') {
+      const form = await govdeOku(req)
+      if (!form) return gonder(res, 413, hataSayfasi('İstek çok büyük.'))
+      const chat = form.get('grup') ?? ''
+      const hesap = hesapBul(chat)
+      if (!hesap) return yonlendir(res, '/oyun')
+
+      const kim = { chat, user: hesap.user_jid }
+      const alanlar = { oyun: form.get('oyun') ?? '', miktar: form.get('miktar') ?? '', secim: form.get('secim') ?? '', hamle: form.get('hamle') ?? '' }
+      if (yol === 'POST /oyun/hamle') kumar.hamle(kim, alanlar)
+      else if (Object.hasOwn(TEK, alanlar.oyun)) kumar.tekOyna(kim, alanlar)
+      else kumar.basla(kim, alanlar)
+      return yonlendir(res, `/oyun?grup=${encodeURIComponent(chat)}`)
+    }
+
+    return yonlendir(res, '/oyun')
   }
 
   function yedekGonder(res) {
@@ -155,10 +224,11 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru }) {
     }
 
     const jeton = cerezOku(req)
-    const girisli = oturum.gecerli(jeton)
+    const kim = oturum.veri(jeton)
+    const girisli = Boolean(kim)
 
     if (yol === 'POST /giris') return girisYap(req, res)
-    if (yol === 'GET /giris') return girisli ? yonlendir(res, '/') : gonder(res, 200, girisSayfasi())
+    if (yol === 'GET /giris') return girisli ? yonlendir(res, kim.tur === 'oyuncu' ? '/oyun' : '/') : gonder(res, 200, girisSayfasi())
 
     if (!girisli) return yonlendir(res, '/giris')
 
@@ -166,6 +236,17 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru }) {
       oturum.kapat(jeton)
       return yonlendir(res, '/giris', { 'Set-Cookie': cerez('', 0) })
     }
+
+    // Oyuncu yalnızca kumarhaneyi görür; grup istatistikleri yöneticinindir.
+    if (kim.tur === 'oyuncu') {
+      const hesaplar = oyuncuHesaplari(kim)
+      if (!hesaplar.length) {
+        oturum.kapat(jeton)
+        return yonlendir(res, '/giris', { 'Set-Cookie': cerez('', 0) })
+      }
+      return oyuncuIsle(req, res, url, yontem, hesaplar)
+    }
+    if (url.pathname.startsWith('/oyun')) return yonlendir(res, '/')
     if (yontem !== 'GET') return gonder(res, 405, hataSayfasi('Bu işlem yapılamaz.'))
 
     return sayfa(res, url)

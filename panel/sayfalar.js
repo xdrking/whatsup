@@ -44,7 +44,7 @@ function avatar(u, boyut = '') {
   return h`<span class="avatar a${fnv1a(u.user_jid) % AVATAR_RENGI} ${boyut}" aria-hidden="true">${harf}</span>`
 }
 
-function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik } = {}) {
+export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik } = {}) {
   return h`<!doctype html>
 <html lang="tr">
 <head>
@@ -66,15 +66,18 @@ function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik } = {})
 </html>`.metin
 }
 
-export function girisSayfasi(hata = '') {
+export function girisSayfasi(hata = '', kimlik = '') {
   return kabuk('Panel', h`
 <form class="giris kart" method="post" action="/giris">
-  <div class="logo" aria-hidden="true">📊</div>
+  <div class="logo" aria-hidden="true">🎰</div>
   <h2>Grup paneli</h2>
+  <label for="kimlik">Numara ya da LID</label>
+  <input id="kimlik" name="kimlik" inputmode="numeric" autocomplete="username" value="${kimlik}" placeholder="905551112233">
   <label for="sifre">Şifre</label>
-  <input id="sifre" name="sifre" type="password" autocomplete="current-password" required autofocus>
+  <input id="sifre" name="sifre" type="password" autocomplete="current-password" required>
   ${hata ? h`<p class="hata" role="alert">${hata}</p>` : ''}
   <button>Giriş yap</button>
+  <p class="not">Hesabın yoksa bota <strong>özelden</strong> <code>.panel kayıt &lt;şifre&gt;</code> yaz.</p>
 </form>`, { cikis: false })
 }
 

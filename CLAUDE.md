@@ -72,7 +72,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event ka
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
 games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu, .vampir)
-panel/          Web paneli: bottan ayrı süreç, veritabanını salt okunur açar
+panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58)
 scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
@@ -157,6 +157,8 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/uyeSustur.js` | `.sustur` ile susturulan üyeler ve bitişleri (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
 | `lib/uyeSustur.js` | susturulan üyenin silinen mesaj sayısı | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/panelHesap.js` | panel oyuncu hesapları (`.panel kayıt`) | `data/stats.db` (kalıcı) |
+| `panel/kumar.js` | paneldeki açık blackjack/mayın/kule/hi-lo eli ve son sonuç | panel belleği (panelle ölür) |
 
 Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe. Tek istisna botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
 
@@ -328,7 +330,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 55 (tamam):** panelin eksik kartları. Ayrıntı aşağıda.
 - **Faz 56 (tamam):** `.coinver`. Ayrıntı aşağıda.
 - **Faz 57 (tamam):** `.kumaraf`. Ayrıntı aşağıda.
-- **Faz 58+:** yeni komutlar, her biri ayrı adım
+- **Faz 58 (tamam):** panelde kumar ve `.panel`. Ayrıntı aşağıda.
+- **Faz 59+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -941,7 +944,7 @@ girmez: yeni ürün eklenince numarası kayar.
 ### Faz 31 — Web paneli
 
 Numara ban yese ya da grup dağılsa da veriler görülsün diye vardır. Bottan ayrı süreçtir, WhatsApp'a
-hiç bağlanmaz, `data/stats.db`'yi **salt okunur** açar. Veri değiştiren bir panel özelliği eklenmez.
+hiç bağlanmaz, istatistikleri `data/stats.db`'den **salt okunur** okur. Tek yazan özellik kumarhanedir (Faz 58, bot sahibinin kararı); başka veri değiştiren panel özelliği eklenmez.
 Yeni npm paketi yoktur: Node `http` + sunucuda üretilen HTML + `panel/stil.css`.
 
 ```
@@ -949,6 +952,8 @@ panel/index.js     başlatma, saatlik yedek denetimi
 panel/sunucu.js    HTTP, giriş, çerez
 panel/guvenlik.js  scrypt, deneme sınırı, oturumlar
 panel/veri.js      bütün sorgular
+panel/kumar.js     kumarhane: oyun eli ve XP yazımı (Faz 58)
+panel/oyunSayfalari.js  kumarhane HTML
 panel/sayfalar.js  HTML
 panel/yedek.js     günlük yedek
 ```
@@ -1228,6 +1233,22 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 
 `.kumaraf @kişi` günlük kumar tavanını (Faz 53) dolduranın yasağını kaldırır (`lib/stats.js:kumarAffet()`). Etiket yoksa yazan kendini affeder (WhatsApp kendini etiketlemeye izin vermiyor). Yalnızca bot sahibi ve İçişleri Bakanı kullanır (bot sahibinin kararı). Bakan için `.bakan af` ile aynı `bakan_hak` sayacını harcar, sahip sınırsızdır. Yasak `kumar_gun.net` sıfırlanarak kalkar, tavan aynı kalır: net silinmeseydi tavan dolu olduğu için her kazanç kasada kalırdı. Yani af kişiye o gün bir tavan daha açar. Tavana takılmamış hedef hak yakmaz. İflas ve hapis yasağına dokunmaz, hapis `.bakan af`'ın işidir.
 
+### Faz 58 — Panelde kumar, `.panel`
+
+```
+panel_hesap(chat_jid, user_jid, numara, lid, sifre, surum ms)   PK(chat_jid,user_jid)
+```
+
+Bot sahibinin kararıyla panel salt okunur olmaktan çıktı: grup üyeleri kumar oyunlarını panelden de oynar. Faz 31'deki "JavaScript yok" ve CSP kuralları sürer: her hamle bir form gönderimidir, sonuç yönlendirmeden sonra bir kez gösterilir.
+
+- **Kayıt:** `.panel kayıt <şifre>` yalnızca özelden. Kimliği WhatsApp verir, kimse başkasının numarasıyla hesap açamaz. Bot `groupFetchAllParticipating()` ile kişinin üye olduğu grupları bulur, her grup için bir satır yazar (`user_jid` gruptaki üye kimliği, `numara`/`lid` giriş adı, rakamlar). Grupta yazılırsa şifre kaydedilmez, mesaj silinmeye çalışılır. Şifre `args`'tan değil `text`'ten okunur (`miktarlariCoz` "50m"i sayıya çevirirdi).
+- **Gruptan çıkan girmez:** `index.js` `group-participants.update`'te `remove` gelince satırı siler, bot çıkarılırsa grubun bütün satırlarını. Panel her istekte satırları yeniden okur, `surum` oturumdakiyle tutmazsa (şifre değişti) oturum düşer.
+- **Giriş:** numara alanı boşsa eski yönetici şifresi, doluysa oyuncu. Oyuncu oturumu yalnızca `/oyun` yollarını görür. Hesap yoksa da scrypt çalışır (`sahteHash`). Deneme sınırı ikisinde ortaktır.
+- **Kumar:** `panel/kumar.js` WhatsApp'la aynı fonksiyonları çağırır (`kumarEngeli`, `kumarYasagi`, `miktarCoz`, `bahisOyna`, `xpCek`, `kumarOde`); oyun mantığı `lib/kumar.js` ve `games/*.js`'in dışa açık saf fonksiyonlarıdır, kopyalanmaz. Panel bot kimliğini `ayar.bot_jid`'den öğrenip `botHesabiniTani()`'ya verir; kayıt yoksa kumar kapalıdır, yoksa kayıp ve kazanç hazineye yazılmazdı. İki süreç aynı dosyaya yazar: WAL ve better-sqlite3'ün 5 sn bekleme süresi yeter, her işlem zaten tek transaction.
+- **Çok adımlı el** panel belleğindedir, gruptaki oyun yuvasını tutmaz. 3 dk hamle gelmezse WhatsApp'taki gibi kapanır (blackjack `dur`, öteki `çek`). Panel yeniden başlarsa yarım bahis yanar. Açık el varken başka oyun açılmaz. Aynı kişinin iki işlemi arasında 700 ms olmalı: form iki kez gönderilmesin.
+- Oyun adı formdan gelir, `Object.hasOwn` ile denetlenir (`constructor` gibi adlar nesne alanı sayılmasın).
+- Sahip şansı panelde yoktur. `.yarış`, `.vs`, `.piyango` panelde yoktur.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1350,3 +1371,4 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 104. Panelde grup sayfası → Hükümet, Hazine, Kumarhane, Suly, Cezalılar kartları; bot sıralamada "🤖 Hazine"; kişi sayfası → Varlıklar, Borç ve alacak, kumar oyun dökümü; servet coin ve mülkü sayar
 105. Sahip özelden `.coinver <grup id> <numara> 5` → onay gelir, kişi `.coinmarket`'te 5 coin görür; `-10` → bakiye 0; grupta yazılırsa hiç tepki yok; `.help coinver` → yok
 106. Tavanı dolduran kişiye İçişleri Bakanı `.kumaraf @kişi` → yasak kalkar, kalan hak 4 yazar, `.bahis` çalışır; tavanı dolduran sahip etiketsiz `.kumaraf` → kendi yasağı kalkar; sıradan üye → "yalnızca İçişleri Bakanı"; yasaksız kişiye → "takılmamış", hak yanmaz; sahip için kalan hak yazmaz
+107. Bota özelden `.panel kayıt deneme-sifre` → giriş adları yazılır; grupta yazılırsa → kaydedilmez. Panelde numarayla girince yalnızca kumarhane açılır, `/grup` kumarhaneye döner; slot oynayınca WhatsApp'ta `.profil` aynı XP'yi gösterir; mayında kutu açılır, `çek` öder; kişi gruptan atılınca sayfa yenilenince giriş ekranına düşer; numara alanı boş + yönetici şifresi → eski panel
