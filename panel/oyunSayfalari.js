@@ -27,9 +27,11 @@ export function grupSecimi(gruplar) {
 
 const gizli = (chat) => h`<input type="hidden" name="grup" value="${chat}">`
 
+/** `tek`: tek düğmeli oyun; bahis alanı ile düğme yan yana durur, telefonda kart kısalır. */
 function oyunKarti(chat, oyun, varsayilan, govde, aciklama, etiket = '') {
   const t = OYUN_ADI[oyun]
-  return h`<form class="masa-kart k-${oyun}" method="post" action="/oyun/oyna">
+  const tek = govde.metin.startsWith('<button')
+  return h`<form class="masa-kart k-${oyun}${tek ? ' tek' : ''}" method="post" action="/oyun/oyna">
   ${gizli(chat)}<input type="hidden" name="oyun" value="${oyun}">
   <div class="masa-ust">
     <span class="masa-ikon" aria-hidden="true">${t.ikon}</span>
@@ -38,6 +40,11 @@ function oyunKarti(chat, oyun, varsayilan, govde, aciklama, etiket = '') {
   </div>
   <label class="alan"><small>Bahis</small>
     <input name="miktar" value="${varsayilan}" placeholder="1000, 5m, hepsi" autocomplete="off" required></label>
+  <div class="cipler" hidden>
+    <button type="button" data-cip="yari">½</button>
+    <button type="button" data-cip="iki">2x</button>
+    <button type="button" data-cip="hepsi">Hepsi</button>
+  </div>
   ${govde}
 </form>`
 }
@@ -58,7 +65,7 @@ ${oyunKarti(chat, 'kazı', v, h`<button class="buyuk-dugme">KAZI</button>`, '3 a
 ${oyunKarti(chat, 'bahis', v, secenekler([['yazı', 'Yazı'], ['tura', 'Tura']]), 'Bilirsen 2x')}
 </section>
 <h2 class="bolum">🃏 Masa oyunları</h2>
-<section class="oyunlar">
+<section class="oyunlar masalar">
 ${oyunKarti(chat, 'blackjack', v, h`<button class="buyuk-dugme">MASAYA OTUR</button>`, 'Kazanç 2x, blackjack 2,5x')}
 ${oyunKarti(chat, 'mayın', v, h`<button class="buyuk-dugme">TARLAYA GİR</button>`, '12 kutu, 3 mayın, 211x tavan')}
 ${oyunKarti(chat, 'kule', v, secenekler([['kolay', 'Kolay'], ['orta', 'Orta'], ['zor', 'Zor', 'sicak']]), '8 kat, tepe 245x', '245x')}
@@ -191,7 +198,7 @@ export function kumarhane({ chat, grupAdi, cokGrup, durum }) {
 <section class="kasa">
   <div class="neon">KUMARHANE</div>
   <small>${grupAdi || 'Grup'}</small>
-  <div class="bakiye"><span class="jeton" aria-hidden="true">🪙</span>${sayi.format(xp)} <small>XP</small></div>
+  <div class="bakiye"><span class="jeton" aria-hidden="true">🪙</span><span class="bakiye-sayi" data-xp="${xp}">${sayi.format(xp)}</span> <small>XP</small></div>
   <span class="durum-cip${yasakBitis ? ' yasakli' : ''}">${durumMetni}${yasakBitis ? ` · ${saatBicimi.format(yasakBitis)}'e kadar` : ''}</span>
   <button type="button" class="ses-dugme" hidden aria-label="Sesi aç ya da kapat">🔊</button>
 </section>

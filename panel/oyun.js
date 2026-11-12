@@ -115,10 +115,10 @@
     const kutu = document.getElementById('sonuc')
     if (!kutu) {
       const el = document.getElementById('acik-el')
-      if (!el) return
+      if (!el) return 0
       if (hamleSonrasi && (el.dataset.oyun === 'mayın' || el.dataset.oyun === 'kule')) sesler.para()
       else sesler.kart()
-      return
+      return 0
     }
     const { oyun, durum } = kutu.dataset
     const kat = Number(kutu.dataset.carpan) || 0
@@ -162,6 +162,40 @@
     else if (durum === 'kaybetti') sesler.kaybet(bitis)
     else if (durum === 'hata') sesler.kaybet()
     else sesler.para(bitis)
+
+    // Telefonda kazanç ve patlama ele de gelsin; desteklemeyen tarayıcı yok sayar.
+    if (durum === 'kazandi' || (durum === 'kaybetti' && kutu.classList.contains('adimli'))) {
+      setTimeout(() => navigator.vibrate?.(durum === 'kazandi' ? [30, 40, 60] : 120), bitis * 1000)
+    }
+    return durum === 'hata' ? 0 : bitis
+  }
+
+  const binlik = new Intl.NumberFormat('tr-TR')
+
+  /**
+   * Bakiye eski değerde bekler, animasyon bitince yeni değere sayar: yeni bakiye
+   * hemen yazılsaydı makaralar durmadan sonuç belli olurdu.
+   */
+  function bakiyeSay(eski, gecikmeSn) {
+    const yazi = document.querySelector('.bakiye-sayi')
+    const yeniXp = Number(yazi?.dataset.xp)
+    if (!yazi || !Number.isFinite(eski) || !Number.isFinite(yeniXp) || eski === yeniXp) return
+    yazi.textContent = binlik.format(eski)
+    setTimeout(() => {
+      const kutu = yazi.closest('.bakiye')
+      const sinif = yeniXp > eski ? 'artti' : 'azaldi'
+      kutu?.classList.add(sinif)
+      const sure = 900
+      const bas = performance.now()
+      const adim = (simdi) => {
+        const oran = Math.min(1, (simdi - bas) / sure)
+        const yumusak = 1 - (1 - oran) ** 3
+        yazi.textContent = binlik.format(Math.round(eski + (yeniXp - eski) * yumusak))
+        if (oran < 1) requestAnimationFrame(adim)
+        else setTimeout(() => kutu?.classList.remove(sinif), 700)
+      }
+      requestAnimationFrame(adim)
+    }, gecikmeSn * 1000)
   }
 
   const yeni = (etiket, sinif, metin) => {
@@ -227,9 +261,11 @@
       location.reload()
       return
     }
+    const eskiXp = Number(document.querySelector('.bakiye-sayi')?.dataset.xp)
+    govde.classList.add('degisti')
     document.querySelector('main').replaceWith(document.adoptNode(govde))
-    sesDugmesi()
-    canlandir(hamleSonrasi)
+    hazirla()
+    bakiyeSay(eskiXp, canlandir(hamleSonrasi))
     const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el')
     hedef?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -270,6 +306,37 @@
     }
   })
 
-  sesDugmesi()
+  /** Betikle gelen parçaları açar: ses düğmesi ve hızlı bahis düğmeleri. */
+  function hazirla() {
+    sesDugmesi()
+    for (const cipler of document.querySelectorAll('.cipler')) cipler.hidden = false
+  }
+
+  const bahisAlanlari = () => document.querySelectorAll('input[name="miktar"]')
+  function bahisYaz(deger) {
+    for (const alan of bahisAlanlari()) alan.value = deger
+  }
+
+  // Bahis bir kartta yazılınca bütün kartlara geçer: her oyunda yeniden yazılmasın.
+  document.addEventListener('input', (olay) => {
+    if (olay.target instanceof HTMLInputElement && olay.target.name === 'miktar') bahisYaz(olay.target.value)
+  })
+
+  document.addEventListener('click', (olay) => {
+    const dugme = olay.target instanceof Element ? olay.target.closest('[data-cip]') : null
+    if (!dugme) return
+    const alan = dugme.closest('form')?.querySelector('input[name="miktar"]')
+    if (!alan) return
+    ses()
+    sesler.tik()
+    if (dugme.dataset.cip === 'hepsi') return bahisYaz('hepsi')
+    // Yalnızca düz sayı katlanır; "5m" ya da "hepsi" yazılıysa bakiye taban alınır.
+    const bakiye = Number(document.querySelector('.bakiye-sayi')?.dataset.xp) || 0
+    const simdiki = /^\d+$/.test(alan.value.trim()) ? Number(alan.value.trim()) : bakiye
+    const yeniDeger = dugme.dataset.cip === 'yari' ? Math.floor(simdiki / 2) : simdiki * 2
+    bahisYaz(String(Math.max(10, Math.min(yeniDeger, Math.max(bakiye, 10)))))
+  })
+
+  hazirla()
   canlandir(false)
 })()

@@ -64,7 +64,7 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   const sayfa = await fetch(`${adres}/oyun`, { headers: { Cookie } })
   assert.equal(sayfa.status, 200)
   const html = await sayfa.text()
-  assert.ok(html.includes('100.000 <small>XP</small>'))
+  assert.ok(html.includes('data-xp="100000">100.000<'))
   // Betik yalnızca panelin kendi dosyasıdır, satır içi betik yoktur.
   assert.ok(html.includes('src="/oyun.js'))
   assert.ok(!/<script(?![^>]*src=)/.test(html))
