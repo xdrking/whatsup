@@ -13,7 +13,7 @@ const { HISSELER } = await import('../lib/borsa.js')
 const {
   addXp, bahisOyna, bankaCek, bankaYatir, borsaAl, borsaSat, botHesabiMi, botHesabiniTani, getStats, kumarOde,
   recordMessage, kumarSiralama, piyangoBilet, piyangoCek, vsOyna, xpCek,
-  kumarYasagi,
+  kumarYasagi, kumarAffet, adayOl, oyVer, secimDurumu,
 } = await import('../lib/stats.js')
 
 const el = (...d) => d.map((deger) => ({ deger, renk: '♠' }))
@@ -218,4 +218,33 @@ test('günlük kumar tavanı: piyasanın yarısını aşan kazanç kasada kalır
 
   // Ertesi gün tavan sıfırlanır.
   assert.equal(kumarYasagi(chatJid, userJid, Date.UTC(2026, 10, 11, 21, 1)), 0)
+})
+
+test('kumar affı: sahip ve İçişleri Bakanı tavan yasağını kaldırır, net sıfırlanır', () => {
+  const chatJid = 'kumaraf@g.us'
+  const now = Date.UTC(2026, 10, 11, 9)
+  addXp({ chatJid, userJid: 'k', amount: 1000 })
+  addXp({ chatJid, userJid: 'bakan', amount: 50_000 })
+  addXp({ chatJid, userJid: 'secmen', amount: 1000 })
+  adayOl({ chatJid, userJid: 'bakan', makam: 'icisleri', now })
+  oyVer({ chatJid, secmen: 'secmen', aday: 'bakan', makam: 'icisleri', now })
+  const P = now + 3_600_000
+  secimDurumu({ chatJid, userJid: 'secmen', now: P })
+
+  // Yasak yokken hak yanmaz.
+  assert.deepEqual(kumarAffet({ chatJid, userJid: 'bakan', hedef: 'k', now: P }), { yasakYok: true })
+
+  const tavanaVur = () => bahisOyna({ chatJid, userJid: 'k', miktar: 1000, cevir: () => ({ carpan: 1000 }), at: P })
+  tavanaVur()
+  assert.ok(kumarYasagi(chatJid, 'k', P) > P)
+  assert.deepEqual(kumarAffet({ chatJid, userJid: 'k', hedef: 'k', now: P }), { degil: true })
+  assert.deepEqual(kumarAffet({ chatJid, userJid: 'bakan', hedef: 'k', now: P }), { kalan: 4 })
+  assert.equal(kumarYasagi(chatJid, 'k', P), 0)
+  // Tavan yeniden dolabilir: ilk kazanç kırpılmadan ödenir.
+  const tekrar = bahisOyna({ chatJid, userJid: 'k', miktar: 100, cevir: () => ({ carpan: 2 }), at: P })
+  assert.equal(tekrar.kesilen, 0)
+
+  tavanaVur()
+  assert.deepEqual(kumarAffet({ chatJid, userJid: 'yabanci', hedef: 'k', sahip: true, now: P }), { kalan: null })
+  assert.equal(kumarYasagi(chatJid, 'k', P), 0)
 })

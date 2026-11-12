@@ -327,7 +327,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 54 (tamam):** susturmayı dinlemeyenin varlığına el konur. Ayrıntı aşağıda.
 - **Faz 55 (tamam):** panelin eksik kartları. Ayrıntı aşağıda.
 - **Faz 56 (tamam):** `.coinver`. Ayrıntı aşağıda.
-- **Faz 57+:** yeni komutlar, her biri ayrı adım
+- **Faz 57 (tamam):** `.kumaraf`. Ayrıntı aşağıda.
+- **Faz 58+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1223,6 +1224,10 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 
 `.xpver`'in coin hali (`commands/coinver.js`, `lib/stats.js:coinAyarla()`): `ownerOnly`, `hidden`, yalnızca özelden, grupta iz bırakmadan düşer. Numara ve grup ayrıştırması `xpver.js`'ten alınır, üye `uyeKimligiBul()` ile bulunur. Eksi adet coin alır, bakiye sıfırın altına inmez. Basılan coin bozdurulunca XP olur, kuru doğrudan etkilemez (coin `paraArzi`'ne girmez).
 
+### Faz 57 — `.kumaraf`
+
+`.kumaraf @kişi` günlük kumar tavanını (Faz 53) dolduranın yasağını kaldırır (`lib/stats.js:kumarAffet()`). Yalnızca bot sahibi ve İçişleri Bakanı kullanır (bot sahibinin kararı). Bakan için `.bakan af` ile aynı `bakan_hak` sayacını harcar, sahip sınırsızdır. Yasak `kumar_gun.net` sıfırlanarak kalkar, tavan aynı kalır: net silinmeseydi tavan dolu olduğu için her kazanç kasada kalırdı. Yani af kişiye o gün bir tavan daha açar. Tavana takılmamış hedef hak yakmaz. İflas ve hapis yasağına dokunmaz, hapis `.bakan af`'ın işidir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1344,3 +1349,4 @@ Faz 36'dan sonra eklenen her şey panele işlendi. Yeni tablolar `tum()`/`tek()`
 103. `.sustur @kişi` sonra kişi 3 mesaj yazar → özelden "3 mesaj daha yazarsan" uyarısı gelir; 3 mesaj daha → özelden el konulanlar listesi gelir, `.servet`'i yarıya iner, `.top`'ta bot artar; `.sustur kaldır @kişi` → sayım sıfırlanır
 104. Panelde grup sayfası → Hükümet, Hazine, Kumarhane, Suly, Cezalılar kartları; bot sıralamada "🤖 Hazine"; kişi sayfası → Varlıklar, Borç ve alacak, kumar oyun dökümü; servet coin ve mülkü sayar
 105. Sahip özelden `.coinver <grup id> <numara> 5` → onay gelir, kişi `.coinmarket`'te 5 coin görür; `-10` → bakiye 0; grupta yazılırsa hiç tepki yok; `.help coinver` → yok
+106. Tavanı dolduran kişiye İçişleri Bakanı `.kumaraf @kişi` → yasak kalkar, kalan hak 4 yazar, `.bahis` çalışır; sıradan üye → "yalnızca İçişleri Bakanı"; yasaksız kişiye → "takılmamış", hak yanmaz; sahip için kalan hak yazmaz
