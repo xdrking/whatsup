@@ -15,9 +15,32 @@ import { endGame } from './gameManager.js'
 
 const YEDEK_KLASORU = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'yedek')
 
+// Özel mesajlar arasında beklenir: kısa sürede çok kişiye yazmak numarayı ban riskine sokar (darbe gibi).
+const DM_ARASI_MS = 3000
+
 const oylamalar = new Map()
 
 export const rebornSuruyor = (chatJid) => oylamalar.has(chatJid)
+
+const bekle = (ms) => new Promise((r) => setTimeout(r, ms))
+
+/** Numarası bilinen üyeye numarasından yazılır: LID'e özel mesaj her zaman ulaşmıyor (bkz. `.tabu`). */
+function dmAdresi(uye) {
+  return [uye.jid, uye.id].find((j) => j?.endsWith('@s.whatsapp.net')) ?? uye.id
+}
+
+/** Oylama iptal edilir ya da biterse kalan üyelere yazılmaz. */
+async function ozeldenBildir({ sock, chatJid, state, hedefler, metin }) {
+  for (const [i, uye] of hedefler.entries()) {
+    if (i) await bekle(DM_ARASI_MS)
+    if (oylamalar.get(chatJid) !== state) return
+    try {
+      await sock.sendMessage(dmAdresi(uye), { text: metin })
+    } catch (err) {
+      logger.warn({ err, uye: uye.id }, 'Reborn özel mesajı gönderilemedi')
+    }
+  }
+}
 
 /** Ad panel/yedek.js'in döndürme kalıbına uymaz, günlük yedeklerle birlikte silinmez. */
 async function yedekAl() {
@@ -89,9 +112,9 @@ async function bitir(sock, chatJid) {
 export async function rebornDuyur({ sock, chatJid, metadata, sahip }) {
   if (oylamalar.has(chatJid)) return false
 
-  const uyeler = (metadata.participants || [])
+  const katilimcilar = (metadata.participants || [])
     .filter((u) => ![u.id, u.jid, u.lid].some((j) => j && botHesabiMi(jidNormalizedUser(j))))
-    .map((u) => jidNormalizedUser(u.id))
+  const uyeler = katilimcilar.map((u) => jidNormalizedUser(u.id))
   const sure = Math.round(REBORN_SURE_MS / 60_000)
 
   const metin = [
@@ -127,6 +150,21 @@ export async function rebornDuyur({ sock, chatJid, metadata, sahip }) {
   }, REBORN_SURE_MS)
   state.timer.unref?.()
   oylamalar.set(chatJid, state)
+
+  const dm = [
+    '♻️ *REBORN OYLAMASI*',
+    '',
+    `*${metadata.subject || 'Grup'}* grubunda ekonomiyi sıfırdan başlatmak oylanıyor.`,
+    '',
+    'Kabul edilirse cüzdan, banka, borçlar, coin, mülk, Suly, hisse, yatırım ve meslekler sıfırlanır; mesaj sayıları, rozetler, kartlar, evcil hayvan, evlilik, makamlar ve unvan kalır.',
+    '',
+    `Gruptaki oylama mesajına *evet* ya da *hayır* yazarak yanıt ver. ⏱️ ${sure} dakikan var. Buraya yazılan oy sayılmaz.`,
+  ].join('\n')
+  // Oylamayı başlatan zaten biliyor, ona yazılmaz.
+  const hedefler = katilimcilar.filter((u) => jidNormalizedUser(u.id) !== sahip)
+  ozeldenBildir({ sock, chatJid, state, hedefler, metin: dm })
+    .catch((err) => logger.error({ err, chatJid }, 'Reborn özel mesajları yarıda kaldı'))
+
   return true
 }
 
