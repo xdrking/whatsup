@@ -25,7 +25,7 @@ export default {
   details: [
     '♻️ *Reborn nasıl yapılır?*\n',
     '1️⃣ Bota *özelden* `.reborn <grup id>` yaz: neyin silineceğini gösterir, hiçbir şey değişmez.',
-    '2️⃣ `.reborn onay <grup id>` yaz: grupta herkes etiketlenir, reborn anlatılır, oylama başlar.',
+    '2️⃣ `.reborn onay <grup id>` yaz: grupta herkes etiketlenir, reborn anlatılır, oylama başlar. Üyelere özelden de bildirim gider.',
     `3️⃣ Üyeler oylama mesajına *evet* ya da *hayır* yanıtı verir. ${DAKIKA} dakika sonra evet fazlaysa reborn gelir.`,
     '   Eşitlikte ya da kimse oy vermezse gelmez. Sen de oy verebilirsin.\n',
     '🧹 *Sıfırlanan*: cüzdan, banka, kredi, tefeci, coin, mülk, Suly, hisse, yatırım, çete kasası, piyango, ödül, meslek, hapis, hazine.',
