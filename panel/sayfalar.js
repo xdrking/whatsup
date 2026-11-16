@@ -196,6 +196,13 @@ function hazineKarti(chatJid, hz) {
   </section>`
 }
 
+function devirlerKarti(chatJid, devirler) {
+  return h`<section class="kart liste"><h2>Devirler</h2>${devirler.map((d) => h`
+    ${duzSatir(`♻️ ${d.no}. devir`, sayi.format(d.kur), `${tarih.format(d.zaman)}'de bitti · son kur · piyasa ${sayi.format(d.arz)} XP`)}
+    ${d.zenginler.map((z) => uyeSatiri(chatJid, z.user_jid, z.uye, '⭐ Devir zengini', sayi.format(z.servet), 'XP'))}`)}
+  </section>`
+}
+
 function hukumetKarti(chatJid, satirlar) {
   return h`<section class="kart liste"><h2>Hükümet</h2>${satirlar.map((m) => h`
     ${m.user_jid
@@ -353,6 +360,8 @@ export function grupSayfasi(chatJid, g, { tekGrup, yedekVar }) {
   ${g.hukumet.length ? hukumetKarti(chatJid, g.hukumet) : ''}
 
   ${g.hazine ? hazineKarti(chatJid, g.hazine) : ''}
+
+  ${g.devirler.length ? devirlerKarti(chatJid, g.devirler) : ''}
 
   ${g.ekonomi ? ekonomiKarti(chatJid, g.ekonomi) : ''}
 

@@ -6,11 +6,12 @@
 import logger from '../lib/logger.js'
 import {
   crashHedefCoz, crashUc, CRASH_EN_AZ, CRASH_EN_COK, kaziCevir, kumarEngeli, miktarCoz, plinkoAt,
-  plinkoRiskCoz, ruletCevir, ruletSecimCoz, slotCevir, yaziTura, yuzCoz,
+  plinkoRiskCoz, ruletCevir, ruletSecimCoz, sansliCevir, slotCevir, yaziTura, yuzCoz,
 } from '../lib/kumar.js'
+import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
 import { miktarlariCoz } from '../lib/sayi.js'
 import { getDb } from '../lib/db.js'
-import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, kumarOde, xpCek } from '../lib/stats.js'
+import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, kumarOde, rebornSansiVar, sonReborn, xpCek } from '../lib/stats.js'
 import { desteKur, elDegeri, odemeCarpani } from '../games/blackjack.js'
 import { KUTU, mayinCarpani, mayinKur } from '../games/mayin.js'
 import { KAT, kuleCarpani, kuleKur, ZORLUK, zorlukCoz } from '../games/kule.js'
@@ -158,7 +159,9 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     const g = giris(h, miktar)
     if (g.hata) return sonucYaz(k, { oyun, hata: g.hata })
 
-    const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: g.miktar, cevir: hazir.cevir, oyun, tavansiz: true })
+    // Reborn'dan sonraki gizli şans WhatsApp'taki `.crash` ile aynıdır, sayfada görünmez (lib/reborn.js).
+    const cevir = oyun === 'crash' && rebornSansiVar(h.chat, saat()) ? sansliCevir(hazir.cevir, REBORN_CRASH_SANSI) : hazir.cevir
+    const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: g.miktar, cevir, oyun, tavansiz: true })
     if (!s) return sonucYaz(k, { oyun, hata: 'Kumarhane şu an kapalı, sonra dene.' })
     if (s.yetersiz) return sonucYaz(k, { oyun, hata: 'O kadar XP\'n yok.' })
     sonucYaz(k, { oyun, bahis: g.miktar, sonuc: s.sonuc, once: s.once, xp: s.xp, fark: s.fark, kesilen: s.kesilen })
@@ -170,6 +173,8 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     el.bitti = true
     temizle(el.zaman)
     eller.delete(k)
+    // El reborn'dan önce açıldıysa bahis eski paradır: ödenseydi sıfırlanan ekonomiye eski rakam girerdi.
+    if ((sonReborn(el.chat)?.no ?? 0) !== el.reborn) return sonucYaz(k, { oyun: el.oyun, hata: 'Reborn geldi, açık elin kapandı.' })
     const s = kumarOde({ oyun: el.oyun, chatJid: el.chat, userJid: el.user, bahis: el.bahis, odeme, tavansiz: true })
     if (!s) {
       logger.error({ chat: el.chat, oyun: el.oyun }, 'Panel kumar ödemesi yazılamadı')
@@ -297,7 +302,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     if (!cekim) return sonucYaz(k, { oyun, hata: 'Masa şu an kapalı, sonra dene.' })
     if (cekim.yetersiz) return sonucYaz(k, { oyun, hata: 'O kadar XP\'n yok.' })
 
-    const el = { oyun, chat: h.chat, user: h.user, bahis: g.miktar, bitti: false, uyari: '' }
+    const el = { oyun, chat: h.chat, user: h.user, bahis: g.miktar, bitti: false, uyari: '', reborn: sonReborn(h.chat)?.no ?? 0 }
     if (oyun === 'blackjack') {
       el.deste = deste()
       el.taban = g.miktar

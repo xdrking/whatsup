@@ -288,6 +288,14 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     return satirlar.some((s) => s.user_jid || s.secim) ? satirlar : []
   }
 
+  /** Geçmiş reborn'lar, yeniden eskiye: son kur, piyasadaki para ve o anki en zenginler. */
+  function devirler(chatJid, liste) {
+    const adlar = new Map(liste.map((u) => [u.user_jid, u]))
+    const zenginler = tum('reborn_zengin', 'SELECT no, user_jid, servet FROM reborn_zengin WHERE chat_jid = ? ORDER BY sira', chatJid)
+    return tum('reborn', 'SELECT no, zaman, arz, kur FROM reborn WHERE chat_jid = ? ORDER BY no DESC', chatJid)
+      .map((d) => ({ ...d, zenginler: zenginler.filter((z) => z.no === d.no).map((z) => ({ ...z, uye: adlar.get(z.user_jid) ?? null })) }))
+  }
+
   function kumarTop(chatJid, liste) {
     const adlar = new Map(liste.map((u) => [u.user_jid, u]))
     const insanlar = liste.filter((u) => !u.bot && (u.kumarNet || u.kumarZarar)).map((u) => ({ ...u, uye: adlar.get(u.user_jid) }))
@@ -433,6 +441,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         hazine: hazine(chatJid, liste, now),
         hukumet: hukumet(chatJid, liste, now),
         kumarTop: kumarTop(chatJid, liste),
+        devirler: devirler(chatJid, liste),
         vergiTop: vergiTop(chatJid, liste),
         kripto: kripto(chatJid, liste),
         petler: petler(chatJid, liste, now),

@@ -1,4 +1,4 @@
-import { bankaBakiyesi, botHesabiMi, coinDurumu, getStats, mulkDurumu, marketDurumu, sampiyonlukSayisi, seviyeIlerlemesi, sosyalDurum } from '../lib/stats.js'
+import { bankaBakiyesi, botHesabiMi, coinDurumu, getStats, mulkDurumu, marketDurumu, rebornYildizi, sampiyonlukSayisi, seviyeIlerlemesi, sosyalDurum } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -39,6 +39,7 @@ export default {
 
     const banka = bankaBakiyesi(from, jid)
     const sampiyonluk = sampiyonlukSayisi(from, jid)
+    const yildiz = rebornYildizi(from, jid)
     const coin = coinDurumu(from, jid).bakiye
     const mulkler = mulkDurumu({ chatJid: from, userJid: jid })
     const sosyal = sosyalDurum(from, jid)
@@ -47,6 +48,7 @@ export default {
       `👤 *${ad}*  ${mentionOf(jid)}`,
       ...(unvan ? [unvan] : []),
       ...(sampiyonluk ? [`🏆 Sezon şampiyonu (${sampiyonluk} kez)`] : []),
+      ...(yildiz ? [`⭐ Devir zengini${yildiz > 1 ? ` (${yildiz} kez)` : ''}`] : []),
       ...(sosyal.baskan ? ['🏛️ Merkez Bankası Başkanı'] : []),
       ...(sosyal.hapis ? ['🚔 Hapiste'] : []),
       `🏅 Seviye ${level}  •  ${sayi.format(veri.xp)} XP`,

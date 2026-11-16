@@ -377,7 +377,11 @@ test('eksik kartlar: hazine, hükümet, kumarhane, Suly, pet, cezalılar, varlı
   db.prepare('INSERT INTO susturulan_uye (chat_jid, user_jid, bitis) VALUES (?, ?, 0)').run(grup, 'kumarbaz@lid')
   db.prepare("INSERT INTO tefeci (chat_jid, borclu, alacakli, anapara, borc, saat, vade, durum) VALUES (?, 'kumarbaz@lid', 'baskan@lid', 100, 150, 1, ?, 'acik')").run(grup, now + 3_600_000)
 
+  db.prepare('INSERT INTO reborn (chat_jid, no, zaman, arz, kur) VALUES (?, 1, ?, 987654321, 9876543)').run(grup, now - 86_400_000)
+  db.prepare("INSERT INTO reborn_zengin (chat_jid, no, sira, user_jid, servet) VALUES (?, 1, 1, 'kumarbaz@lid', 555444333)").run(grup)
+
   const g = veri.grup(grup, 'xp', now)
+  assert.equal(g.devirler[0].zenginler[0].user_jid, 'kumarbaz@lid')
   assert.equal(g.hazine.banka, 123_456)
   assert.equal(g.hukumet.find((m) => m.kod === 'baskan').askida, true)
   assert.equal(g.hukumet.find((m) => m.kod === 'adalet').secim.adaylar[0].oy, 3)
@@ -392,7 +396,7 @@ test('eksik kartlar: hazine, hükümet, kumarhane, Suly, pet, cezalılar, varlı
 
   const Cookie = await cerezAl('8.8.8.2')
   const html = await (await fetch(`${adres}/grup?id=${encodeURIComponent(grup)}`, { headers: { Cookie } })).text()
-  for (const parca of ['Hazine', '123.456', 'Hükümet', 'Başkan Bey', 'darbe', 'Seçim sürüyor', 'Kumarhane', 'Suly', 'Pamuk', 'Cezalılar', 'Tefeci']) {
+  for (const parca of ['Hazine', '123.456', 'Hükümet', 'Başkan Bey', 'darbe', 'Seçim sürüyor', 'Kumarhane', 'Suly', 'Pamuk', 'Cezalılar', 'Tefeci', 'Devirler', '9.876.543', '555.444.333']) {
     assert.ok(html.includes(parca), parca)
   }
 

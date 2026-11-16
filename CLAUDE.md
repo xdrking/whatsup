@@ -149,6 +149,8 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | coin bakiyesi, toplu soygun hakkı, sigorta, mülkler, günlük kur | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | hapis, seçim, başkan ve bakanlar, hazine aktarımı, evlilik, meslek, çete | `data/stats.db` (kalıcı) |
 | `games/darbe.js` | süren darbenin oyları | bellek (süreçle ölür) |
+| `games/reborn.js` | süren reborn oylamasının oyları | bellek (süreçle ölür) |
+| `lib/db.js` + `lib/stats.js` | geçmiş reborn'lar ve o anki en zenginler | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.pet` evcil hayvanlar | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kripto` Suly bakiyeleri ve son Bitcoin fiyatı | `data/stats.db` (kalıcı) |
 | `lib/kripto.js` | son çekilen Bitcoin fiyatı (60 sn) | bellek (süreçle ölür) |
@@ -336,7 +338,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 60 (tamam):** kumarhanede yan menü, oyun başına sayfa, hesap bölümü; panelde kumar yasağı yok. Ayrıntı aşağıda.
 - **Faz 61 (tamam):** panel blackjack'inde çift, böl, sigorta, teslim. Ayrıntı aşağıda.
 - **Faz 62 (tamam):** slot geçiş hatası, lobide vurgun şeridi, telefonda alt menü. Ayrıntı aşağıda.
-- **Faz 63+:** yeni komutlar, her biri ayrı adım
+- **Faz 63 (tamam):** `.reborn`. Ayrıntı aşağıda.
+- **Faz 64+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1298,6 +1301,26 @@ Yalnızca paneldedir (`panel/kumar.js:blackjackHamle`); WhatsApp'taki `.blackjac
 - **Çarpan rozeti ve ödeme tablosu:** tek adımlı oyunda kazanılınca sonuç kartı çarpanı (`.kat`) yazar. Slot ve kazı kazan sayfasındaki ödeme tablosu `SEMBOLLER`, `IKILI_CARPAN` ve `KAZI_ODULLERI`'nden üretilir, elle yazılmaz. Slottaki ödeme çizgisi bot sahibinin isteğiyle kaldırıldı.
 - **Alt menü** (`.alt-menu`) telefonda sabittir, 960 px üstünde gizlenir; `yanMenu` ile birlikte `<main>`'in dışında çizilir.
 
+### Faz 63 — `.reborn`
+
+```
+reborn(chat_jid, no, zaman ms, arz, kur)              PK(chat_jid,no)
+reborn_zengin(chat_jid, no, sira, user_jid, servet)   PK(chat_jid,no,sira)
+```
+
+Enflasyon rakamları anlamsızlaştırınca grubun ekonomisi sıfırdan başlar (bot sahibinin kararı). **Enflasyonu durdurmaz**, saati başa sarar. Kurallar `lib/reborn.js`'te, yazma `lib/stats.js:rebornYap()`'ta, oylama `games/reborn.js`'tedir.
+
+- **Tetikleme:** `hidden`, `ownerOnly`, yalnızca özelden (`.darbe` gibi, grupta iz bırakmadan düşer). `.reborn <grup id>` önizler, `.reborn onay <grup id>` oylamayı başlatır, `.reborn iptal <grup id>` kapatır. Rehber `.help reborn` ile yalnızca sahibe özelden açılır.
+- **Oylama:** grupta herkes etiketlenir, reborn'un ne olduğu anlatılır; duyuruya `evet`/`hayır` yanıtı oydur, son yanıt geçerli. Özel mesaj atılmaz (ban riski). 10 dk sonra evet hayırdan fazlaysa uygulanır; eşitlik ve oysuz oylama reborn getirmez. Oyun yuvasını tutmaz, kanca `lib/handler.js`'te darbe kancasının yanındadır. Durum bellektedir, bot yeniden başlarsa oylama düşer.
+- **Sıfırlanan:** `stats.xp` (seviye de), `SILINEN_TABLOLAR` (banka, kredi, tefeci, yatırım, piyango, ödül, coin, Suly, mülk, portföy, hapis, iflas, sigorta, meslek, `meslek_biten`, ekonomi kayıtları, vergi, kumar tavanı, hazine aktarımı), çete kasaları. Hazine de sıfırlanır, bankasına `HAZINE_TOHUMU` konur: boş kasa krediyi kapatırdı. Yeni para tablosu listeye yazılır.
+- **Kalan (bot sahibinin kararı):** mesaj/sticker/ses, rozet, kart, pet, evlilik, makam, unvan, kumar karnesi, şampiyonluk, çete üyeliği, sezon puanı, borsa fiyatları.
+- **Yedek:** uygulamadan önce `data/yedek/reborn-oncesi-*.db` alınır, alınamazsa reborn yapılmaz.
+- **Açık oyunlar:** gruptaki oyun `endGame` ile kapanır, bahis yanar. Paneldeki açık el `el.reborn` ile damgalıdır, reborn'dan sonra ödenmeden kapanır: ödenseydi eski rakam yeni ekonomiye girerdi.
+- **Yıldız:** reborn anındaki en zengin 3 kişi `reborn_zengin`'e yazılır, `.profil` "⭐ Devir zengini" gösterir. Ekonomik bonus yoktur: kalıcı bonus enflasyonu hızlandırırdı.
+- **Gizli crash şansı (bot sahibinin kararı):** reborn'dan sonraki 6 saat (`REBORN_SANS_MS`) `.crash`'te ve paneldeki crash'te herkesin kaybeden çekilişi %25 olasılıkla bir kez daha atılır (`sansliCevir`, sahip şansıyla aynı yol). Duyuru yalnızca "bazı kumar oyunlarında şans arttı" der; oyunun adı hiçbir grup mesajına, `.help crash`'e ya da panele yazılmaz. Çarpanı doğrudan büyütmek yerine yeniden atılır: `P = 1,2/x` olsaydı 1,2x altındaki hedef garanti kazanırdı. Beklenen dönüş bu sürede %100'ün üstündedir (yüksek hedefte ~%120), bilerek.
+- **Panel:** grup sayfasında Devirler kartı (`panel/veri.js:devirler`) her reborn'un bitiş anını, son kurunu, piyasasını ve zenginlerini gösterir. Gizli şans panelde yazmaz.
+- `ekonomiDenetimi` sıfırlanır: silinen günün ekonomi kaydı ilk mesajda yeniden yazılsın.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1425,3 +1448,4 @@ Yalnızca paneldedir (`panel/kumar.js:blackjackHamle`); WhatsApp'taki `.blackjac
 109. Panelde Banka ve kredi → `100 bin` yatır → bildirim gelir, WhatsApp'ta `.banka` aynı bakiyeyi gösterir; Hesabım → net servet `.servet` ile aynı; günlük ödül ikinci kez → "zaten aldın"
 110. WhatsApp'ta `.bahis` "kumar yasağın var" diyen kişi panelde oynayabilir; panelde büyük kazanç WhatsApp'taki tavanı doldurmaz
 111. Panelde blackjack: iki kartla ✖️2 ÇİFT → bahis katlanır, tek kart gelir, el biter; 8-8 gelince ✂️ BÖL → iki el yan yana, sıradaki el çerçeveli; krupiyenin açık kartı as → önce sigorta sorulur; 🏳️ TESLİM → bahsin yarısı döner; XP yetmezken çift → "XP'n yetmiyor", el sürer
+112. Sahip özelden `.reborn <grup id>` → önizleme, hiçbir şey değişmez; `.reborn onay <grup id>` → grupta herkes etiketlenir, reborn anlatılır; `evet` yanıtı ✅ alır; 10 dk sonra evet fazlaysa "REBORN GELDİ", `.profil` 0 XP ve mesaj sayısı aynı, kart ve pet duruyor, `.meslek` boş, en zengin 3 kişide ⭐; hayır fazlaysa "reddedildi", hiçbir şey değişmez; grupta `.reborn` → hiç tepki yok; `data/yedek/` içinde `reborn-oncesi-*.db` var

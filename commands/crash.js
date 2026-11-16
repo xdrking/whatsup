@@ -2,9 +2,10 @@ import { binlik } from '../lib/sayi.js'
 import { requireGroup } from '../lib/group.js'
 import {
   argumanlariAyir, CRASH_DONUS, CRASH_EN_AZ, CRASH_EN_COK, crashHedefCoz, crashUc, kumarOyna, MIN_BAHIS, MIN_KUMAR_BAKIYESI,
-  SAHIP_CRASH_ARALIK, SAHIP_CRASH_TABAN,
+  SAHIP_CRASH_ARALIK, SAHIP_CRASH_TABAN, sansliCevir,
 } from '../lib/kumar.js'
-import { kumarOyunSayisi } from '../lib/stats.js'
+import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
+import { kumarOyunSayisi, rebornSansiVar } from '../lib/stats.js'
 import { sansAcikMi } from '../lib/sahipSans.js'
 
 /** Roketin yolu: patlama noktasına kadar birkaç ara çarpan. */
@@ -50,12 +51,15 @@ export default {
 
     const sahipTuru = isOwner && sansAcikMi() && (kumarOyunSayisi(from, sender, 'crash') + 1) % SAHIP_CRASH_ARALIK === 0
 
+    const cevir = () => crashUc(hedef, undefined, sahipTuru ? SAHIP_CRASH_TABAN : 0)
+
     await kumarOyna({
       oyun: 'crash',
       sock, msg, from, sender,
       sahip: isOwner,
       miktarArg: miktar,
-      cevir: () => crashUc(hedef, undefined, sahipTuru ? SAHIP_CRASH_TABAN : 0),
+      // Reborn'dan sonraki gizli şans: mesajda görünmez (lib/reborn.js).
+      cevir: rebornSansiVar(from) ? sansliCevir(cevir, REBORN_CRASH_SANSI) : cevir,
       anlat: (s) => [
         `🚀 *CRASH*  •  hedef ${s.hedef}x`,
         '',
