@@ -339,7 +339,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 61 (tamam):** panel blackjack'inde çift, böl, sigorta, teslim. Ayrıntı aşağıda.
 - **Faz 62 (tamam):** slot geçiş hatası, lobide vurgun şeridi, telefonda alt menü. Ayrıntı aşağıda.
 - **Faz 63 (tamam):** `.reborn`. Ayrıntı aşağıda.
-- **Faz 64+:** yeni komutlar, her biri ayrı adım
+- **Faz 64 (tamam):** `.wrapped`. Ayrıntı aşağıda.
+- **Faz 65+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1321,6 +1322,16 @@ Enflasyon rakamları anlamsızlaştırınca grubun ekonomisi sıfırdan başlar 
 - **Panel:** grup sayfasında Devirler kartı (`panel/veri.js:devirler`) her reborn'un bitiş anını, son kurunu, piyasasını ve zenginlerini gösterir. Gizli şans panelde yazmaz.
 - `ekonomiDenetimi` sıfırlanır: silinen günün ekonomi kaydı ilk mesajda yeniden yazılsın.
 
+### Faz 64 — `.wrapped`
+
+Kişinin (`.wrapped`, `.wrapped @kişi`) ya da grubun (`.wrapped grup`) ilk kayıttan bugüne özeti, görsel kart olarak. Yeni tablo yoktur, hiçbir şey yazmaz. Veri `lib/wrapped.js`'te, çizim `lib/wrappedKart.js`'tedir.
+
+- **Kaynaklar** reborn'da silinmeyen tablolardır: `stats` ve `hours` botun ilk gününden sayar; aktif gün, seri, en yoğun gün ve cüzdan zirvesi `gecmis`'ten gelir, o da Faz 31'de başladı. Kart dipte bunu yazar. Kumar toplamı `kumar`'dan, favori oyun ve vurgun `kumar_oyun`'dan (Faz 45'ten önceki eller dökümde yoktur). Reborn'da silinen tablolar (banka, coin, vergi) kullanılmaz: sonuç dönemden döneme tutarsız olurdu.
+- **Cüzdan zirvesi** `gecmis.xp`'nin en büyüğüdür, yani gün sonu değil o günün son mesajındaki cüzdandır; banka sayılmaz.
+- **Kişilik** (`kisilik()`) sıralı kurallardır, ilk tutan kazanır. Yeni kişilik listeye bir satırdır.
+- Bot sıralamalara ve grup toplamına girmez, `.profil` gibi başkasına "gizli"dir. Grup kartında ad düz yazılır, kimse etiketlenmez.
+- Metin pango ile çizilir (`dpi: 72`, punto = piksel); kutu yüksekliği metne göre hesaplanır, kart uzar. `quote.js`'teki `circleAvatar`/`letterAvatar` boyut alır.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1449,3 +1460,4 @@ Enflasyon rakamları anlamsızlaştırınca grubun ekonomisi sıfırdan başlar 
 110. WhatsApp'ta `.bahis` "kumar yasağın var" diyen kişi panelde oynayabilir; panelde büyük kazanç WhatsApp'taki tavanı doldurmaz
 111. Panelde blackjack: iki kartla ✖️2 ÇİFT → bahis katlanır, tek kart gelir, el biter; 8-8 gelince ✂️ BÖL → iki el yan yana, sıradaki el çerçeveli; krupiyenin açık kartı as → önce sigorta sorulur; 🏳️ TESLİM → bahsin yarısı döner; XP yetmezken çift → "XP'n yetmiyor", el sürer
 112. Sahip özelden `.reborn <grup id>` → önizleme, hiçbir şey değişmez; `.reborn onay <grup id>` → grupta herkes etiketlenir, reborn anlatılır, üyelere özelden bildirim gelir; `evet` yanıtı ✅ alır; 10 dk sonra evet fazlaysa "REBORN GELDİ", `.profil` 0 XP ve mesaj sayısı aynı, kart ve pet duruyor, `.meslek` boş, en zengin 3 kişide ⭐; hayır fazlaysa "reddedildi", hiçbir şey değişmez; grupta `.reborn` → hiç tepki yok; `data/yedek/` içinde `reborn-oncesi-*.db` var
+113. `.wrapped` → kişisel kart görseli gelir, sıralama ve kişilik yazar; `.wrapped grup` → grup kartı, kimse etiketlenmez; sıradan üye `.wrapped @bot` → "gizli"

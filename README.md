@@ -533,6 +533,7 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | `.çete` | Çeten ve haftalık sıralama; `kur`, `katıl`, `ayrıl`, `yatır`, `çek`, `at` |
 | `.dava @kişi 1000 sebep` | Grup 5 dakika `haklı` ya da `haksız` oylar, kaybeden öder |
 | `.özet` | Son 7 günün mesajları, tüm zamanların gece kuşu ve kumarcıları |
+| `.wrapped` | İlk kayıttan bugüne kişisel ya da grup (`.wrapped grup`) özeti, görsel kart |
 
 **Hapis:** `.soygun`'da yakalanan 2 saat hapse girer, bu sürede soygun, kumar ve `.çalış` kapalıdır. Kefalet yakalanma anındaki cüzdan ve banka toplamının %20'sidir, en az 100 XP. Ödeyenin cüzdanından alınır, botun bankasına gider.
 
