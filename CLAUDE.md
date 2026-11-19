@@ -71,7 +71,7 @@ kategori, ad çakışması, `details` biçimi ve `data/*.json` hatalarını yaka
 index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event kaydı
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
-games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu, .vampir)
+games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu, .vampir, .poker)
 panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58)
 scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
@@ -137,7 +137,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/activity.js` | sohbet başına son mesaj atanlar (`.son`, `.kimvar`) | bellek (süreçle ölür) |
 | `lib/outgoing.js` | botun kendi gönderdiği son 300 mesajın id'si ve gövdesi | bellek (süreçle ölür) |
 | `lib/cooldown.js` | kullanıcı+komut başına bekleme süresi | bellek (süreçle ölür) |
-| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.hilo`, `.kule`, `.yarış`, `.vs`, `.evlen` teklifi, `.dava`, `.vampir`…) | bellek (süreçle ölür) |
+| `games/gameManager.js` | grup başına aktif oyun (`.kelime`, `.kimim`, `.quiz`, `.düello`, `.emoji`, `.adamasmaca`, `.blackjack`, `.mayın`, `.hilo`, `.kule`, `.yarış`, `.vs`, `.evlen` teklifi, `.dava`, `.vampir`, `.poker` masası…) | bellek (süreçle ölür) |
 | `games/wordle.js` | grubun bugünkü wordle tahtası (tahmin satırları) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | `.wordle` kişi başı günlük hak, grubun toplam tahmini ve bileni | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | mesaj/sticker/ses sayaçları, XP, saat dağılımı | `data/stats.db` (kalıcı) |
@@ -340,7 +340,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 62 (tamam):** slot geçiş hatası, lobide vurgun şeridi, telefonda alt menü. Ayrıntı aşağıda.
 - **Faz 63 (tamam):** `.reborn`. Ayrıntı aşağıda.
 - **Faz 64 (tamam):** `.wrapped`. Ayrıntı aşağıda.
-- **Faz 65+:** yeni komutlar, her biri ayrı adım
+- **Faz 65 (tamam):** `.poker`. Ayrıntı aşağıda.
+- **Faz 66+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1332,6 +1333,18 @@ Kişinin (`.wrapped`, `.wrapped @kişi`) ya da grubun (`.wrapped grup`) ilk kay�
 - Bot sıralamalara ve grup toplamına girmez, `.profil` gibi başkasına "gizli"dir. Grup kartında ad düz yazılır, kimse etiketlenmez.
 - Metin pango ile çizilir (`dpi: 72`, punto = piksel); kutu yüksekliği metne göre hesaplanır, kart uzar. `quote.js`'teki `circleAvatar`/`letterAvatar` boyut alır.
 
+### Faz 65 — `.poker`
+
+No-limit Texas Hold'em, 2-8 kişi. Kurallar `lib/poker.js`'te saftır (el değeri, yan potlar, bahis akışı), akış `games/poker.js`'tedir. Yeni tablo yoktur.
+
+- **Para oyuncular arasıdır** (`.vs` gibi): kasa, hazine, bot hesabı ve günlük kumar tavanı yoktur, XP basılmaz ve yanmaz. Giriş katılırken `xpCek` ile alınır, oyuncu masadan kalkınca (`kalk`, çipi biter, masa kapanır) `pokerKalk` önündeki çipi cüzdana yazar ve neti `kumar_oyun`'a `poker` adıyla işler. Lobide çıkana giriş karnesiz iade edilir. Kumar şartı (`kumarEngeli`, `kumarYasagi`) oturmada denetlenir.
+- **Masa hangi yoldan kapanırsa kapansın para iade edilir:** `.sus` ve reborn oyunu doğrudan `endGame` ile kapatır, bu yüzden `gameManager.endGame` oyunun `onEnd` kancasını çağırır. Poker orada yarım elin katkılarını iade eder (`eliIadeEt`) ve herkesi kaldırır. Kanca tekrar çağrılmaya dayanıklıdır (`cikti` işareti), normal kapanış da aynı yoldan geçer. Reborn `endGame`'i sıfırlamadan önce çağırdığı için iade edilen eski para sonra silinir.
+- **Kartlar her elde özelden gider** (bot sahibinin isteğiyle, `.vampir` gibi): mesajı oyuncunun kendi `katıl`ı tetikler, `senderPn`'e gönderilir. İlk elde birine ulaşılamazsa masa kimse oynamadan kapanır, sonraki ellerde grupta uyarılır; oyuncu özelden `.poker` yazınca kartları, masa ve çipi yanıt olarak gelir (`kartHatirlat`).
+- **Hamleler son masa mesajına yanıttır**, her hamleden sonra yeni masa mesajı gider ve `setLastMessage` güncellenir. Yalnızca sıradaki oyuncunun hamlesi işlenir; `kalk` her an yazılabilir, sıra gelince çekilir. 90 sn hamle gelmezse borç varsa çekil, yoksa pas sayılır; üst üste 2 zaman aşımı masadan kaldırır.
+- **Körler** girişin 50'de biridir (küçük kör yarısı), her 8 elde ikiye katlanır: masa sonsuza dek sürmesin. İki kişide dealer küçük kördür.
+- **Bilerek sade:** kısa hepsi (min artırmanın altında kalan all-in) de masayı yeniden açar. Bölünmeyen artık çip dealer'dan sonraki ilk kazanana gider.
+- `test/poker.test.js` rastgele binlerce elde çip korunumunu denetler; kural değişirse bu test geçmeli.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1461,3 +1474,4 @@ Kişinin (`.wrapped`, `.wrapped @kişi`) ya da grubun (`.wrapped grup`) ilk kay�
 111. Panelde blackjack: iki kartla ✖️2 ÇİFT → bahis katlanır, tek kart gelir, el biter; 8-8 gelince ✂️ BÖL → iki el yan yana, sıradaki el çerçeveli; krupiyenin açık kartı as → önce sigorta sorulur; 🏳️ TESLİM → bahsin yarısı döner; XP yetmezken çift → "XP'n yetmiyor", el sürer
 112. Sahip özelden `.reborn <grup id>` → önizleme, hiçbir şey değişmez; `.reborn onay <grup id>` → grupta herkes etiketlenir, reborn anlatılır, üyelere özelden bildirim gelir; `evet` yanıtı ✅ alır; 10 dk sonra evet fazlaysa "REBORN GELDİ", `.profil` 0 XP ve mesaj sayısı aynı, kart ve pet duruyor, `.meslek` boş, en zengin 3 kişide ⭐; hayır fazlaysa "reddedildi", hiçbir şey değişmez; grupta `.reborn` → hiç tepki yok; `data/yedek/` içinde `reborn-oncesi-*.db` var
 113. `.wrapped` → kişisel kart görseli gelir, sıralama ve kişilik yazar; `.wrapped grup` → grup kartı, kimse etiketlenmez; sıradan üye `.wrapped @bot` → "gizli"
+114. `.poker 1000` → lobi; iki kişi `katıl`, kuran `başla` → herkese kartlar özelden gelir, masa mesajı sırayı etiketler; sırası olmayan `gör` → "Sıra sende değil"; `artır 500`, `hepsi`, `çekil` çalışır; el sonunda showdown ve pot yazılır; `kalk` → el bitince çip cüzdana döner; masa açıkken `.sus` → herkesin çipi iade edilir (`.profil`); özelden `.poker` → kartlar yeniden gelir

@@ -57,6 +57,14 @@ export function endGame(chatJid) {
   clearTimeout(state.timer)
   activeGames.delete(chatJid)
 
+  // Oyun hangi yoldan kapanırsa kapansın (.sus, reborn, .oyunbitir) çalışır: poker masadaki çipi
+  // burada iade eder, yoksa birden çok oyuncunun girişi yanardı. Kanca tekrar çağrılmaya dayanıklı olmalı.
+  try {
+    state.onEnd?.(state)
+  } catch (err) {
+    logger.error({ err, chatJid, tip: state.type }, 'Oyun kapanış kancası çalışmadı')
+  }
+
   logger.info({ chatJid, tip: state.type }, 'Oyun bitti')
   return state
 }

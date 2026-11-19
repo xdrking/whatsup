@@ -253,6 +253,7 @@ Miktar sayı, `hepsi` ya da `yarısı` olabilir, en az 10 XP. Her komut 5 sn bek
 | `.piyango 50` | Ortak havuza XP yatırır, şans yatırılan XP oranındadır. Yalnız `.piyango` havuzu gösterir |
 | `.çekiliş` | Piyangoyu çeker, havuzun tamamı kazananın olur (grup admini veya owner) |
 | `.kumartop` | Kumarda en çok kazananlar ve kaybedenler |
+| `.poker 10000` | Texas Hold'em masası (2-8 kişi): `katıl`, `başla`; kartlar özelden, hamleler masa mesajına yanıt (`pas`, `gör`, `artır 500`, `hepsi`, `çekil`, `kalk`). Para oyuncular arasındadır |
 | `.kumarkarnem` | Kendi kumar geçmişin: oyun oyun net sonuç, en büyük vurgun, kasaya kaptırılan |
 
 Bota karşı oynanan kumarda kaybedilen XP, banka kesintisi, servet vergisi ve borsa komisyonu QR ile bağlı numaranın hesabına gider. `.vs` ve `.piyango` hariçtir, oradaki kayıp diğer oyuncuya geçer. Bakiye yalnızca `.top`'ta görünür.
