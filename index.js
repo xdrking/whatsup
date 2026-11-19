@@ -13,6 +13,7 @@ import qrcode from 'qrcode-terminal'
 import logger, { baileysLogger } from './lib/logger.js'
 import { handleMessage } from './lib/handler.js'
 import { gonderilenMesaj, trackOutgoing } from './lib/outgoing.js'
+import { grupOnbellekSil, soketGrupBilgisi } from './lib/group.js'
 import { panelGrupKapat, panelUyeCikar } from './lib/panelHesap.js'
 import { loadCommands } from './commands/index.js'
 
@@ -50,6 +51,8 @@ async function connect() {
     markOnlineOnConnect: false,
     // Alıcı mesajı çözemeyip yeniden isterse gövde buradan verilir; yoksa "Bu mesaj bekleniyor" kalır.
     getMessage: async (key) => gonderilenMesaj(key.id),
+    // Verilmezse gruba giden her mesaj grup bilgisini yeniden sorar ve hız sınırına takılır.
+    cachedGroupMetadata: async (jid) => soketGrupBilgisi(sock, jid),
   })
 
   // Gönderilen mesajların id'sini not eder; handler botun kendi yanıtlarını
@@ -96,6 +99,7 @@ async function connect() {
 
   // Gruptan çıkan ya da atılan web panelinde oynayamaz; bot çıkarılırsa grubun bütün hesapları kapanır.
   sock.ev.on('group-participants.update', ({ id, participants, action }) => {
+    grupOnbellekSil(id)
     if (action !== 'remove') return
     const cikanlar = (participants || []).map((p) => jidNormalizedUser(typeof p === 'string' ? p : p?.id ?? ''))
     const bot = [sock.user?.id, sock.user?.lid].filter(Boolean).map((j) => jidNormalizedUser(j))
