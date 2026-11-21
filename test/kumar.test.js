@@ -58,6 +58,8 @@ test('rulet: renkler, sıfır, sayı bahsi', () => {
   assert.equal(ruletCarpani(ruletSecimCoz('17'), 17), 36)
   assert.equal(ruletSecimCoz('37'), null)
   assert.equal(ruletSecimCoz('mavi'), null)
+  assert.equal(ruletCarpani(ruletSecimCoz('Yeşil'), 0), 36)
+  assert.equal(ruletCarpani(ruletSecimCoz('yesil'), 5), 0)
 })
 
 test('bahisOyna: yetersiz XP çekiliş yapmaz, kazanç ve kayıp yazılır', () => {

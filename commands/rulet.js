@@ -12,10 +12,10 @@ export default {
   name: 'rulet',
   aliases: ['roulette', 'rulo'],
   description: 'XP\'ne rulet oyna — renk, tek/çift ya da sayı',
-  usage: '.rulet <miktar|hepsi|yarısı> <kırmızı|siyah|tek|çift|0-36>',
+  usage: '.rulet <miktar|hepsi|yarısı> <kırmızı|siyah|tek|çift|yeşil|0-36>',
   details: [
     'Örnek: `.rulet 100 kırmızı`, `.rulet 50 çift`, `.rulet 20 17`',
-    'Renk ve tek/çift bahsi 2x öder, tek sayı bahsi 36x.',
+    'Renk ve tek/çift bahsi 2x öder, tek sayı bahsi 36x. `yeşil` sıfıra oynamaktır (36x).',
     '0 (yeşil) gelirse renk ve tek/çift bahisleri kaybeder.',
     `İkisi de sayıysa önce miktar yazılır. En az ${MIN_BAHIS} XP.`,
   ],
@@ -31,7 +31,7 @@ export default {
     if (!secim) {
       await sock.sendMessage(
         from,
-        { text: '🎡 Neye basıyorsun? `kırmızı`, `siyah`, `tek`, `çift` ya da 0-36 arası bir sayı.\nÖrnek: `.rulet 100 kırmızı`' },
+        { text: '🎡 Neye basıyorsun? `kırmızı`, `siyah`, `tek`, `çift`, `yeşil` ya da 0-36 arası bir sayı.\nÖrnek: `.rulet 100 kırmızı`' },
         { quoted: msg },
       )
       return

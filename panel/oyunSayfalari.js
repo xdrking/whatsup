@@ -31,7 +31,7 @@ const gizli = (chat) => h`<input type="hidden" name="grup" value="${chat}">`
 const secenekler = (dugmeler) => h`<div class="secenekler">${dugmeler.map(([deger, etiket, sinif = '']) =>
   h`<button name="secim" value="${deger}" class="${sinif}">${etiket}</button>`)}</div>`
 
-const RULET_SECIMLERI = [['kırmızı', '🔴 Kırmızı · 2x'], ['siyah', '⚫ Siyah · 2x'], ['tek', 'Tek · 2x'], ['çift', 'Çift · 2x'],
+const RULET_SECIMLERI = [['kırmızı', '🔴 Kırmızı · 2x'], ['siyah', '⚫ Siyah · 2x'], ['tek', 'Tek · 2x'], ['çift', 'Çift · 2x'], ['yeşil', '🟢 Yeşil (0) · 36x'],
   ...Array.from({ length: 37 }, (_, n) => [String(n), `Sayı ${n} · 36x`])]
 
 /** Lobideki kutu ve oyun sayfasındaki bahis formu aynı tanımdan çıkar. */
