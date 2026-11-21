@@ -408,3 +408,25 @@ test('eksik kartlar: hazine, hükümet, kumarhane, Suly, pet, cezalılar, varlı
   assert.ok(baskan.includes('🏛️ Başkan'))
   assert.ok(baskan.includes('Alacak'))
 })
+
+test('oturum: depo verilince yeniden başlatmadan sonra da geçerli', () => {
+  const satirlar = new Map()
+  const depo = {
+    yaz: (ozet, veri, bitis) => satirlar.set(ozet, { veri, bitis }),
+    oku: (ozet) => satirlar.get(ozet) ?? null,
+    sil: (ozet) => satirlar.delete(ozet),
+    temizle: (simdi) => { for (const [k, v] of satirlar) if (v.bitis <= simdi) satirlar.delete(k) },
+  }
+  let simdi = 0
+  const j = oturumlar({ saat: () => simdi, depo }).ac({ tur: 'oyuncu', numara: '90555' })
+  // Jetonun kendisi depoya yazılmaz, yalnızca özeti.
+  assert.ok(![...satirlar.keys()].includes(j))
+  const yeni = oturumlar({ saat: () => simdi, depo })
+  assert.deepEqual(yeni.veri(j), { tur: 'oyuncu', numara: '90555' })
+  yeni.kapat(j)
+  assert.equal(oturumlar({ saat: () => simdi, depo }).gecerli(j), false)
+
+  const j2 = yeni.ac()
+  simdi += 8 * 24 * 60 * 60_000
+  assert.equal(oturumlar({ saat: () => simdi, depo }).gecerli(j2), false)
+})

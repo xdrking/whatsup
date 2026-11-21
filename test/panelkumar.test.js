@@ -295,3 +295,24 @@ test('blackjack sigorta ve teslim', () => {
   assert.equal(teslim.hamle('teslim').sonuc.fark, -500)
   assert.equal(teslim.xp(), 99500)
 })
+
+test('motor: büyük kazanç akışta bir kez paylaşılır, küçüğü paylaşılmaz', () => {
+  const kim = { chat: GRUP, user: 'v@lid' }
+  db.prepare('INSERT OR REPLACE INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, ?, 0, 0, 0, 10000000, 1)').run(GRUP, 'v@lid')
+  let simdi = 20_000_000
+  const m = kumarMotoru({ saat: () => simdi, zamanlayici: () => {}, temizle: () => {} })
+  assert.equal(m.vurgunAl(kim), null)
+  // Crash 5x hedefi kazanınca net kazanç bahsin 4 katıdır, yani büyük kazanç; ~%19 tutar.
+  let kazandi = null
+  for (let i = 0; i < 200 && !kazandi; i++) {
+    simdi += 1000
+    m.tekOyna(kim, { oyun: 'crash', miktar: '1000', secim: '5' })
+    const s = m.durum(kim).sonuc
+    if (s.fark > 0) kazandi = s
+    else assert.equal(m.vurgunVar(kim), false)
+  }
+  assert.ok(kazandi)
+  const v = m.vurgunAl(kim)
+  assert.deepEqual([v.oyun, v.bahis, v.kazanc, v.carpan], ['crash', 1000, 4000, 5])
+  assert.equal(m.vurgunAl(kim), null)
+})

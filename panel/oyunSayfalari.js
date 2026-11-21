@@ -2,7 +2,7 @@
 // yenilemeden gönderir, ses çalar. Animasyonlar CSS'tedir, betik olmadan da oynar.
 // Satır içi `style` CSP'ye takılır: gecikme ve konumlar sınıflarla verilir (d1, d2…).
 import { IKILI_CARPAN, KAZI_ODULLERI, PLINKO_RISK, renk, SEMBOLLER } from '../lib/kumar.js'
-import { COK_OYUNLAR, TEK_OYUNLAR } from './kumar.js'
+import { COK_OYUNLAR, TEK_OYUNLAR, VURGUN_KAT } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -14,8 +14,6 @@ const oyunTanimi = (oyun) => (Object.hasOwn(OYUN_ADI, oyun) ? OYUN_ADI[oyun] : n
 const virgul = (x) => String(x).replace('.', ',')
 // Makara şeridi: son sembol sonuçtur, öncesi yalnızca dönme görüntüsü.
 const SERIT_UZUNLUGU = 15
-// Bahsin bu katından fazla kazanç "büyük kazanç" kutlaması alır.
-const BUYUK_KAT = 4
 
 export function grupSecimi(gruplar) {
   const satirlar = gruplar.map((g, i) => h`
@@ -313,7 +311,7 @@ function sonucKarti(chat, s) {
     return h`<section id="sonuc" class="sonuc kaybetti" role="alert" data-durum="hata"><h2>${baslik}</h2>${s.el ? elCizimi(chat, s.el, true) : ''}<p class="hata">${s.hata}</p></section>`
   }
   const durum = s.fark > 0 ? 'kazandi' : s.fark < 0 ? 'kaybetti' : 'berabere'
-  const buyuk = s.fark > 0 && s.fark >= s.bahis * BUYUK_KAT
+  const buyuk = s.fark > 0 && s.fark >= s.bahis * VURGUN_KAT
   const ozet = s.fark > 0 ? `+${sayi.format(s.fark)} XP` : s.fark < 0 ? `${sayi.format(s.fark)} XP` : 'Paran geri döndü'
   const carpan = s.bahis ? Math.round(((s.bahis + s.fark) / s.bahis) * 100) / 100 : 0
   return h`<section id="sonuc" class="sonuc ${durum}${buyuk ? ' buyuk' : ''}${s.el ? ' adimli' : ''}" role="status"
@@ -327,6 +325,8 @@ function sonucKarti(chat, s) {
     ${s.fark > 0 && !s.el && s.sonuc?.carpan ? h`<p class="kat">${virgul(s.sonuc.carpan)}x</p>` : ''}
     <p class="fark">${ozet}</p>
     <p class="not orta">${sayi.format(s.once)} → ${sayi.format(s.xp)} XP</p>
+    ${buyuk ? h`<form class="vurgun-paylas" method="post" action="/s/vurgun"><input type="hidden" name="grup" value="${chat}">
+      <input name="metin" maxlength="300" placeholder="Bir şey ekle (isteğe bağlı)" autocomplete="off"><button class="dugme">📣 Akışta paylaş</button></form>` : ''}
   </div>
 </section>`
 }

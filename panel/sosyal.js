@@ -4,7 +4,8 @@ import { createReadStream, existsSync } from 'node:fs'
 import logger from '../lib/logger.js'
 import { ROZETLER } from '../lib/rozet.js'
 import * as S from '../lib/sosyal.js'
-import { getBusiestHour, getDailyStreak, getStats, oyunTutari, seviye, xpAyarla } from '../lib/stats.js'
+import { miktarlariCoz } from '../lib/sayi.js'
+import { getBusiestHour, getDailyStreak, getStats, oyunTutari, profilVitrini, seviye, xpAyarla, xpDevret } from '../lib/stats.js'
 import { kisiWrapped } from '../lib/wrapped.js'
 import { hamGovde, multipartCoz } from './multipart.js'
 import { endpointGecerli, panelAdresiKaydet, vapid } from './push.js'
@@ -22,6 +23,20 @@ function xpVer({ chatJid, userJid, taban, now }) {
 
 // "Yazıyor…" son sinyalden bu kadar sonra düşer; betik yazarken 2,5 sn'de bir sinyal yollar.
 const YAZIYOR_MS = 5000
+// Çevrimiçi anı her istekte değil, kişi başı dakikada bir yazılır.
+const AKTIF_YAZMA_MS = 60_000
+// Bahşiş düğmelerinin tabanı; gönderi XP'si gibi kurla ölçeklenir (`oyunTutari`).
+const BAHSIS_TABANLARI = [10, 50, 200]
+const TEMALAR = ['', 'acik', 'koyu']
+
+/** Tema yalnızca bu tarayıcının tercihidir, çerezde durur; sunucu `<html data-tema>` yazar. */
+function temaOku(req) {
+  for (const parca of String(req.headers.cookie ?? '').split(';')) {
+    const [ad, deger] = parca.trim().split('=')
+    if (ad === 'tema' && TEMALAR.includes(deger)) return deger
+  }
+  return ''
+}
 
 /** Bellekteki durum: bir kez gösterilen sonuç, iki yazma arası bekleme ve "yazıyor" sinyalleri. */
 export function sosyalMotoru({ saat = Date.now } = {}) {
@@ -30,7 +45,15 @@ export function sosyalMotoru({ saat = Date.now } = {}) {
   // kanal: "d<alıcı>" (DM) ya da "s<sohbet id>"; kanal → (yazan → son sinyal). Yalnızca panel belleği.
   const yazanlar = new Map()
   const anahtar = (kim) => `${kim.chat}|${kim.user}`
+  const aktifler = new Map()
   return {
+    /** Çevrimiçi anı yazılmalı mı? Dakikada bir true döner. */
+    aktifMi(kim) {
+      const simdi = saat()
+      if (simdi - (aktifler.get(anahtar(kim)) ?? 0) < AKTIF_YAZMA_MS) return false
+      aktifler.set(anahtar(kim), simdi)
+      return true
+    },
     yaziyor(chat, kanal, user) {
       const k = `${chat}|${kanal}`
       if (!yazanlar.has(k)) yazanlar.set(k, new Map())
@@ -117,7 +140,7 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     const s = S.begen(chat, ben, id, now, al('tepki'))
     if (istemci) {
       const [g] = s ? S.akis(chat, ben, { id, adet: 1 }) : []
-      return gonder(res, g ? 200 : 404, g ? P.eylemCubugu(chat, g).metin : '')
+      return gonder(res, g ? 200 : 404, g ? P.eylemCubugu(chat, g, { jid: ben, tutarlar: bahsisTutarlari(chat, now) }).metin : '')
     }
     return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
   }
@@ -215,6 +238,47 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     if (istemci) return yorumDali(gonder, res, chat, ben, anaId, now)
     return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#c${id}`)
   }
+  if (yol === '/s/kaydet') {
+    const s = S.kaydetDegistir(chat, ben, id, now)
+    if (s) motor.bildir(kim, s.kaydedildi ? 'Kaydedildi. Kaydedilenler’de bulursun.' : 'Kayıt kaldırıldı.')
+    return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
+  }
+  if (yol === '/s/sabitle') {
+    const s = S.sabitle(chat, ben, id)
+    if (s?.hata) motor.bildir(kim, s.hata, true)
+    else if (s) motor.bildir(kim, s.sabit ? 'Gönderi profilinin başına sabitlendi.' : 'Sabitleme kaldırıldı.')
+    return yonlendir(res, P.sLink(chat, '/profil', { id: ben }))
+  }
+  if (yol === '/s/duzenle') {
+    const s = S.gonderiDuzenle(chat, ben, id, al('metin'), now)
+    if (s.hata) {
+      motor.bildir(kim, s.hata, true)
+      return yonlendir(res, s.bitti ? P.sLink(chat, '/gonderi', { id }) : P.sLink(chat, '/duzenle', { id }))
+    }
+    if (s.tamam) motor.bildir(kim, 'Gönderi düzenlendi.')
+    return yonlendir(res, P.sLink(chat, '/gonderi', { id }))
+  }
+  if (yol === '/s/bahsis') {
+    // Hazır düğme `miktar`, elle yazılan `ozel` gelir; yazılı tutar (`50 bin`) .devret gibi çözülür.
+    const ham = al('miktar') || al('ozel').trim()
+    const [cozulen] = miktarlariCoz(ham.split(/\s+/)).filter(Boolean)
+    const miktar = Number(cozulen)
+    const s = S.bahsisVer({ chatJid: chat, userJid: ben, id, miktar, devret: xpDevret, now })
+    if (s.hata) motor.bildir(kim, s.hata, true)
+    else motor.bildir(kim, `☕ ${sayi.format(miktar)} XP bahşiş gönderdin. Cüzdanında ${sayi.format(s.kalan)} XP kaldı.`)
+    return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
+  }
+  if (yol === '/s/vurgun') {
+    // Kazanç sunucunun kumar belleğinden alınır: sayfadan gelen rakama güvenilmez, bir kez paylaşılır.
+    const v = ortak.vurgunAl?.(kim)
+    if (!v) {
+      motor.bildir(kim, 'Paylaşılacak bir büyük kazanç yok ya da zaten paylaşıldı.', true)
+      return yonlendir(res, P.sLink(chat))
+    }
+    const s = S.gonderiYaz({ chatJid: chat, userJid: ben, metin: al('metin'), vurgun: { oyun: v.oyun, bahis: v.bahis, kazanc: v.kazanc, carpan: v.carpan }, now })
+    motor.bildir(kim, s.hata ?? 'Kazancın akışta. 📣', Boolean(s.hata))
+    return yonlendir(res, s.id ? `${P.sLink(chat)}#g${s.id}` : P.sLink(chat))
+  }
   if (yol === '/s/sil') {
     S.gonderiSil(chat, ben, id)
     return yonlendir(res, geriAdres(req, P.sLink(chat)))
@@ -253,7 +317,7 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     const medya = await motor.fotoKaydet(form.dosya, tur === 'avatar' ? { boyut: 400, kare: true } : { boyut: 1500 })
     if (medya === null) motor.bildir(kim, 'Bu dosya bir fotoğraf değil.', true)
     else {
-      S.profilYaz(chat, ben, { bio: al('bio'), ...(medya ? { [tur]: medya } : {}) })
+      S.profilYaz(chat, ben, { bio: al('bio'), durum: al('durum'), now, ...(medya ? { [tur]: medya } : {}) })
       motor.bildir(kim, 'Profil kaydedildi.')
     }
     return yonlendir(res, P.sLink(chat, '/ayar'))
@@ -304,6 +368,13 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
     return true
   }
 
+  if (yontem === 'POST' && url.pathname === '/s/tema') {
+    const form = await ortak.govdeOku(req, 1024)
+    const tema = form?.get('tema') ?? ''
+    const deger = TEMALAR.includes(tema) ? tema : ''
+    yonlendir(res, geriAdres(req, '/s'), { 'Set-Cookie': `tema=${deger}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${deger ? 31_536_000 : 0}` })
+    return true
+  }
   if (yontem === 'POST') {
     await postIsle({ req, res, yol: url.pathname, hesapBul, ortak, motor, now })
     return true
@@ -335,8 +406,14 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
     return true
   }
 
+  if (motor.aktifMi(kim)) S.aktifYaz(chat, kim.user, now)
   const uyeler = S.uyeler(chat)
-  const ben = uyeler.find((u) => u.jid === kim.user) ?? { jid: kim.user, ad: '', xp: 0, avatar: '' }
+  const benimProfil = S.profilOku(chat, kim.user, now)
+  const ben = {
+    ...(uyeler.find((u) => u.jid === kim.user) ?? { jid: kim.user, ad: '', xp: 0, avatar: '' }),
+    sabit: benimProfil.sabit,
+    tutarlar: bahsisTutarlari(chat, now),
+  }
 
   // DM ve grup sohbeti yoklaması: yeni balonlar, kim yazıyor ve görüldü durumu birlikte döner.
   const JSON_TUR = { 'Content-Type': 'application/json; charset=utf-8' }
@@ -382,8 +459,12 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
   }
 
   const grupAdi = ortak.grupAdlari().get(chat) ?? ''
+  const tema = temaOku(req)
   const sayfa = (baslik, icerik, secili, sag = P.sagSutun(chat, uyeler, now, S.gundem(chat, now), S.yaklasanEtkinlikler(chat, now))) => {
-    gonder(res, 200, P.sosyalKabuk(baslik, icerik, { chat, ben, grupAdi, sayac: S.sayaclar(chat, kim.user), secili, sag, cokGrup, sorgu: url.searchParams.get('q') ?? '' }))
+    gonder(res, 200, P.sosyalKabuk(baslik, icerik, {
+      chat, ben, grupAdi, sayac: S.sayaclar(chat, kim.user), secili, sag, cokGrup, sorgu: url.searchParams.get('q') ?? '',
+      tema, uyeAdlari: uyeler.filter((u) => u.ad && u.jid !== ben.jid).map((u) => u.ad),
+    }))
     return true
   }
   const bildirim = () => motor.bildirimAl(kim)
@@ -395,8 +476,11 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
       } catch (err) {
         logger.error({ err, chat }, 'Haftalık gazete yazılamadı')
       }
-      const gonderiler = S.akis(chat, kim.user, { once: Number(url.searchParams.get('once')) || 0 })
-      return sayfa('Haber kaynağı', P.akisSayfasi({ chat, ben, gonderiler, uyeler, hikayeler: S.hikayeler(chat, kim.user, now), bildirim: bildirim(), now }), 'akis')
+      const once = Number(url.searchParams.get('once')) || 0
+      const gonderiler = S.akis(chat, kim.user, { once })
+      // "Buraya kadar okudun" yalnızca ilk sayfadadır; görülen yer ilk sayfa açılınca ilerler.
+      const okunan = once ? 0 : S.akisGorulen(chat, kim.user, gonderiler[0]?.id ?? 0)
+      return sayfa('Haber kaynağı', P.akisSayfasi({ chat, ben, gonderiler, uyeler, hikayeler: S.hikayeler(chat, kim.user, now), bildirim: bildirim(), okunan, now }), 'akis')
     }
     case '/s/gonderi': {
       const [g] = S.akis(chat, kim.user, { id: Number(url.searchParams.get('id')) || -1, adet: 1 })
@@ -406,10 +490,15 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
       const kisi = uyeler.find((u) => u.jid === url.searchParams.get('id')) ?? ben
       const stats = getStats(chat, kisi.jid)
       const veri = { ...stats, level: seviye(stats.xp), seri: getDailyStreak(chat, kisi.jid), saat: getBusiestHour(chat, kisi.jid)?.hour ?? null }
+      const profil = S.profilOku(chat, kisi.jid, now)
+      const [sabitGonderi] = profil.sabit ? S.akis(chat, kim.user, { id: profil.sabit, adet: 1 }) : []
       return sayfa(P.adi(kisi), P.profilSayfasi({
-        chat, ben, kisi, profil: S.profilOku(chat, kisi.jid), stats, seviye: veri.level,
+        chat, ben, kisi, profil, stats, seviye: veri.level,
         rozetler: ROZETLER.filter((r) => r.deger(veri) >= r.hedef),
         wrapped: kisiWrapped(chat, kisi.jid, now),
+        vitrin: profilVitrini(chat, kisi.jid, now),
+        sabitGonderi: sabitGonderi ?? null,
+        kayitSayisi: kisi.jid === ben.jid ? S.kayitSayisi(chat, kim.user) : 0,
         gonderiler: S.akis(chat, kim.user, { kisi: kisi.jid }), uyeler, bildirim: bildirim(), now,
       }), kisi.jid === ben.jid ? 'profil' : '')
     }
@@ -425,7 +514,18 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
       return sayfa('Alıntıla', P.alintiSayfasi({ chat, ben, gonderi: hedef, uyeler, now }), '')
     }
     case '/s/ayar':
-      return sayfa('Profili düzenle', P.ayarSayfasi({ chat, profil: S.profilOku(chat, kim.user), bildirim: bildirim() }), 'ayar')
+      return sayfa('Profili düzenle', P.ayarSayfasi({ chat, profil: benimProfil, bildirim: bildirim(), tema, now }), 'ayar')
+    case '/s/kaydedilen':
+      return sayfa('Kaydedilenler', P.kaydedilenSayfasi({ chat, ben, gonderiler: S.kaydedilenler(chat, kim.user), uyeler, bildirim: bildirim(), now }), 'kaydedilen')
+    case '/s/duzenle': {
+      const [g] = S.akis(chat, kim.user, { id: Number(url.searchParams.get('id')) || -1, adet: 1 })
+      if (!g || !S.duzenlenebilir(g, kim.user, now)) {
+        motor.bildir(kim, g ? 'Gönderi yalnızca ilk 10 dakikada düzenlenebilir.' : 'Bu gönderi silinmiş.', true)
+        yonlendir(res, g ? P.sLink(chat, '/gonderi', { id: g.id }) : P.sLink(chat))
+        return true
+      }
+      return sayfa('Düzenle', P.duzenleSayfasi({ chat, gonderi: g, bildirim: bildirim(), now }), '')
+    }
     case '/s/arkadas':
       return sayfa('Arkadaşlar', P.arkadasSayfasi({ chat, uyeler: uyeler.filter((u) => u.jid !== ben.jid), now }), 'arkadas')
     case '/s/bildirim': {
@@ -492,7 +592,11 @@ const OZET_METNI = {
   begeni: 'gönderine tepki verdi', yorum: 'gönderine yorum yaptı', etiket: 'seni etiketledi', duvar: 'duvarına yazdı',
   durt: 'seni dürttü', paylasim: 'gönderini paylaştı', alinti: 'gönderini alıntıladı',
   yanit: 'yorumuna yanıt verdi', yorum_tepki: 'yorumuna tepki verdi', anket_oy: 'anketine oy verdi',
-  etkinlik_katil: 'etkinliğine geliyor',
+  etkinlik_katil: 'etkinliğine geliyor', bahsis: 'gönderine bahşiş bıraktı ☕',
+}
+
+function bahsisTutarlari(chat, now) {
+  return [...new Set(BAHSIS_TABANLARI.map((t) => oyunTutari(chat, t, now)))].filter((t) => t > 0)
 }
 
 /** Servis işçisinin gösterdiği bildirim; DM metni gösterilmez, kilit ekranında okunmasın. */

@@ -1,5 +1,5 @@
-// Panelin şifre, deneme sınırı ve oturum kuralları. Durum yalnızca bellektedir:
-// panel yeniden başlarsa oturumlar kapanır, sayaçlar sıfırlanır.
+// Panelin şifre, deneme sınırı ve oturum kuralları. Deneme sayaçları bellektedir, panel yeniden
+// başlarsa sıfırlanır; oturumlar `panel_oturum`'da da durur (Faz 72), yeniden başlatmada düşmez.
 import { createHash, randomBytes, randomInt, scrypt as scryptCb, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 
@@ -93,13 +93,20 @@ const ozet = (jeton) => createHash('sha256').update(jeton).digest('hex')
 /**
  * Bellekte jetonun kendisi değil özeti durur. `veri` oturumun kime ait olduğudur:
  * `{ tur: 'yonetici' }` ya da `{ tur: 'oyuncu', numara, lid, surum }`.
+ * `depo` verilirse (Faz 72, `panel_oturum`) oturumlar oraya da yazılır: panel yeniden başlayınca
+ * bellekte olmayan jeton depodan okunur, kimse düşmez. Depo da yalnızca özeti tutar.
  */
-export function oturumlar({ saat = Date.now } = {}) {
+export function oturumlar({ saat = Date.now, depo = null } = {}) {
   const acik = new Map()
 
   const oku = (jeton) => {
     if (!jeton) return null
-    const o = acik.get(ozet(jeton))
+    const anahtar = ozet(jeton)
+    let o = acik.get(anahtar)
+    if (!o && depo) {
+      o = depo.oku(anahtar)
+      if (o) acik.set(anahtar, o)
+    }
     return o && o.bitis > saat() ? o : null
   }
 
@@ -109,8 +116,11 @@ export function oturumlar({ saat = Date.now } = {}) {
       for (const [anahtar, o] of acik) {
         if (o.bitis <= simdi) acik.delete(anahtar)
       }
+      depo?.temizle(simdi)
       const jeton = randomBytes(32).toString('base64url')
-      acik.set(ozet(jeton), { bitis: simdi + OTURUM_MS, veri })
+      const o = { bitis: simdi + OTURUM_MS, veri }
+      acik.set(ozet(jeton), o)
+      depo?.yaz(ozet(jeton), veri, o.bitis)
       return jeton
     },
 
@@ -124,7 +134,9 @@ export function oturumlar({ saat = Date.now } = {}) {
     },
 
     kapat(jeton) {
-      if (jeton) acik.delete(ozet(jeton))
+      if (!jeton) return
+      acik.delete(ozet(jeton))
+      depo?.sil(ozet(jeton))
     },
   }
 }

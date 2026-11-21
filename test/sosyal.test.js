@@ -394,7 +394,7 @@ test('haftalık gazete: geçen haftayı bir kez yazar, en çok tepki alanı alı
   assert.ok(g.metin.includes('🏆 Haftanın gönderisi: Can · +77 XP'))
   assert.equal(db.prepare('SELECT user_jid FROM sosyal_hafta_gonderi WHERE chat_jid = ? AND gonderi_id = ?').get(GRUP, id).user_jid, CAN)
   assert.ok(db.prepare("SELECT 1 FROM sosyal_bildirim WHERE user_jid = ? AND tur = 'hafta' AND gonderi_id = ?").get(CAN, id))
-  assert.equal(S.akis(GRUP, ALI, { id, adet: 1 })[0].haftanin, true)
+  assert.deepEqual(S.akis(GRUP, ALI, { id, adet: 1 })[0].haftanin, { xp: 77 })
   // Boş haftada gazete çıkmaz ama işaret yazılır.
   assert.equal(S.gazeteKontrol(OTEKI, ileri + 70 * 86_400_000), 0)
 })
@@ -568,4 +568,104 @@ test('grup sohbeti: kurma, okunmamış, ekleme, ayrılma', async () => {
   S.sohbetCik(GRUP, DENIZ, id)
   assert.ok(!db.prepare('SELECT 1 FROM sosyal_sohbet WHERE id = ?').get(id))
   assert.ok(!db.prepare('SELECT 1 FROM sosyal_sohbet_mesaj WHERE sohbet_id = ?').get(id))
+})
+
+test('oturum veritabanında durur: yeni sunucu aynı çerezi tanır', async () => {
+  const ikinci = sunucuKur({ sifreHash: await sifreHashle('yonetici'), veri, yedekKlasoru: path.join(klasor, 'yedek'), push })
+  await new Promise((tamam) => ikinci.listen(0, '127.0.0.1', tamam))
+  try {
+    const y = await fetch(`http://127.0.0.1:${ikinci.address().port}/s?grup=${g}`, { redirect: 'manual', headers: { Cookie: ali } })
+    assert.equal(y.status, 200)
+    assert.ok(!db.prepare('SELECT 1 FROM panel_oturum WHERE ozet = ?').get(ali.split('=')[1]))
+  } finally {
+    ikinci.close()
+  }
+})
+
+test('Faz 72: düzenle, kaydet, sabitle, durum, çevrimiçi, okundu çizgisi', async () => {
+  const simdi = Date.now()
+  const { id } = S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, metin: 'ilk hali', now: simdi })
+  assert.equal(S.gonderiDuzenle(GRUP, ALI, id, 'başkası', simdi).bitti, true)
+  assert.ok(S.gonderiDuzenle(GRUP, AYSE, id, 'yeni hali', simdi + 1000).tamam)
+  assert.equal(S.gonderiDuzenle(GRUP, AYSE, id, 'geç', simdi + S.DUZENLEME_MS + 1).bitti, true)
+  const [d] = S.akis(GRUP, ALI, { id, adet: 1 })
+  assert.equal(d.metin, 'yeni hali')
+  assert.ok(d.duzenlendi)
+
+  assert.deepEqual(S.kaydetDegistir(GRUP, ALI, id), { kaydedildi: true })
+  assert.equal(S.kaydedilenler(GRUP, ALI)[0].id, id)
+  assert.equal(S.akis(GRUP, ALI, { id, adet: 1 })[0].kaydettim, true)
+  assert.equal(S.akis(GRUP, AYSE, { id, adet: 1 })[0].kaydettim, false)
+  assert.deepEqual(S.kaydetDegistir(GRUP, ALI, id), { kaydedildi: false })
+  assert.equal(S.kayitSayisi(GRUP, ALI), 0)
+
+  assert.ok(S.sabitle(GRUP, ALI, id).hata)
+  assert.equal(S.sabitle(GRUP, AYSE, id).sabit, id)
+  const profil = await (await al(ayse, `/s/profil?grup=${g}`)).text()
+  assert.ok(profil.includes('Sabitlenmiş gönderi'))
+  assert.equal(S.sabitle(GRUP, AYSE, id).sabit, 0)
+
+  S.profilYaz(GRUP, AYSE, { durum: '  maçta   ⚽ ', now: simdi })
+  const p = S.profilOku(GRUP, AYSE, simdi)
+  assert.equal(p.durum, 'maçta ⚽')
+  S.profilYaz(GRUP, AYSE, { durum: 'maçta ⚽', now: simdi + 1000 })
+  assert.equal(S.profilOku(GRUP, AYSE, simdi).durum_bitis, p.durum_bitis)
+  assert.equal(S.profilOku(GRUP, AYSE, simdi + S.DURUM_MS + 1).durum, '')
+
+  // Sayfayı açan çevrimiçi görünür.
+  await al(ayse, `/s?grup=${g}`)
+  const ayseUye = S.uyeler(GRUP).find((u) => u.jid === AYSE)
+  assert.ok(S.cevrimiciMi(ayseUye))
+  assert.ok(!S.cevrimiciMi(ayseUye, Date.now() + S.CEVRIMICI_MS + 1))
+
+  // Okundu çizgisi: görülenden sonra gelen gönderinin altında çıkar.
+  await al(ali, `/s?grup=${g}`)
+  S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, metin: 'çizgiden önce' })
+  const yeniHtml = await (await al(ali, `/s?grup=${g}`)).text()
+  assert.ok(yeniHtml.indexOf('çizgiden önce') < yeniHtml.indexOf('Buraya kadar okudun'))
+  // Hemen yeniden açınca en üstteki zaten görülmüş: çizgi çıkmaz.
+  assert.ok(!(await (await al(ali, `/s?grup=${g}`)).text()).includes('Buraya kadar okudun'))
+})
+
+test('Faz 72: bahşiş .devret kurallarıyla geçer, kazanç kartı yalnızca sunucunun kazancıyla', async () => {
+  const { id } = S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, metin: 'kahve ısmarla' })
+  const once = db.prepare('SELECT xp FROM stats WHERE chat_jid = ? AND user_jid = ?')
+  const [ali0, ayse0] = [once.get(GRUP, ALI).xp, once.get(GRUP, AYSE).xp]
+  const y = await gonder(ali, '/s/bahsis', { grup: GRUP, id, ozel: '50' })
+  assert.equal(y.status, 303)
+  assert.equal(once.get(GRUP, ALI).xp, ali0 - 50)
+  assert.equal(once.get(GRUP, AYSE).xp, ayse0 + 50)
+  const [b] = S.akis(GRUP, ALI, { id, adet: 1 })
+  assert.deepEqual(b.bahsis, { adet: 1, toplam: 50 })
+  assert.ok(db.prepare("SELECT 1 FROM sosyal_bildirim WHERE user_jid = ? AND tur = 'bahsis' AND gonderi_id = ?").get(AYSE, id))
+  const sahte = (s) => () => s
+  assert.ok(S.bahsisVer({ chatJid: GRUP, userJid: AYSE, id, miktar: 5, devret: sahte({}) }).hata.includes('Kendine'))
+  assert.ok(S.bahsisVer({ chatJid: GRUP, userJid: ALI, id, miktar: 5, devret: sahte({ kredili: true }) }).hata.includes('Kredi'))
+  assert.ok(S.bahsisVer({ chatJid: GRUP, userJid: ALI, id, miktar: 5, devret: sahte({ ambargo: 1 }) }).hata.includes('Ambargo'))
+  assert.ok(S.bahsisVer({ chatJid: GRUP, userJid: ALI, id, miktar: 10 ** 12, devret: sahte({ yetersiz: true }) }).hata.includes("XP'n yok"))
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sosyal_bahsis WHERE gonderi_id = ?').get(id).n, 1)
+
+  // Kazanç sayfadan gelmez: kumar belleğinde yoksa paylaşılmaz.
+  const v = await gonder(ali, '/s/vurgun', { grup: GRUP, kazanc: '999999999' })
+  assert.equal(v.status, 303)
+  assert.ok(!db.prepare("SELECT 1 FROM sosyal_gonderi WHERE vurgun <> '' AND user_jid = ?").get(ALI))
+  const { id: vid } = S.gonderiYaz({ chatJid: GRUP, userJid: ALI, vurgun: { oyun: 'slot', bahis: 100, kazanc: 900, carpan: 10 } })
+  const html = await (await al(ali, `/s/gonderi?grup=${g}&id=${vid}`)).text()
+  assert.ok(html.includes('vurgun-kart') && html.includes('+900 XP') && html.includes('10x'))
+})
+
+test('Faz 72: tema çerezi html etiketine yazılır, vitrin ve @ adları sayfada', async () => {
+  const y = await gonder(ali, '/s/tema', { tema: 'koyu' }, { Referer: `${adres}/s/ayar?grup=${g}` })
+  assert.equal(y.status, 303)
+  const cerez = y.headers.get('set-cookie')
+  assert.ok(cerez.startsWith('tema=koyu;'))
+  const html = await (await al(`${ali}; tema=koyu`, `/s?grup=${g}`)).text()
+  assert.ok(html.includes('<html lang="tr" data-tema="koyu">'))
+  assert.ok(html.includes('data-uyeler="[&quot;'))
+  const bozuk = await (await al(`${ali}; tema="><script>`, `/s?grup=${g}`)).text()
+  assert.ok(bozuk.includes('<html lang="tr">'))
+
+  db.prepare("INSERT OR REPLACE INTO market (chat_jid, user_jid, unvan, kalkan_until) VALUES (?, ?, '👑 Kral', 0)").run(GRUP, AYSE)
+  const profil = await (await al(ali, `/s/profil?grup=${g}&id=${encodeURIComponent(AYSE)}`)).text()
+  assert.ok(profil.includes('Vitrin') && profil.includes('👑 Kral'))
 })

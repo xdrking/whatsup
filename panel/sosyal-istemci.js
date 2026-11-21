@@ -520,4 +520,81 @@
       }
     }, SAYAC_ARALIGI)
   }
+
+  // @ önerisi (Faz 72): "@" yazınca grubun adları listelenir, seçilen "@Ad " olarak yazılır.
+  // Adlar body[data-uyeler]'dan gelir; liste textContent ile kurulur, ad HTML olarak işlenmez.
+  let adlar = []
+  try {
+    adlar = JSON.parse(document.body.dataset.uyeler || '[]')
+  } catch (err) {
+    console.warn('Üye adları okunamadı', err)
+  }
+  const katla = (s) => s.toLocaleLowerCase('tr').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i')
+  const ALANLAR = 'textarea[name=metin], input[name=metin]'
+  let oneri = null // { alan, liste, secili, bas, adaylar }
+  const oneriKapat = () => {
+    oneri?.liste.remove()
+    oneri = null
+  }
+  const oneriSec = (ad) => {
+    const { alan, bas } = oneri
+    const son = alan.selectionStart
+    alan.value = `${alan.value.slice(0, bas)}@${ad} ${alan.value.slice(son)}`
+    const yer = bas + ad.length + 2
+    alan.setSelectionRange(yer, yer)
+    oneriKapat()
+    alan.focus()
+  }
+  const oneriCiz = () => {
+    oneri.liste.replaceChildren(...oneri.adaylar.map((ad, i) => {
+      const li = document.createElement('li')
+      li.textContent = ad
+      li.setAttribute('role', 'option')
+      if (i === oneri.secili) li.classList.add('secili')
+      // mousedown: odak alandan çıkmadan seçilsin.
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        oneriSec(ad)
+      })
+      return li
+    }))
+  }
+  if (adlar.length) {
+    document.addEventListener('input', (e) => {
+      const alan = e.target
+      if (!(alan instanceof HTMLElement) || !alan.matches(ALANLAR)) return
+      const once = alan.value.slice(0, alan.selectionStart)
+      const esle = /(^|\s)@([^\s@]{0,20})$/u.exec(once)
+      const adaylar = esle ? adlar.filter((ad) => katla(ad).startsWith(katla(esle[2]))).slice(0, 6) : []
+      if (!adaylar.length) return oneriKapat()
+      if (!oneri || oneri.alan !== alan) {
+        oneriKapat()
+        const kap = alan.parentElement
+        kap.classList.add('oneri-kap')
+        const liste = document.createElement('ul')
+        liste.className = 'oneri'
+        liste.setAttribute('role', 'listbox')
+        alan.after(liste)
+        oneri = { alan, liste }
+      }
+      Object.assign(oneri, { adaylar, secili: 0, bas: once.length - esle[2].length - 1 })
+      oneriCiz()
+    })
+    document.addEventListener('keydown', (e) => {
+      if (!oneri || e.target !== oneri.alan) return
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        const n = oneri.adaylar.length
+        oneri.secili = (oneri.secili + (e.key === 'ArrowDown' ? 1 : n - 1)) % n
+        oneriCiz()
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        oneriSec(oneri.adaylar[oneri.secili])
+      } else if (e.key === 'Escape') oneriKapat()
+    }, true)
+    document.addEventListener('focusout', (e) => {
+      if (oneri && e.target === oneri.alan) setTimeout(oneriKapat, 150)
+    })
+  }
 })()

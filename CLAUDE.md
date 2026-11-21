@@ -163,7 +163,10 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `panel/kumar.js` | paneldeki açık blackjack/mayın/kule/hi-lo eli ve son sonuç | panel belleği (panelle ölür) |
 | `panel/hesap.js` | paneldeki son hesap işleminin bildirimi | panel belleği (panelle ölür) |
 | `lib/db.js` + `lib/sosyal.js` | sosyal bölümün gönderi, yorum, beğeni, DM, grup sohbeti, hikâye, etkinlik, bildirim, profil kayıtları | `data/stats.db` + `data/medya/` (kalıcı) |
-| `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme, DM ve grup sohbetinde "yazıyor" sinyali | panel belleği (panelle ölür) |
+| `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme, DM ve grup sohbetinde "yazıyor" sinyali, son çevrimiçi yazımı | panel belleği (panelle ölür) |
+| `panel/kumar.js` | paylaşılmamış son büyük kazanç (akışta paylaşılır) | panel belleği (panelle ölür) |
+| `lib/db.js` + `lib/panelHesap.js` | panel oturumları (jetonun sha256 özeti) | `data/stats.db` (kalıcı) |
+| tarayıcı çerezi `tema` | sosyal bölümün açık/koyu tema tercihi | tarayıcıda |
 
 WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp yolu bir üyenin açıkça yazdığı `.paylaş`'tır (Faz 69): yalnızca yanıtlanan o mesaj akışa yazılır. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
 
@@ -349,7 +352,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 69 (tamam):** `.paylaş` ile WhatsApp'tan akışa, anket gönderisi, haftalık gazete. Ayrıntı aşağıda.
 - **Faz 70 (tamam):** arama, DM'de yazıyor ve görüldü, hikâye yanıtı ve tepkisi, grup sohbeti, etkinlik, haftanın gönderisi. Ayrıntı aşağıda.
 - **Faz 71 (tamam):** sosyal bölümün yeni görünümü ve SVG simgeler. Faz 66 "Tasarım" maddesine işlendi.
-- **Faz 72+:** yeni komutlar, her biri ayrı adım
+- **Faz 72 (tamam):** kalıcı panel oturumu, @ önerisi, düzenleme, kaydetme, sabitleme, çevrimiçi, durum, okundu çizgisi, tema, bahşiş, kazanç kartı, profil vitrini. Ayrıntı aşağıda.
+- **Faz 73+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -962,7 +966,7 @@ girmez: yeni ürün eklenince numarası kayar.
 ### Faz 31 — Web paneli
 
 Numara ban yese ya da grup dağılsa da veriler görülsün diye vardır. Bottan ayrı süreçtir, WhatsApp'a
-hiç bağlanmaz, istatistikleri `data/stats.db`'den **salt okunur** okur. Yazan özellikler kumarhane (Faz 58) ve sosyal bölümdür (Faz 66), ikisi de bot sahibinin kararıdır; başka veri değiştiren panel özelliği eklenmez.
+hiç bağlanmaz, istatistikleri `data/stats.db`'den **salt okunur** okur. Yazan özellikler kumarhane (Faz 58), sosyal bölüm (Faz 66) ve oturum tablosudur (Faz 72), ilk ikisi bot sahibinin kararıdır; başka veri değiştiren panel özelliği eklenmez.
 Yeni npm paketi yoktur: Node `http` + sunucuda üretilen HTML + `panel/stil.css`.
 
 ```
@@ -985,7 +989,7 @@ panel/yedek.js     günlük yedek
 - **Şifre elle seçilmez**, `npm run panel:sifre` 24 karakter üretir. `.env`'e yalnızca scrypt özeti girer.
 - **Deneme sayacı şifreye bakılmadan önce artar:** IP başına 5 hak, sonra 15 dk kilit, her kilit iki
   katına çıkar (en çok 24 saat). Genel sınır 10 dakikada 30 deneme. Sınır dolunca açık oturumlar etkilenmez.
-- Oturumlar bellektedir, panel yeniden başlarsa herkes yeniden girer. Süre 7 gün.
+- Oturumlar `panel_oturum`'a da yazılır (Faz 72), panel yeniden başlayınca (`pm2 restart`) kimse düşmez. Tabloda jetonun kendisi değil sha256 özeti durur. Süre 7 gün, süresi dolanlar yeni oturum açılınca silinir. Çıkış yapan ve şifre değiştiren (`surum`) yine düşer.
 - **Yedek:** panel açıkken günde bir `data/yedek/`'e alınır, 14 tane kalır. Aynı sunucuda durduğu için
   sunucu ölürse gider; bu yüzden panelde indirme düğmesi vardır.
 - Banka ve portföy son işlenen değerdir: panel faiz işlemez, borsayı ilerletmez.
@@ -1443,6 +1447,30 @@ sosyal_izleme.tepki        izleyenin hikâyeye bıraktığı tepki
 - **Etkinlik:** paylaş kutusundaki 📅 `<details>`; tarih ve saat İstanbul saatidir (+03:00 sabit), ileri bir tarih ve en çok 1 yıl sonra. Anketle aynı gönderide olmaz, metinsiz paylaşılabilir. Aynı düğme ikinci kez basılınca katılım kalkar, sahibine bildirim yalnızca ilk "geliyorum"da. Hatırlatma: panel 5 dakikada bir `etkinlikHatirlat()` çağırır, başlamasına 1 saatten az kalan etkinlikte "geliyorum" ve "belki" diyenlere bildirim (push dahil) yazar; işaret aynı transaction'dadır, hatırlatma bir kez gider. Bot kendiliğinden yazmadığı için hatırlatmayı panel atar. Sağ sütunda yaklaşan 3 etkinlik.
 - **Haftanın gönderisi:** gazete (Faz 69) geçen haftanın en çok tepki alan gönderisini seçer; sahibinin kendi tepkisi sayılmaz ve en az 2 tepki gerekir. Sahibi `HAFTA_ODUL_TABAN` (100) tabanın kur ölçeğini alır (bot sahibinin kararı, `xpVer` ile, sosyal XP'si gibi görev ve sezon puanı yazmaz), gönderide 🏆 şeridi çıkar, kendisine bildirim düşer. Ödül gazeteyle aynı transaction'dadır, bir kez verilir.
 
+### Faz 72 — Sosyal bölümün küçük özellikleri, kalıcı oturum
+
+```
+panel_oturum(ozet PK, veri JSON, bitis ms)
+sosyal_kayit(chat_jid, user_jid, gonderi_id, zaman)              PK(chat_jid,user_jid,gonderi_id)
+sosyal_bahsis(id, chat_jid, gonderi_id, kimden, kime, xp, zaman)
+sosyal_gonderi.duzenlendi  son düzenleme anı (0 = hiç)      sosyal_gonderi.vurgun  kazanç kartı JSON ('' = yok)
+sosyal_profil.sabit, durum, durum_bitis, aktif, akis_gorulen
+```
+
+- **Kalıcı oturum:** `oturumlar({ depo })` belleği önde tutar, bellekte olmayan jetonu `oturumDeposu()`'ndan okur. Testler depo vermez, oturum yalnızca bellektedir.
+- **@ önerisi:** adlar `body[data-uyeler]`'dadır (JSON, `h` kaçırır), betik listeyi `textContent` ile kurar. Gönderi, yorum, yanıt ve DM kutularında çalışır. Etiket bildirimi yine sunucuda `etiketleriBul` ile çıkar.
+- **Düzenleme:** yalnızca yazan, ilk 10 dakikada (`DUZENLEME_MS`), yalnızca metin. Düz paylaşım ve bot gönderisi düzenlenmez. Yeni eklenen @etikete bildirim gitmez, düzenleyerek bildirim yağdırılmasın. Gönderide "· düzenlendi" yazar.
+- **⋯ menüsü** (`<details class="gonderi-menu">`): kaydet, sabitle, düzenle, sil. Betik gerekmez.
+- **Kaydedilenler** yalnızca kaydedene görünür, gönderi silinince kaydı da silinir. **Sabit gönderi** profilde kişi başı birdir, yalnızca kendi gönderisi; silinince sabit kalkar.
+- **Çevrimiçi:** paneli son 5 dakikada açan (`CEVRIMICI_MS`). `sosyal_profil.aktif` her istekte değil, kişi başı dakikada bir yazılır (`motor.aktifMi`). WhatsApp'ın "çevrimiçi" bilgisi değildir, yalnızca panel.
+- **Durum** ("şu an: maçta ⚽"): en çok 80 karakter, 24 saat sonra okunurken düşer, silmek için iş yoktur. Aynı metni yeniden kaydetmek süreyi uzatmaz.
+- **Okundu çizgisi:** `/s` ilk sayfası açılınca en üstteki gönderi `akis_gorulen`'e yazılır; bir sonraki açılışta çizgi eski değerin üstüne çizilir, en üstteyse çizilmez.
+- **Tema:** `tema` çerezi (`acik`/`koyu`, boşsa cihaz), sunucu `<html data-tema>` yazar. Koyu renkler `sosyal.css`'te iki yerdedir (`prefers-color-scheme` içinde `:root:not([data-tema=acik])` ve `:root[data-tema=koyu]`), biri değişirse öbürü de değişir. Çerez değeri listeden değilse yok sayılır.
+- **Bahşiş:** para `xpDevret` ile geçer (bot sahibinin şartı: `.devret` kuralları), kredili ve ambargolu gönderemez, kendine ve Grup Bülteni'ne verilmez. Hazır tutarlar `oyunTutari` ile kurla büyür, elle yazılan tutar `miktarlariCoz` ile okunur. `sosyal_bahsis` yalnızca kayıttır, bakiye `stats`'tadır.
+- **Kazanç kartı:** kumarhanede net kazancı bahsin 4 katını (`VURGUN_KAT`) geçen el sonuç kartında "📣 Akışta paylaş" çıkarır. Rakamlar formdan değil kumar motorunun belleğinden gelir (`vurgunAl`), bir kez paylaşılır: sayfadan gelen kazanç sahte olurdu. XP vermez. Panel yeniden başlarsa paylaşılmamış kazanç düşer.
+- **Profil vitrini** (`profilVitrini`): unvan, devir zengini, şampiyonluk, makamlar, meslek, eş, çete, pet, hapis. Hiçbir şey yazmaz: kaçmış pet gösterilmez ama silinmez.
+- **Haftanın gönderisi** şeridi ödülü yazar (`sosyal_hafta_gonderi.xp`).
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1578,3 +1606,6 @@ sosyal_izleme.tepki        izleyenin hikâyeye bıraktığı tepki
 117. Bir yorumda "Yanıtla" → kutu açılır, yanıt yorumun altına girintili düşer, yorum sahibine "yorumuna yanıt verdi" bildirimi (push dahil) gider; yanıta yanıt da aynı dalda, başında `@Ad`; yorumda Beğen ve ☺ → tepki balonun köşesinde görünür, aynısı kaldırır. Bilgisayarda ve Android'de girişte üstte "Bildirimlere izin ver" çıkar, İzin ver → tarayıcı sorar; "Sonra" → 3 gün çıkmaz. iPhone Safari'de izin yerine Ana Ekrana Ekle adımları çıkar, ana ekrandan açınca İzin ver gelir
 118. Grupta bir fotoğrafa yanıt verip `.paylaş güzel kare` → bot bağlantıyla yanıtlar, akışta fotoğraf ve not görünür, başkasının fotoğrafıysa "WhatsApp'tan · yazan X"; videoya `.paylaş` → kullanım. Paylaş kutusunda 📊 Anket → iki seçenek yaz, Paylaş; başkası oy verince sonuç ve yüzdeler çıkar, oy vermeyen yalnızca düğmeleri görür. Pazartesi akış açılınca geçen haftanın gazetesi Grup Bülteni olarak gelir
 119. Üst çubukta `sukru` ara → Şükrü'nün gönderileri ve kişisi çıkar, `#halısaha` → etiket sayfası. İki tarayıcıda DM: biri yazarken öbüründe "X yazıyor…", mesajı açınca gönderende "Görüldü". Başkasının hikâyesinde 😂 → hikâye sahibinin DM'sine "↩ Hikâyeye tepki" düşer, izleyen listesinde 😂 görünür. Mesajlar › Grup sohbeti kur → iki kişi seç; üçü de yazar, "Görüldü: Ali, Ayşe" çıkar, sohbetten ayrılınca not düşer. Paylaş › 📅 Etkinlik → kart takvim yaprağıyla çıkar, Geliyorum sayısı artar, sağda Yaklaşan etkinlikler; başlamasına 1 saat kala telefona hatırlatma gelir. Pazartesi gazetesinde 🏆 Haftanın gönderisi satırı, gönderide şerit, sahibinin XP'si artar
+120. Panelde giriş yap, sunucuda `pm2 restart panel` → sayfa yenilenince oturum duruyor, giriş ekranı gelmiyor; çıkış yapınca düşüyor
+121. Gönderi kutusuna `@ay` yaz → öneri listesinde Ayşe, Enter ile `@Ayşe ` yazılır. Kendi gönderinde ⋯ → Düzenle, kaydedince "· düzenlendi"; 10 dk sonra Düzenle yok. ⋯ → Kaydet, sol menüde Kaydedilenler'de çıkar. ⋯ → Profilde sabitle, profilde en üstte "Sabitlenmiş gönderi". Profili düzenle → Şu an "maçta ⚽" → profilde ve sağ sütunda görünür. Başka tarayıcıda panel açıkken sağ sütunda yeşil nokta ve "çevrimiçi". Akışa birkaç gönderi düşünce "Buraya kadar okudun" çizgisi. Sol menüde Koyu tema → sayfa koyu, Ayar'dan "Cihazın ayarı"na dönülür
+122. Başkasının gönderisinde ☕ Bahşiş → tutar seç → cüzdan düşer, gönderi sahibinin XP'si artar, ona bildirim düşer, gönderide "☕ 1 bahşiş"; kredi borcuyla → "Kredi borcun varken". Kumarhanede bahsin 4 katı kazanınca sonuç kartında "📣 Akışta paylaş" → akışta çarpanlı kazanç kartı; aynı kazanç ikinci kez paylaşılamaz. Profilde Vitrin kartı unvan, meslek, eş, makam ve peti gösterir. Haftanın gönderisi şeridi "+X XP ödül" yazar

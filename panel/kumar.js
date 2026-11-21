@@ -118,14 +118,27 @@ export function miktarMetni(ham) {
   return kelimeler.length ? miktarlariCoz(kelimeler).join('') : ''
 }
 
+/** Net kazanç bahsin bu katına ulaşınca "büyük kazanç" sayılır, akışta paylaşılabilir (Faz 72). */
+export const VURGUN_KAT = 4
+
 /** `deste`: testte sabit deste vermek içindir; kartlar dizinin sonundan çekilir. */
 export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle = clearTimeout, deste = desteKur } = {}) {
   const eller = new Map() // anahtar → çok adımlı oyunun durumu
   const sonuclar = new Map() // anahtar → son sonuç, bir kez gösterilir
   const sonIslem = new Map()
 
+  // Son büyük kazanç: akışta yalnızca sunucunun gördüğü kazanç paylaşılır, sayfadan gelen rakam değil.
+  const vurgunlar = new Map()
   const anahtar = (h) => `${h.chat}|${h.user}`
-  const sonucYaz = (k, sonuc) => sonuclar.set(k, sonuc)
+  const vurgunNotu = (k, s) => {
+    if (s.fark > 0 && s.bahis && s.fark >= s.bahis * VURGUN_KAT) {
+      vurgunlar.set(k, { oyun: s.oyun, bahis: s.bahis, kazanc: s.fark, carpan: Math.floor(((s.bahis + s.fark) / s.bahis) * 100) / 100, zaman: saat() })
+    }
+  }
+  const sonucYaz = (k, sonuc) => {
+    vurgunNotu(k, sonuc)
+    sonuclar.set(k, sonuc)
+  }
 
   function hizKontrol(k) {
     const simdi = saat()
@@ -148,7 +161,10 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
   function tekOyna(h, { oyun, miktar, secim }) {
     const k = anahtar(h)
     // Form aynı bahis ve seçimle yeniden çizilsin diye sonuç (hata dahil) yazılanı taşır.
-    const sonucYaz = (anahtarAdi, sonuc) => sonuclar.set(anahtarAdi, { yazilan: String(miktar ?? ''), secim: String(secim ?? ''), ...sonuc })
+    const sonucYaz = (anahtarAdi, sonuc) => {
+      vurgunNotu(anahtarAdi, sonuc)
+      sonuclar.set(anahtarAdi, { yazilan: String(miktar ?? ''), secim: String(secim ?? ''), ...sonuc })
+    }
     const tanim = Object.hasOwn(TEK_OYUNLAR, oyun) ? TEK_OYUNLAR[oyun] : null
     if (!tanim) return sonucYaz(k, { hata: 'Böyle bir oyun yok.' })
     if (!hizKontrol(k)) return
@@ -463,5 +479,14 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     return { xp, el: el ? gorunum(el) : null, sonuc }
   }
 
-  return { tekOyna, basla, hamle, durum }
+  /** Paylaşılmamış son büyük kazanç; alınınca silinir, aynı kazanç iki kez paylaşılmaz. */
+  function vurgunAl(h) {
+    const k = anahtar(h)
+    const v = vurgunlar.get(k) ?? null
+    vurgunlar.delete(k)
+    return v
+  }
+  const vurgunVar = (h) => vurgunlar.has(anahtar(h))
+
+  return { tekOyna, basla, hamle, durum, vurgunAl, vurgunVar }
 }

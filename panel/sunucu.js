@@ -5,7 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import logger from '../lib/logger.js'
 import { getStats } from '../lib/stats.js'
-import { girisHesaplari, panelHesaplari } from '../lib/panelHesap.js'
+import { girisHesaplari, oturumDeposu, panelHesaplari } from '../lib/panelHesap.js'
 import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru, sifreHashle } from './guvenlik.js'
 import { buyukVurgunlar, kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
 import { hesapMotoru } from './hesap.js'
@@ -70,10 +70,10 @@ function bekleMetni(ms) {
 }
 
 /** @param {{ sifreHash: string, veri: object, yedekKlasoru: string }} ayar */
-export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru(), push = pushMotoru() }) {
+export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru(), push = pushMotoru(), depo = oturumDeposu() }) {
   bildirimKancasiKur(push)
   const sinir = denemeSiniri()
-  const oturum = oturumlar()
+  const oturum = oturumlar({ depo })
   // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.
   const sahteHash = sifreHashle('panel-sahte-sifre')
 
@@ -136,7 +136,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
 
   const grupAdlari = () => new Map(veri.gruplar().map((g) => [g.chat_jid, g.ad]))
 
-  const ortak = { gonder, yonlendir, govdeOku, grupAdlari: () => grupAdlari(), guvenlik: GUVENLIK_BASLIKLARI }
+  const ortak = { gonder, yonlendir, govdeOku, grupAdlari: () => grupAdlari(), guvenlik: GUVENLIK_BASLIKLARI, vurgunAl: (kim) => kumar.vurgunAl(kim) }
 
   async function oyuncuIsle(req, res, url, yontem, hesaplar) {
     if (url.pathname === '/') return yonlendir(res, '/s')

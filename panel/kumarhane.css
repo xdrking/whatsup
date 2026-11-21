@@ -189,6 +189,13 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
   animation: isilti 2.2s linear infinite;
 }
 
+/* Büyük kazancı sosyal akışa taşıyan form (Faz 72). */
+.vurgun-paylas { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin-top: .9rem; }
+.vurgun-paylas input { flex: 1 1 12rem; min-width: 0; padding: .6rem .8rem; border: 1px solid rgb(245 197 66 / .35); border-radius: .6rem;
+  background: rgb(0 0 0 / .25); color: inherit; font: inherit; }
+.vurgun-paylas input:focus { outline: none; border-color: var(--altin); }
+.vurgun-paylas .dugme { padding: .6rem 1rem; border: 0; border-radius: .6rem; background: var(--altin); color: #2a1d00; font: inherit; font-weight: 800; cursor: pointer; }
+
 /* Sonuç metni animasyon bitince açılır. */
 .gecikmeli { opacity: 0; animation: belir .55s var(--yumusak) forwards; animation-delay: .25s; }
 .sonuc[data-oyun="slot"] .gecikmeli { animation-delay: 2.15s; }
