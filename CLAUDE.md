@@ -165,7 +165,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/sosyal.js` | sosyal bölümün gönderi, yorum, beğeni, DM, hikâye, bildirim, profil kayıtları | `data/stats.db` + `data/medya/` (kalıcı) |
 | `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme | panel belleği (panelle ölür) |
 
-WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
+WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp yolu bir üyenin açıkça yazdığı `.paylaş`'tır (Faz 69): yalnızca yanıtlanan o mesaj akışa yazılır. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
 
 ### Komut sözleşmesi
 
@@ -346,7 +346,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 66 (tamam):** panelde sosyal bölüm ve PWA. Ayrıntı aşağıda.
 - **Faz 67 (tamam):** Web Push, paylaşım ve alıntı, #etiket ve gündem, emoji tepkileri, akış iyileştirmeleri. Ayrıntı aşağıda.
 - **Faz 68 (tamam):** yorum yanıtı ve yorum tepkisi, her girişte bildirim izni ve iPhone kurulum rehberi. Ayrıntı aşağıda.
-- **Faz 69+:** yeni komutlar, her biri ayrı adım
+- **Faz 69 (tamam):** `.paylaş` ile WhatsApp'tan akışa, anket gönderisi, haftalık gazete. Ayrıntı aşağıda.
+- **Faz 70+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1404,6 +1405,19 @@ sosyal_yorum_tepki(yorum_id, user_jid, tepki, zaman)   PK(yorum_id,user_jid)
 - **İzin şeridi** her `/s` sayfasının başındadır (`izinSeridi`), hangi kutunun görüneceğine betik karar verir. Tarayıcı izin penceresini ancak dokunuşla açtığı için şerit düğmelidir, sayfa açılır açılmaz izin istenmez (Safari ve Firefox engeller). "Sonra" 3 gün susturur (`localStorage`, yalnızca kolaylık). İzin önceden verilmişse abonelik her girişte sessizce sunucuya yeniden yazılır.
 - **iPhone/iPad:** ana ekrana eklenmemiş Safari'de push yoktur, izin yerine adım adım "Ana Ekrana Ekle" rehberi çıkar (Paylaş simgesi CSS ile çizilir). Android ve masaüstü Chrome/Edge `beforeinstallprompt` verirse "Uygulama olarak yükle" düğmesi çıkar.
 
+### Faz 69 — `.paylaş`, anket, haftalık gazete
+
+```
+sosyal_gonderi.kaynak                                     WhatsApp'tan gelen gönderinin özgün yazarı ('' = panelde yazıldı)
+sosyal_anket(gonderi_id, secenekler JSON, bitis ms)       PK(gonderi_id)
+sosyal_anket_oy(gonderi_id, user_jid, secim, zaman)       PK(gonderi_id,user_jid)
+ayar 'gazete:<chat_jid>'                                  son gazetenin haftası
+```
+
+- **`.paylaş`** (`commands/paylas.js`, bot sahibinin kararı): yanıtlanan fotoğraf, animasyonsuz sticker ya da metin, komutu yazanın adıyla akışa düşer; komuttaki not metnin başına eklenir. Başkasının mesajıysa gönderi "WhatsApp'tan · yazan X" der (`kaynak`). Video ve animasyonlu sticker paylaşılmaz. XP vermez. Yanıtta panel adresi `ayar.panel_adres`'ten gelir. Bot süreci push atmaz (Faz 67), etiketlenene bildirim yalnızca panelde görünür.
+- **Anket:** paylaş kutusundaki `<details>`; alanlar `secenek1…4` (multipart ayrıştırıcı aynı adlı alanları birleştirir), süre 1/3/7 gün. Metin anketin sorusudur, alıntı ve duvar yazısına anket eklenmez. Oy değiştirilebilir, bitince kapanır. Sonuç ve oy verenler yalnızca oy verene ya da bitince görünür, oy vermeden sonucu görüp çoğunluğa uyulmasın. Çubuk `<progress>`'tir (CSP satır içi stil yok). Bildirim ilk oyda.
+- **Gazete:** bot kendiliğinden yazmadığı için tetik paneldir: haftanın ilk `/s` açılışında `gazeteKontrol()` geçen haftayı (pazartesi başı, `haftaAnahtari`) özetleyip bot gönderisi yazar; en çok tepki alan gönderi alıntı kartıdır. İşaret ve yazma aynı transaction'dadır, gazete bir kez çıkar. Boş haftada gazete yazılmaz. Bot gönderileri sayılmaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1537,3 +1551,4 @@ sosyal_yorum_tepki(yorum_id, user_jid, tepki, zaman)   PK(yorum_id,user_jid)
 115. Panelde oyuncu girişi → haber kaynağı açılır, solda "Oyunlar" kumarhaneye gider, kumarhanede "Akışa dön" geri getirir; foto ile gönderi → akışta görünür, telefonla çekilmiş dikey foto yan dönmez, ilk 3 gönderi XP verir; beğeni sayfa yenilemeden değişir; `@Ad` yazılan kişiye bildirim düşer; başkasının profiline yazınca "A ▸ B" görünür; DM iki tarayıcıda birkaç saniyede düşer; hikâyeyi başkası bir kez görür, ikinci açılışta "zaten gördün"; telefonda alt sekme çıkar, Chrome/Safari'de "Ana ekrana ekle" uygulama gibi açılır; `.wordle` bilinince akışta Grup Bülteni gönderisi çıkar
 116. Bildirimler sayfasında "Aç" → izin sorulur; başka hesaptan beğeni ya da DM gelince telefona bildirim düşer, tıklayınca ilgili sayfa açılır, DM bildiriminde mesaj metni yok; iPhone'da önce Ana Ekrana Ekle. Bir gönderide ☺ → 6 tepki, seçilen tepki çubukta görünür, aynısı kaldırır; ↻ Paylaş → akışta "Sen paylaştın", tekrar basınca geri alınır; ❝ Alıntıla → yorumlu paylaşım, içinde özgün kart; `#halısaha` yazılan gönderide etiket tıklanır, etiket sayfası açılır, sağda Gündem çıkar; aşağı kaydırınca eski gönderiler kendiliğinden gelir; fotoğrafa tek dokunuş büyütür, çift dokunuş ❤️ verir
 117. Bir yorumda "Yanıtla" → kutu açılır, yanıt yorumun altına girintili düşer, yorum sahibine "yorumuna yanıt verdi" bildirimi (push dahil) gider; yanıta yanıt da aynı dalda, başında `@Ad`; yorumda Beğen ve ☺ → tepki balonun köşesinde görünür, aynısı kaldırır. Bilgisayarda ve Android'de girişte üstte "Bildirimlere izin ver" çıkar, İzin ver → tarayıcı sorar; "Sonra" → 3 gün çıkmaz. iPhone Safari'de izin yerine Ana Ekrana Ekle adımları çıkar, ana ekrandan açınca İzin ver gelir
+118. Grupta bir fotoğrafa yanıt verip `.paylaş güzel kare` → bot bağlantıyla yanıtlar, akışta fotoğraf ve not görünür, başkasının fotoğrafıysa "WhatsApp'tan · yazan X"; videoya `.paylaş` → kullanım. Paylaş kutusunda 📊 Anket → iki seçenek yaz, Paylaş; başkası oy verince sonuç ve yüzdeler çıkar, oy vermeyen yalnızca düğmeleri görür. Pazartesi akış açılınca geçen haftanın gazetesi Grup Bülteni olarak gelir

@@ -340,3 +340,71 @@ test('her sayfada izin şeridi ve iPhone kurulum rehberi var', async () => {
   assert.ok(html.includes('class="kart izin-serit" hidden'))
   assert.ok(html.includes('Bildirimlere izin ver') && html.includes('Ana Ekrana Ekle'))
 })
+
+test('anket: denetim, oy değişir, bitince kapanır, sonuç sayfası', async () => {
+  assert.ok(S.anketHazirla(['tek'], 1).hata)
+  assert.ok(S.anketHazirla(['a', 'A'], 1).hata)
+  assert.ok(S.anketHazirla(['a', 'b', 'c', 'd', 'e'], 1).hata)
+  const hazir = S.anketHazirla(['Pizza', 'Döner', ''], 99, 0)
+  assert.deepEqual(hazir, { secenekler: ['Pizza', 'Döner'], bitis: 86_400_000 })
+  assert.ok(S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: '', anket: S.anketHazirla(['a', 'b'], 1) }).hata)
+
+  const id = S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: 'Akşam ne yiyelim?', anket: S.anketHazirla(['Pizza', 'Döner'], 1) }).id
+  assert.deepEqual(S.anketOy(GRUP, AYSE, id, 1), { tamam: true })
+  assert.equal(S.bildirimler(GRUP, ALI)[0].tur, 'anket_oy')
+  S.anketOy(GRUP, AYSE, id, 0)
+  assert.equal(S.bildirimler(GRUP, ALI).filter((b) => b.tur === 'anket_oy').length, 1)
+  assert.ok(S.anketOy(GRUP, AYSE, id, 5).hata)
+  assert.ok(S.anketOy(OTEKI, CAN, id, 0).hata)
+  let [g] = S.akis(GRUP, AYSE, { id })
+  assert.equal(g.anket.toplam, 1)
+  assert.equal(g.anket.benim, 0)
+  assert.deepEqual(g.anket.secenekler[0].verenler, [AYSE])
+  assert.ok(S.anketOy(GRUP, ALI, id, 0, Date.now() + 2 * 86_400_000).hata)
+
+  const html = await (await gonder(ali, '/s/anket-oy', { grup: GRUP, id, secim: 1 }, { 'X-Istemci': '1' })).text()
+  assert.ok(html.startsWith('<form class="anket sonuclu"') && html.includes('%50') && html.includes('Kim neye oy verdi'))
+  // Oy vermeyen sonucu görmez.
+  ;[g] = S.akis(GRUP, CAN, { id })
+  assert.equal(g.anket.benim, -1)
+  const form = new FormData()
+  for (const [k, v] of Object.entries({ grup: GRUP, metin: 'Hangisi?', secenek1: 'x', secenek2: 'y', sure: '3' })) form.append(k, v)
+  await gonder(ayse, '/s/paylas', form)
+  const son = db.prepare('SELECT a.* FROM sosyal_anket a JOIN sosyal_gonderi g ON g.id = a.gonderi_id WHERE g.metin = ?').get('Hangisi?')
+  assert.deepEqual(JSON.parse(son.secenekler), ['x', 'y'])
+  S.gonderiSil(GRUP, ALI, id)
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sosyal_anket_oy WHERE gonderi_id = ?').get(id).n, 0)
+})
+
+test('haftalık gazete: geçen haftayı bir kez yazar, en çok tepki alanı alıntılar', () => {
+  const ileri = Date.now() + 7 * 86_400_000
+  const id = S.gonderiYaz({ chatJid: GRUP, userJid: CAN, metin: 'gazete adayı #gazete' }).id
+  for (const kim of [ALI, AYSE]) S.begen(GRUP, kim, id)
+  for (let i = 0; i < 5; i++) S.begen(GRUP, `9${i}@lid`, id)
+  const gazete = S.gazeteKontrol(GRUP, ileri)
+  assert.ok(gazete)
+  assert.equal(S.gazeteKontrol(GRUP, ileri), 0)
+  const g = db.prepare('SELECT * FROM sosyal_gonderi WHERE id = ?').get(gazete)
+  assert.equal(g.user_jid, '')
+  assert.ok(g.metin.startsWith('📰 HAFTANIN GAZETESİ'))
+  assert.equal(g.alinti_id, id)
+  // Boş haftada gazete çıkmaz ama işaret yazılır.
+  assert.equal(S.gazeteKontrol(OTEKI, ileri + 70 * 86_400_000), 0)
+})
+
+test('.paylaş: yanıtlanan metin akışa düşer, kimin mesajı olduğu yazar', async () => {
+  const komut = (await import('../commands/paylas.js')).default
+  const giden = []
+  const sock = { sendMessage: async (_, icerik) => giden.push(icerik.text) }
+  const parsed = { isGroup: true, quoted: { type: 'conversation', body: 'efsane laf', message: {}, key: { participant: AYSE } } }
+  await komut.execute({ sock, msg: {}, text: 'bunu görün #wp', from: GRUP, sender: ALI, parsed })
+  assert.ok(giden[0].startsWith('✅ Akışa düştü'))
+  const g = db.prepare("SELECT * FROM sosyal_gonderi WHERE metin LIKE 'bunu görün%'").get()
+  assert.equal(g.user_jid, ALI)
+  assert.equal(g.kaynak, AYSE)
+  assert.equal(g.metin, 'bunu görün #wp\n\nefsane laf')
+  const html = await (await al(ali, `/s/gonderi?grup=${g_}&id=${g.id}`)).text()
+  assert.ok(html.includes('WhatsApp&#39;tan') || html.includes("WhatsApp'tan"))
+  await komut.execute({ sock, msg: {}, text: '', from: GRUP, sender: ALI, parsed: { isGroup: true } })
+  assert.ok(giden[1].includes('yanıt verip'))
+})

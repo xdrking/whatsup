@@ -103,7 +103,9 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     if (medya === null) motor.bildir(kim, 'Bu dosya bir fotoğraf değil.', true)
     else {
       const alintiId = Number(al('alinti')) || 0
-      const s = S.gonderiYaz({ chatJid: chat, userJid: ben, hedefJid: al('hedef'), metin: al('metin'), medya, alintiId, now, xpVer })
+      const secenekler = [1, 2, 3, 4].map((i) => al(`secenek${i}`)).filter((x) => x.trim())
+      const anket = secenekler.length ? S.anketHazirla(secenekler, al('sure'), now) : null
+      const s = S.gonderiYaz({ chatJid: chat, userJid: ben, hedefJid: al('hedef'), metin: al('metin'), medya, alintiId, anket, now, xpVer })
       if (s.hata) {
         if (medya) S.medyaSil(medya)
         motor.bildir(kim, s.hata, true)
@@ -119,6 +121,16 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     const y = S.yorumYaz(chat, ben, id, al('metin'), now, Number(al('yanit')) || 0)
     if (istemci) return yorumDali(gonder, res, chat, ben, y?.id, now)
     return yonlendir(res, `${geriAdres(req, P.sLink(chat, '/gonderi', { id }))}#${y ? `c${y.id}` : `g${id}`}`)
+  }
+  if (yol === '/s/anket-oy') {
+    const s = S.anketOy(chat, ben, id, Number(al('secim')), now)
+    if (istemci) {
+      const [g] = S.akis(chat, ben, { id, adet: 1 })
+      if (!g?.anket) return gonder(res, 404, '')
+      return gonder(res, s.hata ? 409 : 200, P.anketCiz(chat, g, S.uyeler(chat), now).metin)
+    }
+    if (s.hata) motor.bildir(kim, s.hata, true)
+    return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
   }
   if (yol === '/s/yorum-tepki') {
     const anaId = S.yorumTepki(chat, ben, id, al('tepki'), now)
@@ -275,6 +287,11 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
 
   switch (url.pathname) {
     case '/s': {
+      try {
+        S.gazeteKontrol(chat, now)
+      } catch (err) {
+        logger.error({ err, chat }, 'Haftalık gazete yazılamadı')
+      }
       const gonderiler = S.akis(chat, kim.user, { once: Number(url.searchParams.get('once')) || 0 })
       return sayfa('Haber kaynağı', P.akisSayfasi({ chat, ben, gonderiler, uyeler, hikayeler: S.hikayeler(chat, kim.user, now), bildirim: bildirim(), now }), 'akis')
     }
@@ -346,7 +363,7 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
 const OZET_METNI = {
   begeni: 'gönderine tepki verdi', yorum: 'gönderine yorum yaptı', etiket: 'seni etiketledi', duvar: 'duvarına yazdı',
   durt: 'seni dürttü', paylasim: 'gönderini paylaştı', alinti: 'gönderini alıntıladı',
-  yanit: 'yorumuna yanıt verdi', yorum_tepki: 'yorumuna tepki verdi',
+  yanit: 'yorumuna yanıt verdi', yorum_tepki: 'yorumuna tepki verdi', anket_oy: 'anketine oy verdi',
 }
 
 /** Servis işçisinin gösterdiği bildirim; DM metni gösterilmez, kilit ekranında okunmasın. */

@@ -97,6 +97,23 @@
       return
     }
 
+    // Anket oyu: sunucu anketin güncel HTML'ini döner.
+    if (form.matches('.anket')) {
+      e.preventDefault()
+      const veri = new URLSearchParams(new FormData(form))
+      if (e.submitter?.name === 'secim') veri.set('secim', e.submitter.value)
+      try {
+        const yanit = await istek(form.action, { method: 'POST', body: veri })
+        if (!yanit.ok && yanit.status !== 409) throw new Error(String(yanit.status))
+        const yeni = parca(await yanit.text()).firstElementChild
+        if (yeni) form.replaceWith(yeni)
+      } catch (err) {
+        console.warn('Oy gönderilemedi', err)
+        form.submit()
+      }
+      return
+    }
+
     // Yorum, yanıt ve yorum tepkisi: sunucu yorum dalının güncel HTML'ini döner.
     // Yeni yorum listeye eklenir, yanıt ve tepki kendi dalını yeniler.
     if (form.matches('.yorum-yaz, .yanit-yaz, .yorum-tepki')) {

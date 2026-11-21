@@ -3,7 +3,7 @@
 // /sosyal.js dosyasıdır; o yoksa da her form normal gönderilir.
 import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
-import { TEPKILER, yorumSayisi } from '../lib/sosyal.js'
+import { ANKET_AZAMI, ANKET_GUNLERI, TEPKILER, yorumSayisi } from '../lib/sosyal.js'
 import { OYUN_ADI } from '../lib/wrapped.js'
 import { h } from './sayfalar.js'
 
@@ -169,7 +169,40 @@ export function paylasKutusu(chat, ben, { hedef = null, yer = '' } = {}) {
   <input type="hidden" name="don" value="${yer}">
   <div class="paylas-ust">${avatar(chat, ben)}<textarea name="metin" rows="2" maxlength="2000" placeholder="${ipucu}"></textarea></div>
   <div class="onizleme" hidden></div>
+  ${hedef ? '' : h`<details class="anket-ac"><summary>📊 Anket</summary>
+    <div class="anket-girdi">
+      ${Array.from({ length: ANKET_AZAMI }, (_, i) => h`<input name="secenek${i + 1}" maxlength="80" placeholder="${i < 2 ? `${i + 1}. seçenek` : `${i + 1}. seçenek (isteğe bağlı)`}" autocomplete="off">`)}
+      <label>Süre <select name="sure">${ANKET_GUNLERI.map((g) => h`<option value="${g}">${g} gün</option>`)}</select></label>
+      <small class="soluk">Metin kutusuna yazdığın, anketin sorusu olur.</small>
+    </div>
+  </details>`}
   <div class="paylas-alt">${fotoAlani()}<button class="birincil">Paylaş</button></div>
+</form>`
+}
+
+function kalanYaz(ms) {
+  const saat = Math.ceil(ms / 3_600_000)
+  return saat >= 24 ? `${Math.ceil(saat / 24)} gün kaldı` : saat > 1 ? `${saat} saat kaldı` : 'son saat'
+}
+
+/** Anket: oy verilmeden seçenekler düğmedir; oy verince ya da bitince sonuç ve oy verenler görünür. */
+export function anketCiz(chat, g, uyeler, now = Date.now()) {
+  const a = g.anket
+  const sonucGorunur = a.bitti || a.benim >= 0
+  const enCok = Math.max(...a.secenekler.map((x) => x.oy))
+  return h`<form class="anket${sonucGorunur ? ' sonuclu' : ''}" method="post" action="/s/anket-oy">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}">
+  ${a.secenekler.map((x, i) => {
+    const yuzde = a.toplam ? Math.round((x.oy / a.toplam) * 100) : 0
+    const sinif = `anket-secenek${i === a.benim ? ' benim' : ''}${sonucGorunur && x.oy && x.oy === enCok ? ' onde' : ''}`
+    return h`<button name="secim" value="${i}" class="${sinif}"${a.bitti ? ' disabled' : ''}>
+      <span class="anket-metin">${x.metin}${i === a.benim ? ' ✓' : ''}</span>
+      ${sonucGorunur ? h`<span class="anket-yuzde">%${yuzde}</span><progress max="100" value="${yuzde}"></progress>` : ''}
+    </button>`
+  })}
+  <p class="anket-alt">${a.toplam} oy · ${a.bitti ? 'Sona erdi' : kalanYaz(a.bitis - now)}${!a.bitti && a.benim >= 0 ? ' · oyunu değiştirebilirsin' : ''}</p>
+  ${sonucGorunur && a.toplam ? h`<details class="anket-kim"><summary>Kim neye oy verdi</summary>
+    ${a.secenekler.filter((x) => x.oy).map((x) => h`<p><strong>${x.metin}:</strong> ${x.verenler.map((j) => adi(bul(uyeler, j))).join(', ')}</p>`)}
+  </details>` : ''}
 </form>`
 }
 
@@ -265,11 +298,13 @@ function govde(chat, g, uyeler, ben, now, { ustNot = '', silinebilir = true } = 
       ${bot ? h`<strong>${BOT.ad}</strong>` : h`<a href="${profilLink(chat, yazan.jid)}"><strong>${adi(yazan)}</strong></a>`}
       ${hedef ? h` <span class="ok">▸</span> <a href="${profilLink(chat, hedef.jid)}"><strong>${adi(hedef)}</strong></a>` : ''}
       <a class="zaman" href="${sLink(chat, '/gonderi', { id: g.id })}">${zamanYaz(g.zaman, now)}</a>
+      ${g.kaynak ? h`<span class="kaynak">· WhatsApp'tan${g.kaynak !== g.user_jid ? h` · yazan <a href="${profilLink(chat, g.kaynak)}">${adi(bul(uyeler, g.kaynak))}</a>` : ''}</span>` : ''}
     </div>
     ${silebilir ? h`<form method="post" action="/s/sil" class="sil">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}"><button class="baglanti" aria-label="Gönderiyi sil">Sil</button></form>` : ''}
   </header>
   ${g.metin ? h`<p class="metin">${metinCiz(chat, g.metin, uyeler)}</p>` : ''}
   ${g.medya ? h`<a class="gorsel" href="${medyaLink(chat, g.medya)}"><img src="${medyaLink(chat, g.medya)}" alt="" loading="lazy"></a>` : ''}
+  ${g.anket ? anketCiz(chat, g, uyeler, now) : ''}
   ${g.alinti_id ? alintiKarti(chat, g.alinti, uyeler, now) : ''}
   ${eylemCubugu(chat, g)}
   ${yorumlarCiz(chat, g, uyeler, ben, now)}`
@@ -446,6 +481,7 @@ const BILDIRIM_METNI = {
   paylasim: 'gönderini paylaştı.',
   alinti: 'gönderini alıntıladı.',
   yanit: 'yorumuna yanıt verdi.',
+  anket_oy: 'anketine oy verdi.',
   yorum_tepki: 'yorumuna tepki verdi.',
 }
 

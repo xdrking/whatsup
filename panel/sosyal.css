@@ -352,6 +352,37 @@ body.tek .secim { max-width: 420px; margin: 0 auto; padding: 48px 16px; display:
   .yanitlar { margin-left: 18px; }
 }
 
+/* --- Faz 69: anket, WhatsApp kaynağı ------------------------------------------- */
+.kaynak { color: var(--soluk); font-size: 13px; }
+.kaynak a { color: var(--soluk); font-weight: 600; }
+.anket-ac { margin-top: 8px; }
+.anket-ac > summary { display: inline-block; padding: 4px 8px; border-radius: var(--kose); color: var(--soluk); font-weight: 600; cursor: pointer; list-style: none; }
+.anket-ac > summary::-webkit-details-marker { display: none; }
+.anket-ac > summary:hover, .anket-ac[open] > summary { background: var(--cizgi-acik); color: var(--yazi); }
+.anket-girdi { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.anket-girdi input, .anket-girdi select { padding: 7px 10px; border: 1px solid var(--cizgi); border-radius: var(--kose); background: var(--zemin); color: var(--yazi); }
+.anket-girdi label { display: flex; align-items: center; gap: 8px; color: var(--soluk); font-size: 14px; }
+.anket { display: flex; flex-direction: column; gap: 6px; margin: 10px 14px 0; }
+.anket-secenek { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 8px 12px; overflow: hidden;
+  border: 1px solid var(--vurgu); border-radius: var(--kose); background: var(--kart); color: var(--vurgu); font-weight: 600; text-align: left; cursor: pointer; }
+.anket-secenek:hover:not(:disabled) { background: var(--vurgu-acik); }
+.anket.sonuclu .anket-secenek { border-color: var(--cizgi); color: var(--yazi); font-weight: 500; }
+.anket-secenek progress { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; border: 0; appearance: none; background: transparent; }
+.anket-secenek progress::-webkit-progress-bar { background: transparent; }
+.anket-secenek progress::-webkit-progress-value { background: var(--cizgi-acik); transition: width .4s ease-out; }
+.anket-secenek progress::-moz-progress-bar { background: var(--cizgi-acik); }
+.anket-secenek.onde progress::-webkit-progress-value { background: var(--vurgu-acik); }
+.anket-secenek.onde progress::-moz-progress-bar { background: var(--vurgu-acik); }
+.anket-metin, .anket-yuzde { position: relative; z-index: 1; }
+.anket-metin { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.anket-yuzde { font-variant-numeric: tabular-nums; font-weight: 700; }
+.anket-secenek.benim { border-color: var(--vurgu); }
+.anket-secenek:disabled { cursor: default; }
+.anket-alt { margin: 2px 0 0; font-size: 13px; color: var(--soluk); }
+.anket-kim { font-size: 13px; color: var(--soluk); }
+.anket-kim summary { cursor: pointer; }
+.anket-kim p { margin: 4px 0 0; }
+
 @media (max-width: 1000px) {
   .duzen { grid-template-columns: 200px minmax(0, 1fr); }
   .sag { display: none; }
