@@ -111,6 +111,47 @@
     requestAnimationFrame(adim)
   }
 
+  // Kart dağıtma aralığı; kumarhane.css'teki d1…d9 gecikmeleriyle eşli.
+  const KART_ARALIGI = 0.4
+  const KAPALI = 'kapalı kart'
+  /** Bu sayfada kaç kart yeni dağıtıldı (blackjack); ses ve sonuç gecikmesi buna göre. */
+  let yeniKart = 0
+
+  const blackjackMasasi = (kok) => kok.querySelector('#acik-el .kece') ?? kok.querySelector('#sonuc .kece')
+  /** Açık elin kartları, masa başına (krupiye, sonra eller) kart adları. */
+  function kartlariOku() {
+    const masa = document.querySelector('#acik-el .kece')
+    if (!masa) return null
+    return [...masa.querySelectorAll('.kartlar')].map((m) => [...m.querySelectorAll('.oyun-kart')].map((k) => k.getAttribute('aria-label')))
+  }
+  /**
+   * Önceki hamlede masada olan kart yeniden dağıtılmaz, açılan kapalı kart çevrilir, yeni kartlar
+   * sırayla gelir. Önceki el yoksa (ilk dağıtım) sunucunun verdiği sıra kalır.
+   */
+  function kartlariEsle(onceki) {
+    const masa = blackjackMasasi(document)
+    if (!masa) return 0
+    const kartlar = [...masa.querySelectorAll('.kartlar')].map((m) => [...m.querySelectorAll('.oyun-kart')])
+    if (!onceki) return kartlar.reduce((t, m) => t + m.length, 0)
+    let sira = 0
+    kartlar.forEach((m, i) => m.forEach((k, j) => {
+      const eski = onceki[i]?.[j]
+      const ad = k.getAttribute('aria-label')
+      if (eski === ad) {
+        k.classList.add('eski')
+        return
+      }
+      if (eski === KAPALI) k.classList.add('acildi')
+      for (let d = 1; d <= 9; d += 1) k.classList.remove(`d${d}`)
+      k.classList.add(`d${Math.min(sira + 1, 9)}`)
+      sira += 1
+    }))
+    return sira
+  }
+  function kartSesleri(adet) {
+    for (let i = 0; i < Math.max(adet, 1); i += 1) sesler.kart(i * KART_ARALIGI + 0.05)
+  }
+
   /** Sunucudan gelen sonucun sesini CSS animasyonunun zamanlamasıyla çalar. */
   function canlandir(hamleSonrasi) {
     const kutu = document.getElementById('sonuc')
@@ -118,6 +159,7 @@
       const el = document.getElementById('acik-el')
       if (!el) return 0
       if (hamleSonrasi && (el.dataset.oyun === 'mayın' || el.dataset.oyun === 'kule')) sesler.para()
+      else if (el.dataset.oyun === 'blackjack') kartSesleri(yeniKart)
       else sesler.kart()
       return 0
     }
@@ -156,6 +198,10 @@
       crashSay(kutu)
       if (durum === 'kaybetti') sesler.patla(1.75)
       bitis = 1.9
+    } else if (oyun === 'blackjack' && yeniKart) {
+      kartSesleri(yeniKart)
+      kutu.classList.add(`bekle${Math.min(yeniKart, 6)}`)
+      bitis = (Math.min(yeniKart, 6) - 1) * KART_ARALIGI + 0.6
     } else if (kutu.classList.contains('adimli') && durum === 'kaybetti') {
       sesler.patla()
       bitis = 0.3
@@ -276,7 +322,9 @@
     govde.classList.add('degisti')
     // Sonuç bekleme kutusunun yerine geliyorsa kart yeniden açılmaz, yalnızca makaralar durur.
     if (document.querySelector('.sonuc.bekleme')) govde.classList.add('yerinde')
+    const oncekiKartlar = kartlariOku()
     document.querySelector('main').replaceWith(document.adoptNode(govde))
+    yeniKart = kartlariEsle(oncekiKartlar)
     hazirla()
     bakiyeSay(eskiXp, canlandir(hamleSonrasi))
     const bildirim = document.getElementById('bildirim')
@@ -358,5 +406,6 @@
   })
 
   hazirla()
+  yeniKart = kartlariEsle(null)
   canlandir(false)
 })()

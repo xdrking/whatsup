@@ -142,8 +142,19 @@ const hamleDugmesi = (deger, etiket, sinif = '', kapali = false) =>
 const MAYIN_HUCRE = { acik: '💎', patlayan: '💥', mayin: '💣' }
 const KULE_HUCRE = { acik: '🥚', patlayan: '🔥', mayin: '🐉' }
 const kirmiziKart = (k) => /[♥♦]/.test(k)
-const kart = (k, i, kapali = false) =>
-  h`<span class="oyun-kart d${Math.min(i + 1, 9)}${kapali ? ' kapali' : kirmiziKart(k) ? ' kirmizi' : ''}">${kapali ? '' : k}</span>`
+/**
+ * Gerçek iskambil kartı: köşelerde değer ve renk, ortada büyük simge, arkada desenli sırt.
+ * `sira` dağıtma sırasıdır (d1…d9). Kapalı kartın yüzü boştur, sırtı görünür; açılınca oyun.js çevirir.
+ */
+function kart(k, sira, kapali = false) {
+  const sinif = `oyun-kart d${Math.min(sira + 1, 9)}${kapali ? ' kapali' : kirmiziKart(k) ? ' kirmizi' : ''}`
+  if (kapali) return h`<span class="${sinif}" aria-label="kapalı kart"><span class="yuz"></span><span class="sirt"></span></span>`
+  const renkSimge = k.slice(-1)
+  const deger = k.slice(0, -1)
+  const kose = (alt) => h`<b class="kose${alt ? ' alt' : ''}">${deger}<i>${renkSimge}</i></b>`
+  const orta = ['J', 'Q', 'K'].includes(deger) ? h`<b class="orta resim">${deger}<i>${renkSimge}</i></b>` : h`<b class="orta">${renkSimge}</b>`
+  return h`<span class="${sinif}" aria-label="${k}"><span class="yuz">${kose(false)}${orta}${kose(true)}</span><span class="sirt"></span></span>`
+}
 
 function elCizimi(chat, el, bitti = false) {
   const form = (icerik) => (bitti ? icerik : h`<form method="post" action="/oyun/hamle">${gizli(chat)}<input type="hidden" name="oyun" value="${el.oyun}">${icerik}</form>`)
@@ -155,7 +166,7 @@ function elCizimi(chat, el, bitti = false) {
   if (el.oyun === 'blackjack') {
     const cok = el.eller.length > 1
     const elKutusu = (o, i) => h`<div class="el${o.aktif ? ' aktif' : ''}"><small>${cok ? `${i + 1}. el` : 'Sen'} · <strong>${o.deger}</strong>${cok || o.cift ? h` · ${sayi.format(o.bahis)} XP` : ''}${o.cift ? ' · ÇİFT' : ''}${o.teslim ? ' · TESLİM' : ''}</small>
-    <p class="kartlar">${o.kartlar.map((k, j) => kart(k, j))}</p></div>`
+    <p class="kartlar">${o.kartlar.map((k, j) => kart(k, j * 2))}</p></div>`
     const dugmeler = el.sigortaSor
       ? h`<p class="not orta">Krupiyenin açık kartı as. Sigorta ${sayi.format(el.sigortaTutari)} XP tutar, krupiye blackjack yaparsa 2'ye 1 öder.</p>
 <div class="secenekler">${hamleDugmesi('sigorta', '☂️ SİGORTA AL')}${hamleDugmesi('devam', 'SİGORTASIZ DEVAM', 'ikincil')}</div>`
@@ -163,8 +174,12 @@ function elCizimi(chat, el, bitti = false) {
   ${el.cift ? hamleDugmesi('çift', '✖️2 ÇİFT', 'sicak') : ''}${el.bol ? hamleDugmesi('böl', '✂️ BÖL', 'sicak') : ''}${el.teslim ? hamleDugmesi('teslim', '🏳️ TESLİM', 'ikincil') : ''}</div>`
     return h`${sure}
 <div class="kece">
+  <span class="kart-kutusu" aria-hidden="true"></span>
   <div class="el"><small>Krupiye${el.krupiyeDeger !== null ? h` · <strong>${el.krupiyeDeger}</strong>` : ''}</small>
-    <p class="kartlar">${el.krupiye.map((k, i) => kart(k, i, k === '🂠'))}</p></div>
+    <p class="kartlar">${el.krupiye.map((k, i) => kart(k, i * 2 + 1, k === '🂠'))}</p></div>
+  <svg class="masa-yazi" viewBox="0 0 300 50" aria-hidden="true"><path id="masa-yay" d="M30,10 Q150,44 270,10" fill="none"/>
+    <text><textPath href="#masa-yay" startOffset="50%" text-anchor="middle">BLACKJACK 3'E 2 ÖDER</textPath></text>
+    <text x="150" y="44" text-anchor="middle" class="kucuk">KRUPİYE 17'DE DURUR · SİGORTA 2'YE 1</text></svg>
   <div class="eller${cok ? ' cift-el' : ''}">${el.eller.map(elKutusu)}</div>
   ${el.sigorta ? h`<p class="not orta">☂️ Sigorta: ${sayi.format(el.sigorta)} XP</p>` : ''}
 </div>${uyari}
