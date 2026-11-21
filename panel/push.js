@@ -64,6 +64,16 @@ export function panelAdresiKaydet(adres) {
  * Bildirim kancası: aynı kişiye arka arkaya gelen bildirimler BEKLEME_MS içinde birleşir,
  * aynı cihaza CIHAZ_ARALIGI_MS'de bir push gider. Hata kullanıcıya dönmez, loglanır.
  */
+/** Tek cihaza hemen push atar (teşhis betiği için); bekleme ve aralık yoktur. */
+export async function pushDene(endpoint, gonder = fetch) {
+  const yanit = await gonder(endpoint, {
+    method: 'POST',
+    headers: { TTL: '86400', Urgency: 'high', Authorization: vapidBasligi(endpoint, ayarOku('panel_adres') || 'mailto:panel@example.com') },
+    signal: AbortSignal.timeout(10_000),
+  })
+  return { status: yanit.status, sebep: (await yanit.text().catch(() => '')).slice(0, 300) }
+}
+
 export function pushMotoru({ gonder = fetch, zamanlayici = setTimeout } = {}) {
   const bekleyen = new Set()
   const sonGonderim = new Map()
@@ -80,7 +90,8 @@ export function pushMotoru({ gonder = fetch, zamanlayici = setTimeout } = {}) {
       })
       // Abonelik ölmüş: cihaz izni kaldırdı ya da uygulama silindi.
       if (yanit.status === 404 || yanit.status === 410) pushSil(endpoint)
-      else if (!yanit.ok) logger.warn({ status: yanit.status }, 'Push servisi reddetti')
+      // Gövde servisin sebebidir (Apple: {"reason":"BadJwtToken"}); adres yazılmaz, aboneliğin anahtarıdır.
+      else if (!yanit.ok) logger.warn({ status: yanit.status, servis: new URL(endpoint).hostname, sebep: (await yanit.text().catch(() => '')).slice(0, 200) }, 'Push servisi reddetti')
     } catch (err) {
       logger.warn({ err: err.message }, 'Push gönderilemedi')
     }
