@@ -97,27 +97,43 @@
       return
     }
 
-    // Yorum: yeni yorum listeye eklenir, sayfa yenilenmez.
-    if (form.matches('.yorum-yaz')) {
+    // Yorum, yanıt ve yorum tepkisi: sunucu yorum dalının güncel HTML'ini döner.
+    // Yeni yorum listeye eklenir, yanıt ve tepki kendi dalını yeniler.
+    if (form.matches('.yorum-yaz, .yanit-yaz, .yorum-tepki')) {
       e.preventDefault()
       const girdi = form.querySelector('input[name=metin]')
-      if (!girdi.value.trim()) return
-      girdi.disabled = true
+      if (girdi && !girdi.value.trim()) return
+      const veri = new URLSearchParams(new FormData(form))
+      if (e.submitter?.name === 'tepki') veri.set('tepki', e.submitter.value)
+      if (girdi) girdi.disabled = true
       try {
-        const yanit = await istek(form.action, { method: 'POST', body: new URLSearchParams(new FormData(form)) })
+        const yanit = await istek(form.action, { method: 'POST', body: veri })
         if (!yanit.ok) throw new Error(String(yanit.status))
-        form.previousElementSibling?.append(parca(await yanit.text()))
-        girdi.value = ''
+        const dal = parca(await yanit.text()).firstElementChild
+        if (form.matches('.yorum-yaz')) {
+          form.previousElementSibling?.append(dal)
+          girdi.value = ''
+          girdi.disabled = false
+          girdi.focus()
+        } else {
+          form.closest('.yorum-dal')?.replaceWith(dal)
+          if (form.matches('.yanit-yaz')) dal.querySelector('.yanitlar li:last-child .yorum')?.classList.add('yeni')
+          else dal.querySelector(`#c${veri.get('id')} .yorum-tepki .baglanti`)?.classList.add('zipla')
+        }
       } catch (err) {
         console.warn('Yorum gönderilemedi', err)
-        girdi.disabled = false
         form.submit()
-        return
       }
-      girdi.disabled = false
-      girdi.focus()
     }
   })
+
+  // "Yanıtla" açılınca kutuya odaklanır, imleç ön ekin sonuna gider.
+  document.addEventListener('toggle', (e) => {
+    if (!e.target.matches?.('.yanit-ac') || !e.target.open) return
+    const girdi = e.target.querySelector('input[name=metin]')
+    girdi.focus()
+    girdi.setSelectionRange(girdi.value.length, girdi.value.length)
+  }, true)
 
   // "Yorum" düğmesi aynı sayfadaki yorum kutusuna odaklanır.
   document.addEventListener('click', (e) => {
@@ -282,44 +298,131 @@
     hikaye.querySelector('.izleyenler')?.addEventListener('toggle', () => clearTimeout(zamanlayici))
   }
 
-  // Web Push aç/kapat (Faz 67). iPhone'da yalnızca ana ekrana eklenmiş uygulamada çalışır.
+  // --- Web Push ve kurulum (Faz 67, 68) -------------------------------------------
+  // Tarayıcı izin penceresini ancak bir dokunuşla açar; bu yüzden izin şeridi düğmelidir.
+  // iPhone'da push yalnızca ana ekrana eklenmiş uygulamada vardır, orada rehber çıkar.
+  const pushVar = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const kurulu = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+  const SONRA_MS = 3 * 24 * 3600 * 1000
+  const sonraAl = (ad) => {
+    try { return Number(localStorage.getItem(`sonra-${ad}`)) || 0 } catch { return 0 }
+  }
+  const sonraYaz = (ad) => {
+    try { localStorage.setItem(`sonra-${ad}`, String(Date.now())) } catch (err) { console.warn('Tercih saklanamadı', err) }
+  }
+  const ertelendi = (ad) => Date.now() - sonraAl(ad) < SONRA_MS
+
+  const anahtarCoz = (b64) => {
+    const ham = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64.length % 4)) % 4))
+    return Uint8Array.from(ham, (c) => c.charCodeAt(0))
+  }
+  const sunucuyaYaz = async (yol, endpoint) => {
+    const yanit = await istek(yol, { method: 'POST', body: new URLSearchParams({ endpoint }) })
+    if (!yanit.ok) throw new Error(`${yol} ${yanit.status}`)
+  }
+  /** İzin alınmışsa cihazı abone eder ve sunucuya yazar; abonelik zaten varsa yalnızca tazeler. */
+  async function aboneOl() {
+    const sw = await navigator.serviceWorker.ready
+    let abonelik = await sw.pushManager.getSubscription()
+    if (!abonelik) {
+      const anahtar = await (await istek('/s/push-anahtar')).text()
+      abonelik = await sw.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: anahtarCoz(anahtar) })
+    }
+    try {
+      await sunucuyaYaz('/s/push-kayit', abonelik.endpoint)
+    } catch (err) {
+      await abonelik.unsubscribe()
+      throw err
+    }
+    return abonelik
+  }
+  async function izinIste() {
+    if ((await Notification.requestPermission()) !== 'granted') return false
+    await aboneOl()
+    return true
+  }
+
+  const serit = document.querySelector('.izin-serit')
+  const kutuGoster = (sinif) => {
+    if (!serit) return
+    for (const k of serit.children) k.hidden = !k.classList.contains(sinif)
+    serit.hidden = false
+  }
+  const seritKapat = () => { if (serit) serit.hidden = true }
+  serit?.addEventListener('click', (e) => {
+    const sonra = e.target.closest('.izin-sonra')
+    if (!sonra) return
+    sonraYaz(sonra.closest('.izin-push, .izin-yukle, .izin-ios').className)
+    seritKapat()
+  })
+
+  let kurulumOlayi = null
+  if (serit && !kurulu) {
+    // Android Chrome ve masaüstü Chrome/Edge "yükle" olayını verir; Safari ve Firefox vermez.
+    addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault()
+      kurulumOlayi = e
+      if (serit.hidden && !ertelendi('izin-yukle')) kutuGoster('izin-yukle')
+    })
+    serit.querySelector('.izin-kur').addEventListener('click', async () => {
+      if (!kurulumOlayi) return seritKapat()
+      kurulumOlayi.prompt()
+      await kurulumOlayi.userChoice.catch((err) => console.warn('Kurulum sorulamadı', err))
+      kurulumOlayi = null
+      seritKapat()
+    })
+  }
+
+  if (serit && ios && !kurulu) {
+    if (!ertelendi('izin-ios')) kutuGoster('izin-ios')
+  } else if (serit && pushVar) {
+    if (Notification.permission === 'granted') {
+      // İzin önceden verilmiş: abonelik sessizce tazelenir (sunucu silmiş ya da cihaz değişmiş olabilir).
+      aboneOl().catch((err) => console.warn('Bildirim aboneliği tazelenemedi', err))
+    } else if (Notification.permission === 'default' && !ertelendi('izin-push')) {
+      kutuGoster('izin-push')
+    }
+    const ver = serit.querySelector('.izin-ver')
+    ver.addEventListener('click', async () => {
+      ver.disabled = true
+      try {
+        await izinIste()
+        seritKapat()
+      } catch (err) {
+        console.warn('Bildirim açılamadı', err)
+        serit.querySelector('.izin-push small').textContent = 'Bildirim açılamadı, biraz sonra yeniden dene.'
+      } finally {
+        ver.disabled = false
+      }
+    })
+  }
+
+  // Bildirimler sayfasındaki aç/kapat kutusu.
   const pushKutu = document.querySelector('.push-kutu')
-  if (pushKutu && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) {
+  if (pushKutu && pushVar) {
     const ac = pushKutu.querySelector('.push-ac')
     const kapa = pushKutu.querySelector('.push-kapat')
     const durum = pushKutu.querySelector('.push-durum')
-    const anahtarCoz = (b64) => {
-      const ham = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (b64.length % 4)) % 4))
-      return Uint8Array.from(ham, (c) => c.charCodeAt(0))
-    }
     const goster = (abone) => {
       ac.hidden = abone
       kapa.hidden = !abone
       if (Notification.permission === 'denied') {
-        durum.textContent = 'Bildirim izni tarayıcı ayarlarından kapatılmış.'
+        durum.textContent = 'Bildirim izni tarayıcı ayarlarından kapatılmış. Site ayarlarından izin verip sayfayı yenile.'
         ac.hidden = true
       } else if (abone) durum.textContent = 'Bu cihaza bildirim geliyor.'
     }
-    const kayit = new URLSearchParams()
     navigator.serviceWorker.ready.then(async (sw) => {
       pushKutu.hidden = false
       goster(Boolean(await sw.pushManager.getSubscription()))
       ac.addEventListener('click', async () => {
         ac.disabled = true
         try {
-          if ((await Notification.requestPermission()) !== 'granted') return goster(false)
-          const anahtar = await (await istek('/s/push-anahtar')).text()
-          const abonelik = await sw.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: anahtarCoz(anahtar) })
-          kayit.set('endpoint', abonelik.endpoint)
-          const yanit = await istek('/s/push-kayit', { method: 'POST', body: kayit })
-          if (!yanit.ok) {
-            await abonelik.unsubscribe()
-            throw new Error(String(yanit.status))
-          }
-          goster(true)
+          goster(await izinIste())
+          seritKapat()
         } catch (err) {
           console.warn('Bildirim açılamadı', err)
-          durum.textContent = 'Bildirim açılamadı. iPhone kullanıyorsan önce Paylaş › Ana Ekrana Ekle.'
+          durum.textContent = 'Bildirim açılamadı, biraz sonra yeniden dene.'
         } finally {
           ac.disabled = false
         }
@@ -327,14 +430,20 @@
       kapa.addEventListener('click', async () => {
         const abonelik = await sw.pushManager.getSubscription()
         if (abonelik) {
-          kayit.set('endpoint', abonelik.endpoint)
-          await istek('/s/push-sil', { method: 'POST', body: kayit }).catch((err) => console.warn('Abonelik silinemedi', err))
+          await sunucuyaYaz('/s/push-sil', abonelik.endpoint).catch((err) => console.warn('Abonelik silinemedi', err))
           await abonelik.unsubscribe()
         }
+        // Kapatan kişiye şerit hemen yeniden sorulmasın.
+        sonraYaz('izin-push')
         durum.textContent = 'Bildirimler kapalı.'
         goster(false)
       })
     }).catch((err) => console.warn('Servis işçisi hazır değil', err))
+  } else if (pushKutu && ios && !kurulu) {
+    pushKutu.hidden = false
+    pushKutu.querySelector('.push-ac').hidden = true
+    pushKutu.querySelector('.push-durum').textContent = 'iPhone’da önce uygulamayı ana ekrana ekle (sayfanın üstündeki adımlar).'
+    if (serit) kutuGoster('izin-ios')
   }
 
   // Menüdeki okunmamış sayıları tazeler.

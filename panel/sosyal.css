@@ -138,7 +138,7 @@ button:disabled { opacity: .5; cursor: default; }
 .bot-gonderi { border-left: 3px solid var(--vurgu); }
 .bot-gonderi .metin { font-weight: 500; }
 .yorumlar { list-style: none; margin: 0; padding: 6px 14px 0; display: flex; flex-direction: column; gap: 6px; }
-.yorumlar li { display: flex; gap: 8px; }
+.yorumlar > li { display: block; }
 .balon { min-width: 0; padding: 6px 10px; border-radius: var(--kose); background: var(--zemin); overflow-wrap: anywhere; }
 .balon small { display: block; font-size: 12px; color: var(--soluk); }
 .satir-ici { display: inline; }
@@ -299,6 +299,58 @@ body.tek .secim { max-width: 420px; margin: 0 auto; padding: 48px 16px; display:
 .buyutec button { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 14px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgb(255 255 255 / .12); color: #fff; font-size: 18px; cursor: pointer; }
 @media (max-width: 400px) { .dugmeler .etk { display: none; } .tepki-ana, .eylem-dugme { font-size: 17px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* --- Faz 68: yorum yanıtı ve tepkisi, izin şeridi ------------------------------- */
+.yorum { display: flex; gap: 8px; }
+.yorum-govde { min-width: 0; flex: 1; }
+.yorum .balon { position: relative; display: inline-block; max-width: 100%; }
+.yorum-ozet { position: absolute; right: -6px; bottom: -10px; padding: 1px 6px; border: 1px solid var(--cizgi-acik);
+  border-radius: 12px; background: var(--kart); font-size: 12px; color: var(--soluk); white-space: nowrap; letter-spacing: -1px; }
+.yorum-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; padding: 3px 4px 0; font-size: 12.5px; }
+.yorum-alt .baglanti { font-size: 12.5px; font-weight: 600; color: var(--soluk); }
+.yorum-alt .baglanti.acik { color: var(--sicak); }
+.yorum-alt small { color: var(--soluk); font-size: 12px; }
+.yorum-tepki { position: relative; display: inline-flex; align-items: center; gap: 2px; }
+.yorum-tepki .tepki-sec summary { width: 20px; height: 20px; font-size: 13px; }
+.yorum-tepki .tepki-liste { left: -6px; }
+.yorum-tepki .baglanti.zipla { display: inline-block; animation: zipla .35s ease-out; }
+.yanit-ac { order: 1; }
+.yanit-ac[open] { order: 10; flex-basis: 100%; }
+.yorum-alt > small { order: 2; }
+.yorum-alt > .satir-ici { order: 3; }
+.yanit-ac > summary { list-style: none; cursor: pointer; }
+.yanit-ac > summary::-webkit-details-marker { display: none; }
+.yanit-ac[open] > summary { color: var(--vurgu); }
+.yanit-yaz { display: flex; gap: 6px; margin-top: 6px; }
+.yanit-yaz input { flex: 1; min-width: 0; padding: 5px 9px; border: 1px solid var(--cizgi); border-radius: var(--kose); background: var(--zemin); }
+.yanit-yaz input:focus { outline: none; border-color: var(--vurgu); background: var(--kart); }
+.yanit-yaz .birincil { padding: 5px 10px; font-size: 13px; }
+.yanitlar { list-style: none; margin: 8px 0 0 36px; padding: 0 0 0 10px; display: flex; flex-direction: column; gap: 8px; border-left: 2px solid var(--cizgi-acik); }
+.yorum.yeni .balon { animation: yeni-yorum 1.2s ease-out; }
+@keyframes yeni-yorum { from { background: var(--vurgu-acik); } }
+.yorum[id]:target .balon { outline: 2px solid var(--vurgu); }
+
+.izin-serit { padding: 12px 14px; border-left: 3px solid var(--sicak); }
+.izin-serit[hidden], .izin-serit > [hidden] { display: none; }
+.izin-push, .izin-yukle, .izin-bas { display: flex; align-items: center; gap: 12px; }
+.izin-ikon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--zemin); font-size: 20px; }
+.izin-metin { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.izin-metin small { color: var(--soluk); }
+.izin-dugmeler { display: flex; align-items: center; gap: 10px; flex: none; }
+.izin-ios .izin-dugmeler { justify-content: flex-end; margin-top: 6px; }
+.izin-adim { list-style: none; margin: 12px 0 8px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.izin-adim li { display: flex; gap: 10px; align-items: flex-start; }
+.izin-adim li > span { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--vurgu); color: var(--vurgu-yazi); font-size: 12px; font-weight: 700; }
+.izin-adim li > div { padding-top: 1px; line-height: 1.45; }
+/* iOS Paylaş simgesi: kare ve yukarı ok, CSS ile çizilir (görsel dosyası yok). */
+.ios-paylas { position: relative; display: inline-block; width: 13px; height: 12px; margin: 0 3px -1px; border: 1.6px solid var(--vurgu); border-top: 0; border-radius: 0 0 2px 2px; }
+.ios-paylas::before { content: ''; position: absolute; left: 50%; top: -7px; width: 1.6px; height: 11px; background: var(--vurgu); transform: translateX(-50%); }
+.ios-paylas::after { content: ''; position: absolute; left: 50%; top: -7px; width: 5px; height: 5px; border-top: 1.6px solid var(--vurgu); border-left: 1.6px solid var(--vurgu); transform: translateX(-50%) rotate(45deg); transform-origin: center; }
+@media (max-width: 560px) {
+  .izin-push, .izin-yukle { flex-wrap: wrap; }
+  .izin-push .izin-dugmeler, .izin-yukle .izin-dugmeler { width: 100%; justify-content: flex-end; }
+  .yanitlar { margin-left: 18px; }
+}
 
 @media (max-width: 1000px) {
   .duzen { grid-template-columns: 200px minmax(0, 1fr); }

@@ -291,3 +291,52 @@ test('yönetici sosyal bölüme giremez, oyuncu başka grubu göremez', async ()
   assert.equal((await al(can, `/s?grup=${g}`)).status, 200)
   assert.ok(!(await (await al(can, `/s?grup=${g}`)).text()).includes('Ali Veli'))
 })
+
+test('yorum yanıtı ve tepkisi: tek seviye, bildirim, sayfa yenilemeden dal, silme yanıtlarıyla', async () => {
+  const id = S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: 'yanıt denemesi' }).id
+  const ana = S.yorumYaz(GRUP, AYSE, id, 'ilk yorum')
+  const y1 = S.yorumYaz(GRUP, CAN, id, 'katılıyorum', Date.now(), ana.id)
+  assert.equal(y1.yanit_id, ana.id)
+  // Yanıtın yanıtı ana yorumun altına düşer.
+  const y2 = S.yorumYaz(GRUP, AYSE, id, 'sağ ol', Date.now(), y1.id)
+  assert.equal(y2.yanit_id, ana.id)
+  assert.equal(S.yorumYaz(GRUP, AYSE, id, 'yok', Date.now(), 999999), null)
+  assert.equal(S.bildirimler(GRUP, AYSE).find((b) => b.kimden === CAN).tur, 'yanit')
+  assert.equal(S.bildirimler(GRUP, CAN)[0].tur, 'yanit')
+  // Gönderi sahibine yorum bildirimi gider, yanıtlanan değilse "yanıt" değil.
+  assert.equal(S.bildirimler(GRUP, ALI)[0].tur, 'yorum')
+
+  const [g] = S.akis(GRUP, ALI, { id })
+  assert.equal(g.yorumlar.length, 1)
+  assert.deepEqual(g.yorumlar[0].yanitlar.map((x) => x.id), [y1.id, y2.id])
+
+  assert.equal(S.yorumTepki(GRUP, ALI, y1.id, '😂'), ana.id)
+  assert.equal(S.bildirimler(GRUP, CAN)[0].tur, 'yorum_tepki')
+  S.yorumTepki(GRUP, ALI, y1.id, '👍')
+  assert.equal(S.bildirimler(GRUP, CAN).filter((b) => b.tur === 'yorum_tepki').length, 1)
+  assert.equal(S.yorumTepki(GRUP, CAN, y1.id, '<b>'), ana.id)
+  let dal = S.yorumOku(GRUP, ALI, ana.id)
+  assert.equal(dal.yanitlar[0].begeni, 2)
+  assert.equal(dal.yanitlar[0].benimTepkim, '👍')
+  S.yorumTepki(GRUP, ALI, y1.id, '👍')
+  assert.equal(S.yorumOku(GRUP, ALI, ana.id).yanitlar[0].begeni, 1)
+  assert.equal(S.yorumTepki(OTEKI, CAN, y1.id), null)
+
+  const html = await (await gonder(ali, '/s/yorum-tepki', { grup: GRUP, id: ana.id, tepki: '😮' }, { 'X-Istemci': '1' })).text()
+  assert.ok(html.startsWith(`<li class="yorum-dal" data-ana="${ana.id}"`))
+  assert.ok(html.includes('class="yanitlar"') && html.includes('😮'))
+  const yeni = await (await gonder(ali, '/s/yorum', { grup: GRUP, id, yanit: ana.id, metin: '<i>son</i>' }, { 'X-Istemci': '1' })).text()
+  assert.ok(yeni.includes('&lt;i&gt;son') && yeni.includes(`data-ana="${ana.id}"`))
+  const sayfa = await (await al(ali, `/s/gonderi?grup=${g_}&id=${id}`)).text()
+  assert.ok(sayfa.includes('4 yorum') && sayfa.includes('Yanıtla'))
+
+  assert.ok(S.yorumSil(GRUP, AYSE, ana.id))
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sosyal_yorum WHERE gonderi_id = ?').get(id).n, 0)
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sosyal_yorum_tepki WHERE yorum_id IN (?, ?)').get(ana.id, y1.id).n, 0)
+})
+
+test('her sayfada izin şeridi ve iPhone kurulum rehberi var', async () => {
+  const html = await (await al(ali, `/s?grup=${g_}`)).text()
+  assert.ok(html.includes('class="kart izin-serit" hidden'))
+  assert.ok(html.includes('Bildirimlere izin ver') && html.includes('Ana Ekrana Ekle'))
+})

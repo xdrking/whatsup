@@ -1,6 +1,6 @@
 // Sosyal bölümün servis işçisi (Faz 66). Yalnızca stil, betik ve ikonu önbellekler;
 // sayfalar kişiye özel olduğu için her zaman ağdan gelir, ağ yoksa çevrimdışı notu çıkar.
-const ONBELLEK = 'grup-v2'
+const ONBELLEK = 'grup-v3'
 const STATIK = ['/ikon-192.png']
 
 self.addEventListener('install', (e) => {

@@ -3,7 +3,7 @@
 // /sosyal.js dosyasıdır; o yoksa da her form normal gönderilir.
 import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
-import { TEPKILER } from '../lib/sosyal.js'
+import { TEPKILER, yorumSayisi } from '../lib/sosyal.js'
 import { OYUN_ADI } from '../lib/wrapped.js'
 import { h } from './sayfalar.js'
 
@@ -118,7 +118,7 @@ export function sosyalKabuk(baslik, icerik, c) {
     ${cokGrup ? menu('/s', 'grup', '⇄', 'Grubu değiştir') : ''}
     <form method="post" action="/cikis" class="cikis"><button>Çıkış yap</button></form>
   </nav>
-  <main id="icerik">${icerik}</main>
+  <main id="icerik">${izinSeridi}${icerik}</main>
   <aside class="sag">${sag}</aside>
 </div>
 <nav class="alt-sekme" aria-label="Alt menü">
@@ -173,11 +173,41 @@ export function paylasKutusu(chat, ben, { hedef = null, yer = '' } = {}) {
 </form>`
 }
 
-export function yorumCiz(chat, g, y, uyeler, ben, now = Date.now()) {
+/** Yorumun altındaki tepki düğmesi ve seçici; gönderi tepkisiyle aynı kural. */
+function yorumTepkiFormu(chat, y) {
+  return h`<form method="post" action="/s/yorum-tepki" class="yorum-tepki">${gizliGrup(chat)}<input type="hidden" name="id" value="${y.id}">
+    <button name="tepki" value="${y.benimTepkim || '❤️'}" class="baglanti${y.benimTepkim ? ' acik' : ''}">${y.benimTepkim ? `${y.benimTepkim} Tepki` : 'Beğen'}</button>
+    <details class="tepki-sec"><summary aria-label="Tepki seç">☺</summary>
+      <div class="tepki-liste">${TEPKILER.map((t) => h`<button name="tepki" value="${t}"${t === y.benimTepkim ? h` class="secili"` : ''}>${t}</button>`)}</div>
+    </details>
+  </form>`
+}
+
+/** Tek yorum ya da yanıt: balon, tepki özeti, Beğen, Yanıtla, sil. */
+function tekYorum(chat, g, y, uyeler, ben, now) {
   const u = bul(uyeler, y.user_jid)
   const silebilir = y.user_jid === ben.jid || g.user_jid === ben.jid
-  return h`<li>${avatar(chat, u, 'kucuk')}<div class="balon"><a href="${profilLink(chat, u.jid)}"><strong>${adi(u)}</strong></a> ${metinCiz(chat, y.metin, uyeler)}
-    <small>${zamanYaz(y.zaman, now)}${silebilir ? h` · <form method="post" action="/s/yorum-sil" class="satir-ici">${gizliGrup(chat)}<input type="hidden" name="id" value="${y.id}"><button class="baglanti">sil</button></form>` : ''}</small></div></li>`
+  // Yanıta yanıt verilince yanıtlanan etiketlenir: tek seviyede kime yazıldığı belli olsun.
+  const onEk = y.yanit_id && y.user_jid !== ben.jid ? `@${adi(u)} ` : ''
+  return h`<div class="yorum" id="c${y.id}">${avatar(chat, u, 'kucuk')}<div class="yorum-govde">
+    <div class="balon"><a href="${profilLink(chat, u.jid)}"><strong>${adi(u)}</strong></a> ${metinCiz(chat, y.metin, uyeler)}
+      ${y.begeni ? h`<span class="yorum-ozet" title="${y.tepkiler.map((t) => `${t.tepki} ${t.n}`).join('  ')}">${y.tepkiler.slice(0, 3).map((t) => t.tepki).join('')}${y.begeni > 1 ? ` ${y.begeni}` : ''}</span>` : ''}</div>
+    <div class="yorum-alt">
+      ${yorumTepkiFormu(chat, y)}
+      <details class="yanit-ac"><summary class="baglanti">Yanıtla</summary>
+        <form class="yanit-yaz" method="post" action="/s/yorum">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}"><input type="hidden" name="yanit" value="${y.id}">
+          <input name="metin" maxlength="500" value="${onEk}" placeholder="${adi(u)} adlı kişiye yanıt…" autocomplete="off" required><button class="birincil">Gönder</button></form>
+      </details>
+      <small>${zamanYaz(y.zaman, now)}</small>
+      ${silebilir ? h`<form method="post" action="/s/yorum-sil" class="satir-ici">${gizliGrup(chat)}<input type="hidden" name="id" value="${y.id}"><button class="baglanti">Sil</button></form>` : ''}
+    </div>
+  </div></div>`
+}
+
+/** Ana yorum ve yanıtları; betik bu dalı olduğu gibi yeniler. */
+export function yorumCiz(chat, g, y, uyeler, ben, now = Date.now()) {
+  return h`<li class="yorum-dal" data-ana="${y.id}">${tekYorum(chat, g, y, uyeler, ben, now)}
+  ${y.yanitlar.length ? h`<ul class="yanitlar">${y.yanitlar.map((x) => h`<li>${tekYorum(chat, g, x, uyeler, ben, now)}</li>`)}</ul>` : ''}</li>`
 }
 
 function yorumlarCiz(chat, g, uyeler, ben, now) {
@@ -206,7 +236,7 @@ export function eylemCubugu(chat, g) {
   return h`<div class="eylem" data-gonderi="${g.id}">
   <div class="sayilar">
     ${g.begeni ? h`<span class="tepki-ozet" title="${g.tepkiler.map((t) => `${t.tepki} ${t.n}`).join('  ')}">${ozet} ${g.begeni}</span>` : h`<span></span>`}
-    <span>${g.yorumlar.length ? `${g.yorumlar.length} yorum` : ''}${g.yorumlar.length && g.paylasim ? ' · ' : ''}${g.paylasim ? `${g.paylasim} paylaşım` : ''}</span>
+    <span>${yorumSayisi(g) ? `${yorumSayisi(g)} yorum` : ''}${yorumSayisi(g) && g.paylasim ? ' · ' : ''}${g.paylasim ? `${g.paylasim} paylaşım` : ''}</span>
   </div>
   <div class="dugmeler">
     <form method="post" action="/s/begen" class="tepki-form">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}">
@@ -376,6 +406,37 @@ export function arkadasSayfasi({ chat, uyeler, now = Date.now() }) {
 
 // --- Bildirim ----------------------------------------------------------------
 
+/**
+ * Bildirim izni ve uygulama kurulumu şeridi. Betik hangisinin görüneceğine karar verir:
+ * tarayıcı izin penceresini ancak bir dokunuşla açtığı için düğmelidir. iPhone'da push
+ * yalnızca ana ekrana eklenmiş uygulamada çalışır, orada izin yerine kurulum rehberi çıkar.
+ */
+const izinSeridi = h`<section class="kart izin-serit" hidden>
+  <div class="izin-push" hidden>
+    <span class="izin-ikon" aria-hidden="true">🔔</span>
+    <div class="izin-metin"><strong>Bildirimlere izin ver</strong><small>Beğeni, yorum, yanıt ve mesaj gelince haberin olsun.</small></div>
+    <div class="izin-dugmeler"><button type="button" class="birincil izin-ver">İzin ver</button><button type="button" class="baglanti izin-sonra">Sonra</button></div>
+  </div>
+  <div class="izin-yukle" hidden>
+    <span class="izin-ikon" aria-hidden="true">📲</span>
+    <div class="izin-metin"><strong>Uygulama olarak yükle</strong><small>Ana ekrandan tek dokunuşla aç, bildirimler uygulama gibi gelsin.</small></div>
+    <div class="izin-dugmeler"><button type="button" class="birincil izin-kur">Yükle</button><button type="button" class="baglanti izin-sonra">Sonra</button></div>
+  </div>
+  <div class="izin-ios" hidden>
+    <div class="izin-bas"><span class="izin-ikon" aria-hidden="true">📲</span>
+      <div class="izin-metin"><strong>iPhone'da bildirim için uygulamayı ana ekrana ekle</strong><small>Apple, bildirimi yalnızca ana ekrana eklenmiş uygulamaya veriyor.</small></div></div>
+    <ol class="izin-adim">
+      <li><span>1</span><div>Bu sayfayı <b>Safari</b>'de aç. Chrome ya da başka tarayıcıdaysan adresi kopyalayıp Safari'ye yapıştır.</div></li>
+      <li><span>2</span><div>Alttaki <b>Paylaş</b> düğmesine dokun <i class="ios-paylas" aria-label="Paylaş simgesi"></i> (iPad'de sağ üstte).</div></li>
+      <li><span>3</span><div>Açılan listeyi aşağı kaydır, <b>Ana Ekrana Ekle</b>'yi seç. Görmüyorsan en altta <b>Eylemleri Düzenle</b>'den ekle.</div></li>
+      <li><span>4</span><div>Sağ üstte <b>Ekle</b>'ye dokun.</div></li>
+      <li><span>5</span><div>Ana ekrandaki <b>Grup</b> simgesinden aç. Burada <b>İzin ver</b> düğmesi çıkacak.</div></li>
+    </ol>
+    <small class="soluk">iOS 16.4 ve sonrası gerekir (Ayarlar › Genel › Hakkında).</small>
+    <div class="izin-dugmeler"><button type="button" class="baglanti izin-sonra">Sonra</button></div>
+  </div>
+</section>`
+
 const BILDIRIM_METNI = {
   begeni: 'gönderini beğendi.',
   yorum: 'gönderine yorum yaptı.',
@@ -384,6 +445,8 @@ const BILDIRIM_METNI = {
   durt: 'seni dürttü.',
   paylasim: 'gönderini paylaştı.',
   alinti: 'gönderini alıntıladı.',
+  yanit: 'yorumuna yanıt verdi.',
+  yorum_tepki: 'yorumuna tepki verdi.',
 }
 
 export function bildirimSayfasi({ chat, liste, uyeler, now = Date.now() }) {

@@ -116,14 +116,14 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     return yonlendir(res, don ? P.sLink(chat, '/profil', { id: don }) : P.sLink(chat))
   }
   if (yol === '/s/yorum') {
-    const y = S.yorumYaz(chat, ben, id, al('metin'), now)
-    if (istemci) {
-      const [g] = y ? S.akis(chat, ben, { id, adet: 1 }) : []
-      if (!g) return gonder(res, 404, '')
-      const uyeler = S.uyeler(chat)
-      return gonder(res, 200, P.yorumCiz(chat, g, y, uyeler, uyeler.find((u) => u.jid === ben) ?? { jid: ben }, now).metin)
-    }
-    return yonlendir(res, `${geriAdres(req, P.sLink(chat, '/gonderi', { id }))}#g${id}`)
+    const y = S.yorumYaz(chat, ben, id, al('metin'), now, Number(al('yanit')) || 0)
+    if (istemci) return yorumDali(gonder, res, chat, ben, y?.id, now)
+    return yonlendir(res, `${geriAdres(req, P.sLink(chat, '/gonderi', { id }))}#${y ? `c${y.id}` : `g${id}`}`)
+  }
+  if (yol === '/s/yorum-tepki') {
+    const anaId = S.yorumTepki(chat, ben, id, al('tepki'), now)
+    if (istemci) return yorumDali(gonder, res, chat, ben, anaId, now)
+    return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#c${id}`)
   }
   if (yol === '/s/sil') {
     S.gonderiSil(chat, ben, id)
@@ -346,6 +346,7 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
 const OZET_METNI = {
   begeni: 'gönderine tepki verdi', yorum: 'gönderine yorum yaptı', etiket: 'seni etiketledi', duvar: 'duvarına yazdı',
   durt: 'seni dürttü', paylasim: 'gönderini paylaştı', alinti: 'gönderini alıntıladı',
+  yanit: 'yorumuna yanıt verdi', yorum_tepki: 'yorumuna tepki verdi',
 }
 
 /** Servis işçisinin gösterdiği bildirim; DM metni gösterilmez, kilit ekranında okunmasın. */
@@ -361,4 +362,13 @@ function pushOzeti(hesaplar, grupAdlari) {
     adres: son.gonderi_id ? P.sLink(son.chat_jid, '/gonderi', { id: son.gonderi_id }) : P.sLink(son.chat_jid, '/bildirim'),
     etiket: `b-${son.id}`,
   }
+}
+
+/** Betik için yorum dalının (ana yorum ve yanıtları) güncel HTML'i. */
+function yorumDali(gonder, res, chat, ben, yorumId, now) {
+  const y = yorumId ? S.yorumOku(chat, ben, yorumId) : null
+  const [g] = y ? S.akis(chat, ben, { id: y.gonderi_id, adet: 1 }) : []
+  if (!g) return gonder(res, 404, '')
+  const uyeler = S.uyeler(chat)
+  return gonder(res, 200, P.yorumCiz(chat, g, y, uyeler, uyeler.find((u) => u.jid === ben) ?? { jid: ben }, now).metin)
 }

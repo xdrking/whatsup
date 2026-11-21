@@ -345,7 +345,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 65 (tamam):** `.poker`. Ayrıntı aşağıda.
 - **Faz 66 (tamam):** panelde sosyal bölüm ve PWA. Ayrıntı aşağıda.
 - **Faz 67 (tamam):** Web Push, paylaşım ve alıntı, #etiket ve gündem, emoji tepkileri, akış iyileştirmeleri. Ayrıntı aşağıda.
-- **Faz 68+:** yeni komutlar, her biri ayrı adım
+- **Faz 68 (tamam):** yorum yanıtı ve yorum tepkisi, her girişte bildirim izni ve iPhone kurulum rehberi. Ayrıntı aşağıda.
+- **Faz 69+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1391,6 +1392,18 @@ sosyal_push(endpoint, numara, lid, zaman)
 - **Tepki:** kişi başı tek tepki. Başka tepki değiştirir, aynısı kaldırır. Bildirim yalnızca ilk tepkide düşer. Seçici `<details>`'tir, betik gerekmez. Betik varsa sunucu güncel `eylemCubugu` HTML'ini döner, betik çubuğu değiştirir.
 - **Akış:** "Daha eski" bağlantısı görünür olunca sonraki sayfa yerinde yüklenir (`/s/akis-parca`, `X-Sonraki` başlığı). 45 sn'de bir yeni gönderi sorulur (`/s/yeni-sayi`, kişinin kendi gönderisi sayılmaz). Yorum sayfa yenilemeden eklenir. Fotoğraf büyüteçte açılır, çift dokunuş ❤️ verir. Yazı kutusu uzar, Ctrl+Enter gönderir. Sonuç şeridi 4 sn sonra kaybolur. `prefers-reduced-motion`'da animasyon yoktur.
 
+### Faz 68 — Yorum yanıtı ve tepkisi, bildirim izni
+
+```
+sosyal_yorum.yanit_id                              yanıtlanan ana yorum (0 = gönderiye yorum)
+sosyal_yorum_tepki(yorum_id, user_jid, tepki, zaman)   PK(yorum_id,user_jid)
+```
+
+- **Yanıt tek seviyedir** (Facebook gibi): yanıtın yanıtı ana yorumun altına düşer, kutuya yanıtlananın `@Ad`'ı ön ek olarak gelir. Yanıtlanana `yanit`, gönderi sahibine `yorum` bildirimi düşer, kimseye iki kez değil. Ana yorum silinince yanıtları ve tepkileri de gider.
+- **Yorum tepkisi** gönderi tepkisinin kuralıdır (`TEPKILER`, aynısı kaldırır, başkası değiştirir, bildirim yalnızca ilkinde, `yorum_tepki`). Betik varsa `/s/yorum` ve `/s/yorum-tepki` yorum dalının (`li.yorum-dal`, ana yorum ve yanıtları) güncel HTML'ini döner, betik dalı değiştirir. "Yanıtla" `<details>`'tir, betik gerekmez.
+- **İzin şeridi** her `/s` sayfasının başındadır (`izinSeridi`), hangi kutunun görüneceğine betik karar verir. Tarayıcı izin penceresini ancak dokunuşla açtığı için şerit düğmelidir, sayfa açılır açılmaz izin istenmez (Safari ve Firefox engeller). "Sonra" 3 gün susturur (`localStorage`, yalnızca kolaylık). İzin önceden verilmişse abonelik her girişte sessizce sunucuya yeniden yazılır.
+- **iPhone/iPad:** ana ekrana eklenmemiş Safari'de push yoktur, izin yerine adım adım "Ana Ekrana Ekle" rehberi çıkar (Paylaş simgesi CSS ile çizilir). Android ve masaüstü Chrome/Edge `beforeinstallprompt` verirse "Uygulama olarak yükle" düğmesi çıkar.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1523,3 +1536,4 @@ sosyal_push(endpoint, numara, lid, zaman)
 114. `.poker 1000` → lobi; iki kişi `katıl`, kuran `başla` → herkese kartlar özelden gelir, masa mesajı sırayı etiketler; sırası olmayan `gör` → "Sıra sende değil"; `artır 500`, `hepsi`, `çekil` çalışır; el sonunda showdown ve pot yazılır; `kalk` → el bitince çip cüzdana döner; masa açıkken `.sus` → herkesin çipi iade edilir (`.profil`); özelden `.poker` → kartlar yeniden gelir
 115. Panelde oyuncu girişi → haber kaynağı açılır, solda "Oyunlar" kumarhaneye gider, kumarhanede "Akışa dön" geri getirir; foto ile gönderi → akışta görünür, telefonla çekilmiş dikey foto yan dönmez, ilk 3 gönderi XP verir; beğeni sayfa yenilemeden değişir; `@Ad` yazılan kişiye bildirim düşer; başkasının profiline yazınca "A ▸ B" görünür; DM iki tarayıcıda birkaç saniyede düşer; hikâyeyi başkası bir kez görür, ikinci açılışta "zaten gördün"; telefonda alt sekme çıkar, Chrome/Safari'de "Ana ekrana ekle" uygulama gibi açılır; `.wordle` bilinince akışta Grup Bülteni gönderisi çıkar
 116. Bildirimler sayfasında "Aç" → izin sorulur; başka hesaptan beğeni ya da DM gelince telefona bildirim düşer, tıklayınca ilgili sayfa açılır, DM bildiriminde mesaj metni yok; iPhone'da önce Ana Ekrana Ekle. Bir gönderide ☺ → 6 tepki, seçilen tepki çubukta görünür, aynısı kaldırır; ↻ Paylaş → akışta "Sen paylaştın", tekrar basınca geri alınır; ❝ Alıntıla → yorumlu paylaşım, içinde özgün kart; `#halısaha` yazılan gönderide etiket tıklanır, etiket sayfası açılır, sağda Gündem çıkar; aşağı kaydırınca eski gönderiler kendiliğinden gelir; fotoğrafa tek dokunuş büyütür, çift dokunuş ❤️ verir
+117. Bir yorumda "Yanıtla" → kutu açılır, yanıt yorumun altına girintili düşer, yorum sahibine "yorumuna yanıt verdi" bildirimi (push dahil) gider; yanıta yanıt da aynı dalda, başında `@Ad`; yorumda Beğen ve ☺ → tepki balonun köşesinde görünür, aynısı kaldırır. Bilgisayarda ve Android'de girişte üstte "Bildirimlere izin ver" çıkar, İzin ver → tarayıcı sorar; "Sonra" → 3 gün çıkmaz. iPhone Safari'de izin yerine Ana Ekrana Ekle adımları çıkar, ana ekrandan açınca İzin ver gelir
