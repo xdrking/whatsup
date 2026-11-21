@@ -59,7 +59,7 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
 
   const giris = await post('/giris', { kimlik: '905551112233', sifre: SIFRE })
   assert.equal(giris.status, 303)
-  assert.equal(giris.headers.get('location'), '/oyun')
+  assert.equal(giris.headers.get('location'), '/s')
   const Cookie = giris.headers.get('set-cookie').split(';')[0]
 
   const sayfa = await fetch(`${adres}/oyun`, { headers: { Cookie } })
@@ -75,7 +75,7 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   for (const yol of ['/', `/grup?id=${encodeURIComponent(GRUP)}`, '/yedek']) {
     const y = await fetch(adres + yol, { redirect: 'manual', headers: { Cookie } })
     assert.equal(y.status, 303, yol)
-    assert.equal(y.headers.get('location'), '/oyun')
+    assert.equal(y.headers.get('location'), '/s')
   }
 
   // Lobi oyunları kategorili listeler, her oyunun ve hesabın kendi sayfası vardır.

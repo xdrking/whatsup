@@ -1,4 +1,5 @@
 import { binlik } from '../lib/sayi.js'
+import { botGonderisi } from '../lib/sosyal.js'
 import { displayName, mentionOf } from '../lib/target.js'
 import { readFile } from 'node:fs/promises'
 import logger from '../lib/logger.js'
@@ -128,6 +129,7 @@ export async function wordleOyna({ from, sender, tahmin, now = new Date() }) {
 
   if (dogru) {
     const kazanc = oyunOdulu({ chatJid: from, userJid: sender, amount: oduluHesapla(kayit.toplam) })
+    botGonderisi(from, `🟩 Bugünün wordle'ını ${displayName(sender)} buldu. Grup ${kayit.toplam} tahminde çözdü.`)
     lines.push(`🎉 ${mentionOf(sender)} bildi! Grup ${kayit.toplam} tahminde buldu. ⭐ +${binlik(kazanc)} XP`, 'Yeni kelime yarın.')
     return { text: lines.join('\n'), mentions: [sender] }
   }

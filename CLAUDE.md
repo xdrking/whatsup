@@ -72,7 +72,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event ka
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
 games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu, .vampir, .poker)
-panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58)
+panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58), sosyal bölüm (Faz 66)
 scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
@@ -162,8 +162,10 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/panelHesap.js` | panel oyuncu hesapları (`.panel kayıt`) | `data/stats.db` (kalıcı) |
 | `panel/kumar.js` | paneldeki açık blackjack/mayın/kule/hi-lo eli ve son sonuç | panel belleği (panelle ölür) |
 | `panel/hesap.js` | paneldeki son hesap işleminin bildirimi | panel belleği (panelle ölür) |
+| `lib/db.js` + `lib/sosyal.js` | sosyal bölümün gönderi, yorum, beğeni, DM, hikâye, bildirim, profil kayıtları | `data/stats.db` + `data/medya/` (kalıcı) |
+| `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme | panel belleği (panelle ölür) |
 
-Sayaçlar dışında hiçbir mesaj **içeriği** saklanmaz — ne diske ne belleğe. Tek istisna botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
+WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
 
 ### Komut sözleşmesi
 
@@ -237,7 +239,7 @@ JID karşılaştırırken `jidNormalizedUser()` kullan. Baileys yeni sürümlerd
 
 **`.env` commit edilmez.** Paylaşılan şablon `.env.example`'dır ve içinde gerçek değer bulunmaz.
 
-**`data/yedek/` commit edilmez**, `stats.db` ile aynı veriyi taşır.
+**`data/yedek/` commit edilmez**, `stats.db` ile aynı veriyi taşır. **`data/medya/` commit edilmez**, sosyal bölüme yüklenen fotoğraflardır.
 
 **`data/stats.db` commit edilmez.** İçinde grup üyelerinin JID'leri, WhatsApp adları ve aktivite sayaçları vardır. Mesaj içeriği tutulmaz, ama JID listesi de paylaşılacak bir şey değildir. `data/*.json` havuzları commit edilir.
 
@@ -341,7 +343,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 63 (tamam):** `.reborn`. Ayrıntı aşağıda.
 - **Faz 64 (tamam):** `.wrapped`. Ayrıntı aşağıda.
 - **Faz 65 (tamam):** `.poker`. Ayrıntı aşağıda.
-- **Faz 66+:** yeni komutlar, her biri ayrı adım
+- **Faz 66 (tamam):** panelde sosyal bölüm ve PWA. Ayrıntı aşağıda.
+- **Faz 67+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -954,7 +957,7 @@ girmez: yeni ürün eklenince numarası kayar.
 ### Faz 31 — Web paneli
 
 Numara ban yese ya da grup dağılsa da veriler görülsün diye vardır. Bottan ayrı süreçtir, WhatsApp'a
-hiç bağlanmaz, istatistikleri `data/stats.db`'den **salt okunur** okur. Tek yazan özellik kumarhanedir (Faz 58, bot sahibinin kararı); başka veri değiştiren panel özelliği eklenmez.
+hiç bağlanmaz, istatistikleri `data/stats.db`'den **salt okunur** okur. Yazan özellikler kumarhane (Faz 58) ve sosyal bölümdür (Faz 66), ikisi de bot sahibinin kararıdır; başka veri değiştiren panel özelliği eklenmez.
 Yeni npm paketi yoktur: Node `http` + sunucuda üretilen HTML + `panel/stil.css`.
 
 ```
@@ -1345,6 +1348,32 @@ No-limit Texas Hold'em, 2-8 kişi. Kurallar `lib/poker.js`'te saftır (el değer
 - **Bilerek sade:** kısa hepsi (min artırmanın altında kalan all-in) de masayı yeniden açar. Bölünmeyen artık çip dealer'dan sonraki ilk kazanana gider.
 - `test/poker.test.js` rastgele binlerce elde çip korunumunu denetler; kural değişirse bu test geçmeli.
 
+### Faz 66 — Panelde sosyal bölüm
+
+Bot sahibinin isteğiyle panel, grubun kendi küçük sosyal ağına dönüştü (ileride ayrı uygulama olacak prototip). Oyuncu girişi artık `/s`'e açılır, kumarhane sol menüdeki "Oyunlar"dır. Kurallar ve yazma `lib/sosyal.js`'te, yollar `panel/sosyal.js`'te, HTML `panel/sosyalSayfalar.js`'te, stil `panel/sosyal.css`'te, betik `panel/sosyal-istemci.js`'tedir. Yeni paket yoktur.
+
+```
+sosyal_gonderi(id, chat_jid, user_jid, hedef_jid, metin, medya, zaman)   user_jid '' = bot
+sosyal_begeni(gonderi_id, user_jid, zaman)        sosyal_yorum(id, gonderi_id, user_jid, metin, zaman)
+sosyal_profil(chat_jid, user_jid, bio, avatar, kapak)
+sosyal_dm(id, chat_jid, gonderen, alici, metin, medya, zaman, okundu)
+sosyal_hikaye(id, chat_jid, user_jid, medya, metin, zaman)   sosyal_izleme(hikaye_id, user_jid, zaman)
+sosyal_bildirim(id, chat_jid, user_jid, kimden, tur, gonderi_id, zaman, okundu)
+sosyal_durt(chat_jid, kimden, kime, zaman)        sosyal_xp(chat_jid, user_jid, day, adet)
+```
+
+- **Ağ gruptur:** her şey `chat_jid`'e aittir, grubun istatistiği olan herkes otomatik arkadaştır, kişi o gruptaki üye kimliğiyle (`panel_hesap.user_jid`) görünür. Birden çok gruptaki kişi grubu seçer. Başka grubun gönderisi, DM'si ya da görseli görülmez.
+- **Medya:** `sharp` ile WebP'ye çevrilip `data/medya/<32 hex>.webp`'ye yazılır; `rotate()` yönü düzeltir, metadata (konum) atılır, görsel olmayan dosya reddedilir. Görsel `/s/medya/<ad>` ile yalnızca o grubun gönderisinde, profilinde ya da kişinin kendi DM'sinde geçiyorsa verilir (`medyaIzni`). Yükleme elle yazılmış multipart ayrıştırıcıyla okunur (`panel/multipart.js`), sınır 12 MB. Medya günlük yedeğe girmez.
+- **Hikâye (Snapchat gibi, bot sahibinin kararı):** sahibi dışındaki herkes bir kez görür; açılışta izleme yazılır, görsel yalnızca sonraki `HIKAYE_MEDYA_MS` (2 dk) içinde yüklenir ve önbelleklenmez. Panel hesabı olan herkes görünce ya da 7 gün dolunca (`HIKAYE_AZAMI_MS`, hiç girmeyen yüzünden disk dolmasın) dosyasıyla silinir. Silme izlemeden 2 dk sonra sayılır: yoksa son izleyici görseli yükleyemiyordu.
+- **DM** panelde kalır, WhatsApp'a gitmez; yalnızca panel hesabı olana yazılır. WebSocket yoktur, betik 3 sn'de bir yeni mesajı sorar (`/s/mesaj-yeni`, HTML parçası döner, `h` ile kaçırılmış). Uçtan uca şifreleme yoktur: sunucuya erişen DM'yi okuyabilir.
+- **XP (bot sahibinin kararı, "az XP"):** günün ilk `SOSYAL_XP_HAKKI` (3) gönderisi `SOSYAL_XP_TABAN` (10) tabanın kurla ölçeğini (`oyunTutari`) `xpAyarla` ile alır; görev ve sezon puanı yazmaz, beğeni ve yorum XP vermez: spam ile XP kasılmasın.
+- **Duvar, dürtme, etiket, bildirim:** başkasının profiline yazılan gönderi `hedef_jid` taşır, yazan da duvar sahibi de siler. Dürtme kişi başı saatte birdir. `@Ad` etiketi grubun adlarıyla eşleşir, uzun ad önce (`etiketleriBul`). Beğeni, yorum, etiket, duvar ve dürtme `sosyal_bildirim`'e düşer.
+- **Bot olayları** `botGonderisi()` ile akışa "Grup Bülteni" olarak düşer: reborn, darbe sonucu, wordle çözümü, grubun tek el kumar rekoru (`kumarKaydet`, ilk kayıt rekor sayılmaz). Yeni olay bir çağrıdır, hata botu durdurmaz.
+- **Profil:** kapak, avatar, biyografi, `.stats` sayıları, rozetler (`lib/rozet.js`), wrapped özeti (`kisiWrapped`).
+- **PWA:** `/manifest.webmanifest`, `/sw.js`, ikon (`panel/pwa.js`, SVG'den bellekte üretilir). Servis işçisi yalnızca stil, betik ve ikonu önbellekler; sayfalar kişiye özel olduğu için hep ağdan gelir, ağ yoksa çevrimdışı notu çıkar. CSP'ye `img-src 'self' blob:` (seçilen fotoğrafın önizlemesi), `manifest-src` ve `worker-src` eklendi; satır içi betik ve stil yine yasaktır.
+- **Tasarım:** eski Facebook düzeni (sol menü, orta akış, sağda son görülenler ve zirve), lacivert üst çubuk, kağıt zemin, ince çerçeve, 4 px köşe; gradyan, cam efekti ve gölge yok. 1000 px altında sağ sütun, 720 px altında sol menü kalkar, alt sekme çıkar. Koyu tema `prefers-color-scheme` iledir.
+- Betik yoksa her form normal gönderilir (beğeni ve DM sayfayı yeniler). İki yazma arası 1,5 sn'dir (`sosyalMotoru`).
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1475,3 +1504,4 @@ No-limit Texas Hold'em, 2-8 kişi. Kurallar `lib/poker.js`'te saftır (el değer
 112. Sahip özelden `.reborn <grup id>` → önizleme, hiçbir şey değişmez; `.reborn onay <grup id>` → grupta herkes etiketlenir, reborn anlatılır, üyelere özelden bildirim gelir; `evet` yanıtı ✅ alır; 10 dk sonra evet fazlaysa "REBORN GELDİ", `.profil` 0 XP ve mesaj sayısı aynı, kart ve pet duruyor, `.meslek` boş, en zengin 3 kişide ⭐; hayır fazlaysa "reddedildi", hiçbir şey değişmez; grupta `.reborn` → hiç tepki yok; `data/yedek/` içinde `reborn-oncesi-*.db` var
 113. `.wrapped` → kişisel kart görseli gelir, sıralama ve kişilik yazar; `.wrapped grup` → grup kartı, kimse etiketlenmez; sıradan üye `.wrapped @bot` → "gizli"
 114. `.poker 1000` → lobi; iki kişi `katıl`, kuran `başla` → herkese kartlar özelden gelir, masa mesajı sırayı etiketler; sırası olmayan `gör` → "Sıra sende değil"; `artır 500`, `hepsi`, `çekil` çalışır; el sonunda showdown ve pot yazılır; `kalk` → el bitince çip cüzdana döner; masa açıkken `.sus` → herkesin çipi iade edilir (`.profil`); özelden `.poker` → kartlar yeniden gelir
+115. Panelde oyuncu girişi → haber kaynağı açılır, solda "Oyunlar" kumarhaneye gider, kumarhanede "Akışa dön" geri getirir; foto ile gönderi → akışta görünür, telefonla çekilmiş dikey foto yan dönmez, ilk 3 gönderi XP verir; beğeni sayfa yenilemeden değişir; `@Ad` yazılan kişiye bildirim düşer; başkasının profiline yazınca "A ▸ B" görünür; DM iki tarayıcıda birkaç saniyede düşer; hikâyeyi başkası bir kez görür, ikinci açılışta "zaten gördün"; telefonda alt sekme çıkar, Chrome/Safari'de "Ana ekrana ekle" uygulama gibi açılır; `.wordle` bilinince akışta Grup Bülteni gönderisi çıkar

@@ -13,6 +13,8 @@ import { bankaSayfasi, coinSayfasi, HESAP_SAYFALARI, hesapSayfasi } from './hesa
 import { grupSecimi, hesapLink, lobi, oyunLink, oyunSayfasi, oyunVar } from './oyunSayfalari.js'
 import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisiSayfasi } from './sayfalar.js'
 import { sonYedek } from './yedek.js'
+import { sosyalIsle, sosyalMotoru } from './sosyal.js'
+import { ikonlar, MANIFEST } from './pwa.js'
 
 const CEREZ = '__Host-panel'
 const AZAMI_GOVDE = 1024
@@ -20,11 +22,15 @@ const KLASOR = path.dirname(fileURLToPath(import.meta.url))
 const STIL = readFileSync(path.join(KLASOR, 'stil.css'))
 const KUMARHANE_STIL = readFileSync(path.join(KLASOR, 'kumarhane.css'))
 const OYUN_BETIGI = readFileSync(path.join(KLASOR, 'oyun.js'))
+const SOSYAL_STIL = readFileSync(path.join(KLASOR, 'sosyal.css'))
+const SOSYAL_BETIGI = readFileSync(path.join(KLASOR, 'sosyal-istemci.js'))
+const SERVIS_ISCISI = readFileSync(path.join(KLASOR, 'sw.js'))
 
 const GUVENLIK_BASLIKLARI = {
   // Betik yalnızca panelin kendi oyun.js dosyasıdır: satır içi betik yasak kalır, ad alanına
   // yazılan <script> çalışmaz. connect-src oyun.js'in formu sayfa yenilemeden göndermesi içindir.
-  'Content-Security-Policy': "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+  // img-src blob: seçilen fotoğrafın önizlemesi içindir; manifest ve worker PWA içindir (Faz 66).
+  'Content-Security-Policy': "default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' blob:; manifest-src 'self'; worker-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
   'X-Robots-Tag': 'noindex',
@@ -47,11 +53,11 @@ function cerezOku(req) {
 
 const cerez = (deger, saniye) => `${CEREZ}=${deger}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${saniye}`
 
-async function govdeOku(req) {
+async function govdeOku(req, azami = AZAMI_GOVDE) {
   let govde = ''
   for await (const parca of req) {
     govde += parca
-    if (govde.length > AZAMI_GOVDE) return null
+    if (govde.length > azami) return null
   }
   return new URLSearchParams(govde)
 }
@@ -62,7 +68,7 @@ function bekleMetni(ms) {
 }
 
 /** @param {{ sifreHash: string, veri: object, yedekKlasoru: string }} ayar */
-export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru() }) {
+export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru() }) {
   const sinir = denemeSiniri()
   const oturum = oturumlar()
   // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.
@@ -117,7 +123,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     sinir.basarili(ip)
     logger.info({ ip }, 'Panele oyuncu girişi yapıldı')
     const veriler = { tur: 'oyuncu', numara: hesap.numara, lid: hesap.lid, surum: hesap.surum }
-    return yonlendir(res, '/oyun', { 'Set-Cookie': cerez(oturum.ac(veriler), OTURUM_SANIYE) })
+    return yonlendir(res, '/s', { 'Set-Cookie': cerez(oturum.ac(veriler), OTURUM_SANIYE) })
   }
 
   /** Oyuncunun hâlâ geçerli grup satırları: gruptan çıkan ya da şifresini değiştiren düşer. */
@@ -127,7 +133,11 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
 
   const grupAdlari = () => new Map(veri.gruplar().map((g) => [g.chat_jid, g.ad]))
 
+  const ortak = { gonder, yonlendir, govdeOku, grupAdlari: () => grupAdlari(), guvenlik: GUVENLIK_BASLIKLARI }
+
   async function oyuncuIsle(req, res, url, yontem, hesaplar) {
+    if (url.pathname === '/') return yonlendir(res, '/s')
+    if (await sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor: sosyal })) return
     const yol = `${yontem} ${url.pathname}`
     const hesapBul = (chat) => hesaplar.find((r) => r.chat_jid === chat)
 
@@ -176,7 +186,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       return yonlendir(res, oyunLink(chat, oyunVar(alanlar.oyun) ? alanlar.oyun : ''))
     }
 
-    return yonlendir(res, '/oyun')
+    return yonlendir(res, '/s')
   }
 
   function yedekGonder(res) {
@@ -248,13 +258,28 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     if (yol === 'GET /oyun.js') {
       return gonder(res, 200, OYUN_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
     }
+    if (yol === 'GET /sosyal.css') {
+      return gonder(res, 200, SOSYAL_STIL, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /sosyal.js') {
+      return gonder(res, 200, SOSYAL_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    // Servis işçisi önbelleklenmez: yeni sürüm hemen kurulsun.
+    if (yol === 'GET /sw.js') return gonder(res, 200, SERVIS_ISCISI, { 'Content-Type': 'text/javascript; charset=utf-8' })
+    if (yol === 'GET /manifest.webmanifest') {
+      return gonder(res, 200, MANIFEST, { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /ikon-192.png' || yol === 'GET /ikon-512.png') {
+      const ikon = (await ikonlar())[url.pathname]
+      return gonder(res, 200, ikon, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' })
+    }
 
     const jeton = cerezOku(req)
     const kim = oturum.veri(jeton)
     const girisli = Boolean(kim)
 
     if (yol === 'POST /giris') return girisYap(req, res)
-    if (yol === 'GET /giris') return girisli ? yonlendir(res, kim.tur === 'oyuncu' ? '/oyun' : '/') : gonder(res, 200, girisSayfasi())
+    if (yol === 'GET /giris') return girisli ? yonlendir(res, kim.tur === 'oyuncu' ? '/s' : '/') : gonder(res, 200, girisSayfasi())
 
     if (!girisli) return yonlendir(res, '/giris')
 
@@ -272,7 +297,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       }
       return oyuncuIsle(req, res, url, yontem, hesaplar)
     }
-    if (url.pathname.startsWith('/oyun')) return yonlendir(res, '/')
+    if (url.pathname.startsWith('/oyun') || url.pathname === '/s' || url.pathname.startsWith('/s/')) return yonlendir(res, '/')
     if (yontem !== 'GET') return gonder(res, 405, hataSayfasi('Bu işlem yapılamaz.'))
 
     return sayfa(res, url)

@@ -71,6 +71,7 @@ export function yanMenu({ chat, cokGrup, secili = '' }) {
     h`<a href="${adres}"${secili === anahtar ? h` class="secili" aria-current="page"` : ''}><span aria-hidden="true">${ikon}</span>${ad}</a>`
   return h`<nav class="yan" aria-label="Kumarhane menüsü">
   <div class="yan-marka">🎰 KUMARHANE</div>
+  <a href="/s?grup=${encodeURIComponent(chat)}"><span aria-hidden="true">‹</span>Akışa dön</a>
   ${baglanti(oyunLink(chat), 'lobi', '🏠', 'Lobi')}
   ${KATEGORILER.map((k) => h`<h3>${k.ikon} ${k.ad}</h3>${k.oyunlar.map((o) => baglanti(oyunLink(chat, o), o, OYUN_ADI[o].ikon, OYUN_ADI[o].ad))}`)}
   <h3>👤 Hesap</h3>

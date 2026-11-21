@@ -8,6 +8,7 @@ import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import { getDb } from '../lib/db.js'
 import { REBORN_SANS_MS, REBORN_SURE_MS, rebornKabul, rebornOyu, YILDIZ_ADEDI } from '../lib/reborn.js'
 import { binlik } from '../lib/sayi.js'
+import { botGonderisi } from '../lib/sosyal.js'
 import { botHesabiMi, rebornYap } from '../lib/stats.js'
 import { displayName, mentionOf } from '../lib/target.js'
 import logger from '../lib/logger.js'
@@ -103,6 +104,7 @@ async function bitir(sock, chatJid) {
     '🚀 Herkes sıfırdan: mesaj yaz, `.günlük` al, `.meslek seç` ile işe gir.',
   )
   await sock.sendMessage(chatJid, { text: lines.join('\n') })
+  botGonderisi(chatJid, `♻️ Reborn geldi: ${s.no}. devir bitti, ekonomi sıfırdan başladı.${s.zenginler.length ? ` Biten devrin zengini ${displayName(s.zenginler[0].user_jid)}.` : ''}`)
 }
 
 /**

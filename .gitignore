@@ -17,6 +17,8 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 data/yedek/
+# Panelin sosyal bölümüne yüklenen fotoğraflar (Faz 66)
+data/medya/
 
 *.log
 npm-debug.log*

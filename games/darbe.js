@@ -5,6 +5,7 @@ import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import { DARBE_BORSA_DUSUS, DARBE_SURE_MS, DARBE_YUZDE, darbeOyu } from '../lib/devlet.js'
 import { MULKLER } from '../lib/mulk.js'
 import { binlik } from '../lib/sayi.js'
+import { botGonderisi } from '../lib/sosyal.js'
 import { botHesabiMi, darbeSonuc } from '../lib/stats.js'
 import { displayName, mentionOf } from '../lib/target.js'
 import logger from '../lib/logger.js'
@@ -81,6 +82,7 @@ async function bitir(sock, chatJid) {
     lines.push('', `📉 *Borsa çöktü:* ${s.borsa.map((h) => `${h.ad} -%${h.dusus}`).join(', ')}`)
   }
   await sock.sendMessage(chatJid, { text: lines.join('\n') })
+  botGonderisi(chatJid, `🪖 Darbe tamamlandı. Yönetim ${displayName(state.sahip)} elinde. Destek: ${destekciler.length}, karşı: ${karsi}, sessiz: ${muhalifler.length - karsi}.`)
 }
 
 /**
