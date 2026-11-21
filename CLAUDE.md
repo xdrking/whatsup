@@ -162,8 +162,8 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/panelHesap.js` | panel oyuncu hesapları (`.panel kayıt`) | `data/stats.db` (kalıcı) |
 | `panel/kumar.js` | paneldeki açık blackjack/mayın/kule/hi-lo eli ve son sonuç | panel belleği (panelle ölür) |
 | `panel/hesap.js` | paneldeki son hesap işleminin bildirimi | panel belleği (panelle ölür) |
-| `lib/db.js` + `lib/sosyal.js` | sosyal bölümün gönderi, yorum, beğeni, DM, hikâye, bildirim, profil kayıtları | `data/stats.db` + `data/medya/` (kalıcı) |
-| `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme | panel belleği (panelle ölür) |
+| `lib/db.js` + `lib/sosyal.js` | sosyal bölümün gönderi, yorum, beğeni, DM, grup sohbeti, hikâye, etkinlik, bildirim, profil kayıtları | `data/stats.db` + `data/medya/` (kalıcı) |
+| `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme, DM ve grup sohbetinde "yazıyor" sinyali | panel belleği (panelle ölür) |
 
 WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp yolu bir üyenin açıkça yazdığı `.paylaş`'tır (Faz 69): yalnızca yanıtlanan o mesaj akışa yazılır. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
 
@@ -347,7 +347,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 67 (tamam):** Web Push, paylaşım ve alıntı, #etiket ve gündem, emoji tepkileri, akış iyileştirmeleri. Ayrıntı aşağıda.
 - **Faz 68 (tamam):** yorum yanıtı ve yorum tepkisi, her girişte bildirim izni ve iPhone kurulum rehberi. Ayrıntı aşağıda.
 - **Faz 69 (tamam):** `.paylaş` ile WhatsApp'tan akışa, anket gönderisi, haftalık gazete. Ayrıntı aşağıda.
-- **Faz 70+:** yeni komutlar, her biri ayrı adım
+- **Faz 70 (tamam):** arama, DM'de yazıyor ve görüldü, hikâye yanıtı ve tepkisi, grup sohbeti, etkinlik, haftanın gönderisi. Ayrıntı aşağıda.
+- **Faz 71+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1421,6 +1422,26 @@ ayar 'gazete:<chat_jid>'                                  son gazetenin haftası
 - **Anket:** paylaş kutusundaki `<details>`; alanlar `secenek1…4` (multipart ayrıştırıcı aynı adlı alanları birleştirir), süre 1/3/7 gün. Metin anketin sorusudur, alıntı ve duvar yazısına anket eklenmez. Oy değiştirilebilir, bitince kapanır. Sonuç ve oy verenler yalnızca oy verene ya da bitince görünür, oy vermeden sonucu görüp çoğunluğa uyulmasın. Çubuk `<progress>`'tir (CSP satır içi stil yok). Bildirim ilk oyda.
 - **Gazete:** bot kendiliğinden yazmadığı için tetik paneldir: haftanın ilk `/s` açılışında `gazeteKontrol()` geçen haftayı (pazartesi başı, `haftaAnahtari`) özetleyip bot gönderisi yazar; en çok tepki alan gönderi alıntı kartıdır. İşaret ve yazma aynı transaction'dadır, gazete bir kez çıkar. Boş haftada gazete yazılmaz. Bot gönderileri sayılmaz.
 
+### Faz 70 — Arama, grup sohbeti, etkinlik, haftanın gönderisi
+
+```
+sosyal_sohbet(id, chat_jid, ad, kuran, zaman)
+sosyal_sohbet_uye(sohbet_id, user_jid, son_okunan)          PK(sohbet_id,user_jid)
+sosyal_sohbet_mesaj(id, sohbet_id, gonderen, metin, medya, zaman)   gonderen '' = sistem notu
+sosyal_etkinlik(gonderi_id PK, baslik, yer, zaman, hatirlatildi)
+sosyal_katilim(gonderi_id, user_jid, durum, zaman)          PK(gonderi_id,user_jid), durum evet|belki|hayir
+sosyal_hafta_gonderi(chat_jid, hafta, gonderi_id, user_jid, xp)     PK(chat_jid,hafta)
+sosyal_dm.hikaye_id        hikâyeye verilen yanıt ya da tepki (0 = düz DM)
+sosyal_izleme.tepki        izleyenin hikâyeye bıraktığı tepki
+```
+
+- **Arama** (`ara`, `/s/ara`): kişi adı, etiket ve gönderi metni; `katla()` Türkçe küçük harf ve aksansız karşılaştırır ("sukru" Şükrü'yü bulur). SQLite'ın `lower()`'ı Türkçe harfleri bilmediği için gönderiler son 3000 içinden JS'te süzülür. `#etiket` yazılırsa doğrudan etiket sayfasına gider. En az 2 harf.
+- **Yazıyor ve görüldü:** "yazıyor" yalnızca panel belleğindedir (`sosyalMotoru().yaziyor`), betik yazarken 2,5 sn'de bir `/s/yaziyor` atar, sinyal 5 sn sonra düşer, mesaj gidince hemen silinir. `/s/yaziyor` iki yazma arası beklemeye girmez: girseydi hemen ardından giden mesaj reddedilirdi. DM'de "Görüldü" var olan `okundu` alanıdır (`dmGoruldu`), grup sohbetinde üyenin `son_okunan`'ıdır. `/s/mesaj-yeni` ve `/s/sohbet-yeni` JSON döner (`html`, `yaziyor`, `goruldu`/`gorenler`).
+- **Hikâye yanıtı** (`hikayeYanit`): yalnızca hikâyeyi açmış kişi (izleme satırı) yazar, sahibi yazamaz. Yanıt ve tepki sahibine DM olarak düşer (`hikaye_id`), tepki ayrıca izleyen listesinde görünür; ikinci tepki öncekinin yerine geçer. Betik form odaklanınca hikâyenin süresini durdurur.
+- **Grup sohbeti:** kuran dahil en az 3, en çok 20 kişi; yalnızca panel hesabı olan üye eklenir. Üye seçme kutuları `uye0…uyeN` adıyla gelir (multipart aynı adlı alanların yalnızca ilkini tutar). Okunmamış sayısı `son_okunan`'dan çıkar, menü rozeti ve push (`kaynak 'sohbet'`) DM'lerle birlikte sayar. Medya yalnızca üyelere verilir (`medyaIzni`). Son üye ayrılınca sohbet mesajları ve fotoğraflarıyla silinir.
+- **Etkinlik:** paylaş kutusundaki 📅 `<details>`; tarih ve saat İstanbul saatidir (+03:00 sabit), ileri bir tarih ve en çok 1 yıl sonra. Anketle aynı gönderide olmaz, metinsiz paylaşılabilir. Aynı düğme ikinci kez basılınca katılım kalkar, sahibine bildirim yalnızca ilk "geliyorum"da. Hatırlatma: panel 5 dakikada bir `etkinlikHatirlat()` çağırır, başlamasına 1 saatten az kalan etkinlikte "geliyorum" ve "belki" diyenlere bildirim (push dahil) yazar; işaret aynı transaction'dadır, hatırlatma bir kez gider. Bot kendiliğinden yazmadığı için hatırlatmayı panel atar. Sağ sütunda yaklaşan 3 etkinlik.
+- **Haftanın gönderisi:** gazete (Faz 69) geçen haftanın en çok tepki alan gönderisini seçer; sahibinin kendi tepkisi sayılmaz ve en az 2 tepki gerekir. Sahibi `HAFTA_ODUL_TABAN` (100) tabanın kur ölçeğini alır (bot sahibinin kararı, `xpVer` ile, sosyal XP'si gibi görev ve sezon puanı yazmaz), gönderide 🏆 şeridi çıkar, kendisine bildirim düşer. Ödül gazeteyle aynı transaction'dadır, bir kez verilir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1555,3 +1576,4 @@ ayar 'gazete:<chat_jid>'                                  son gazetenin haftası
 116. Bildirimler sayfasında "Aç" → izin sorulur; başka hesaptan beğeni ya da DM gelince telefona bildirim düşer, tıklayınca ilgili sayfa açılır, DM bildiriminde mesaj metni yok; iPhone'da önce Ana Ekrana Ekle. Bir gönderide ☺ → 6 tepki, seçilen tepki çubukta görünür, aynısı kaldırır; ↻ Paylaş → akışta "Sen paylaştın", tekrar basınca geri alınır; ❝ Alıntıla → yorumlu paylaşım, içinde özgün kart; `#halısaha` yazılan gönderide etiket tıklanır, etiket sayfası açılır, sağda Gündem çıkar; aşağı kaydırınca eski gönderiler kendiliğinden gelir; fotoğrafa tek dokunuş büyütür, çift dokunuş ❤️ verir
 117. Bir yorumda "Yanıtla" → kutu açılır, yanıt yorumun altına girintili düşer, yorum sahibine "yorumuna yanıt verdi" bildirimi (push dahil) gider; yanıta yanıt da aynı dalda, başında `@Ad`; yorumda Beğen ve ☺ → tepki balonun köşesinde görünür, aynısı kaldırır. Bilgisayarda ve Android'de girişte üstte "Bildirimlere izin ver" çıkar, İzin ver → tarayıcı sorar; "Sonra" → 3 gün çıkmaz. iPhone Safari'de izin yerine Ana Ekrana Ekle adımları çıkar, ana ekrandan açınca İzin ver gelir
 118. Grupta bir fotoğrafa yanıt verip `.paylaş güzel kare` → bot bağlantıyla yanıtlar, akışta fotoğraf ve not görünür, başkasının fotoğrafıysa "WhatsApp'tan · yazan X"; videoya `.paylaş` → kullanım. Paylaş kutusunda 📊 Anket → iki seçenek yaz, Paylaş; başkası oy verince sonuç ve yüzdeler çıkar, oy vermeyen yalnızca düğmeleri görür. Pazartesi akış açılınca geçen haftanın gazetesi Grup Bülteni olarak gelir
+119. Üst çubukta `sukru` ara → Şükrü'nün gönderileri ve kişisi çıkar, `#halısaha` → etiket sayfası. İki tarayıcıda DM: biri yazarken öbüründe "X yazıyor…", mesajı açınca gönderende "Görüldü". Başkasının hikâyesinde 😂 → hikâye sahibinin DM'sine "↩ Hikâyeye tepki" düşer, izleyen listesinde 😂 görünür. Mesajlar › Grup sohbeti kur → iki kişi seç; üçü de yazar, "Görüldü: Ali, Ayşe" çıkar, sohbetten ayrılınca not düşer. Paylaş › 📅 Etkinlik → kart takvim yaprağıyla çıkar, Geliyorum sayısı artar, sağda Yaklaşan etkinlikler; başlamasına 1 saat kala telefona hatırlatma gelir. Pazartesi gazetesinde 🏆 Haftanın gönderisi satırı, gönderide şerit, sahibinin XP'si artar

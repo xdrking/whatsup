@@ -20,12 +20,36 @@ function xpVer({ chatJid, userJid, taban, now }) {
   return xpAyarla({ chatJid, userJid, miktar, at: now }) ? miktar : 0
 }
 
-/** Bellekteki durum: bir kez gösterilen sonuç ve iki yazma arası bekleme. */
+// "Yazıyor…" son sinyalden bu kadar sonra düşer; betik yazarken 2,5 sn'de bir sinyal yollar.
+const YAZIYOR_MS = 5000
+
+/** Bellekteki durum: bir kez gösterilen sonuç, iki yazma arası bekleme ve "yazıyor" sinyalleri. */
 export function sosyalMotoru({ saat = Date.now } = {}) {
   const bildirimler = new Map()
   const sonIslem = new Map()
+  // kanal: "d<alıcı>" (DM) ya da "s<sohbet id>"; kanal → (yazan → son sinyal). Yalnızca panel belleği.
+  const yazanlar = new Map()
   const anahtar = (kim) => `${kim.chat}|${kim.user}`
   return {
+    yaziyor(chat, kanal, user) {
+      const k = `${chat}|${kanal}`
+      if (!yazanlar.has(k)) yazanlar.set(k, new Map())
+      yazanlar.get(k).set(user, saat())
+    },
+    /** Kanalda son YAZIYOR_MS içinde yazan kişiler, `haric` dışında. */
+    kimYaziyor(chat, kanal, haric) {
+      const k = `${chat}|${kanal}`
+      const liste = yazanlar.get(k)
+      if (!liste) return []
+      const simdi = saat()
+      for (const [u, t] of liste) if (simdi - t > YAZIYOR_MS) liste.delete(u)
+      if (!liste.size) yazanlar.delete(k)
+      return [...liste.keys()].filter((u) => u !== haric)
+    },
+    /** Mesaj gidince "yazıyor" hemen düşer. */
+    yazmayiBitir(chat, kanal, user) {
+      yazanlar.get(`${chat}|${kanal}`)?.delete(user)
+    },
     bildir: (kim, metin, hata = false) => bildirimler.set(anahtar(kim), { metin, hata }),
     bildirimAl(kim) {
       const b = bildirimler.get(anahtar(kim)) ?? null
@@ -51,6 +75,9 @@ export function sosyalMotoru({ saat = Date.now } = {}) {
     },
   }
 }
+
+/** Üye seçme kutuları `uye0…uyeN` adıyla gelir: multipart ayrıştırıcı aynı adlı alanların yalnızca ilkini tutar. */
+const secilenUyeler = (form) => [...form.alanlar].filter(([ad, deger]) => /^uye\d+$/.test(ad) && deger).map(([, deger]) => deger)
 
 async function formOku(req, govdeOku) {
   const tur = String(req.headers['content-type'] ?? '')
@@ -95,6 +122,15 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
   }
 
+  // "Yazıyor" sinyali yazma sayılmaz: bekleme süresine girseydi hemen ardından giden mesaj reddedilirdi.
+  if (yol === '/s/yaziyor') {
+    const sohbet = Number(al('sohbet')) || 0
+    const ile = al('ile')
+    const kanal = sohbet ? (S.sohbetOku(chat, ben, sohbet) ? `s${sohbet}` : '') : (ile && S.uyeBul(chat, ile) ? `d${ile}` : '')
+    if (kanal) motor.yaziyor(chat, kanal, ben)
+    return gonder(res, 204, '')
+  }
+
   if (motor.hizli(kim)) return istemci ? gonder(res, 429, 'Biraz yavaş.', DUZ) : yonlendir(res, geriAdres(req, P.sLink(chat)))
 
   if (yol === '/s/paylas') {
@@ -105,7 +141,10 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
       const alintiId = Number(al('alinti')) || 0
       const secenekler = [1, 2, 3, 4].map((i) => al(`secenek${i}`)).filter((x) => x.trim())
       const anket = secenekler.length ? S.anketHazirla(secenekler, al('sure'), now) : null
-      const s = S.gonderiYaz({ chatJid: chat, userJid: ben, hedefJid: al('hedef'), metin: al('metin'), medya, alintiId, anket, now, xpVer })
+      const etkinlik = al('etkinlik_baslik').trim() || al('etkinlik_tarih')
+        ? S.etkinlikHazirla({ baslik: al('etkinlik_baslik'), tarih: al('etkinlik_tarih'), saat: al('etkinlik_saat'), yer: al('etkinlik_yer') }, now)
+        : null
+      const s = S.gonderiYaz({ chatJid: chat, userJid: ben, hedefJid: al('hedef'), metin: al('metin'), medya, alintiId, anket, etkinlik, now, xpVer })
       if (s.hata) {
         if (medya) S.medyaSil(medya)
         motor.bildir(kim, s.hata, true)
@@ -132,6 +171,45 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     if (s.hata) motor.bildir(kim, s.hata, true)
     return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
   }
+  if (yol === '/s/etkinlik') {
+    const s = S.etkinlikKatil(chat, ben, id, al('durum'), now)
+    if (istemci) {
+      const [g] = S.akis(chat, ben, { id, adet: 1 })
+      if (!g?.etkinlik) return gonder(res, 404, '')
+      return gonder(res, s.hata ? 409 : 200, P.etkinlikCiz(chat, g, S.uyeler(chat), now).metin)
+    }
+    if (s.hata) motor.bildir(kim, s.hata, true)
+    return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
+  }
+  if (yol === '/s/hikaye-yanit') {
+    const s = S.hikayeYanit(chat, ben, id, { tepki: al('tepki'), metin: al('metin') }, now)
+    motor.bildir(kim, s.hata ?? (al('tepki') ? 'Tepkin gönderildi.' : 'Yanıtın mesaj olarak gitti.'), Boolean(s.hata))
+    const sonraki = Number(al('sonraki')) || 0
+    return yonlendir(res, sonraki ? P.sLink(chat, '/hikaye', { id: sonraki }) : P.sLink(chat))
+  }
+  if (yol === '/s/sohbet-kur') {
+    const s = S.sohbetKur({ chatJid: chat, kuran: ben, ad: al('ad'), uyeJidler: secilenUyeler(form), now })
+    if (s.hata) {
+      motor.bildir(kim, s.hata, true)
+      return yonlendir(res, P.sLink(chat, '/mesaj'))
+    }
+    return yonlendir(res, P.sLink(chat, '/sohbet', { id: s.id }))
+  }
+  if (yol === '/s/sohbet-yaz') {
+    const medya = await motor.fotoKaydet(form.dosya, { boyut: 1024 })
+    if (medya !== null && !S.sohbetYaz({ chatJid: chat, userJid: ben, id, metin: al('metin'), medya, now }) && medya) S.medyaSil(medya)
+    motor.yazmayiBitir(chat, `s${id}`, ben)
+    return istemci ? gonder(res, 204, '') : yonlendir(res, P.sLink(chat, '/sohbet', { id }))
+  }
+  if (yol === '/s/sohbet-ekle') {
+    const s = S.sohbetEkle(chat, ben, id, secilenUyeler(form), now)
+    if (s.hata) motor.bildir(kim, s.hata, true)
+    return yonlendir(res, P.sLink(chat, '/sohbet', { id }))
+  }
+  if (yol === '/s/sohbet-cik') {
+    if (S.sohbetCik(chat, ben, id, now)) motor.bildir(kim, 'Sohbetten ayrıldın.')
+    return yonlendir(res, P.sLink(chat, '/mesaj'))
+  }
   if (yol === '/s/yorum-tepki') {
     const anaId = S.yorumTepki(chat, ben, id, al('tepki'), now)
     if (istemci) return yorumDali(gonder, res, chat, ben, anaId, now)
@@ -157,6 +235,7 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     if (S.uyeBul(chat, ile)?.panelde) {
       const medya = await motor.fotoKaydet(form.dosya, { boyut: 1024 })
       if (medya !== null) S.dmYaz({ chatJid: chat, gonderen: ben, alici: ile, metin: al('metin'), medya, now })
+      motor.yazmayiBitir(chat, `d${ile}`, ben)
     }
     return istemci ? gonder(res, 204, '') : yonlendir(res, P.sLink(chat, '/mesaj', { ile }))
   }
@@ -259,9 +338,33 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
   const uyeler = S.uyeler(chat)
   const ben = uyeler.find((u) => u.jid === kim.user) ?? { jid: kim.user, ad: '', xp: 0, avatar: '' }
 
+  // DM ve grup sohbeti yoklaması: yeni balonlar, kim yazıyor ve görüldü durumu birlikte döner.
+  const JSON_TUR = { 'Content-Type': 'application/json; charset=utf-8' }
   if (url.pathname === '/s/mesaj-yeni') {
-    const yeni = S.dmAkis(chat, kim.user, url.searchParams.get('ile') ?? '', { sonId: Number(url.searchParams.get('son')) || 0 })
-    gonder(res, 200, P.dmBalonlari(chat, yeni, ben).map((p) => p.metin).join(''))
+    const ile = url.searchParams.get('ile') ?? ''
+    const yeni = S.dmAkis(chat, kim.user, ile, { sonId: Number(url.searchParams.get('son')) || 0 })
+    // Bana yazan kişinin sinyali "d<ben>" kanalındadır: kanal alıcıya göre adlanır.
+    const yaziyor = motor.kimYaziyor(chat, `d${kim.user}`, kim.user).includes(ile)
+    gonder(res, 200, JSON.stringify({
+      html: P.dmBalonlari(chat, yeni, ben).map((p) => p.metin).join(''),
+      yaziyor: yaziyor ? `${P.adi(uyeler.find((u) => u.jid === ile))} yazıyor…` : '',
+      goruldu: S.dmGoruldu(chat, kim.user, ile),
+    }), JSON_TUR)
+    return true
+  }
+  if (url.pathname === '/s/sohbet-yeni') {
+    const id = Number(url.searchParams.get('id')) || 0
+    if (!S.sohbetOku(chat, kim.user, id)) {
+      gonder(res, 404, '{}', JSON_TUR)
+      return true
+    }
+    const yeni = S.sohbetAkis(chat, kim.user, id, { sonId: Number(url.searchParams.get('son')) || 0 })
+    const yazanlar = motor.kimYaziyor(chat, `s${id}`, kim.user).map((j) => P.adi(uyeler.find((u) => u.jid === j)))
+    gonder(res, 200, JSON.stringify({
+      html: P.sohbetBalonlari(chat, yeni, ben, uyeler).map((p) => p.metin).join(''),
+      yaziyor: yazanlar.length ? `${yazanlar.join(', ')} yazıyor…` : '',
+      gorenler: P.gorenlerMetni(S.sohbetOku(chat, kim.user, id), ben, uyeler),
+    }), JSON_TUR)
     return true
   }
 
@@ -279,8 +382,8 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
   }
 
   const grupAdi = ortak.grupAdlari().get(chat) ?? ''
-  const sayfa = (baslik, icerik, secili, sag = P.sagSutun(chat, uyeler, now, S.gundem(chat, now))) => {
-    gonder(res, 200, P.sosyalKabuk(baslik, icerik, { chat, ben, grupAdi, sayac: S.sayaclar(chat, kim.user), secili, sag, cokGrup }))
+  const sayfa = (baslik, icerik, secili, sag = P.sagSutun(chat, uyeler, now, S.gundem(chat, now), S.yaklasanEtkinlikler(chat, now))) => {
+    gonder(res, 200, P.sosyalKabuk(baslik, icerik, { chat, ben, grupAdi, sayac: S.sayaclar(chat, kim.user), secili, sag, cokGrup, sorgu: url.searchParams.get('q') ?? '' }))
     return true
   }
   const bildirim = () => motor.bildirimAl(kim)
@@ -288,7 +391,7 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
   switch (url.pathname) {
     case '/s': {
       try {
-        S.gazeteKontrol(chat, now)
+        S.gazeteKontrol(chat, now, xpVer)
       } catch (err) {
         logger.error({ err, chat }, 'Haftalık gazete yazılamadı')
       }
@@ -330,11 +433,36 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
       S.bildirimleriOku(chat, kim.user)
       return sayfa('Bildirimler', P.bildirimSayfasi({ chat, liste, uyeler, now }), 'bildirim')
     }
+    case '/s/ara': {
+      const sorgu = (url.searchParams.get('q') ?? '').slice(0, 80)
+      if (/^#[\p{L}\p{N}_]{1,40}$/u.test(sorgu.trim())) {
+        yonlendir(res, P.sLink(chat, '/etiket', { ad: sorgu.trim().slice(1).toLocaleLowerCase('tr') }))
+        return true
+      }
+      return sayfa('Ara', P.araSayfasi({ chat, ben, sorgu, sonuc: S.ara(chat, kim.user, sorgu), uyeler, now }), 'ara')
+    }
+    case '/s/sohbet': {
+      const sohbet = S.sohbetOku(chat, kim.user, Number(url.searchParams.get('id')) || 0)
+      if (!sohbet) {
+        motor.bildir(kim, 'Bu sohbet yok ya da ondan ayrıldın.', true)
+        yonlendir(res, P.sLink(chat, '/mesaj'))
+        return true
+      }
+      const mesajlar = S.sohbetAkis(chat, kim.user, sohbet.id)
+      return sayfa(sohbet.ad, P.grupSohbetSayfasi({
+        chat, ben, sohbet: S.sohbetOku(chat, kim.user, sohbet.id), mesajlar, uyeler, bildirim: bildirim(), now,
+      }), 'mesaj', '')
+    }
     case '/s/mesaj': {
       const ile = url.searchParams.get('ile')
       const karsi = ile && ile !== ben.jid ? uyeler.find((u) => u.jid === ile) : null
-      if (karsi) return sayfa(P.adi(karsi), P.sohbetSayfasi({ chat, ben, karsi, mesajlar: S.dmAkis(chat, kim.user, karsi.jid) }), 'mesaj', '')
-      return sayfa('Mesajlar', P.mesajListesi({ chat, konusmalar: S.konusmalar(chat, kim.user), uyeler, ben, now }), 'mesaj')
+      if (karsi) {
+        const mesajlar = S.dmAkis(chat, kim.user, karsi.jid)
+        return sayfa(P.adi(karsi), P.sohbetSayfasi({ chat, ben, karsi, mesajlar, goruldu: S.dmGoruldu(chat, kim.user, karsi.jid) }), 'mesaj', '')
+      }
+      return sayfa('Mesajlar', P.mesajListesi({
+        chat, konusmalar: S.konusmalar(chat, kim.user), sohbetler: S.sohbetler(chat, kim.user), uyeler, ben, bildirim: bildirim(), now,
+      }), 'mesaj')
     }
     case '/s/hikaye': {
       const id = Number(url.searchParams.get('id')) || 0
@@ -351,7 +479,7 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
       const sonraki = kendim ? (hk.benim[benimKi + 1]?.id ?? 0) : (hk.kisiler.flatMap((k) => k.liste)[0]?.id ?? 0)
       const sahip = uyeler.find((u) => u.jid === hikaye.user_jid) ?? { jid: hikaye.user_jid, ad: '' }
       return sayfa('Hikâye', P.hikayeSayfasi({
-        chat, hikaye, sahip, kendim, izleyenler: kendim ? hk.benim[benimKi]?.izleyenler ?? [] : [], uyeler, sonraki, now,
+        chat, hikaye, sahip, kendim, izleyenler: kendim ? hk.benim[benimKi]?.izleyenler ?? [] : [], uyeler, sonraki, bildirim: bildirim(), now,
       }), '', '')
     }
     default:
@@ -364,6 +492,7 @@ const OZET_METNI = {
   begeni: 'gönderine tepki verdi', yorum: 'gönderine yorum yaptı', etiket: 'seni etiketledi', duvar: 'duvarına yazdı',
   durt: 'seni dürttü', paylasim: 'gönderini paylaştı', alinti: 'gönderini alıntıladı',
   yanit: 'yorumuna yanıt verdi', yorum_tepki: 'yorumuna tepki verdi', anket_oy: 'anketine oy verdi',
+  etkinlik_katil: 'etkinliğine geliyor',
 }
 
 /** Servis işçisinin gösterdiği bildirim; DM metni gösterilmez, kilit ekranında okunmasın. */
@@ -373,6 +502,9 @@ function pushOzeti(hesaplar, grupAdlari) {
   const ad = (jid) => S.uyeBul(son.chat_jid, jid)?.ad || 'Biri'
   const grup = grupAdlari.get(son.chat_jid) || 'Grup'
   if (son.kaynak === 'dm') return { baslik: grup, metin: `${ad(son.gonderen)} sana mesaj gönderdi`, adres: P.sLink(son.chat_jid, '/mesaj', { ile: son.gonderen }), etiket: `dm-${son.gonderen}` }
+  if (son.kaynak === 'sohbet') return { baslik: grup, metin: `${ad(son.gonderen)}, ${son.ad} sohbetine yazdı`, adres: P.sLink(son.chat_jid, '/sohbet', { id: son.sohbet_id }), etiket: `sohbet-${son.sohbet_id}` }
+  if (son.tur === 'etkinlik_yakin') return { baslik: grup, metin: '📅 Katılacağın etkinlik 1 saat içinde başlıyor', adres: P.sLink(son.chat_jid, '/gonderi', { id: son.gonderi_id }), etiket: `b-${son.id}` }
+  if (son.tur === 'hafta') return { baslik: grup, metin: '🏆 Gönderin haftanın gönderisi seçildi', adres: P.sLink(son.chat_jid, '/gonderi', { id: son.gonderi_id }), etiket: `b-${son.id}` }
   return {
     baslik: grup,
     metin: `${ad(son.kimden)} ${OZET_METNI[son.tur] ?? 'bir şey yaptı'}`,

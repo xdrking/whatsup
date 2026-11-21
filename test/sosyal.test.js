@@ -381,13 +381,20 @@ test('haftalık gazete: geçen haftayı bir kez yazar, en çok tepki alanı alı
   const id = S.gonderiYaz({ chatJid: GRUP, userJid: CAN, metin: 'gazete adayı #gazete' }).id
   for (const kim of [ALI, AYSE]) S.begen(GRUP, kim, id)
   for (let i = 0; i < 5; i++) S.begen(GRUP, `9${i}@lid`, id)
-  const gazete = S.gazeteKontrol(GRUP, ileri)
+  const odul = []
+  const gazete = S.gazeteKontrol(GRUP, ileri, (x) => { odul.push(x); return 77 })
   assert.ok(gazete)
   assert.equal(S.gazeteKontrol(GRUP, ileri), 0)
   const g = db.prepare('SELECT * FROM sosyal_gonderi WHERE id = ?').get(gazete)
   assert.equal(g.user_jid, '')
   assert.ok(g.metin.startsWith('📰 HAFTANIN GAZETESİ'))
   assert.equal(g.alinti_id, id)
+  // Haftanın gönderisi: sahibi ödül alır, gönderide 🏆 görünür, bildirim düşer.
+  assert.deepEqual(odul.map((x) => [x.userJid, x.taban]), [[CAN, S.HAFTA_ODUL_TABAN]])
+  assert.ok(g.metin.includes('🏆 Haftanın gönderisi: Can · +77 XP'))
+  assert.equal(db.prepare('SELECT user_jid FROM sosyal_hafta_gonderi WHERE chat_jid = ? AND gonderi_id = ?').get(GRUP, id).user_jid, CAN)
+  assert.ok(db.prepare("SELECT 1 FROM sosyal_bildirim WHERE user_jid = ? AND tur = 'hafta' AND gonderi_id = ?").get(CAN, id))
+  assert.equal(S.akis(GRUP, ALI, { id, adet: 1 })[0].haftanin, true)
   // Boş haftada gazete çıkmaz ama işaret yazılır.
   assert.equal(S.gazeteKontrol(OTEKI, ileri + 70 * 86_400_000), 0)
 })
@@ -407,4 +414,158 @@ test('.paylaş: yanıtlanan metin akışa düşer, kimin mesajı olduğu yazar',
   assert.ok(html.includes('WhatsApp&#39;tan') || html.includes("WhatsApp'tan"))
   await komut.execute({ sock, msg: {}, text: '', from: GRUP, sender: ALI, parsed: { isGroup: true } })
   assert.ok(giden[1].includes('yanıt verip'))
+})
+
+test('haftanın gönderisi: sahibinin kendi tepkisi sayılmaz', () => {
+  const bas = Date.now() + 200 * 86_400_000
+  const id = S.gonderiYaz({ chatJid: OTEKI, userJid: CAN, metin: 'kendimi beğendim', now: bas }).id
+  S.begen(OTEKI, CAN, id, bas)
+  S.begen(OTEKI, '98@lid', id, bas)
+  assert.ok(S.gazeteKontrol(OTEKI, bas + 7 * 86_400_000))
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sosyal_hafta_gonderi WHERE chat_jid = ?').get(OTEKI).n, 0)
+})
+
+test('arama: Türkçe harf farkı gözetmez; kişi, etiket ve gönderi bulur', async () => {
+  assert.equal(S.katla('ŞÜKRÜ Işık'), 'sukru isik')
+  const id = S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: 'Şükrü ile maç var #HalıSaha' }).id
+  const s = S.ara(GRUP, AYSE, 'sukru')
+  assert.deepEqual(s.gonderiler.map((x) => x.id), [id])
+  assert.equal(S.ara(GRUP, AYSE, 'halisaha').etiketler[0].ad, 'halısaha')
+  assert.deepEqual(S.ara(GRUP, AYSE, 'ayse').kisiler.map((u) => u.jid), [AYSE])
+  assert.deepEqual(S.ara(GRUP, AYSE, 'ş'), { kisiler: [], etiketler: [], gonderiler: [] })
+  // Başka grubun gönderisi çıkmaz.
+  assert.equal(S.ara(OTEKI, CAN, 'sukru').gonderiler.length, 0)
+  const html = await (await al(ayse, `/s/ara?grup=${g}&q=sukru`)).text()
+  assert.ok(html.includes('Şükrü ile maç var'))
+  const y = await al(ayse, `/s/ara?grup=${g}&q=${encodeURIComponent('#HalıSaha')}`)
+  assert.equal(y.status, 303)
+  assert.ok(y.headers.get('location').includes('/s/etiket'))
+})
+
+test('etkinlik: katılım, hatırlatma bir kez, silinince temizlik', async () => {
+  const simdi = Date.now()
+  assert.ok(S.etkinlikHazirla({ baslik: 'maç', tarih: '2000-01-01', saat: '20:00' }, simdi).hata)
+  assert.ok(S.etkinlikHazirla({ baslik: '', tarih: '2999-01-01', saat: '20:00' }, simdi).hata)
+  const e = S.etkinlikHazirla({ baslik: 'Halı saha', tarih: '2027-06-01', saat: '20:30', yer: 'Kadıköy' }, Date.parse('2027-05-01T00:00:00+03:00'))
+  assert.equal(e.zaman, Date.parse('2027-06-01T17:30:00Z'))
+  const anket = S.anketHazirla(['a', 'b'], '1', simdi)
+  assert.ok(S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: 'soru', anket, etkinlik: e }).hata)
+  // Metinsiz etkinlik gönderisi paylaşılabilir.
+  const id = S.gonderiYaz({ chatJid: GRUP, userJid: ALI, etkinlik: e, now: simdi }).id
+  assert.ok(id)
+  S.etkinlikKatil(GRUP, AYSE, id, 'evet', simdi)
+  assert.ok(db.prepare("SELECT 1 FROM sosyal_bildirim WHERE user_jid = ? AND tur = 'etkinlik_katil' AND gonderi_id = ?").get(ALI, id))
+  S.etkinlikKatil(GRUP, AYSE, id, 'evet', simdi)
+  assert.equal(S.akis(GRUP, AYSE, { id, adet: 1 })[0].etkinlik.benim, '')
+  S.etkinlikKatil(GRUP, AYSE, id, 'belki', simdi)
+  S.etkinlikKatil(GRUP, CAN, id, 'hayir', simdi)
+  const ok = S.akis(GRUP, AYSE, { id, adet: 1 })[0].etkinlik
+  assert.equal(ok.benim, 'belki')
+  assert.deepEqual(ok.katilim.hayir, [CAN])
+  assert.ok(S.yaklasanEtkinlikler(GRUP, simdi).some((x) => x.id === id))
+  assert.ok(S.etkinlikKatil(GRUP, AYSE, id, 'evet', e.zaman + 1).hata)
+
+  const once = e.zaman - 30 * 60_000
+  assert.ok(S.etkinlikHatirlat(once) >= 1)
+  assert.equal(S.etkinlikHatirlat(once), 0)
+  assert.ok(db.prepare("SELECT 1 FROM sosyal_bildirim WHERE user_jid = ? AND tur = 'etkinlik_yakin' AND gonderi_id = ?").get(AYSE, id))
+  assert.ok(!db.prepare("SELECT 1 FROM sosyal_bildirim WHERE user_jid = ? AND tur = 'etkinlik_yakin' AND gonderi_id = ?").get(CAN, id))
+
+  // Panelden: form alanlarıyla etkinlik, betikle katılım kartın HTML'ini döner.
+  const form = new FormData()
+  for (const [k, v] of Object.entries({ grup: GRUP, metin: '', etkinlik_baslik: 'Piknik', etkinlik_tarih: '2027-07-01', etkinlik_saat: '12:00' })) form.append(k, v)
+  await gonder(ayse, '/s/paylas', form)
+  const piknik = db.prepare("SELECT gonderi_id FROM sosyal_etkinlik WHERE baslik = 'Piknik'").get().gonderi_id
+  const y = await gonder(ali, '/s/etkinlik', { grup: GRUP, id: piknik, durum: 'evet' }, { 'X-Istemci': '1' })
+  assert.equal(y.status, 200)
+  const kart = await y.text()
+  assert.ok(kart.startsWith('<form class="etkinlik') && kart.includes('Geliyorum'))
+
+  S.gonderiSil(GRUP, ALI, id)
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sosyal_katilim WHERE gonderi_id = ?').get(id).n, 0)
+  assert.ok(!db.prepare('SELECT 1 FROM sosyal_etkinlik WHERE gonderi_id = ?').get(id))
+})
+
+test('hikâye yanıtı: yalnızca gören yazar, DM olarak düşer, tepki izleyen listesinde', async () => {
+  const simdi = Date.now()
+  const hid = S.hikayeYaz({ chatJid: GRUP, userJid: ALI, medya: 'a'.repeat(32), now: simdi })
+  assert.ok(S.hikayeYanit(GRUP, AYSE, hid, { tepki: '😂' }, simdi).hata)
+  S.hikayeAc(GRUP, AYSE, hid, simdi)
+  assert.ok(S.hikayeYanit(GRUP, ALI, hid, { metin: 'ben' }, simdi).hata)
+  assert.ok(S.hikayeYanit(GRUP, AYSE, hid, {}, simdi).hata)
+  assert.equal(S.hikayeYanit(GRUP, AYSE, hid, { tepki: '😂' }, simdi).tamam, true)
+  assert.equal(S.hikayeYanit(GRUP, AYSE, hid, { metin: 'çok iyi' }, simdi).tamam, true)
+  const dmler = db.prepare('SELECT metin, hikaye_id FROM sosyal_dm WHERE gonderen = ? AND alici = ? AND hikaye_id = ? ORDER BY id').all(AYSE, ALI, hid)
+  assert.deepEqual(dmler.map((m) => m.metin), ['😂', 'çok iyi'])
+  const benim = S.hikayeler(GRUP, ALI, simdi).benim.find((x) => x.id === hid)
+  assert.equal(benim.izleyenler.find((i) => i.user_jid === AYSE).tepki, '😂')
+  const html = await (await al(ali, `/s/mesaj?grup=${g}&ile=${encodeURIComponent(AYSE)}`)).text()
+  assert.ok(html.includes('Hikâyeye tepki'))
+})
+
+test('DM: görüldü ve "yazıyor" sinyali', async () => {
+  const id = S.dmYaz({ chatJid: GRUP, gonderen: ALI, alici: AYSE, metin: 'orda mısın' })
+  assert.ok(S.dmGoruldu(GRUP, ALI, AYSE) < id)
+  S.dmAkis(GRUP, AYSE, ALI)
+  assert.equal(S.dmGoruldu(GRUP, ALI, AYSE), id)
+
+  let t = 0
+  const motor = sosyalMotoru({ saat: () => t })
+  motor.yaziyor(GRUP, `d${ALI}`, AYSE)
+  assert.deepEqual(motor.kimYaziyor(GRUP, `d${ALI}`, ALI), [AYSE])
+  assert.deepEqual(motor.kimYaziyor(GRUP, `d${ALI}`, AYSE), [])
+  t = 6000
+  assert.deepEqual(motor.kimYaziyor(GRUP, `d${ALI}`, ALI), [])
+  motor.yaziyor(GRUP, `d${ALI}`, AYSE)
+  motor.yazmayiBitir(GRUP, `d${ALI}`, AYSE)
+  assert.deepEqual(motor.kimYaziyor(GRUP, `d${ALI}`, ALI), [])
+
+  assert.equal((await gonder(ayse, '/s/yaziyor', { grup: GRUP, ile: ALI }, { 'X-Istemci': '1' })).status, 204)
+  const y = await al(ali, `/s/mesaj-yeni?grup=${g}&ile=${encodeURIComponent(AYSE)}&son=0`)
+  const veri = await y.json()
+  assert.ok(veri.html.includes('orda mısın'))
+  assert.equal(veri.goruldu, id)
+  assert.equal(typeof veri.yaziyor, 'string')
+})
+
+test('grup sohbeti: kurma, okunmamış, ekleme, ayrılma', async () => {
+  const DENIZ = '444@lid'
+  db.prepare("INSERT INTO stats (chat_jid, user_jid, messages, xp, last_seen) VALUES (?, ?, 1, 0, 4)").run(GRUP, DENIZ)
+  db.prepare("INSERT INTO isimler (user_jid, ad, guncelleme) VALUES (?, 'Deniz', 1)").run(DENIZ)
+  assert.ok(S.sohbetKur({ chatJid: GRUP, kuran: ALI, uyeJidler: [AYSE] }).hata)
+  // Panel hesabı olmayan eklenmez: Deniz henüz panelde değil.
+  assert.ok(S.sohbetKur({ chatJid: GRUP, kuran: ALI, uyeJidler: [AYSE, DENIZ] }).hata)
+  panelKaydet({ uyelikler: [{ chatJid: GRUP, userJid: DENIZ }], numara: '905550000004', lid: '444', sifre: hash })
+
+  const { id } = S.sohbetKur({ chatJid: GRUP, kuran: ALI, ad: 'Maç ekibi', uyeJidler: [AYSE, DENIZ] })
+  assert.ok(id)
+  assert.equal(S.sohbetOku(GRUP, CAN, id), null)
+  const once = S.sayaclar(GRUP, AYSE).dm
+  const mid = S.sohbetYaz({ chatJid: GRUP, userJid: ALI, id, metin: 'akşam 9', medya: 'b'.repeat(32) })
+  assert.ok(mid)
+  assert.equal(S.sayaclar(GRUP, AYSE).dm, once + 1)
+  assert.equal(S.sohbetYaz({ chatJid: GRUP, userJid: CAN, id, metin: 'sızdım' }), null)
+  assert.ok(S.medyaIzni(GRUP, DENIZ, 'b'.repeat(32)))
+  assert.ok(!S.medyaIzni(GRUP, CAN, 'b'.repeat(32)))
+  assert.equal(S.sonOkunmamis([{ chat_jid: GRUP, user_jid: DENIZ }]).kaynak, 'sohbet')
+  S.sohbetAkis(GRUP, AYSE, id)
+  // Kuruluş notu da okunmamış sayılıyordu; okuyunca ikisi de düşer.
+  assert.equal(S.sayaclar(GRUP, AYSE).dm, once - 1)
+  assert.equal(S.sohbetler(GRUP, AYSE).find((x) => x.id === id).okunmamis, 0)
+  assert.equal(S.sohbetOku(GRUP, ALI, id).uyeler.find((u) => u.user_jid === AYSE).son_okunan, mid)
+
+  // Panelden: sayfa, yoklama, kurma formu.
+  const sayfa = await (await al(ali, `/s/sohbet?grup=${g}&id=${id}`)).text()
+  assert.ok(sayfa.includes('Maç ekibi') && sayfa.includes('akşam 9'))
+  const yokla = await (await al(ali, `/s/sohbet-yeni?grup=${g}&id=${id}&son=0`)).json()
+  assert.ok(yokla.gorenler.includes('Ayşe'))
+  assert.equal((await al(can, `/s/sohbet?grup=${encodeURIComponent(OTEKI)}&id=${id}`)).status, 303)
+  const kur = await gonder(ayse, '/s/sohbet-kur', { grup: GRUP, ad: 'İkinci', uye0: ALI, uye1: DENIZ })
+  assert.ok(kur.headers.get('location').includes('/s/sohbet'))
+
+  for (const kim of [ALI, AYSE]) S.sohbetCik(GRUP, kim, id)
+  assert.ok(db.prepare("SELECT 1 FROM sosyal_sohbet_mesaj WHERE sohbet_id = ? AND metin LIKE '%ayrıldı%'").get(id))
+  S.sohbetCik(GRUP, DENIZ, id)
+  assert.ok(!db.prepare('SELECT 1 FROM sosyal_sohbet WHERE id = ?').get(id))
+  assert.ok(!db.prepare('SELECT 1 FROM sosyal_sohbet_mesaj WHERE sohbet_id = ?').get(id))
 })

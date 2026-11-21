@@ -3,7 +3,7 @@
 // /sosyal.js dosyasıdır; o yoksa da her form normal gönderilir.
 import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
-import { ANKET_AZAMI, ANKET_GUNLERI, TEPKILER, yorumSayisi } from '../lib/sosyal.js'
+import { ANKET_AZAMI, ANKET_GUNLERI, ETKINLIK_METIN_AZAMI, SOHBET_AD_AZAMI, TEPKILER, yorumSayisi } from '../lib/sosyal.js'
 import { OYUN_ADI } from '../lib/wrapped.js'
 import { h } from './sayfalar.js'
 
@@ -77,7 +77,7 @@ const rozetSayi = (n) => (n ? h`<span class="sayac">${n > 99 ? '99+' : n}</span>
  * @param {{ chat, ben, grupAdi, sayac, secili, sag?, cokGrup? }} c
  */
 export function sosyalKabuk(baslik, icerik, c) {
-  const { chat, ben, grupAdi, sayac, secili = '', sag = '', cokGrup = false } = c
+  const { chat, ben, grupAdi, sayac, secili = '', sag = '', cokGrup = false, sorgu = '' } = c
   const menu = (adres, anahtar, ikon, ad, ek = '') =>
     h`<a href="${adres}"${secili === anahtar ? h` class="secili" aria-current="page"` : ''}><span class="ik" aria-hidden="true">${ikon}</span><span class="ad">${ad}</span>${ek}</a>`
   return h`<!doctype html>
@@ -99,7 +99,9 @@ export function sosyalKabuk(baslik, icerik, c) {
 <body class="sosyal" data-grup="${chat}">
 <header class="ust-cubuk">
   <a class="marka" href="${sLink(chat)}">${(grupAdi || 'grup').toLocaleLowerCase('tr')}</a>
+  <form class="ara-kutu" method="get" action="/s/ara" role="search">${gizliGrup(chat)}<input type="search" name="q" value="${secili === 'ara' ? sorgu : ''}" placeholder="Kişi, #etiket ya da gönderi ara" maxlength="80" aria-label="Ara"></form>
   <nav class="ust-ikonlar" aria-label="Kısayollar">
+    <a href="${sLink(chat, '/ara')}" aria-label="Ara" class="ust-ik ara-ik${secili === 'ara' ? ' secili' : ''}">⌕</a>
     <a href="${sLink(chat, '/bildirim')}" aria-label="Bildirimler" class="ust-ik${secili === 'bildirim' ? ' secili' : ''}">◔${rozetSayi(sayac.bildirim)}</a>
     <a href="${sLink(chat, '/mesaj')}" aria-label="Mesajlar" class="ust-ik${secili === 'mesaj' ? ' secili' : ''}">✉${rozetSayi(sayac.dm)}</a>
     <a href="${profilLink(chat, ben.jid)}" aria-label="Profilim" class="ust-ben">${avatar(chat, ben, 'kucuk')}</a>
@@ -109,6 +111,7 @@ export function sosyalKabuk(baslik, icerik, c) {
   <nav class="sol" aria-label="Ana menü">
     <a class="sol-ben" href="${profilLink(chat, ben.jid)}">${avatar(chat, ben)}<span><strong>${adi(ben)}</strong><small>Profili gör</small></span></a>
     ${menu(sLink(chat), 'akis', '▤', 'Haber kaynağı')}
+    ${menu(sLink(chat, '/ara'), 'ara', '⌕', 'Ara')}
     ${menu(sLink(chat, '/mesaj'), 'mesaj', '✉', 'Mesajlar', rozetSayi(sayac.dm))}
     ${menu(sLink(chat, '/bildirim'), 'bildirim', '◔', 'Bildirimler', rozetSayi(sayac.bildirim))}
     ${menu(sLink(chat, '/arkadas'), 'arkadas', '☺', 'Arkadaşlar')}
@@ -133,10 +136,14 @@ export function sosyalKabuk(baslik, icerik, c) {
 }
 
 /** Sağ sütun: gündem, son görülenler, grubun zirvesi. Mesaj içeriği yoktur, yalnızca son görülme. */
-export function sagSutun(chat, uyeler, now = Date.now(), gundem = []) {
+export function sagSutun(chat, uyeler, now = Date.now(), gundem = [], etkinlikler = []) {
   const aktif = uyeler.slice(0, 8)
   const zirve = [...uyeler].sort((a, b) => b.xp - a.xp).slice(0, 5)
-  return h`${gundem.length ? h`<section class="kutu gundem">
+  return h`${etkinlikler.length ? h`<section class="kutu yaklasan">
+  <h2>Yaklaşan etkinlikler</h2>
+  ${etkinlikler.map((e) => h`<a class="mini etkinlik-mini" href="${sLink(chat, '/gonderi', { id: e.id })}">${takvimYapragi(e.zaman)}<span>${e.baslik}<small>${tarih.format(e.zaman)}${e.gelen ? ` · ${e.gelen} kişi geliyor` : ''}</small></span></a>`)}
+</section>` : ''}
+${gundem.length ? h`<section class="kutu gundem">
   <h2>Gündem</h2>
   ${gundem.map((e) => h`<a class="mini" href="${sLink(chat, '/etiket', { ad: e.ad })}"><span>#${e.ad}</span><small>${e.sayi} kişi</small></a>`)}
 </section>` : ''}
@@ -176,7 +183,39 @@ export function paylasKutusu(chat, ben, { hedef = null, yer = '' } = {}) {
       <small class="soluk">Metin kutusuna yazdığın, anketin sorusu olur.</small>
     </div>
   </details>`}
+  ${hedef ? '' : h`<details class="anket-ac etkinlik-ac"><summary>📅 Etkinlik</summary>
+    <div class="anket-girdi">
+      <input name="etkinlik_baslik" maxlength="${ETKINLIK_METIN_AZAMI}" placeholder="Etkinliğin adı (halı saha, doğum günü…)" autocomplete="off">
+      <div class="yan-yana"><input type="date" name="etkinlik_tarih" aria-label="Tarih"><input type="time" name="etkinlik_saat" value="20:00" aria-label="Saat"></div>
+      <input name="etkinlik_yer" maxlength="${ETKINLIK_METIN_AZAMI}" placeholder="Yer (isteğe bağlı)" autocomplete="off">
+      <small class="soluk">"Geliyorum" ya da "Belki" diyenlere başlamadan 1 saat önce bildirim gider.</small>
+    </div>
+  </details>`}
   <div class="paylas-alt">${fotoAlani()}<button class="birincil">Paylaş</button></div>
+</form>`
+}
+
+const AY_KISA = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', month: 'short' })
+const GUN_SAYI = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric' })
+const GUN_AD = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', weekday: 'long' })
+const takvimYapragi = (ms) => h`<span class="takvim" aria-hidden="true"><small>${AY_KISA.format(ms)}</small><b>${GUN_SAYI.format(ms)}</b></span>`
+const KATILIM_DUGME = [['evet', '✓ Geliyorum'], ['belki', '? Belki'], ['hayir', '✕ Gelemem']]
+const KATILIM_AD = { evet: 'Geliyor', belki: 'Belki', hayir: 'Gelemiyor' }
+
+/** Etkinlik kartı: takvim yaprağı, katılım düğmeleri, kimin geldiği. Aynı düğme ikinci kez basılınca seçim kalkar. */
+export function etkinlikCiz(chat, g, uyeler, now = Date.now()) {
+  const e = g.etkinlik
+  const sayilar = KATILIM_DUGME.map(([k]) => e.katilim[k].length)
+  return h`<form class="etkinlik${e.gecti ? ' gecti' : ''}" method="post" action="/s/etkinlik">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}">
+  <div class="etkinlik-ust">${takvimYapragi(e.zaman)}
+    <div><strong>${e.baslik}</strong>
+      <small>${GUN_AD.format(e.zaman)}, ${tarih.format(e.zaman)}${e.yer ? ` · 📍 ${e.yer}` : ''}</small>
+      <small class="soluk">${e.gecti ? 'Etkinlik geçti' : kalanYaz(e.zaman - now)}</small></div>
+  </div>
+  ${e.gecti ? '' : h`<div class="katilim">${KATILIM_DUGME.map(([k, ad], i) => h`<button name="durum" value="${k}" class="${e.benim === k ? 'secili' : ''}">${ad}${sayilar[i] ? h` <b>${sayilar[i]}</b>` : ''}</button>`)}</div>`}
+  ${sayilar.some(Boolean) ? h`<details class="anket-kim"><summary>Kim geliyor</summary>
+    ${KATILIM_DUGME.filter(([k]) => e.katilim[k].length).map(([k]) => h`<p><strong>${KATILIM_AD[k]}:</strong> ${e.katilim[k].map((j) => adi(bul(uyeler, j))).join(', ')}</p>`)}
+  </details>` : ''}
 </form>`
 }
 
@@ -292,6 +331,7 @@ function govde(chat, g, uyeler, ben, now, { ustNot = '', silinebilir = true } = 
   const hedef = g.hedef_jid ? bul(uyeler, g.hedef_jid) : null
   const silebilir = silinebilir && !bot && (g.user_jid === ben.jid || g.hedef_jid === ben.jid)
   return h`${ustNot}
+  ${g.haftanin ? h`<p class="hafta-serit">🏆 Haftanın gönderisi</p>` : ''}
   <header>
     ${bot ? botAvatar : h`<a href="${profilLink(chat, yazan.jid)}">${avatar(chat, yazan)}</a>`}
     <div class="kim">
@@ -305,6 +345,7 @@ function govde(chat, g, uyeler, ben, now, { ustNot = '', silinebilir = true } = 
   ${g.metin ? h`<p class="metin">${metinCiz(chat, g.metin, uyeler)}</p>` : ''}
   ${g.medya ? h`<a class="gorsel" href="${medyaLink(chat, g.medya)}"><img src="${medyaLink(chat, g.medya)}" alt="" loading="lazy"></a>` : ''}
   ${g.anket ? anketCiz(chat, g, uyeler, now) : ''}
+  ${g.etkinlik ? etkinlikCiz(chat, g, uyeler, now) : ''}
   ${g.alinti_id ? alintiKarti(chat, g.alinti, uyeler, now) : ''}
   ${eylemCubugu(chat, g)}
   ${yorumlarCiz(chat, g, uyeler, ben, now)}`
@@ -483,6 +524,9 @@ const BILDIRIM_METNI = {
   yanit: 'yorumuna yanıt verdi.',
   anket_oy: 'anketine oy verdi.',
   yorum_tepki: 'yorumuna tepki verdi.',
+  etkinlik_katil: 'etkinliğine geliyor.',
+  etkinlik_yakin: 'tarafından kurulan etkinlik 1 saat içinde başlıyor. 📅',
+  hafta: 'Gönderin haftanın gönderisi seçildi. 🏆',
 }
 
 export function bildirimSayfasi({ chat, liste, uyeler, now = Date.now() }) {
@@ -494,22 +538,40 @@ export function bildirimSayfasi({ chat, liste, uyeler, now = Date.now() }) {
 <section class="kart liste-kart">
   <h2>Bildirimler</h2>
   ${liste.length ? liste.map((b) => {
-    const u = bul(uyeler, b.kimden)
+    const bot = !b.kimden
+    const u = bot ? BOT : bul(uyeler, b.kimden)
     const adres = b.gonderi_id ? sLink(chat, '/gonderi', { id: b.gonderi_id }) : profilLink(chat, u.jid)
-    return h`<a class="bildirim${b.okundu ? '' : ' yeni'}" href="${adres}">${avatar(chat, u)}<span><strong>${adi(u)}</strong> ${BILDIRIM_METNI[b.tur] ?? ''}<small>${zamanYaz(b.zaman, now)}</small></span></a>`
+    return h`<a class="bildirim${b.okundu ? '' : ' yeni'}" href="${adres}">${bot ? botAvatar : avatar(chat, u)}<span><strong>${bot ? BOT.ad : adi(u)}</strong> ${BILDIRIM_METNI[b.tur] ?? ''}<small>${zamanYaz(b.zaman, now)}</small></span></a>`
   }) : h`<p class="bos">Henüz bildirim yok.</p>`}
 </section>`
 }
 
 // --- DM ------------------------------------------------------------------
 
-export function mesajListesi({ chat, konusmalar, uyeler, ben, now = Date.now() }) {
+const onizlemeYaz = (m) => (m.medya && !m.metin ? '▣ Fotoğraf' : m.metin)
+const grupAvatar = h`<span class="av grup-av" aria-hidden="true">👥</span>`
+
+/** Üye seçme kutuları; ad `uye0…uyeN`, multipart aynı adlı alanların yalnızca ilkini tutar. */
+const uyeSecici = (chat, liste) => h`<div class="uye-sec">${liste.map((u, i) => h`<label>${avatar(chat, u, 'kucuk')}<input type="checkbox" name="uye${i}" value="${u.jid}"><span>${adi(u)}</span></label>`)}</div>`
+
+export function mesajListesi({ chat, konusmalar, sohbetler = [], uyeler, ben, bildirim = null, now = Date.now() }) {
   const yazilabilir = uyeler.filter((u) => u.panelde && u.jid !== ben.jid)
-  return h`<section class="kart liste-kart">
+  // DM'ler ve grup sohbetleri tek listede, son mesaja göre.
+  const satirlar = [
+    ...konusmalar.map((k) => ({ tur: 'dm', zaman: k.son.zaman, k })),
+    ...sohbetler.map((s) => ({ tur: 'sohbet', zaman: s.son?.zaman ?? s.zaman, s })),
+  ].sort((a, b) => b.zaman - a.zaman)
+  return h`${serit(bildirim)}<section class="kart liste-kart">
   <h2>Mesajlar</h2>
-  ${konusmalar.length ? konusmalar.map((k) => {
+  ${satirlar.length ? satirlar.map(({ tur, k, s }) => {
+    if (tur === 'sohbet') {
+      const yazan = s.son?.gonderen ? (s.son.gonderen === ben.jid ? 'Sen: ' : `${adi(bul(uyeler, s.son.gonderen)).split(' ')[0]}: `) : ''
+      return h`<a class="konusma${s.okunmamis ? ' yeni' : ''}" href="${sLink(chat, '/sohbet', { id: s.id })}">${grupAvatar}
+      <span><strong>${s.ad} <small class="soluk">· ${s.kisi} kişi</small></strong><small>${yazan}${s.son ? onizlemeYaz(s.son) : ''}</small></span>
+      <time>${zamanYaz(s.son?.zaman ?? s.zaman, now)}</time>${rozetSayi(s.okunmamis)}</a>`
+    }
     const u = bul(uyeler, k.ile)
-    const onizleme = k.son.medya && !k.son.metin ? '▣ Fotoğraf' : k.son.metin
+    const onizleme = k.son.hikaye_id ? `↩ Hikâyeye: ${k.son.metin}` : onizlemeYaz(k.son)
     return h`<a class="konusma${k.okunmamis ? ' yeni' : ''}" href="${sLink(chat, '/mesaj', { ile: k.ile })}">${avatar(chat, u)}
       <span><strong>${adi(u)}</strong><small>${k.son.gonderen === ben.jid ? 'Sen: ' : ''}${onizleme}</small></span>
       <time>${zamanYaz(k.son.zaman, now)}</time>${rozetSayi(k.okunmamis)}</a>`
@@ -519,19 +581,56 @@ export function mesajListesi({ chat, konusmalar, uyeler, ben, now = Date.now() }
   <h2>Yeni mesaj</h2>
   ${yazilabilir.length ? h`<div class="arkadaslar kucuk">${yazilabilir.map((u) => h`<a class="arkadas" href="${sLink(chat, '/mesaj', { ile: u.jid })}">${avatar(chat, u)}<strong>${adi(u)}</strong></a>`)}</div>`
     : h`<p class="bos">Panelde senden başka kimse yok. Arkadaşların bota özelden <code>.panel kayıt</code> yazınca burada görünür.</p>`}
-</section>`
+</section>
+${yazilabilir.length >= 2 ? h`<details class="kart liste-kart sohbet-kur">
+  <summary>👥 Grup sohbeti kur</summary>
+  <form method="post" action="/s/sohbet-kur">${gizliGrup(chat)}
+    <input name="ad" maxlength="${SOHBET_AD_AZAMI}" placeholder="Sohbetin adı (isteğe bağlı)" autocomplete="off">
+    ${uyeSecici(chat, yazilabilir)}
+    <button class="birincil">Sohbeti kur</button>
+  </form>
+</details>` : ''}`
 }
+
+const tepkiMi = (m) => m.hikaye_id && TEPKILER.includes(m.metin)
+const balonIci = (chat, m) => h`${m.hikaye_id ? h`<small class="hikaye-not">↩ Hikâyeye ${tepkiMi(m) ? 'tepki' : 'yanıt'}</small>` : ''}
+    ${m.medya ? h`<a href="${medyaLink(chat, m.medya)}"><img src="${medyaLink(chat, m.medya)}" alt="" loading="lazy"></a>` : ''}
+    ${m.metin ? h`<p${tepkiMi(m) ? h` class="buyuk-emoji"` : ''}>${m.metin}</p>` : ''}<time>${saatBicimi.format(m.zaman)}</time>`
 
 export function dmBalonlari(chat, mesajlar, ben) {
-  return mesajlar.map((m) => h`<div class="dm ${m.gonderen === ben.jid ? 'benim' : 'onun'}" data-id="${m.id}">
-    ${m.medya ? h`<a href="${medyaLink(chat, m.medya)}"><img src="${medyaLink(chat, m.medya)}" alt="" loading="lazy"></a>` : ''}
-    ${m.metin ? h`<p>${m.metin}</p>` : ''}<time>${saatBicimi.format(m.zaman)}</time></div>`)
+  return mesajlar.map((m) => h`<div class="dm ${m.gonderen === ben.jid ? 'benim' : 'onun'}" data-id="${m.id}">${balonIci(chat, m)}</div>`)
 }
 
-export function sohbetSayfasi({ chat, ben, karsi, mesajlar }) {
+/** Grup sohbeti balonları: başkasının mesajında ad yazar, sistem notu ortada durur. */
+export function sohbetBalonlari(chat, mesajlar, ben, uyeler) {
+  return mesajlar.map((m) => {
+    if (!m.gonderen) return h`<p class="sistem-not" data-id="${m.id}">${m.metin}</p>`
+    const benim = m.gonderen === ben.jid
+    return h`<div class="dm ${benim ? 'benim' : 'onun'}" data-id="${m.id}">${benim ? '' : h`<a class="yazan" href="${profilLink(chat, m.gonderen)}">${adi(bul(uyeler, m.gonderen))}</a>`}${balonIci(chat, m)}</div>`
+  })
+}
+
+/**
+ * Grup sohbetinde benim son mesajımı okuyanlar ("Görüldü: Ali, Ayşe"). Son mesajın benim olup
+ * olmadığına bakılmaz: betik metni yalnızca son balon benimken gösterir.
+ */
+export function gorenlerMetni(sohbet, ben, uyeler) {
+  const benimSon = sohbet?.benimSon ?? 0
+  if (!benimSon) return ''
+  const gorenler = sohbet.uyeler.filter((u) => u.user_jid !== ben.jid && u.son_okunan >= benimSon)
+  if (!gorenler.length) return 'Gönderildi'
+  return gorenler.length === sohbet.uyeler.length - 1 ? 'Herkes gördü' : `Görüldü: ${gorenler.map((u) => adi(bul(uyeler, u.user_jid)).split(' ')[0]).join(', ')}`
+}
+
+const yaziyorSatiri = h`<p class="yaziyor" aria-live="polite"></p>`
+
+export function sohbetSayfasi({ chat, ben, karsi, mesajlar, goruldu = 0 }) {
+  const son = mesajlar.at(-1)
+  const durum = son?.gonderen === ben.jid ? (goruldu >= son.id ? 'Görüldü' : 'Gönderildi') : ''
   return h`<section class="kart sohbet">
   <header><a class="geri" href="${sLink(chat, '/mesaj')}" aria-label="Mesajlara dön">‹</a>${avatar(chat, karsi)}<a href="${profilLink(chat, karsi.jid)}"><strong>${adi(karsi)}</strong></a></header>
-  <div class="dm-akis" data-ile="${karsi.jid}" data-son="${mesajlar.at(-1)?.id ?? 0}">${mesajlar.length ? dmBalonlari(chat, mesajlar, ben) : h`<p class="bos">İlk mesajı sen yaz.</p>`}</div>
+  <div class="dm-akis" data-ile="${karsi.jid}" data-son="${son?.id ?? 0}">${mesajlar.length ? dmBalonlari(chat, mesajlar, ben) : h`<p class="bos">İlk mesajı sen yaz.</p>`}</div>
+  <p class="dm-durum">${durum}</p>${yaziyorSatiri}
   ${karsi.panelde ? h`<form class="dm-yaz" method="post" action="/s/mesaj-yaz" enctype="multipart/form-data">
     ${gizliGrup(chat)}<input type="hidden" name="ile" value="${karsi.jid}">
     ${fotoAlani('foto', '')}
@@ -541,18 +640,63 @@ export function sohbetSayfasi({ chat, ben, karsi, mesajlar }) {
 </section>`
 }
 
+export function grupSohbetSayfasi({ chat, ben, sohbet, mesajlar, uyeler, bildirim = null }) {
+  const uyeJidler = sohbet.uyeler.map((u) => u.user_jid)
+  const eklenebilir = uyeler.filter((u) => u.panelde && !uyeJidler.includes(u.jid))
+  const son = mesajlar.at(-1)
+  return h`${serit(bildirim)}<section class="kart sohbet">
+  <header><a class="geri" href="${sLink(chat, '/mesaj')}" aria-label="Mesajlara dön">‹</a>${grupAvatar}
+    <span class="sohbet-baslik"><strong>${sohbet.ad}</strong><small>${uyeJidler.map((j) => (j === ben.jid ? 'Sen' : adi(bul(uyeler, j)).split(' ')[0])).join(', ')}</small></span></header>
+  <div class="dm-akis grup-akis" data-sohbet="${sohbet.id}" data-son="${son?.id ?? 0}">${sohbetBalonlari(chat, mesajlar, ben, uyeler)}</div>
+  <p class="dm-durum">${son?.gonderen === ben.jid ? gorenlerMetni(sohbet, ben, uyeler) : ''}</p>${yaziyorSatiri}
+  <form class="dm-yaz" method="post" action="/s/sohbet-yaz" enctype="multipart/form-data">
+    ${gizliGrup(chat)}<input type="hidden" name="id" value="${sohbet.id}">
+    ${fotoAlani('foto', '')}
+    <input name="metin" maxlength="1000" placeholder="Gruba yaz…" autocomplete="off">
+    <button class="birincil">Gönder</button>
+  </form>
+</section>
+<details class="kart liste-kart sohbet-ayar">
+  <summary>⚙ Sohbet ayarları</summary>
+  ${eklenebilir.length ? h`<form method="post" action="/s/sohbet-ekle">${gizliGrup(chat)}<input type="hidden" name="id" value="${sohbet.id}">
+    <h3>Kişi ekle</h3>${uyeSecici(chat, eklenebilir)}<button class="dugme">Ekle</button></form>` : ''}
+  <form method="post" action="/s/sohbet-cik">${gizliGrup(chat)}<input type="hidden" name="id" value="${sohbet.id}"><button class="dugme tehlike">Sohbetten ayrıl</button></form>
+</details>`
+}
+
+// --- Arama -----------------------------------------------------------------
+
+export function araSayfasi({ chat, ben, sorgu, sonuc, uyeler, now = Date.now() }) {
+  const temiz = sorgu.trim()
+  const bos = !sonuc.kisiler.length && !sonuc.etiketler.length && !sonuc.gonderiler.length
+  return h`<form class="kart ara-buyuk" method="get" action="/s/ara" role="search">${gizliGrup(chat)}
+  <input type="search" name="q" value="${sorgu}" placeholder="Kişi, #etiket ya da gönderi ara" maxlength="80" autofocus aria-label="Ara"><button class="birincil">Ara</button>
+</form>
+${temiz.length < 2 ? h`<p class="kart bos">En az iki harf yaz. Türkçe harf farkı önemli değil: "sukru" da Şükrü'yü bulur.</p>`
+  : bos ? h`<p class="kart bos">"${temiz}" için bir şey bulunamadı.</p>` : h`
+${sonuc.kisiler.length ? h`<section class="kart liste-kart"><h2>Kişiler</h2>
+  <div class="arkadaslar kucuk">${sonuc.kisiler.map((u) => h`<a class="arkadas" href="${profilLink(chat, u.jid)}">${avatar(chat, u)}<strong>${adi(u)}</strong></a>`)}</div></section>` : ''}
+${sonuc.etiketler.length ? h`<section class="kart liste-kart"><h2>Etiketler</h2>
+  ${sonuc.etiketler.map((e) => h`<a class="mini" href="${sLink(chat, '/etiket', { ad: e.ad })}"><span>#${e.ad}</span><small>${e.sayi} gönderi</small></a>`)}</section>` : ''}
+${sonuc.gonderiler.length ? h`<h2 class="bolum-baslik">Gönderiler</h2>${sonuc.gonderiler.map((g) => gonderiCiz(chat, g, uyeler, ben, now))}` : ''}`}`
+}
+
 // --- Hikâye ----------------------------------------------------------------
 
-export function hikayeSayfasi({ chat, hikaye, sahip, kendim, izleyenler, uyeler, sonraki, now = Date.now() }) {
+export function hikayeSayfasi({ chat, hikaye, sahip, kendim, izleyenler, uyeler, sonraki, bildirim = null, now = Date.now() }) {
   const sonrakiAdres = sonraki ? sLink(chat, '/hikaye', { id: sonraki }) : sLink(chat)
-  return h`<section class="hikaye-goster" data-sonraki="${sonrakiAdres}">
+  return h`${serit(bildirim)}<section class="hikaye-goster" data-sonraki="${sonrakiAdres}">
   <div class="hikaye-cubuk"><span></span></div>
   <header>${avatar(chat, sahip, 'kucuk')}<strong>${adi(sahip)}</strong><small>${zamanYaz(hikaye.zaman, now)}</small>
     <a class="kapat" href="${sLink(chat)}" aria-label="Kapat">✕</a></header>
   <img src="${sLink(chat, '/hikaye-medya', { id: hikaye.id })}" alt="">
   ${hikaye.metin ? h`<p class="hikaye-metin">${hikaye.metin}</p>` : ''}
-  ${kendim ? h`<details class="izleyenler"><summary>${izleyenler.length} kişi gördü</summary>${izleyenler.map((i) => h`<span>${adi(bul(uyeler, i.user_jid))}</span>`)}</details>`
-    : h`<p class="tek-sefer">Bu hikâye sana yalnızca bir kez gösterilir.</p>`}
+  ${kendim ? h`<details class="izleyenler"><summary>${izleyenler.length} kişi gördü${izleyenler.some((i) => i.tepki) ? ` · ${izleyenler.map((i) => i.tepki).join('')}` : ''}</summary>${izleyenler.map((i) => h`<span>${adi(bul(uyeler, i.user_jid))}${i.tepki ? ` ${i.tepki}` : ''}</span>`)}</details>`
+    : h`<p class="tek-sefer">Bu hikâye sana yalnızca bir kez gösterilir.</p>
+  <form class="hikaye-yanit" method="post" action="/s/hikaye-yanit">${gizliGrup(chat)}<input type="hidden" name="id" value="${hikaye.id}"><input type="hidden" name="sonraki" value="${sonraki}">
+    <div class="hikaye-tepkiler">${TEPKILER.map((t) => h`<button name="tepki" value="${t}" aria-label="${t} tepkisi">${t}</button>`)}</div>
+    <div class="hikaye-yaz"><input name="metin" maxlength="1000" placeholder="Yanıt yaz…" autocomplete="off"><button class="birincil">Gönder</button></div>
+  </form>`}
   <a class="sonraki" href="${sonrakiAdres}">${sonraki ? 'Sonraki ›' : 'Akışa dön'}</a>
 </section>`
 }

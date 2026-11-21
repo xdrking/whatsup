@@ -2,6 +2,7 @@
 import 'dotenv/config'
 import path from 'node:path'
 import logger from '../lib/logger.js'
+import { etkinlikHatirlat } from '../lib/sosyal.js'
 import { sunucuKur } from './sunucu.js'
 import { DATA_DIR, veriAc } from './veri.js'
 import { yedekAl } from './yedek.js'
@@ -29,6 +30,15 @@ async function yedekle() {
 
 await yedekle()
 setInterval(yedekle, SAAT_MS)
+
+// Bot kendiliğinden yazmadığı için etkinlik hatırlatmasını panel atar (bildirim + push).
+setInterval(() => {
+  try {
+    etkinlikHatirlat()
+  } catch (err) {
+    logger.error({ err }, 'Etkinlik hatırlatması yazılamadı')
+  }
+}, 5 * 60 * 1000)
 
 sunucuKur({ sifreHash, veri, yedekKlasoru }).listen(port, '127.0.0.1', () => {
   logger.info({ port }, 'Panel hazır')

@@ -1,4 +1,4 @@
-// Sosyal bölümün tarayıcı tarafı (Faz 66, 67). Betik çalışmazsa her form yine normal
+// Sosyal bölümün tarayıcı tarafı (Faz 66, 67, 70). Betik çalışmazsa her form yine normal
 // gönderilir. Olaylar belgeye bağlıdır: kaydırınca gelen gönderilerde de çalışsın.
 (() => {
   'use strict'
@@ -8,6 +8,8 @@
   const SAYAC_ARALIGI = 30000
   const YENI_ARALIGI = 45000
   const HIKAYE_SURESI = 6000
+  // Sunucu "yazıyor"u son sinyalden 5 sn sonra düşürür; sinyal bundan sık gider.
+  const YAZIYOR_ARALIGI = 2500
   document.body.classList.add('js')
 
   if ('serviceWorker' in navigator) {
@@ -97,11 +99,11 @@
       return
     }
 
-    // Anket oyu: sunucu anketin güncel HTML'ini döner.
-    if (form.matches('.anket')) {
+    // Anket oyu ve etkinlik katılımı: sunucu kartın güncel HTML'ini döner.
+    if (form.matches('.anket, .etkinlik')) {
       e.preventDefault()
       const veri = new URLSearchParams(new FormData(form))
-      if (e.submitter?.name === 'secim') veri.set('secim', e.submitter.value)
+      if (e.submitter?.name) veri.set(e.submitter.name, e.submitter.value)
       try {
         const yanit = await istek(form.action, { method: 'POST', body: veri })
         if (!yanit.ok && yanit.status !== 409) throw new Error(String(yanit.status))
@@ -251,26 +253,38 @@
     }, YENI_ARALIGI)
   }
 
-  // DM: yeni mesajları birkaç saniyede bir sorar; gönderim sayfayı yenilemez.
+  // DM ve grup sohbeti: yeni mesajları, kimin yazdığını ve görüldü durumunu birkaç saniyede bir
+  // sorar; gönderim sayfayı yenilemez.
   const dmAkis = document.querySelector('.dm-akis')
   if (dmAkis) {
+    const sohbet = dmAkis.dataset.sohbet || ''
+    const kanal = sohbet ? { sohbet } : { ile: dmAkis.dataset.ile }
+    const durumYeri = document.querySelector('.dm-durum')
+    const yaziyorYeri = document.querySelector('.yaziyor')
     const asagi = () => { dmAkis.scrollTop = dmAkis.scrollHeight }
     asagi()
+    const sonBalonBenim = () => [...dmAkis.querySelectorAll('[data-id]')].at(-1)?.classList.contains('benim')
     let sorguda = false
     const yokla = async () => {
       if (sorguda || document.hidden) return
       sorguda = true
       try {
-        const p = new URLSearchParams({ grup, ile: dmAkis.dataset.ile, son: dmAkis.dataset.son })
-        const yanit = await istek(`/s/mesaj-yeni?${p}`)
-        const html = yanit.ok ? await yanit.text() : ''
-        if (html.trim()) {
+        const p = new URLSearchParams({ grup, son: dmAkis.dataset.son, ...(sohbet ? { id: sohbet } : kanal) })
+        const yanit = await istek(`${sohbet ? '/s/sohbet-yeni' : '/s/mesaj-yeni'}?${p}`)
+        if (!yanit.ok) return
+        const veri = await yanit.json()
+        if (veri.html.trim()) {
           dmAkis.querySelector('.bos')?.remove()
-          const yeniler = [...parca(html).children].filter((d) => !dmAkis.querySelector(`[data-id="${d.dataset.id}"]`))
+          const yeniler = [...parca(veri.html).children].filter((d) => !dmAkis.querySelector(`[data-id="${d.dataset.id}"]`))
           dmAkis.append(...yeniler)
           const son = yeniler.at(-1)
           if (son) dmAkis.dataset.son = son.dataset.id
           asagi()
+        }
+        if (yaziyorYeri) yaziyorYeri.textContent = veri.yaziyor
+        if (durumYeri) {
+          const benim = sonBalonBenim()
+          durumYeri.textContent = !benim ? '' : sohbet ? veri.gorenler : Number(veri.goruldu) >= Number(dmAkis.dataset.son) ? 'Görüldü' : 'Gönderildi'
         }
       } catch (err) {
         console.warn('Mesajlar alınamadı', err)
@@ -281,6 +295,15 @@
     setInterval(yokla, DM_ARALIGI)
 
     const form = document.querySelector('.dm-yaz')
+    // Yazarken karşı tarafa "yazıyor…" sinyali; boş kutu sinyal göndermez.
+    let sonSinyal = 0
+    form?.querySelector('input[name=metin]')?.addEventListener('input', (e) => {
+      const simdi = Date.now()
+      if (!e.target.value.trim() || simdi - sonSinyal < YAZIYOR_ARALIGI) return
+      sonSinyal = simdi
+      istek('/s/yaziyor', { method: 'POST', body: new URLSearchParams({ grup, ...kanal }) })
+        .catch((err) => console.warn('Yazıyor sinyali gitmedi', err))
+    })
     form?.addEventListener('submit', async (e) => {
       e.preventDefault()
       const veri = new FormData(form)
@@ -292,6 +315,7 @@
         const yanit = await istek(form.action, { method: 'POST', body: veri })
         if (!yanit.ok) throw new Error(String(yanit.status))
         form.reset()
+        sonSinyal = 0
         form.querySelector('.foto-sec')?.classList.remove('secildi')
         await yokla()
       } catch (err) {
@@ -313,6 +337,9 @@
       gec()
     })
     hikaye.querySelector('.izleyenler')?.addEventListener('toggle', () => clearTimeout(zamanlayici))
+    // Yanıt yazan ya da tepki seçen kişinin elinden hikâye kaçmasın.
+    const yanitFormu = hikaye.querySelector('.hikaye-yanit')
+    for (const olay of ['focusin', 'pointerdown']) yanitFormu?.addEventListener(olay, () => clearTimeout(zamanlayici))
   }
 
   // --- Web Push ve kurulum (Faz 67, 68) -------------------------------------------
