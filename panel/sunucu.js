@@ -15,6 +15,8 @@ import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisi
 import { sonYedek } from './yedek.js'
 import { sosyalIsle, sosyalMotoru } from './sosyal.js'
 import { ikonlar, MANIFEST } from './pwa.js'
+import { pushMotoru } from './push.js'
+import { bildirimKancasiKur } from '../lib/sosyal.js'
 
 const CEREZ = '__Host-panel'
 const AZAMI_GOVDE = 1024
@@ -68,7 +70,8 @@ function bekleMetni(ms) {
 }
 
 /** @param {{ sifreHash: string, veri: object, yedekKlasoru: string }} ayar */
-export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru() }) {
+export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru(), push = pushMotoru() }) {
+  bildirimKancasiKur(push)
   const sinir = denemeSiniri()
   const oturum = oturumlar()
   // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.

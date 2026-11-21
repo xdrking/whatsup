@@ -1,6 +1,6 @@
 // Sosyal bölümün servis işçisi (Faz 66). Yalnızca stil, betik ve ikonu önbellekler;
 // sayfalar kişiye özel olduğu için her zaman ağdan gelir, ağ yoksa çevrimdışı notu çıkar.
-const ONBELLEK = 'grup-v1'
+const ONBELLEK = 'grup-v2'
 const STATIK = ['/ikon-192.png']
 
 self.addEventListener('install', (e) => {
@@ -36,4 +36,36 @@ self.addEventListener('fetch', (e) => {
   if (istek.mode === 'navigate') {
     e.respondWith(fetch(istek).catch(() => new Response(CEVRIMDISI, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })))
   }
+})
+
+// Web Push (Faz 67): push gövdesiz gelir, metin panelden çekilir. Oturum yoksa ya da
+// istek düşerse genel bir bildirim gösterilir: tarayıcı sessiz push'u cezalandırır.
+self.addEventListener('push', (e) => {
+  e.waitUntil((async () => {
+    let ozet = { baslik: 'Yeni bildirim', metin: 'Açıp bak.', adres: '/s' }
+    try {
+      const yanit = await fetch('/s/push-ozet', { credentials: 'same-origin', cache: 'no-store' })
+      if (yanit.ok && (yanit.headers.get('content-type') || '').includes('json')) ozet = await yanit.json()
+    } catch (err) {
+      console.warn('Bildirim özeti alınamadı', err)
+    }
+    await self.registration.showNotification(ozet.baslik, {
+      body: ozet.metin, icon: '/ikon-192.png', badge: '/ikon-192.png',
+      tag: ozet.etiket || 'genel', renotify: true, data: { adres: ozet.adres || '/s' },
+    })
+  })())
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const adres = new URL(e.notification.data?.adres || '/s', location.origin).href
+  e.waitUntil((async () => {
+    const pencereler = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    const acik = pencereler.find((p) => p.url.startsWith(location.origin))
+    if (acik) {
+      await acik.focus()
+      return acik.navigate(adres)
+    }
+    return self.clients.openWindow(adres)
+  })())
 })

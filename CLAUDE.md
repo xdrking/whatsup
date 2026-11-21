@@ -344,7 +344,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 64 (tamam):** `.wrapped`. Ayrıntı aşağıda.
 - **Faz 65 (tamam):** `.poker`. Ayrıntı aşağıda.
 - **Faz 66 (tamam):** panelde sosyal bölüm ve PWA. Ayrıntı aşağıda.
-- **Faz 67+:** yeni komutlar, her biri ayrı adım
+- **Faz 67 (tamam):** Web Push, paylaşım ve alıntı, #etiket ve gündem, emoji tepkileri, akış iyileştirmeleri. Ayrıntı aşağıda.
+- **Faz 68+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1374,6 +1375,22 @@ sosyal_durt(chat_jid, kimden, kime, zaman)        sosyal_xp(chat_jid, user_jid, 
 - **Tasarım:** eski Facebook düzeni (sol menü, orta akış, sağda son görülenler ve zirve), lacivert üst çubuk, kağıt zemin, ince çerçeve, 4 px köşe; gradyan, cam efekti ve gölge yok. 1000 px altında sağ sütun, 720 px altında sol menü kalkar, alt sekme çıkar. Koyu tema `prefers-color-scheme` iledir.
 - Betik yoksa her form normal gönderilir (beğeni ve DM sayfayı yeniler). İki yazma arası 1,5 sn'dir (`sosyalMotoru`).
 
+### Faz 67 — Web Push, paylaşım, etiket, tepki
+
+```
+sosyal_gonderi.alinti_id   paylaşılan ya da alıntılanan gönderi (0 = yok)
+sosyal_begeni.tepki        TEPKILER'den biri; eski beğeniler ❤️
+sosyal_push(endpoint, numara, lid, zaman)
+```
+
+- **Web Push (`panel/push.js`), paket yok:** push **gövdesiz** gider. Şifreli payload (RFC 8291) yazılmadı, yalnızca VAPID imzası (ES256, `node:crypto`) atılır. Telefon uyanınca servis işçisi metni `/s/push-ozet`'ten çerezle çeker. DM metni bildirimde gösterilmez, yalnızca "X sana mesaj gönderdi" yazar: kilit ekranında okunmasın. VAPID anahtarı ilk kullanımda üretilir, `ayar.vapid_ozel`'e (JWK) yazılır. Silinirse bütün abonelikler geçersiz olur, herkes bildirimi yeniden açar. `sub`, abonelik anında `Host`'tan yazılan `ayar.panel_adres`'tir.
+- **Push SSRF koruması:** abonelik adresini kullanıcı verir, sunucu o adrese istek atar. Yalnızca https ve bilinen push servisleri kabul edilir (`endpointGecerli`: FCM, Mozilla, Apple, Windows). Bu liste genişletilirken iç ağ adresi kabul edilmemeli.
+- **Kanca:** `lib/sosyal.js` her bildirim ve DM yazıldığında `bildirimKancasi`'nı çağırır. Kancayı yalnızca panel kurar (`sunucuKur`), bot süreci push atmaz: bot gönderileri bildirim değildir. Aynı kişiye 2 sn içinde gelenler birleşir, aynı cihaza 20 sn'de bir push gider. Servis 404 ya da 410 dönerse abonelik silinir. Abonelik cihaza aittir, kişinin bütün gruplarına bağlanır (numara ya da lid). iPhone'da yalnızca ana ekrana eklenmiş uygulamada çalışır (iOS 16.4+).
+- **Paylaşım (retweet):** metinsiz ve fotosuz alıntıdır, kişi başı birdir, ikinci kez istenince geri alınır, XP vermez. Paylaşımın paylaşımı özgüne bağlanır (`ozgunGonderi`). Akışta özgün gönderi "↻ X paylaştı" notuyla görünür, tepki ve yorum özgüne gider. Özgün silinince alıntı "silinmiş" yazar.
+- **#etiket:** `hashtagler()` harf, rakam ve `_` alır, Türkçe küçük harfe çevirir. `&#39;` gibi HTML varlıkları etiket sayılmaz. Etiket sayfası son 1000 etiketli gönderiyi süzer. Gündem son 7 gündür, aynı kişinin tekrarı bir sayılır: tek kişi spamla gündem yapmasın.
+- **Tepki:** kişi başı tek tepki. Başka tepki değiştirir, aynısı kaldırır. Bildirim yalnızca ilk tepkide düşer. Seçici `<details>`'tir, betik gerekmez. Betik varsa sunucu güncel `eylemCubugu` HTML'ini döner, betik çubuğu değiştirir.
+- **Akış:** "Daha eski" bağlantısı görünür olunca sonraki sayfa yerinde yüklenir (`/s/akis-parca`, `X-Sonraki` başlığı). 45 sn'de bir yeni gönderi sorulur (`/s/yeni-sayi`, kişinin kendi gönderisi sayılmaz). Yorum sayfa yenilemeden eklenir. Fotoğraf büyüteçte açılır, çift dokunuş ❤️ verir. Yazı kutusu uzar, Ctrl+Enter gönderir. Sonuç şeridi 4 sn sonra kaybolur. `prefers-reduced-motion`'da animasyon yoktur.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1505,3 +1522,4 @@ sosyal_durt(chat_jid, kimden, kime, zaman)        sosyal_xp(chat_jid, user_jid, 
 113. `.wrapped` → kişisel kart görseli gelir, sıralama ve kişilik yazar; `.wrapped grup` → grup kartı, kimse etiketlenmez; sıradan üye `.wrapped @bot` → "gizli"
 114. `.poker 1000` → lobi; iki kişi `katıl`, kuran `başla` → herkese kartlar özelden gelir, masa mesajı sırayı etiketler; sırası olmayan `gör` → "Sıra sende değil"; `artır 500`, `hepsi`, `çekil` çalışır; el sonunda showdown ve pot yazılır; `kalk` → el bitince çip cüzdana döner; masa açıkken `.sus` → herkesin çipi iade edilir (`.profil`); özelden `.poker` → kartlar yeniden gelir
 115. Panelde oyuncu girişi → haber kaynağı açılır, solda "Oyunlar" kumarhaneye gider, kumarhanede "Akışa dön" geri getirir; foto ile gönderi → akışta görünür, telefonla çekilmiş dikey foto yan dönmez, ilk 3 gönderi XP verir; beğeni sayfa yenilemeden değişir; `@Ad` yazılan kişiye bildirim düşer; başkasının profiline yazınca "A ▸ B" görünür; DM iki tarayıcıda birkaç saniyede düşer; hikâyeyi başkası bir kez görür, ikinci açılışta "zaten gördün"; telefonda alt sekme çıkar, Chrome/Safari'de "Ana ekrana ekle" uygulama gibi açılır; `.wordle` bilinince akışta Grup Bülteni gönderisi çıkar
+116. Bildirimler sayfasında "Aç" → izin sorulur; başka hesaptan beğeni ya da DM gelince telefona bildirim düşer, tıklayınca ilgili sayfa açılır, DM bildiriminde mesaj metni yok; iPhone'da önce Ana Ekrana Ekle. Bir gönderide ☺ → 6 tepki, seçilen tepki çubukta görünür, aynısı kaldırır; ↻ Paylaş → akışta "Sen paylaştın", tekrar basınca geri alınır; ❝ Alıntıla → yorumlu paylaşım, içinde özgün kart; `#halısaha` yazılan gönderide etiket tıklanır, etiket sayfası açılır, sağda Gündem çıkar; aşağı kaydırınca eski gönderiler kendiliğinden gelir; fotoğrafa tek dokunuş büyütür, çift dokunuş ❤️ verir

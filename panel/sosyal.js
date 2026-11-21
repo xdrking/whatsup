@@ -7,6 +7,7 @@ import * as S from '../lib/sosyal.js'
 import { getBusiestHour, getDailyStreak, getStats, oyunTutari, seviye, xpAyarla } from '../lib/stats.js'
 import { kisiWrapped } from '../lib/wrapped.js'
 import { hamGovde, multipartCoz } from './multipart.js'
+import { endpointGecerli, panelAdresiKaydet, vapid } from './push.js'
 import * as P from './sosyalSayfalar.js'
 
 const ARALIK_MS = 1500
@@ -86,8 +87,11 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
   const id = Number(al('id')) || 0
 
   if (yol === '/s/begen') {
-    const s = S.begen(chat, ben, id, now)
-    if (istemci) return gonder(res, s ? 200 : 404, s ? `${s.begendi ? 1 : 0}:${s.sayi}` : '', DUZ)
+    const s = S.begen(chat, ben, id, now, al('tepki'))
+    if (istemci) {
+      const [g] = s ? S.akis(chat, ben, { id, adet: 1 }) : []
+      return gonder(res, g ? 200 : 404, g ? P.eylemCubugu(chat, g).metin : '')
+    }
     return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${id}`)
   }
 
@@ -98,16 +102,27 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
     const medya = await motor.fotoKaydet(form.dosya)
     if (medya === null) motor.bildir(kim, 'Bu dosya bir fotoğraf değil.', true)
     else {
-      const s = S.gonderiYaz({ chatJid: chat, userJid: ben, hedefJid: al('hedef'), metin: al('metin'), medya, now, xpVer })
+      const alintiId = Number(al('alinti')) || 0
+      const s = S.gonderiYaz({ chatJid: chat, userJid: ben, hedefJid: al('hedef'), metin: al('metin'), medya, alintiId, now, xpVer })
       if (s.hata) {
         if (medya) S.medyaSil(medya)
         motor.bildir(kim, s.hata, true)
-      } else if (s.xp) motor.bildir(kim, `Paylaşıldı. +${sayi.format(s.xp)} XP`)
+      } else if (s.geriAlindi) motor.bildir(kim, 'Paylaşımı geri aldın.')
+      else if (s.xp) motor.bildir(kim, `Paylaşıldı. +${sayi.format(s.xp)} XP`)
+      else if (alintiId) motor.bildir(kim, 'Paylaşıldı.')
+      // Düz paylaşım kişiyi olduğu yerde bırakır, alıntı akışa döner.
+      if (alintiId && !al('metin').trim() && !medya) return yonlendir(res, `${geriAdres(req, P.sLink(chat))}#g${alintiId}`)
     }
     return yonlendir(res, don ? P.sLink(chat, '/profil', { id: don }) : P.sLink(chat))
   }
   if (yol === '/s/yorum') {
-    S.yorumYaz(chat, ben, id, al('metin'), now)
+    const y = S.yorumYaz(chat, ben, id, al('metin'), now)
+    if (istemci) {
+      const [g] = y ? S.akis(chat, ben, { id, adet: 1 }) : []
+      if (!g) return gonder(res, 404, '')
+      const uyeler = S.uyeler(chat)
+      return gonder(res, 200, P.yorumCiz(chat, g, y, uyeler, uyeler.find((u) => u.jid === ben) ?? { jid: ben }, now).metin)
+    }
     return yonlendir(res, `${geriAdres(req, P.sLink(chat, '/gonderi', { id }))}#g${id}`)
   }
   if (yol === '/s/sil') {
@@ -175,6 +190,29 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
   const cokGrup = hesaplar.length > 1
   const now = Date.now()
 
+  // Web Push (Faz 67): abonelik cihaza aittir, gruba değil.
+  if (yontem === 'POST' && (url.pathname === '/s/push-kayit' || url.pathname === '/s/push-sil')) {
+    const form = await ortak.govdeOku(req, 2048)
+    const endpoint = form?.get('endpoint') ?? ''
+    if (!endpointGecerli(endpoint)) return gonder(res, 400, 'Geçersiz abonelik.', DUZ), true
+    if (url.pathname === '/s/push-sil') S.pushSil(endpoint)
+    else {
+      S.pushKaydet({ endpoint, numara: hesaplar[0].numara, lid: hesaplar[0].lid, now })
+      // VAPID'in `sub` alanı panelin kendi adresidir; nginx Host'u ve https'i verir.
+      if (req.headers.host) panelAdresiKaydet(`https://${req.headers.host}`)
+    }
+    gonder(res, 204, '')
+    return true
+  }
+  if (yontem === 'GET' && url.pathname === '/s/push-anahtar') {
+    gonder(res, 200, vapid().acik, DUZ)
+    return true
+  }
+  if (yontem === 'GET' && url.pathname === '/s/push-ozet') {
+    gonder(res, 200, JSON.stringify(pushOzeti(hesaplar, ortak.grupAdlari())), { 'Content-Type': 'application/json; charset=utf-8' })
+    return true
+  }
+
   if (yontem === 'POST') {
     await postIsle({ req, res, yol: url.pathname, hesapBul, ortak, motor, now })
     return true
@@ -215,8 +253,21 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
     return true
   }
 
+  if (url.pathname === '/s/akis-parca') {
+    const etiket = url.searchParams.get('ad')
+    const once = Number(url.searchParams.get('once')) || 0
+    const gonderiler = etiket ? S.etiketAkisi(chat, kim.user, etiket, { once }) : S.akis(chat, kim.user, { once, kisi: url.searchParams.get('kisi') ?? '' })
+    const sonraki = gonderiler.length >= S.AKIS_SAYFA ? gonderiler.at(-1).id : 0
+    gonder(res, 200, gonderiler.map((g) => P.gonderiCiz(chat, g, uyeler, ben, now).metin).join(''), { 'X-Sonraki': String(sonraki) })
+    return true
+  }
+  if (url.pathname === '/s/yeni-sayi') {
+    gonder(res, 200, String(S.yeniGonderiSayisi(chat, Number(url.searchParams.get('son')) || 0, kim.user)), DUZ)
+    return true
+  }
+
   const grupAdi = ortak.grupAdlari().get(chat) ?? ''
-  const sayfa = (baslik, icerik, secili, sag = P.sagSutun(chat, uyeler, now)) => {
+  const sayfa = (baslik, icerik, secili, sag = P.sagSutun(chat, uyeler, now, S.gundem(chat, now))) => {
     gonder(res, 200, P.sosyalKabuk(baslik, icerik, { chat, ben, grupAdi, sayac: S.sayaclar(chat, kim.user), secili, sag, cokGrup }))
     return true
   }
@@ -241,6 +292,17 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
         wrapped: kisiWrapped(chat, kisi.jid, now),
         gonderiler: S.akis(chat, kim.user, { kisi: kisi.jid }), uyeler, bildirim: bildirim(), now,
       }), kisi.jid === ben.jid ? 'profil' : '')
+    }
+    case '/s/etiket': {
+      const etiket = (url.searchParams.get('ad') ?? '').toLocaleLowerCase('tr').slice(0, 40)
+      const gonderiler = S.etiketAkisi(chat, kim.user, etiket, { once: Number(url.searchParams.get('once')) || 0 })
+      return sayfa(`#${etiket}`, P.etiketSayfasi({ chat, ben, etiket, gonderiler, uyeler, now }), '')
+    }
+    case '/s/alinti': {
+      const [g] = S.akis(chat, kim.user, { id: Number(url.searchParams.get('id')) || -1, adet: 1 })
+      // Düz paylaşım alıntılanırsa özgün gönderi alıntılanır.
+      const hedef = g && g.alinti_id && !g.metin && !g.medya && g.alinti && !g.alinti.silindi ? g.alinti : g
+      return sayfa('Alıntıla', P.alintiSayfasi({ chat, ben, gonderi: hedef, uyeler, now }), '')
     }
     case '/s/ayar':
       return sayfa('Profili düzenle', P.ayarSayfasi({ chat, profil: S.profilOku(chat, kim.user), bildirim: bildirim() }), 'ayar')
@@ -278,5 +340,25 @@ export async function sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor
     default:
       yonlendir(res, P.sLink(chat))
       return true
+  }
+}
+
+const OZET_METNI = {
+  begeni: 'gönderine tepki verdi', yorum: 'gönderine yorum yaptı', etiket: 'seni etiketledi', duvar: 'duvarına yazdı',
+  durt: 'seni dürttü', paylasim: 'gönderini paylaştı', alinti: 'gönderini alıntıladı',
+}
+
+/** Servis işçisinin gösterdiği bildirim; DM metni gösterilmez, kilit ekranında okunmasın. */
+function pushOzeti(hesaplar, grupAdlari) {
+  const son = S.sonOkunmamis(hesaplar)
+  if (!son) return { baslik: 'Yeni bildirim', metin: 'Açıp bak.', adres: '/s' }
+  const ad = (jid) => S.uyeBul(son.chat_jid, jid)?.ad || 'Biri'
+  const grup = grupAdlari.get(son.chat_jid) || 'Grup'
+  if (son.kaynak === 'dm') return { baslik: grup, metin: `${ad(son.gonderen)} sana mesaj gönderdi`, adres: P.sLink(son.chat_jid, '/mesaj', { ile: son.gonderen }), etiket: `dm-${son.gonderen}` }
+  return {
+    baslik: grup,
+    metin: `${ad(son.kimden)} ${OZET_METNI[son.tur] ?? 'bir şey yaptı'}`,
+    adres: son.gonderi_id ? P.sLink(son.chat_jid, '/gonderi', { id: son.gonderi_id }) : P.sLink(son.chat_jid, '/bildirim'),
+    etiket: `b-${son.id}`,
   }
 }

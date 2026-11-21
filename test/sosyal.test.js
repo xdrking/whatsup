@@ -19,6 +19,8 @@ const { multipartCoz } = await import('../panel/multipart.js')
 const { sunucuKur } = await import('../panel/sunucu.js')
 const { sosyalMotoru } = await import('../panel/sosyal.js')
 const { veriAc } = await import('../panel/veri.js')
+const { endpointGecerli, pushMotoru, vapid, vapidBasligi } = await import('../panel/push.js')
+const { createPublicKey, verify } = await import('node:crypto')
 
 const GRUP = 'g1@g.us'
 const OTEKI = 'g2@g.us'
@@ -42,7 +44,10 @@ panelKaydet({ uyelikler: [{ chatJid: OTEKI, userJid: CAN }], numara: '9055500000
 const veri = veriAc()
 // Testte iki yazma arası bekleme yok sayılsın diye saat her çağrıda ilerler.
 let sahteSaat = 0
-const sunucu = sunucuKur({ sifreHash: await sifreHashle('yonetici'), veri, yedekKlasoru: path.join(klasor, 'yedek'), sosyal: sosyalMotoru({ saat: () => (sahteSaat += 5000) }) })
+// Push ağa çıkmaz: gönderilen istekler burada birikir, bekleme hemen çalışır.
+const pushIstekleri = []
+const push = pushMotoru({ gonder: async (adres, ayar) => { pushIstekleri.push({ adres, ayar }); return { ok: true, status: 201 } }, zamanlayici: (fn) => fn() })
+const sunucu = sunucuKur({ sifreHash: await sifreHashle('yonetici'), veri, yedekKlasoru: path.join(klasor, 'yedek'), sosyal: sosyalMotoru({ saat: () => (sahteSaat += 5000) }), push })
 await new Promise((tamam) => sunucu.listen(0, '127.0.0.1', tamam))
 const adres = `http://127.0.0.1:${sunucu.address().port}`
 after(() => {
@@ -66,6 +71,7 @@ const gonder = (Cookie, yol, alanlar, ek = {}) => fetch(adres + yol, {
   body: alanlar instanceof FormData ? alanlar : new URLSearchParams(alanlar),
 })
 const g = encodeURIComponent(GRUP)
+const g_ = g
 const png = await sharp({ create: { width: 40, height: 30, channels: 3, background: '#c8553d' } }).png().toBuffer()
 const fotoFormu = (alanlar) => {
   const f = new FormData()
@@ -107,12 +113,105 @@ test('akış: gönderi kaçırılır, XP günde üç kez, beğeni açılıp kapa
   assert.ok(db.prepare('SELECT xp FROM stats WHERE chat_jid = ? AND user_jid = ?').get(GRUP, ALI).xp > 1000)
 
   const id = db.prepare('SELECT MAX(id) AS id FROM sosyal_gonderi').get().id
-  const b1 = await gonder(ayse, '/s/begen', { grup: GRUP, id }, { 'X-Istemci': '1' })
-  assert.equal(await b1.text(), '1:1')
-  assert.equal(await (await gonder(ayse, '/s/begen', { grup: GRUP, id }, { 'X-Istemci': '1' })).text(), '0:0')
+  const b1 = await (await gonder(ayse, '/s/begen', { grup: GRUP, id, tepki: '😂' }, { 'X-Istemci': '1' })).text()
+  assert.ok(b1.startsWith('<div class="eylem"'))
+  assert.ok(b1.includes('😂 1'))
+  // Başka tepki değiştirir, aynı tepki kaldırır; bildirim yalnızca ilkinde.
+  assert.deepEqual(S.begen(GRUP, AYSE, id, 1, '👍').ozet, [{ tepki: '👍', n: 1 }])
+  assert.equal(S.begen(GRUP, AYSE, id, 1, '👍').sayi, 0)
+  assert.equal(S.begen(GRUP, AYSE, id, 1, '<script>').tepki, '❤️')
   // Etiket ve beğeni Ayşe'ye ve Ali'ye bildirim düşer.
   assert.ok(S.sayaclar(GRUP, AYSE).bildirim >= 1)
   assert.equal(S.bildirimler(GRUP, ALI)[0].tur, 'begeni')
+  // Kaldırıp yeniden vermek yeni tepkidir; değiştirmek bildirim düşmez.
+  assert.equal(S.bildirimler(GRUP, ALI).filter((b) => b.tur === 'begeni').length, 2)
+})
+
+test('paylaşım ve alıntı: düz paylaşım aç/kapa, zincir özgüne gider, XP vermez', async () => {
+  const ozgun = S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: 'özgün #Çay_Saati' }).id
+  const p1 = S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, alintiId: ozgun })
+  assert.ok(p1.id && p1.xp === 0)
+  assert.equal(S.bildirimler(GRUP, ALI)[0].tur, 'paylasim')
+  // Paylaşımın paylaşımı özgüne bağlanır.
+  const p2 = S.gonderiYaz({ chatJid: GRUP, userJid: CAN, alintiId: p1.id })
+  assert.equal(db.prepare('SELECT alinti_id FROM sosyal_gonderi WHERE id = ?').get(p2.id).alinti_id, ozgun)
+  const [g] = S.akis(GRUP, AYSE, { id: p1.id })
+  assert.equal(g.alinti.id, ozgun)
+  assert.equal(g.alinti.paylasim, 2)
+  assert.ok(g.alinti.paylastim)
+  assert.deepEqual(S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, alintiId: ozgun }), { geriAlindi: true })
+  assert.equal(S.akis(GRUP, ALI, { id: ozgun })[0].paylasim, 1)
+
+  const alinti = S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, alintiId: ozgun, metin: 'buna katılıyorum' })
+  assert.equal(S.bildirimler(GRUP, ALI)[0].tur, 'alinti')
+  const html = await (await al(ali, `/s/gonderi?grup=${g_}&id=${alinti.id}`)).text()
+  assert.ok(html.includes('class="alinti"') && html.includes('buna katılıyorum'))
+  assert.equal((await al(ayse, `/s/alinti?grup=${g_}&id=${ozgun}`)).status, 200)
+
+  // Özgün silinince alıntı "silinmiş" der.
+  S.gonderiSil(GRUP, ALI, ozgun)
+  assert.ok(S.akis(GRUP, ALI, { id: alinti.id })[0].alinti.silindi)
+  assert.ok((await (await al(ali, `/s/gonderi?grup=${g_}&id=${alinti.id}`)).text()).includes('Bu gönderi silinmiş'))
+})
+
+test('hashtag: ayıklama, etiket sayfası, gündem kişi başı sayar', async () => {
+  assert.deepEqual(S.hashtagler('#Merhaba dünya #çay_saati a#yok &#39; #MERHABA'), ['merhaba', 'çay_saati'])
+  S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: 'bugün #halısaha var' })
+  S.gonderiYaz({ chatJid: GRUP, userJid: ALI, metin: 'yine #halısaha' })
+  S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, metin: '#HALISAHA geliyorum' })
+  assert.equal(S.etiketAkisi(GRUP, ALI, 'halısaha').length, 3)
+  assert.deepEqual(S.gundem(GRUP).find((e) => e.ad === 'halısaha'), { ad: 'halısaha', sayi: 2 })
+  const sayfa = await (await al(ali, `/s/etiket?grup=${g_}&ad=${encodeURIComponent('halısaha')}`)).text()
+  assert.ok(sayfa.includes('#halısaha</h1>') && sayfa.includes('class="hashtag"'))
+  assert.ok((await (await al(ali, `/s?grup=${g_}`)).text()).includes('Gündem'))
+})
+
+test('push: yalnızca bilinen servisler, imza doğrulanır, bildirim cihaza gider, DM metni gizli', async () => {
+  assert.ok(endpointGecerli('https://fcm.googleapis.com/fcm/send/abc'))
+  assert.ok(endpointGecerli('https://web.push.apple.com/QG'))
+  for (const kotu of ['http://fcm.googleapis.com/x', 'https://127.0.0.1/x', 'https://fcm.googleapis.com.kotu.com/x', 'https://fcm.googleapis.com:8443/x', 'nope']) {
+    assert.equal(endpointGecerli(kotu), false, kotu)
+  }
+  const baslik = vapidBasligi('https://fcm.googleapis.com/fcm/send/abc', 'https://panel.ornek', 0)
+  const [, jwt, k] = /^vapid t=([^,]+), k=(.+)$/.exec(baslik)
+  assert.equal(k, vapid().acik)
+  const [bas, govde, imza] = jwt.split('.')
+  assert.equal(JSON.parse(Buffer.from(govde, 'base64url')).aud, 'https://fcm.googleapis.com')
+  const acik = Buffer.from(k, 'base64url')
+  const anahtar = createPublicKey({ key: { kty: 'EC', crv: 'P-256', x: acik.subarray(1, 33).toString('base64url'), y: acik.subarray(33).toString('base64url') }, format: 'jwk' })
+  assert.ok(verify('sha256', Buffer.from(`${bas}.${govde}`), { key: anahtar, dsaEncoding: 'ieee-p1363' }, Buffer.from(imza, 'base64url')))
+  assert.equal((await fetch(`${adres}/s/push-anahtar`, { headers: { Cookie: ali } })).status, 200)
+
+  const kotuKayit = await gonder(ayse, '/s/push-kayit', { endpoint: 'https://169.254.169.254/latest' })
+  assert.equal(kotuKayit.status, 400)
+  assert.equal((await gonder(ayse, '/s/push-kayit', { endpoint: 'https://fcm.googleapis.com/fcm/send/ayse' })).status, 204)
+  assert.deepEqual(S.pushAlicilari(GRUP, AYSE), ['https://fcm.googleapis.com/fcm/send/ayse'])
+
+  pushIstekleri.length = 0
+  S.dmYaz({ chatJid: GRUP, gonderen: ALI, alici: AYSE, metin: 'çok gizli' })
+  await new Promise((t) => setImmediate(t))
+  assert.equal(pushIstekleri.length, 1)
+  assert.equal(pushIstekleri[0].adres, 'https://fcm.googleapis.com/fcm/send/ayse')
+  assert.ok(pushIstekleri[0].ayar.headers.Authorization.startsWith('vapid t='))
+  assert.equal(pushIstekleri[0].ayar.body, undefined)
+
+  const ozet = await (await al(ayse, '/s/push-ozet')).json()
+  assert.equal(ozet.metin, 'Ali Veli sana mesaj gönderdi')
+  assert.ok(!JSON.stringify(ozet).includes('çok gizli'))
+  S.dmAkis(GRUP, AYSE, ALI)
+  assert.equal((await gonder(ayse, '/s/push-sil', { endpoint: 'https://fcm.googleapis.com/fcm/send/ayse' })).status, 204)
+  assert.deepEqual(S.pushAlicilari(GRUP, AYSE), [])
+})
+
+test('akış parçası ve yeni gönderi sayısı', async () => {
+  const yanit = await al(ali, `/s/akis-parca?grup=${g_}&once=999999`)
+  assert.equal(yanit.status, 200)
+  assert.ok((await yanit.text()).includes('<article'))
+  assert.equal(yanit.headers.get('x-sonraki'), '0')
+  const son = db.prepare('SELECT MAX(id) AS id FROM sosyal_gonderi').get().id
+  S.gonderiYaz({ chatJid: GRUP, userJid: AYSE, metin: 'yeni' })
+  assert.equal(await (await al(ali, `/s/yeni-sayi?grup=${g_}&son=${son}`)).text(), '1')
+  assert.equal(await (await al(ayse, `/s/yeni-sayi?grup=${g_}&son=${son}`)).text(), '0')
 })
 
 test('duvar ve dürtme bildirim düşer, dürtme saatte bir', async () => {
@@ -139,7 +238,7 @@ test('DM: yalnızca taraflar okur, yoklama yeni mesajı verir', async () => {
   assert.ok(yeni.includes('gizli &lt;b&gt;mesaj'))
   assert.equal(S.sayaclar(GRUP, AYSE).dm, 0)
 
-  const medya = db.prepare('SELECT medya FROM sosyal_dm').get().medya
+  const medya = db.prepare("SELECT medya FROM sosyal_dm WHERE medya <> ''").get().medya
   assert.equal((await al(ayse, `/s/medya/${medya}?grup=${g}`)).status, 200)
   // Başka grubun üyesi kendi grubunu seçse de görseli alamaz.
   assert.equal((await al(can, `/s/medya/${medya}?grup=${encodeURIComponent(OTEKI)}`)).status, 404)
@@ -171,7 +270,7 @@ test('görsel olmayan dosya reddedilir, profil fotoğrafı kaydedilir', async ()
   f.append('grup', GRUP)
   f.append('foto', new Blob([Buffer.from('düz metin')]), 'a.txt')
   await gonder(ali, '/s/paylas', f)
-  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM sosyal_gonderi WHERE metin = '' ").get().n, 0)
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM sosyal_gonderi WHERE metin = '' AND alinti_id = 0").get().n, 0)
 
   await gonder(ali, '/s/profil-yaz', fotoFormu({ grup: GRUP, bio: 'merhaba', tur: 'avatar' }))
   const p = S.profilOku(GRUP, ALI)

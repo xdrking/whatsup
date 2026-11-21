@@ -3,6 +3,7 @@
 // /sosyal.js dosyasıdır; o yoksa da her form normal gönderilir.
 import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
+import { TEPKILER } from '../lib/sosyal.js'
 import { OYUN_ADI } from '../lib/wrapped.js'
 import { h } from './sayfalar.js'
 
@@ -47,7 +48,7 @@ const botAvatar = h`<span class="av bot" aria-hidden="true">✦</span>`
 export function metinCiz(chat, metin, uyeler) {
   const adlar = uyeler.filter((u) => u.ad).sort((a, b) => b.ad.length - a.ad.length)
   const kacir = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const desen = new RegExp(`(https?://[^\\s<]+)${adlar.length ? `|@(${adlar.map((u) => kacir(u.ad)).join('|')})` : ''}`, 'giu')
+  const desen = new RegExp(`(https?://[^\\s<]+)|(?<![\\p{L}\\p{N}_&])#([\\p{L}\\p{N}_]{1,40})${adlar.length ? `|@(${adlar.map((u) => kacir(u.ad)).join('|')})` : ''}`, 'giu')
   const yazi = String(metin)
   const parcalar = []
   let son = 0
@@ -55,8 +56,10 @@ export function metinCiz(chat, metin, uyeler) {
     parcalar.push(yazi.slice(son, e.index))
     if (e[1]) {
       parcalar.push(h`<a href="${e[1]}" rel="noopener noreferrer nofollow" target="_blank">${e[1]}</a>`)
+    } else if (e[2]) {
+      parcalar.push(h`<a class="hashtag" href="${sLink(chat, '/etiket', { ad: e[2].toLocaleLowerCase('tr') })}">#${e[2]}</a>`)
     } else {
-      const u = adlar.find((x) => x.ad.toLocaleLowerCase('tr') === e[2].toLocaleLowerCase('tr')) ?? adlar[0]
+      const u = adlar.find((x) => x.ad.toLocaleLowerCase('tr') === e[3].toLocaleLowerCase('tr')) ?? adlar[0]
       parcalar.push(h`<a class="etiket" href="${profilLink(chat, u.jid)}">@${u.ad}</a>`)
     }
     son = e.index + e[0].length
@@ -129,11 +132,15 @@ export function sosyalKabuk(baslik, icerik, c) {
 </html>`.metin
 }
 
-/** Sağ sütun: son görülenler ve grubun zirvesi. Mesaj içeriği yoktur, yalnızca son görülme. */
-export function sagSutun(chat, uyeler, now = Date.now()) {
+/** Sağ sütun: gündem, son görülenler, grubun zirvesi. Mesaj içeriği yoktur, yalnızca son görülme. */
+export function sagSutun(chat, uyeler, now = Date.now(), gundem = []) {
   const aktif = uyeler.slice(0, 8)
   const zirve = [...uyeler].sort((a, b) => b.xp - a.xp).slice(0, 5)
-  return h`<section class="kutu">
+  return h`${gundem.length ? h`<section class="kutu gundem">
+  <h2>Gündem</h2>
+  ${gundem.map((e) => h`<a class="mini" href="${sLink(chat, '/etiket', { ad: e.ad })}"><span>#${e.ad}</span><small>${e.sayi} kişi</small></a>`)}
+</section>` : ''}
+<section class="kutu">
   <h2>Son görülenler</h2>
   ${aktif.map((u) => h`<a class="mini" href="${profilLink(chat, u.jid)}">${avatar(chat, u, 'kucuk')}<span>${adi(u)}</span><small>${zamanYaz(u.last_seen, now)}</small></a>`)}
 </section>
@@ -166,25 +173,62 @@ export function paylasKutusu(chat, ben, { hedef = null, yer = '' } = {}) {
 </form>`
 }
 
+export function yorumCiz(chat, g, y, uyeler, ben, now = Date.now()) {
+  const u = bul(uyeler, y.user_jid)
+  const silebilir = y.user_jid === ben.jid || g.user_jid === ben.jid
+  return h`<li>${avatar(chat, u, 'kucuk')}<div class="balon"><a href="${profilLink(chat, u.jid)}"><strong>${adi(u)}</strong></a> ${metinCiz(chat, y.metin, uyeler)}
+    <small>${zamanYaz(y.zaman, now)}${silebilir ? h` · <form method="post" action="/s/yorum-sil" class="satir-ici">${gizliGrup(chat)}<input type="hidden" name="id" value="${y.id}"><button class="baglanti">sil</button></form>` : ''}</small></div></li>`
+}
+
 function yorumlarCiz(chat, g, uyeler, ben, now) {
-  return h`<ul class="yorumlar">${g.yorumlar.map((y) => {
-    const u = bul(uyeler, y.user_jid)
-    const silebilir = y.user_jid === ben.jid || g.user_jid === ben.jid
-    return h`<li>${avatar(chat, u, 'kucuk')}<div class="balon"><a href="${profilLink(chat, u.jid)}"><strong>${adi(u)}</strong></a> ${metinCiz(chat, y.metin, uyeler)}
-      <small>${zamanYaz(y.zaman, now)}${silebilir ? h` · <form method="post" action="/s/yorum-sil" class="satir-ici">${gizliGrup(chat)}<input type="hidden" name="id" value="${y.id}"><button class="baglanti">sil</button></form>` : ''}</small></div></li>`
-  })}</ul>
-  <form class="yorum-yaz" method="post" action="/s/yorum">
+  return h`<ul class="yorumlar">${g.yorumlar.map((y) => yorumCiz(chat, g, y, uyeler, ben, now))}</ul>
+  <form class="yorum-yaz" id="y${g.id}" method="post" action="/s/yorum">
     ${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}">
     ${avatar(chat, ben, 'kucuk')}<input name="metin" maxlength="500" placeholder="Yorum yaz…" autocomplete="off" required>
   </form>`
 }
 
-export function gonderiCiz(chat, g, uyeler, ben, now = Date.now()) {
+/** Alıntılanan gönderinin küçük kartı. */
+function alintiKarti(chat, a, uyeler, now) {
+  if (!a || a.silindi) return h`<div class="alinti silik">Bu gönderi silinmiş.</div>`
+  const yazan = a.user_jid ? bul(uyeler, a.user_jid) : BOT
+  return h`<a class="alinti" href="${sLink(chat, '/gonderi', { id: a.id })}">
+    <span class="alinti-kim">${a.user_jid ? avatar(chat, yazan, 'mini') : ''}<strong>${adi(yazan)}</strong> <small>${zamanYaz(a.zaman, now)}</small></span>
+    ${a.metin ? h`<span class="alinti-metin">${a.metin}</span>` : ''}
+    ${a.medya ? h`<img src="${medyaLink(chat, a.medya)}" alt="" loading="lazy">` : ''}
+  </a>`
+}
+
+/** Tepki özeti, tepki seçici, paylaş, alıntıla. Betik bu bölümü olduğu gibi yeniler. */
+export function eylemCubugu(chat, g) {
+  const ozet = g.tepkiler.slice(0, 3).map((t) => t.tepki).join('')
+  const ana = g.benimTepkim || '❤️'
+  return h`<div class="eylem" data-gonderi="${g.id}">
+  <div class="sayilar">
+    ${g.begeni ? h`<span class="tepki-ozet" title="${g.tepkiler.map((t) => `${t.tepki} ${t.n}`).join('  ')}">${ozet} ${g.begeni}</span>` : h`<span></span>`}
+    <span>${g.yorumlar.length ? `${g.yorumlar.length} yorum` : ''}${g.yorumlar.length && g.paylasim ? ' · ' : ''}${g.paylasim ? `${g.paylasim} paylaşım` : ''}</span>
+  </div>
+  <div class="dugmeler">
+    <form method="post" action="/s/begen" class="tepki-form">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}">
+      <button name="tepki" value="${ana}" class="tepki-ana${g.benimTepkim ? ' acik' : ''}" aria-pressed="${g.benimTepkim ? 'true' : 'false'}">${g.benimTepkim ? h`<span class="emoji">${g.benimTepkim}</span><span class="etk">Tepki</span>` : h`<span class="emoji soluk-emoji">♡</span><span class="etk">Beğen</span>`}</button>
+      <details class="tepki-sec"><summary aria-label="Tepki seç">☺</summary>
+        <div class="tepki-liste">${TEPKILER.map((t) => h`<button name="tepki" value="${t}"${t === g.benimTepkim ? h` class="secili"` : ''}>${t}</button>`)}</div>
+      </details>
+    </form>
+    <a class="eylem-dugme yorum-ac" href="${sLink(chat, '/gonderi', { id: g.id })}#y${g.id}">💬<span class="etk">Yorum</span></a>
+    <form method="post" action="/s/paylas" class="paylas-form">${gizliGrup(chat)}<input type="hidden" name="alinti" value="${g.id}">
+      <button class="eylem-dugme${g.paylastim ? ' acik' : ''}" aria-pressed="${g.paylastim ? 'true' : 'false'}">↻<span class="etk">${g.paylastim ? 'Paylaştın' : 'Paylaş'}</span></button></form>
+    <a class="eylem-dugme" href="${sLink(chat, '/alinti', { id: g.id })}">❝<span class="etk">Alıntıla</span></a>
+  </div>
+</div>`
+}
+
+function govde(chat, g, uyeler, ben, now, { ustNot = '', silinebilir = true } = {}) {
   const bot = !g.user_jid
   const yazan = bot ? BOT : bul(uyeler, g.user_jid)
   const hedef = g.hedef_jid ? bul(uyeler, g.hedef_jid) : null
-  const silebilir = !bot && (g.user_jid === ben.jid || g.hedef_jid === ben.jid)
-  return h`<article class="kart gonderi${bot ? ' bot-gonderi' : ''}" id="g${g.id}">
+  const silebilir = silinebilir && !bot && (g.user_jid === ben.jid || g.hedef_jid === ben.jid)
+  return h`${ustNot}
   <header>
     ${bot ? botAvatar : h`<a href="${profilLink(chat, yazan.jid)}">${avatar(chat, yazan)}</a>`}
     <div class="kim">
@@ -196,13 +240,19 @@ export function gonderiCiz(chat, g, uyeler, ben, now = Date.now()) {
   </header>
   ${g.metin ? h`<p class="metin">${metinCiz(chat, g.metin, uyeler)}</p>` : ''}
   ${g.medya ? h`<a class="gorsel" href="${medyaLink(chat, g.medya)}"><img src="${medyaLink(chat, g.medya)}" alt="" loading="lazy"></a>` : ''}
-  <div class="eylem">
-    <form method="post" action="/s/begen" class="begen-form">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}">
-      <button class="begen${g.begendim ? ' acik' : ''}" aria-pressed="${g.begendim ? 'true' : 'false'}">♥ <span class="begeni-sayi">${g.begeni || ''}</span> Beğen</button></form>
-    <span class="yorum-sayi">${g.yorumlar.length ? `${g.yorumlar.length} yorum` : ''}</span>
-  </div>
-  ${yorumlarCiz(chat, g, uyeler, ben, now)}
-</article>`
+  ${g.alinti_id ? alintiKarti(chat, g.alinti, uyeler, now) : ''}
+  ${eylemCubugu(chat, g)}
+  ${yorumlarCiz(chat, g, uyeler, ben, now)}`
+}
+
+export function gonderiCiz(chat, g, uyeler, ben, now = Date.now()) {
+  const duzPaylasim = g.alinti_id && !g.metin && !g.medya
+  if (duzPaylasim && g.alinti && !g.alinti.silindi) {
+    const paylasan = bul(uyeler, g.user_jid)
+    const not = h`<p class="ust-not">↻ <a href="${profilLink(chat, paylasan.jid)}">${g.user_jid === ben.jid ? 'Sen' : adi(paylasan)}</a> paylaştı · ${zamanYaz(g.zaman, now)}</p>`
+    return h`<article class="kart gonderi paylasim" id="g${g.id}" data-id="${g.id}">${govde(chat, g.alinti, uyeler, ben, now, { ustNot: not, silinebilir: false })}</article>`
+  }
+  return h`<article class="kart gonderi${g.user_jid ? '' : ' bot-gonderi'}" id="g${g.id}" data-id="${g.id}">${govde(chat, g, uyeler, ben, now)}</article>`
 }
 
 function hikayeSeridi(chat, ben, hk, uyeler) {
@@ -222,13 +272,35 @@ function hikayeSeridi(chat, ben, hk, uyeler) {
 
 const serit = (bildirim) => (bildirim ? h`<p class="bildirim-serit${bildirim.hata ? ' hata' : ''}" role="status">${bildirim.metin}</p>` : '')
 
-export function akisSayfasi({ chat, ben, gonderiler, uyeler, hikayeler: hk, bildirim, now = Date.now() }) {
+/** Akış listesi ve sonraki sayfanın bağlantısı; betik bağlantıyı kaydırınca kendisi yükler. */
+export function gonderiListesi({ chat, ben, gonderiler, uyeler, now = Date.now(), yol = '', ek = {}, bosMetin = 'Henüz kimse bir şey paylaşmadı. İlk sen yaz.' }) {
   const son = gonderiler.at(-1)
+  return h`<div class="akis" data-ilk="${gonderiler[0]?.id ?? 0}">${gonderiler.length ? gonderiler.map((g) => gonderiCiz(chat, g, uyeler, ben, now)) : h`<p class="kart bos">${bosMetin}</p>`}</div>
+${son && gonderiler.length >= 20 ? h`<a class="daha" href="${sLink(chat, yol, { ...ek, once: son.id })}">Daha eski gönderiler</a>` : ''}`
+}
+
+export function akisSayfasi({ chat, ben, gonderiler, uyeler, hikayeler: hk, bildirim, now = Date.now() }) {
   return h`${serit(bildirim)}
 ${hikayeSeridi(chat, ben, hk, uyeler)}
 ${paylasKutusu(chat, ben)}
-${gonderiler.length ? gonderiler.map((g) => gonderiCiz(chat, g, uyeler, ben, now)) : h`<p class="kart bos">Henüz kimse bir şey paylaşmadı. İlk sen yaz.</p>`}
-${son && gonderiler.length >= 20 ? h`<a class="daha" href="${sLink(chat, '', { once: son.id })}">Daha eski gönderiler</a>` : ''}`
+<a class="yeni-gonderi" href="${sLink(chat)}" hidden>Yeni gönderiler var ↑</a>
+${gonderiListesi({ chat, ben, gonderiler, uyeler, now })}`
+}
+
+export function etiketSayfasi({ chat, ben, etiket, gonderiler, uyeler, now = Date.now() }) {
+  return h`<section class="kart etiket-bas"><h1>#${etiket}</h1><p class="soluk">Bu etiketi kullanan gönderiler</p></section>
+${gonderiListesi({ chat, ben, gonderiler, uyeler, now, yol: '/etiket', ek: { ad: etiket }, bosMetin: 'Bu etiketle henüz gönderi yok.' })}`
+}
+
+export function alintiSayfasi({ chat, ben, gonderi, uyeler, now = Date.now() }) {
+  if (!gonderi) return h`<p class="kart bos">Bu gönderi silinmiş.</p>`
+  return h`<form class="kart paylas" method="post" action="/s/paylas" enctype="multipart/form-data">
+  ${gizliGrup(chat)}<input type="hidden" name="alinti" value="${gonderi.id}">
+  <h2>Alıntıla</h2>
+  <div class="paylas-ust">${avatar(chat, ben)}<textarea name="metin" rows="3" maxlength="2000" placeholder="Ne düşünüyorsun?" required></textarea></div>
+  ${alintiKarti(chat, gonderi, uyeler, now)}
+  <div class="paylas-alt"><a href="${sLink(chat)}">Vazgeç</a><button class="birincil">Paylaş</button></div>
+</form>`
 }
 
 export function tekGonderiSayfasi({ chat, ben, gonderi, uyeler, now = Date.now() }) {
@@ -310,10 +382,17 @@ const BILDIRIM_METNI = {
   etiket: 'seni bir gönderide etiketledi.',
   duvar: 'duvarına yazdı.',
   durt: 'seni dürttü.',
+  paylasim: 'gönderini paylaştı.',
+  alinti: 'gönderini alıntıladı.',
 }
 
 export function bildirimSayfasi({ chat, liste, uyeler, now = Date.now() }) {
-  return h`<section class="kart liste-kart">
+  return h`<section class="kart push-kutu" hidden>
+  <div><strong>Telefon bildirimleri</strong><small class="push-durum">Beğeni, yorum ve mesaj gelince telefonun titresin.</small></div>
+  <button type="button" class="birincil push-ac">Aç</button>
+  <button type="button" class="dugme push-kapat" hidden>Kapat</button>
+</section>
+<section class="kart liste-kart">
   <h2>Bildirimler</h2>
   ${liste.length ? liste.map((b) => {
     const u = bul(uyeler, b.kimden)
