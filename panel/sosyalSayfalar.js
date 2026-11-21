@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
 import { ANKET_AZAMI, ANKET_GUNLERI, ETKINLIK_METIN_AZAMI, SOHBET_AD_AZAMI, TEPKILER, yorumSayisi } from '../lib/sosyal.js'
 import { OYUN_ADI } from '../lib/wrapped.js'
+import { ikon } from './ikonlar.js'
 import { h } from './sayfalar.js'
 
 const surum = (dosya) => fnv1a(readFileSync(new URL(dosya, import.meta.url), 'utf8'))
@@ -78,15 +79,15 @@ const rozetSayi = (n) => (n ? h`<span class="sayac">${n > 99 ? '99+' : n}</span>
  */
 export function sosyalKabuk(baslik, icerik, c) {
   const { chat, ben, grupAdi, sayac, secili = '', sag = '', cokGrup = false, sorgu = '' } = c
-  const menu = (adres, anahtar, ikon, ad, ek = '') =>
-    h`<a href="${adres}"${secili === anahtar ? h` class="secili" aria-current="page"` : ''}><span class="ik" aria-hidden="true">${ikon}</span><span class="ad">${ad}</span>${ek}</a>`
+  const menu = (adres, anahtar, simge, ad, ek = '') =>
+    h`<a href="${adres}"${secili === anahtar ? h` class="secili" aria-current="page"` : ''}><span class="ik">${ikon(simge)}</span><span class="ad">${ad}</span>${ek}</a>`
   return h`<!doctype html>
 <html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16181b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#3b5b98" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b2433" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>${baslik} · ${grupAdi || 'Grup'}</title>
@@ -98,38 +99,38 @@ export function sosyalKabuk(baslik, icerik, c) {
 </head>
 <body class="sosyal" data-grup="${chat}">
 <header class="ust-cubuk">
-  <a class="marka" href="${sLink(chat)}">${(grupAdi || 'grup').toLocaleLowerCase('tr')}</a>
+  <a class="marka" href="${sLink(chat)}"><span class="logo" aria-hidden="true">${[...(grupAdi || 'g')][0].toLocaleLowerCase('tr')}</span><span class="marka-ad">${(grupAdi || 'grup').toLocaleLowerCase('tr')}</span></a>
   <form class="ara-kutu" method="get" action="/s/ara" role="search">${gizliGrup(chat)}<input type="search" name="q" value="${secili === 'ara' ? sorgu : ''}" placeholder="Kişi, #etiket ya da gönderi ara" maxlength="80" aria-label="Ara"></form>
   <nav class="ust-ikonlar" aria-label="Kısayollar">
-    <a href="${sLink(chat, '/ara')}" aria-label="Ara" class="ust-ik ara-ik${secili === 'ara' ? ' secili' : ''}">⌕</a>
-    <a href="${sLink(chat, '/bildirim')}" aria-label="Bildirimler" class="ust-ik${secili === 'bildirim' ? ' secili' : ''}">◔${rozetSayi(sayac.bildirim)}</a>
-    <a href="${sLink(chat, '/mesaj')}" aria-label="Mesajlar" class="ust-ik${secili === 'mesaj' ? ' secili' : ''}">✉${rozetSayi(sayac.dm)}</a>
+    <a href="${sLink(chat, '/ara')}" aria-label="Ara" class="ust-ik ara-ik${secili === 'ara' ? ' secili' : ''}">${ikon('ara')}</a>
+    <a href="${sLink(chat, '/bildirim')}" aria-label="Bildirimler" class="ust-ik${secili === 'bildirim' ? ' secili' : ''}">${ikon('zil')}${rozetSayi(sayac.bildirim)}</a>
+    <a href="${sLink(chat, '/mesaj')}" aria-label="Mesajlar" class="ust-ik${secili === 'mesaj' ? ' secili' : ''}">${ikon('mesaj')}${rozetSayi(sayac.dm)}</a>
     <a href="${profilLink(chat, ben.jid)}" aria-label="Profilim" class="ust-ben">${avatar(chat, ben, 'kucuk')}</a>
   </nav>
 </header>
 <div class="duzen">
   <nav class="sol" aria-label="Ana menü">
     <a class="sol-ben" href="${profilLink(chat, ben.jid)}">${avatar(chat, ben)}<span><strong>${adi(ben)}</strong><small>Profili gör</small></span></a>
-    ${menu(sLink(chat), 'akis', '▤', 'Haber kaynağı')}
-    ${menu(sLink(chat, '/ara'), 'ara', '⌕', 'Ara')}
-    ${menu(sLink(chat, '/mesaj'), 'mesaj', '✉', 'Mesajlar', rozetSayi(sayac.dm))}
-    ${menu(sLink(chat, '/bildirim'), 'bildirim', '◔', 'Bildirimler', rozetSayi(sayac.bildirim))}
-    ${menu(sLink(chat, '/arkadas'), 'arkadas', '☺', 'Arkadaşlar')}
-    ${menu(sLink(chat, '/ayar'), 'ayar', '✎', 'Profili düzenle')}
+    ${menu(sLink(chat), 'akis', 'ev', 'Haber kaynağı')}
+    ${menu(sLink(chat, '/ara'), 'ara', 'ara', 'Ara')}
+    ${menu(sLink(chat, '/mesaj'), 'mesaj', 'mesaj', 'Mesajlar', rozetSayi(sayac.dm))}
+    ${menu(sLink(chat, '/bildirim'), 'bildirim', 'zil', 'Bildirimler', rozetSayi(sayac.bildirim))}
+    ${menu(sLink(chat, '/arkadas'), 'arkadas', 'kisiler', 'Arkadaşlar')}
+    ${menu(sLink(chat, '/ayar'), 'ayar', 'kalem', 'Profili düzenle')}
     <h3>Eğlence</h3>
-    ${menu(`/oyun?${q(chat)}`, 'oyun', '♠', 'Oyunlar')}
-    ${cokGrup ? menu('/s', 'grup', '⇄', 'Grubu değiştir') : ''}
-    <form method="post" action="/cikis" class="cikis"><button>Çıkış yap</button></form>
+    ${menu(`/oyun?${q(chat)}`, 'oyun', 'oyun', 'Oyunlar')}
+    ${cokGrup ? menu('/s', 'grup', 'degistir', 'Grubu değiştir') : ''}
+    <form method="post" action="/cikis" class="cikis"><button>${ikon('cikis')}<span>Çıkış yap</span></button></form>
   </nav>
   <main id="icerik">${izinSeridi}${icerik}</main>
   <aside class="sag">${sag}</aside>
 </div>
 <nav class="alt-sekme" aria-label="Alt menü">
-  ${menu(sLink(chat), 'akis', '▤', 'Akış')}
-  ${menu(sLink(chat, '/arkadas'), 'arkadas', '☺', 'Arkadaşlar')}
-  ${menu(`${sLink(chat)}#paylas`, 'paylas', '+', 'Paylaş')}
-  ${menu(sLink(chat, '/mesaj'), 'mesaj', '✉', 'Mesajlar', rozetSayi(sayac.dm))}
-  ${menu(`/oyun?${q(chat)}`, 'oyun', '♠', 'Oyunlar')}
+  ${menu(sLink(chat), 'akis', 'ev', 'Akış')}
+  ${menu(sLink(chat, '/arkadas'), 'arkadas', 'kisiler', 'Arkadaşlar')}
+  ${menu(`${sLink(chat)}#paylas`, 'paylas', 'arti', 'Paylaş')}
+  ${menu(sLink(chat, '/mesaj'), 'mesaj', 'mesaj', 'Mesajlar', rozetSayi(sayac.dm))}
+  ${menu(`/oyun?${q(chat)}`, 'oyun', 'oyun', 'Oyunlar')}
 </nav>
 </body>
 </html>`.metin
@@ -164,7 +165,7 @@ const bul = (uyeler, jid) => uyeler.find((u) => u.jid === jid) ?? { jid, ad: '' 
 
 /** Fotoğraf seçen alan: önizleme betikle gelir. */
 const fotoAlani = (ad = 'foto', etiket = 'Fotoğraf') =>
-  h`<label class="foto-sec"><input type="file" name="${ad}" accept="image/*"><span>▣${etiket ? ` ${etiket}` : ''}</span></label>`
+  h`<label class="foto-sec"><input type="file" name="${ad}" accept="image/*"><span>${ikon('foto')}${etiket ? h`<b>${etiket}</b>` : ''}</span></label>`
 
 const gizliGrup = (chat) => h`<input type="hidden" name="grup" value="${chat}">`
 
@@ -176,14 +177,15 @@ export function paylasKutusu(chat, ben, { hedef = null, yer = '' } = {}) {
   <input type="hidden" name="don" value="${yer}">
   <div class="paylas-ust">${avatar(chat, ben)}<textarea name="metin" rows="2" maxlength="2000" placeholder="${ipucu}"></textarea></div>
   <div class="onizleme" hidden></div>
-  ${hedef ? '' : h`<details class="anket-ac"><summary>📊 Anket</summary>
+  <div class="paylas-alt">${fotoAlani()}
+  ${hedef ? '' : h`<details class="anket-ac"><summary>${ikon('anket')}<b>Anket</b></summary>
     <div class="anket-girdi">
       ${Array.from({ length: ANKET_AZAMI }, (_, i) => h`<input name="secenek${i + 1}" maxlength="80" placeholder="${i < 2 ? `${i + 1}. seçenek` : `${i + 1}. seçenek (isteğe bağlı)`}" autocomplete="off">`)}
       <label>Süre <select name="sure">${ANKET_GUNLERI.map((g) => h`<option value="${g}">${g} gün</option>`)}</select></label>
       <small class="soluk">Metin kutusuna yazdığın, anketin sorusu olur.</small>
     </div>
   </details>`}
-  ${hedef ? '' : h`<details class="anket-ac etkinlik-ac"><summary>📅 Etkinlik</summary>
+  ${hedef ? '' : h`<details class="anket-ac etkinlik-ac"><summary>${ikon('takvim')}<b>Etkinlik</b></summary>
     <div class="anket-girdi">
       <input name="etkinlik_baslik" maxlength="${ETKINLIK_METIN_AZAMI}" placeholder="Etkinliğin adı (halı saha, doğum günü…)" autocomplete="off">
       <div class="yan-yana"><input type="date" name="etkinlik_tarih" aria-label="Tarih"><input type="time" name="etkinlik_saat" value="20:00" aria-label="Saat"></div>
@@ -191,7 +193,7 @@ export function paylasKutusu(chat, ben, { hedef = null, yer = '' } = {}) {
       <small class="soluk">"Geliyorum" ya da "Belki" diyenlere başlamadan 1 saat önce bildirim gider.</small>
     </div>
   </details>`}
-  <div class="paylas-alt">${fotoAlani()}<button class="birincil">Paylaş</button></div>
+  <button class="birincil paylas-dugme">Paylaş</button></div>
 </form>`
 }
 
@@ -249,7 +251,7 @@ export function anketCiz(chat, g, uyeler, now = Date.now()) {
 function yorumTepkiFormu(chat, y) {
   return h`<form method="post" action="/s/yorum-tepki" class="yorum-tepki">${gizliGrup(chat)}<input type="hidden" name="id" value="${y.id}">
     <button name="tepki" value="${y.benimTepkim || '❤️'}" class="baglanti${y.benimTepkim ? ' acik' : ''}">${y.benimTepkim ? `${y.benimTepkim} Tepki` : 'Beğen'}</button>
-    <details class="tepki-sec"><summary aria-label="Tepki seç">☺</summary>
+    <details class="tepki-sec"><summary aria-label="Tepki seç">${ikon('gulumse')}</summary>
       <div class="tepki-liste">${TEPKILER.map((t) => h`<button name="tepki" value="${t}"${t === y.benimTepkim ? h` class="secili"` : ''}>${t}</button>`)}</div>
     </details>
   </form>`
@@ -312,15 +314,15 @@ export function eylemCubugu(chat, g) {
   </div>
   <div class="dugmeler">
     <form method="post" action="/s/begen" class="tepki-form">${gizliGrup(chat)}<input type="hidden" name="id" value="${g.id}">
-      <button name="tepki" value="${ana}" class="tepki-ana${g.benimTepkim ? ' acik' : ''}" aria-pressed="${g.benimTepkim ? 'true' : 'false'}">${g.benimTepkim ? h`<span class="emoji">${g.benimTepkim}</span><span class="etk">Tepki</span>` : h`<span class="emoji soluk-emoji">♡</span><span class="etk">Beğen</span>`}</button>
-      <details class="tepki-sec"><summary aria-label="Tepki seç">☺</summary>
+      <button name="tepki" value="${ana}" class="tepki-ana${g.benimTepkim ? ' acik' : ''}" aria-pressed="${g.benimTepkim ? 'true' : 'false'}">${g.benimTepkim ? h`<span class="emoji">${g.benimTepkim}</span><span class="etk">Tepki</span>` : h`<span class="emoji soluk-emoji">${ikon('kalp')}</span><span class="etk">Beğen</span>`}</button>
+      <details class="tepki-sec"><summary aria-label="Tepki seç">${ikon('gulumse')}</summary>
         <div class="tepki-liste">${TEPKILER.map((t) => h`<button name="tepki" value="${t}"${t === g.benimTepkim ? h` class="secili"` : ''}>${t}</button>`)}</div>
       </details>
     </form>
-    <a class="eylem-dugme yorum-ac" href="${sLink(chat, '/gonderi', { id: g.id })}#y${g.id}">💬<span class="etk">Yorum</span></a>
+    <a class="eylem-dugme yorum-ac" href="${sLink(chat, '/gonderi', { id: g.id })}#y${g.id}">${ikon('yorum')}<span class="etk">Yorum</span></a>
     <form method="post" action="/s/paylas" class="paylas-form">${gizliGrup(chat)}<input type="hidden" name="alinti" value="${g.id}">
-      <button class="eylem-dugme${g.paylastim ? ' acik' : ''}" aria-pressed="${g.paylastim ? 'true' : 'false'}">↻<span class="etk">${g.paylastim ? 'Paylaştın' : 'Paylaş'}</span></button></form>
-    <a class="eylem-dugme" href="${sLink(chat, '/alinti', { id: g.id })}">❝<span class="etk">Alıntıla</span></a>
+      <button class="eylem-dugme${g.paylastim ? ' acik' : ''}" aria-pressed="${g.paylastim ? 'true' : 'false'}">${ikon('paylas')}<span class="etk">${g.paylastim ? 'Paylaştın' : 'Paylaş'}</span></button></form>
+    <a class="eylem-dugme" href="${sLink(chat, '/alinti', { id: g.id })}">${ikon('alinti')}<span class="etk">Alıntıla</span></a>
   </div>
 </div>`
 }
@@ -364,7 +366,7 @@ export function gonderiCiz(chat, g, uyeler, ben, now = Date.now()) {
 function hikayeSeridi(chat, ben, hk, uyeler) {
   const kendi = h`<form class="hikaye-ekle" method="post" action="/s/hikaye-yaz" enctype="multipart/form-data">
     ${gizliGrup(chat)}
-    <label class="hikaye">${avatar(chat, ben)}<span class="arti" aria-hidden="true">+</span><input type="file" name="foto" accept="image/*" class="hemen-gonder"><small>Hikâye ekle</small></label>
+    <label class="hikaye">${avatar(chat, ben)}<span class="arti">${ikon('arti')}</span><input type="file" name="foto" accept="image/*" class="hemen-gonder"><small>Hikâye ekle</small></label>
     <button class="gizli-gonder">Yükle</button>
   </form>`
   const benimKi = hk.benim.length
@@ -549,7 +551,7 @@ export function bildirimSayfasi({ chat, liste, uyeler, now = Date.now() }) {
 // --- DM ------------------------------------------------------------------
 
 const onizlemeYaz = (m) => (m.medya && !m.metin ? '▣ Fotoğraf' : m.metin)
-const grupAvatar = h`<span class="av grup-av" aria-hidden="true">👥</span>`
+const grupAvatar = h`<span class="av grup-av" aria-hidden="true">${ikon('kisiler')}</span>`
 
 /** Üye seçme kutuları; ad `uye0…uyeN`, multipart aynı adlı alanların yalnızca ilkini tutar. */
 const uyeSecici = (chat, liste) => h`<div class="uye-sec">${liste.map((u, i) => h`<label>${avatar(chat, u, 'kucuk')}<input type="checkbox" name="uye${i}" value="${u.jid}"><span>${adi(u)}</span></label>`)}</div>`
@@ -628,14 +630,14 @@ export function sohbetSayfasi({ chat, ben, karsi, mesajlar, goruldu = 0 }) {
   const son = mesajlar.at(-1)
   const durum = son?.gonderen === ben.jid ? (goruldu >= son.id ? 'Görüldü' : 'Gönderildi') : ''
   return h`<section class="kart sohbet">
-  <header><a class="geri" href="${sLink(chat, '/mesaj')}" aria-label="Mesajlara dön">‹</a>${avatar(chat, karsi)}<a href="${profilLink(chat, karsi.jid)}"><strong>${adi(karsi)}</strong></a></header>
+  <header><a class="geri" href="${sLink(chat, '/mesaj')}" aria-label="Mesajlara dön">${ikon('geri')}</a>${avatar(chat, karsi)}<a href="${profilLink(chat, karsi.jid)}"><strong>${adi(karsi)}</strong></a></header>
   <div class="dm-akis" data-ile="${karsi.jid}" data-son="${son?.id ?? 0}">${mesajlar.length ? dmBalonlari(chat, mesajlar, ben) : h`<p class="bos">İlk mesajı sen yaz.</p>`}</div>
   <p class="dm-durum">${durum}</p>${yaziyorSatiri}
   ${karsi.panelde ? h`<form class="dm-yaz" method="post" action="/s/mesaj-yaz" enctype="multipart/form-data">
     ${gizliGrup(chat)}<input type="hidden" name="ile" value="${karsi.jid}">
     ${fotoAlani('foto', '')}
     <input name="metin" maxlength="1000" placeholder="Mesaj yaz…" autocomplete="off">
-    <button class="birincil">Gönder</button>
+    <button class="birincil gonder-dugme">${ikon('gonder')}<span>Gönder</span></button>
   </form>` : h`<p class="bos">${adi(karsi)} henüz panele katılmadı, mesajı okuyamaz.</p>`}
 </section>`
 }
@@ -645,7 +647,7 @@ export function grupSohbetSayfasi({ chat, ben, sohbet, mesajlar, uyeler, bildiri
   const eklenebilir = uyeler.filter((u) => u.panelde && !uyeJidler.includes(u.jid))
   const son = mesajlar.at(-1)
   return h`${serit(bildirim)}<section class="kart sohbet">
-  <header><a class="geri" href="${sLink(chat, '/mesaj')}" aria-label="Mesajlara dön">‹</a>${grupAvatar}
+  <header><a class="geri" href="${sLink(chat, '/mesaj')}" aria-label="Mesajlara dön">${ikon('geri')}</a>${grupAvatar}
     <span class="sohbet-baslik"><strong>${sohbet.ad}</strong><small>${uyeJidler.map((j) => (j === ben.jid ? 'Sen' : adi(bul(uyeler, j)).split(' ')[0])).join(', ')}</small></span></header>
   <div class="dm-akis grup-akis" data-sohbet="${sohbet.id}" data-son="${son?.id ?? 0}">${sohbetBalonlari(chat, mesajlar, ben, uyeler)}</div>
   <p class="dm-durum">${son?.gonderen === ben.jid ? gorenlerMetni(sohbet, ben, uyeler) : ''}</p>${yaziyorSatiri}
@@ -653,7 +655,7 @@ export function grupSohbetSayfasi({ chat, ben, sohbet, mesajlar, uyeler, bildiri
     ${gizliGrup(chat)}<input type="hidden" name="id" value="${sohbet.id}">
     ${fotoAlani('foto', '')}
     <input name="metin" maxlength="1000" placeholder="Gruba yaz…" autocomplete="off">
-    <button class="birincil">Gönder</button>
+    <button class="birincil gonder-dugme">${ikon('gonder')}<span>Gönder</span></button>
   </form>
 </section>
 <details class="kart liste-kart sohbet-ayar">
@@ -695,7 +697,7 @@ export function hikayeSayfasi({ chat, hikaye, sahip, kendim, izleyenler, uyeler,
     : h`<p class="tek-sefer">Bu hikâye sana yalnızca bir kez gösterilir.</p>
   <form class="hikaye-yanit" method="post" action="/s/hikaye-yanit">${gizliGrup(chat)}<input type="hidden" name="id" value="${hikaye.id}"><input type="hidden" name="sonraki" value="${sonraki}">
     <div class="hikaye-tepkiler">${TEPKILER.map((t) => h`<button name="tepki" value="${t}" aria-label="${t} tepkisi">${t}</button>`)}</div>
-    <div class="hikaye-yaz"><input name="metin" maxlength="1000" placeholder="Yanıt yaz…" autocomplete="off"><button class="birincil">Gönder</button></div>
+    <div class="hikaye-yaz"><input name="metin" maxlength="1000" placeholder="Yanıt yaz…" autocomplete="off"><button class="birincil gonder-dugme">${ikon('gonder')}<span>Gönder</span></button></div>
   </form>`}
   <a class="sonraki" href="${sonrakiAdres}">${sonraki ? 'Sonraki ›' : 'Akışa dön'}</a>
 </section>`

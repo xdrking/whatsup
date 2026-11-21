@@ -348,7 +348,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 68 (tamam):** yorum yanıtı ve yorum tepkisi, her girişte bildirim izni ve iPhone kurulum rehberi. Ayrıntı aşağıda.
 - **Faz 69 (tamam):** `.paylaş` ile WhatsApp'tan akışa, anket gönderisi, haftalık gazete. Ayrıntı aşağıda.
 - **Faz 70 (tamam):** arama, DM'de yazıyor ve görüldü, hikâye yanıtı ve tepkisi, grup sohbeti, etkinlik, haftanın gönderisi. Ayrıntı aşağıda.
-- **Faz 71+:** yeni komutlar, her biri ayrı adım
+- **Faz 71 (tamam):** sosyal bölümün yeni görünümü ve SVG simgeler. Faz 66 "Tasarım" maddesine işlendi.
+- **Faz 72+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1378,7 +1379,7 @@ sosyal_durt(chat_jid, kimden, kime, zaman)        sosyal_xp(chat_jid, user_jid, 
 - **Bot olayları** `botGonderisi()` ile akışa "Grup Bülteni" olarak düşer: reborn, darbe sonucu, wordle çözümü, grubun tek el kumar rekoru (`kumarKaydet`, ilk kayıt rekor sayılmaz). Yeni olay bir çağrıdır, hata botu durdurmaz.
 - **Profil:** kapak, avatar, biyografi, `.stats` sayıları, rozetler (`lib/rozet.js`), wrapped özeti (`kisiWrapped`).
 - **PWA:** `/manifest.webmanifest`, `/sw.js`, ikon (`panel/pwa.js`, SVG'den bellekte üretilir). Servis işçisi yalnızca stil, betik ve ikonu önbellekler; sayfalar kişiye özel olduğu için hep ağdan gelir, ağ yoksa çevrimdışı notu çıkar. CSP'ye `img-src 'self' blob:` (seçilen fotoğrafın önizlemesi), `manifest-src` ve `worker-src` eklendi; satır içi betik ve stil yine yasaktır.
-- **Tasarım:** eski Facebook düzeni (sol menü, orta akış, sağda son görülenler ve zirve), lacivert üst çubuk, kağıt zemin, ince çerçeve, 4 px köşe; gradyan, cam efekti ve gölge yok. 1000 px altında sağ sütun, 720 px altında sol menü kalkar, alt sekme çıkar. Koyu tema `prefers-color-scheme` iledir.
+- **Tasarım (Faz 71, bot sahibinin isteği: "old school sosyal medya ama güncel frontend"):** eski Facebook düzeni kalır (mavi üst çubuk, sol menü, orta akış, sağda etkinlik, gündem, son görülenler ve zirve), üstüne yuvarlak köşe (10 px), hafif gölge, hap biçimli giriş kutuları. Simgeler `panel/ikonlar.js`'teki satır içi SVG'dir (`ikon(ad)`, renk `currentColor`, boyut CSS'te), unicode glif kullanılmaz; yeni simge `IKONLAR`'a bir satırdır. Yazı tipi sistem yazı tipidir: CSP `font-src` vermez. 1100 px altında sağ sütun, 760 px altında sol menü kalkar, kartlar kenara yapışır, buzlu alt sekme çıkar (ortadaki Paylaş vurgulu). 370 px altında eylem çubuğunda yalnızca simge kalır, 320 px'te yatay taşma olmamalı. Koyu tema `prefers-color-scheme` iledir. İstemci betiğinin dayandığı sınıf adları (`.eylem`, `.tepki-ana`, `.dm-akis`…) değiştirilmez.
 - Betik yoksa her form normal gönderilir (beğeni ve DM sayfayı yeniler). İki yazma arası 1,5 sn'dir (`sosyalMotoru`).
 
 ### Faz 67 — Web Push, paylaşım, etiket, tepki
