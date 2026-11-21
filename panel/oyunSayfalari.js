@@ -206,6 +206,64 @@ function serit(son) {
   return h`<div class="serit">${[...dolgu, son].map((s) => h`<span>${s}</span>`)}</div>`
 }
 
+// Avrupa ruletinin gerçek cep sırası, sıfırdan saat yönünde.
+const RULET_SIRASI = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26]
+const CEP_ACISI = 360 / RULET_SIRASI.length
+const RENK_SINIFI = { kırmızı: 'kirmizi', siyah: 'siyah', yeşil: 'yesil' }
+const CEP_RENGI = { kırmızı: '#b3202c', siyah: '#16191d', yeşil: '#13824a' }
+const f1 = (x) => x.toFixed(2)
+const nokta = (r, aci) => `${f1(r * Math.sin(aci * Math.PI / 180))},${f1(-r * Math.cos(aci * Math.PI / 180))}`
+
+/** Dönen kısım: cepler, numaralar, perdeler, koni ve tepe. Cep konumları sabit olduğu için bir kez üretilir. */
+const RULET_GOVDE = (() => {
+  const cepler = RULET_SIRASI.map((n, i) => {
+    const a0 = (i - 0.5) * CEP_ACISI
+    const a1 = (i + 0.5) * CEP_ACISI
+    const yol = `M${nokta(50, a0)} L${nokta(79, a0)} A79,79 0 0 1 ${nokta(79, a1)} L${nokta(50, a1)} A50,50 0 0 0 ${nokta(50, a0)}Z`
+    return h`<path d="${yol}" fill="${CEP_RENGI[renk(n)]}"/>`
+  })
+  const numaralar = RULET_SIRASI.map((n, i) =>
+    h`<text x="0" y="-71.5" transform="rotate(${f1(i * CEP_ACISI)})">${n}</text>`)
+  const perdeler = RULET_SIRASI.map((_, i) => {
+    const a = (i - 0.5) * CEP_ACISI
+    return h`<path d="M${nokta(50, a)} L${nokta(64, a)}"/>`
+  })
+  const kollar = [0, 90, 180, 270].map((a) => h`<path d="M-2.2,-4 L0,-21 L2.2,-4Z" transform="rotate(${a})"/>`)
+  return h`<circle r="79.5" fill="#d9b25a"/>${cepler}
+<circle r="64" fill="none" stroke="#e8c874" stroke-width=".9"/><circle r="79" fill="none" stroke="#e8c874" stroke-width=".7"/>
+<g stroke="#e8c874" stroke-width=".9">${perdeler}</g>
+<circle r="50" fill="url(#rulet-koni)" stroke="#e8c874" stroke-width="1.2"/>
+<circle r="38" fill="none" stroke="rgb(0 0 0 / .25)" stroke-width=".6"/>
+<g fill="url(#rulet-altin)">${kollar}<circle r="7.5"/></g><circle r="3.2" fill="#fff3c4"/>
+<g class="rulet-numara" fill="#fff" font-size="7" font-weight="700" font-family="Georgia, serif" text-anchor="middle" dominant-baseline="central">${numaralar}</g>`
+})()
+
+const RULET_TANIM = h`<defs>
+<radialGradient id="rulet-ahsap" r=".5"><stop offset=".82" stop-color="#3a1d0c"/><stop offset=".9" stop-color="#7a4520"/><stop offset=".96" stop-color="#4a250f"/><stop offset="1" stop-color="#1e0d04"/></radialGradient>
+<radialGradient id="rulet-pist" r=".5"><stop offset=".78" stop-color="#2b170b"/><stop offset=".86" stop-color="#5b371c"/><stop offset=".92" stop-color="#2b170b"/></radialGradient>
+<radialGradient id="rulet-koni" r=".5"><stop offset="0" stop-color="#a8692f"/><stop offset=".55" stop-color="#6d3c17"/><stop offset="1" stop-color="#3a1d0b"/></radialGradient>
+<linearGradient id="rulet-altin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b3"/><stop offset=".5" stop-color="#d4a640"/><stop offset="1" stop-color="#8a6417"/></linearGradient>
+<radialGradient id="rulet-isik" cx=".35" cy=".3" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient>
+</defs>`
+
+const RULET_KASE = h`<svg class="rulet-kase" viewBox="-100 -100 200 200" aria-hidden="true">${RULET_TANIM}
+<circle r="99" fill="url(#rulet-ahsap)"/><circle r="92" fill="url(#rulet-pist)" stroke="#c9a14a" stroke-width="1"/>
+<circle r="81.5" fill="#1a0d05"/>
+<g fill="url(#rulet-altin)">${[0, 45, 90, 135, 180, 225, 270, 315].map((a) => h`<path d="M0,-88 L1.8,-84.5 L0,-81 L-1.8,-84.5Z" transform="rotate(${a + 22.5})"/>`)}</g></svg>`
+
+/**
+ * Gerçekçi rulet çarkı. `sayi` verilirse o cep tepeye döner (dönüş grubu öznitelikle, CSP satır içi stili
+ * engellediği için): çark tam turlarla döndüğü için durunca cep yine tepededir, top da tepeye düşer.
+ * `sayi` yoksa bekleme çarkıdır, oyun.js şablondan kopyalar.
+ */
+export function ruletCarki(sayi = null, sinif = '') {
+  const aci = sayi === null ? 0 : -RULET_SIRASI.indexOf(sayi) * CEP_ACISI
+  return h`<div class="rulet${sinif ? ` ${sinif}` : ''}">${RULET_KASE}
+<div class="rulet-cark"><svg viewBox="-100 -100 200 200" aria-hidden="true"><g transform="rotate(${f1(aci)})">${RULET_GOVDE}</g></svg>
+<div class="rulet-yorunge"><i class="rulet-top"></i></div></div>
+<svg viewBox="-100 -100 200 200" aria-hidden="true"><circle r="92" fill="url(#rulet-isik)"/></svg></div>`
+}
+
 /** Tek adımlı oyunun canlandırması; sonuç metni `gecikmeli` ile animasyon bitince görünür. */
 function tekCizim(oyun, s) {
   if (oyun === 'slot') {
@@ -217,8 +275,7 @@ function tekCizim(oyun, s) {
   }
   if (oyun === 'rulet') {
     const r = renk(s.sayi)
-    const sinif = r === 'kırmızı' ? 'kirmizi' : r === 'siyah' ? 'siyah' : 'yesil'
-    return h`<div class="carkfelek"><div class="cark-dis"></div><span class="top ${sinif}">${s.sayi}</span></div><p class="not orta gecikmeli">${r}</p>`
+    return h`${ruletCarki(s.sayi)}<p class="not orta gecikmeli"><span class="rulet-sayi ${RENK_SINIFI[r]}">${s.sayi}</span> ${r}</p>`
   }
   if (oyun === 'kazı') {
     return h`<div class="izgara uc kazi">${s.kutular.map((k, i) => h`<span class="hucre d${i + 1}${s.sembol === k ? ' eslesen' : ''}"><i></i>${k}</span>`)}</div>`
@@ -309,5 +366,6 @@ ${kasa({ xp, dar: true })}
 ${sonucKarti(chat, sonuc)}
 ${masa}
 ${odemeTablosu(oyun)}
+${oyun === 'rulet' ? h`<template id="rulet-sablon">${ruletCarki(null, 'donuyor')}</template>` : ''}
 ${altNot}`, { ust: `${t.ikon} ${t.ad}`, kumarhane: true, yan: yanMenu({ chat, cokGrup, secili: oyun }) })
 }

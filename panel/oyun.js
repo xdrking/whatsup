@@ -63,6 +63,7 @@
 
   const sesler = {
     tik: (g = 0) => ton(1400, 0.03, { guc: 0.035, gecikme: g }),
+    tak: (g = 0) => ton(2600, 0.025, { tip: 'triangle', guc: 0.07, gecikme: g }),
     dur: (g = 0) => ton(180, 0.14, { tip: 'triangle', guc: 0.16, gecikme: g, kayma: 80 }),
     kart: (g = 0) => hisirti(0.09, { guc: 0.14, gecikme: g, filtre: 3500 }),
     para: (g = 0) => {
@@ -129,15 +130,17 @@
       ;[1.3, 1.65, 2].forEach((t) => sesler.dur(t))
       bitis = 2.15
     } else if (oyun === 'rulet') {
+      // Top pistte yuvarlanır (yavaşlayan tıkırtı), 1,8 sn'de iner, perdelere çarpıp 3 sn'de cebe oturur.
       let t = 0
-      let aralik = 0.04
-      while (t < 2.1) {
+      let aralik = 0.035
+      while (t < 1.8) {
         sesler.tik(t)
         t += aralik
-        aralik *= 1.1
+        aralik *= 1.06
       }
-      sesler.dur(2.1)
-      bitis = 2.3
+      ;[2.3, 2.6, 2.8, 2.92].forEach((g) => sesler.tak(g))
+      sesler.dur(3)
+      bitis = 3.4
     } else if (oyun === 'bahis') {
       for (let i = 0; i < 10; i += 1) ton(2400, 0.03, { tip: 'sine', guc: 0.04, gecikme: i * 0.12 })
       sesler.dur(1.3)
@@ -221,9 +224,9 @@
       gorsel.append(makaralar)
       donmeBaslat(90)
     } else if (oyun === 'rulet') {
-      gorsel = yeni('div', 'carkfelek donuyor')
-      gorsel.append(yeni('div', 'cark-dis'))
-      donmeBaslat(60)
+      // Çark sunucuda çizilir, sayfadaki şablondan kopyalanır; şablon yoksa bekleme görseli çıkmaz.
+      gorsel = document.getElementById('rulet-sablon')?.content.firstElementChild?.cloneNode(true) ?? null
+      if (gorsel) donmeBaslat(60)
     } else if (oyun === 'bahis') {
       gorsel = yeni('div', 'para-alan')
       const para = yeni('div', 'para donuyor')

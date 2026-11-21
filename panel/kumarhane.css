@@ -1,6 +1,6 @@
 /* Panel kumarhanesi. stil.css'in üstüne yüklenir, yalnızca body.kumarhane'yi etkiler.
    Satır içi style CSP'ye takıldığı için gecikmeler sınıflarla verilir (d1…d9, m1…m3).
-   Süreler oyun.js'teki ses zamanlamasıyla eşlidir: slot 1,3/1,65/2 sn, rulet 2,2 sn, crash 1,8 sn. */
+   Süreler oyun.js'teki ses zamanlamasıyla eşlidir: slot 1,3/1,65/2 sn, rulet 4 sn (top 3 sn'de oturur), crash 1,8 sn. */
 
 .kumarhane {
   --altin: #f5c542;
@@ -167,7 +167,7 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
 /* Hale, animasyon bitince yanar: sonuç önceden belli olmasın. */
 .sonuc[data-oyun="slot"].kazandi, .sonuc[data-oyun="slot"].kaybetti, .sonuc[data-oyun="slot"].buyuk { animation-delay: 0s, 2.1s; }
 .sonuc[data-oyun="bahis"].kazandi, .sonuc[data-oyun="bahis"].kaybetti { animation-delay: 0s, 1.45s; }
-.sonuc[data-oyun="rulet"].kazandi, .sonuc[data-oyun="rulet"].kaybetti, .sonuc[data-oyun="rulet"].buyuk { animation-delay: 0s, 2.25s; }
+.sonuc[data-oyun="rulet"].kazandi, .sonuc[data-oyun="rulet"].kaybetti, .sonuc[data-oyun="rulet"].buyuk { animation-delay: 0s, 3.35s; }
 .sonuc[data-oyun="kazı"].kazandi, .sonuc[data-oyun="kazı"].kaybetti, .sonuc[data-oyun="kazı"].buyuk { animation-delay: 0s, 1.65s; }
 .sonuc[data-oyun="plinko"].kazandi, .sonuc[data-oyun="plinko"].kaybetti, .sonuc[data-oyun="plinko"].buyuk { animation-delay: 0s, 1.7s; }
 .sonuc[data-oyun="crash"].kazandi, .sonuc[data-oyun="crash"].kaybetti, .sonuc[data-oyun="crash"].buyuk { animation-delay: 0s, 1.85s; }
@@ -193,7 +193,7 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
 .gecikmeli { opacity: 0; animation: belir .55s var(--yumusak) forwards; animation-delay: .25s; }
 .sonuc[data-oyun="slot"] .gecikmeli { animation-delay: 2.15s; }
 .sonuc[data-oyun="bahis"] .gecikmeli { animation-delay: 1.5s; }
-.sonuc[data-oyun="rulet"] .gecikmeli { animation-delay: 2.3s; }
+.sonuc[data-oyun="rulet"] .gecikmeli { animation-delay: 3.4s; }
 .sonuc[data-oyun="kazı"] .gecikmeli { animation-delay: 1.7s; }
 .sonuc[data-oyun="plinko"] .gecikmeli { animation-delay: 1.75s; }
 .sonuc[data-oyun="crash"] .gecikmeli { animation-delay: 1.9s; }
@@ -246,23 +246,31 @@ main.degisti .masa-kart, main.degisti .kasa { animation: none; }
 @keyframes para-tura { 0% { transform: rotateY(0) translateY(0); } 50% { transform: rotateY(990deg) translateY(-2.6rem) scale(1.12); } 100% { transform: rotateY(1980deg) translateY(0); } }
 @keyframes para-don { to { transform: rotateY(360deg); } }
 
-/* Rulet */
-.carkfelek { position: relative; justify-self: center; display: grid; place-items: center; width: clamp(8.5rem, 44vw, 11rem); aspect-ratio: 1; margin-top: .6rem; }
-/* İbre */
-.carkfelek::before { content: ""; position: absolute; top: -.7rem; left: 50%; z-index: 2; translate: -50% 0; border: .55rem solid transparent; border-top: .9rem solid var(--altin2); filter: drop-shadow(0 2px 3px rgb(0 0 0 / .6)); }
-.cark-dis {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(circle, #130b24 0 34%, transparent 35%), repeating-conic-gradient(#c62f3b 0 9.73deg, #1d2328 9.73deg 19.46deg);
-  box-shadow: 0 0 0 5px #6b4a12, 0 0 0 8px var(--altin), 0 0 34px rgb(245 197 66 / .3), inset 0 0 22px rgb(0 0 0 / .7);
-  animation: cark 2.2s cubic-bezier(.12, .62, .16, 1) forwards;
+/* Rulet: kase sabittir, çark saat yönünde döner. Top çarkın içindedir: yörüngesi çarka göre ters döner,
+   3 sn'de durur ve cebe düşer, sonra çarkla birlikte döner. Çark tam turla döndüğü için kazanan cep
+   (oyunSayfalari.js'te öznitelikle tepeye çevrilir) durunca yine tepededir. */
+.rulet { position: relative; justify-self: center; width: clamp(13rem, 70vw, 17rem); aspect-ratio: 1; margin: .4rem auto 0;
+  border-radius: 50%; filter: drop-shadow(0 10px 22px rgb(0 0 0 / .7)); }
+.rulet svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rulet-cark { position: absolute; inset: 0; animation: rulet-cark 4s cubic-bezier(.15, .55, .25, 1) forwards; }
+.rulet-yorunge { position: absolute; inset: 0; animation: rulet-yorunge 3s cubic-bezier(.3, .5, .4, 1) forwards; }
+.rulet-top { position: absolute; left: 50%; top: 21.5%; width: 4.2%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 18%, #e4e4e4 45%, #8d8d8d 100%); box-shadow: 0 1px 2px rgb(0 0 0 / .8);
+  animation: rulet-dus 1.2s 1.8s linear backwards; }
+.rulet.donuyor .rulet-cark { animation: rulet-cark-surekli 2.4s linear infinite; }
+.rulet.donuyor .rulet-yorunge { animation: rulet-yorunge-surekli .9s linear infinite; }
+.rulet.donuyor .rulet-top { top: 6%; animation: none; }
+.rulet-sayi { display: inline-grid; place-items: center; min-width: 2.2rem; height: 2.2rem; padding: 0 .3rem; border-radius: 50%; color: #fff; font-weight: 900;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / .8); vertical-align: middle; margin-right: .3rem; }
+.rulet-sayi.kirmizi { background: #b3202c; } .rulet-sayi.siyah { background: #16191d; } .rulet-sayi.yesil { background: #13824a; }
+@keyframes rulet-cark { from { transform: rotate(0); } to { transform: rotate(1440deg); } }
+@keyframes rulet-cark-surekli { to { transform: rotate(360deg); } }
+@keyframes rulet-yorunge { from { transform: rotate(2880deg); } to { transform: rotate(0); } }
+@keyframes rulet-yorunge-surekli { from { transform: rotate(720deg); } to { transform: rotate(0); } }
+/* Top pistten iner, perdelere çarpıp seker, cebe oturur. */
+@keyframes rulet-dus {
+  0% { top: 6%; } 30% { top: 9%; } 52% { top: 20%; } 62% { top: 16.5%; } 74% { top: 21.5%; } 82% { top: 19.8%; } 91% { top: 21.5%; } 95% { top: 21%; } 100% { top: 21.5%; }
 }
-.carkfelek.donuyor .cark-dis { animation: cark-hizli .8s linear infinite; }
-.carkfelek .top { position: relative; z-index: 1; opacity: 0; animation: top-gel .5s 2.1s var(--yay) forwards; box-shadow: 0 0 0 3px rgb(255 255 255 / .85), 0 0 22px rgb(0 0 0 / .8); }
-.top { display: inline-grid; place-items: center; width: 4.2rem; height: 4.2rem; border-radius: 50%; color: #fff; font-size: 1.8rem; font-weight: 900; }
-.top.kirmizi { background: #c62f3b; } .top.siyah { background: #1d2328; } .top.yesil { background: #1f8a4c; }
-@keyframes cark { from { transform: rotate(0); } to { transform: rotate(1450deg); } }
-@keyframes cark-hizli { to { transform: rotate(360deg); } }
-@keyframes top-gel { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
 
 /* Kazı kazan: gümüş kaplama sırayla silinir. */
 .kumarhane .izgara.uc { width: min(100%, 17rem); max-width: none; margin: 0 auto; }
