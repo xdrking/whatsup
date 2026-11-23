@@ -10,7 +10,8 @@ import { FAIZ_YUZDESI } from '../lib/banka.js'
 import { borcIslet, krediFaizi } from '../lib/kredi.js'
 import { bozdurmaDegeri, COIN_TABAN } from '../lib/coin.js'
 import { MAKAMLAR } from '../lib/devlet.js'
-import { SULY, sulyFiyati, sulySatisDegeri } from '../lib/kripto.js'
+import { NFT_GERI_ALIM, nftBul } from '../lib/nft.js'
+import { BIRIM, SULY, sulyFiyati, sulySatisDegeri } from '../lib/kripto.js'
 import { MESLEKLER, meslekKoduyla } from '../lib/meslek.js'
 import { MULKLER } from '../lib/mulk.js'
 import { durum as petDurumu, kactiMi, seviye as petSeviyesi, TURLER } from '../lib/pet.js'
@@ -94,7 +95,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     const usd = btcUsd()
     const harita = new Map()
     const al = (jid) => {
-      if (!harita.has(jid)) harita.set(jid, { coin: 0, coinDeger: 0, suly: 0, sulyDeger: 0, mulkDeger: 0, yatirim: 0 })
+      if (!harita.has(jid)) harita.set(jid, { coin: 0, coinDeger: 0, suly: 0, sulyDeger: 0, nftDeger: 0, mulkDeger: 0, yatirim: 0 })
       return harita.get(jid)
     }
     for (const c of tum('coin', 'SELECT user_jid, bakiye FROM coin WHERE chat_jid = ?', chatJid)) {
@@ -102,6 +103,10 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     }
     for (const k of tum('kripto', 'SELECT user_jid, birim FROM kripto WHERE chat_jid = ?', chatJid)) {
       Object.assign(al(k.user_jid), { suly: k.birim, sulyDeger: usd ? sulySatisDegeri(k.birim, usd, kur) : 0 })
+    }
+    for (const n of tum('nft', 'SELECT user_jid, no FROM nft WHERE chat_jid = ?', chatJid)) {
+      const birim = ((nftBul(n.no)?.fiyat ?? 0) * BIRIM * NFT_GERI_ALIM) / 100
+      if (usd) al(n.user_jid).nftDeger += sulySatisDegeri(birim, usd, kur)
     }
     for (const m of tum('mulk', 'SELECT user_jid, kod, adet, bekleyen FROM mulk WHERE chat_jid = ?', chatJid)) {
       const mulk = MULKLER.find((x) => x.kod === m.kod)
@@ -136,13 +141,13 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
       WHERE s.chat_jid = @chat
     `).all({ chat: chatJid, dun: istanbulDay(new Date(now - GUN_MS)) }).map((u) => {
       const portfoy = portfoyler.get(u.user_jid) ?? 0
-      const v = diger.get(u.user_jid) ?? { coin: 0, coinDeger: 0, suly: 0, sulyDeger: 0, mulkDeger: 0, yatirim: 0 }
+      const v = diger.get(u.user_jid) ?? { coin: 0, coinDeger: 0, suly: 0, sulyDeger: 0, nftDeger: 0, mulkDeger: 0, yatirim: 0 }
       return {
         ...u,
         ...v,
         bot: u.user_jid === bot,
         portfoy,
-        servet: u.xp + u.bakiye + portfoy + v.coinDeger + v.sulyDeger + v.mulkDeger + v.yatirim,
+        servet: u.xp + u.bakiye + portfoy + v.coinDeger + v.sulyDeger + v.nftDeger + v.mulkDeger + v.yatirim,
         seviye: seviye(u.xp),
         seri: u.seri ?? 0,
         kumarNet: Math.max(u.net, 0),

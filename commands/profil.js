@@ -1,4 +1,4 @@
-import { bankaBakiyesi, botHesabiMi, coinDurumu, getStats, mulkDurumu, marketDurumu, rebornYildizi, sampiyonlukSayisi, seviyeIlerlemesi, sosyalDurum } from '../lib/stats.js'
+import { bankaBakiyesi, botHesabiMi, coinDurumu, getStats, mulkDurumu, marketDurumu, nftListesi, rebornYildizi, sampiyonlukSayisi, seviyeIlerlemesi, sosyalDurum } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -43,6 +43,7 @@ export default {
     const coin = coinDurumu(from, jid).bakiye
     const mulkler = mulkDurumu({ chatJid: from, userJid: jid })
     const sosyal = sosyalDurum(from, jid)
+    const nftler = nftListesi(from, jid)
 
     const lines = [
       `👤 *${ad}*  ${mentionOf(jid)}`,
@@ -57,6 +58,7 @@ export default {
       ...(banka ? [`🏦 Bankada: ${sayi.format(banka)} XP`] : []),
       ...(coin ? [`🪙 Coin: ${sayi.format(coin)}`] : []),
       ...(mulkler.length ? [mulkler.map((m) => `${m.mulk.ad} x${m.adet}`).join('  •  ')] : []),
+      ...(nftler.length ? [`🖼️ NFT: ${nftler.map((n) => `#${n.no}`).join(' ')}`] : []),
       ...(sosyal.meslek ? [sosyal.meslek.ad] : []),
       ...(sosyal.cete ? [`🏴 Çete: ${sosyal.cete}`] : []),
       ...(sosyal.es ? [`💍 Eşi: ${mentionOf(sosyal.es)}`] : []),

@@ -1,7 +1,10 @@
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
+import { sureYaz } from './cark.js'
+import { BASKIN_AZAMI_BOMBA, GANIMET_YUZDESI, KAYBEDEN_KAYIP_YUZDESI, urunKoduyla } from '../lib/sulymarket.js'
+import { botGonderisi } from '../lib/sosyal.js'
 import { AZAMI_UYE, CETE_SEZON_ODULU, ceteAdi, KASA_KESINTI_YUZDESI } from '../lib/cete.js'
 import { binlik } from '../lib/sayi.js'
-import { ceteAt, ceteAyril, ceteCek, ceteDurumu, ceteKatil, ceteKur, ceteYatir } from '../lib/stats.js'
+import { ceteAt, ceteAyril, ceteBaskin, ceteCek, ceteDurumu, ceteKatil, ceteKur, ceteYatir } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -75,6 +78,50 @@ function at({ yaz, chatJid, userJid, parsed, metadata }) {
   return yaz(`🏴 ${mentionOf(uye)} çeteden atıldı.`, [uye])
 }
 
+const silahYaz = (liste) => liste.map((s) => `${urunKoduyla(s.kod)?.ad ?? s.kod} x${binlik(s.adet)}`).join('  •  ')
+
+function baskinEngeli({ engel, bitis, eldeki }) {
+  const kalan = bitis ? sureYaz(bitis - Date.now()) : ''
+  return {
+    'cete-yok': CETESIZ,
+    'lider-degil': LIDER_DEGIL,
+    'rakip-yok': '🏴 Böyle bir çete yok.',
+    kendi: '🏴 Kendi çeteni basamazsın.',
+    hapis: `🚔 Hapisteyken baskın yapılmaz, ${kalan} kaldı.`,
+    bekle: `🏴 Çete yorgun, ${kalan} sonra yeniden basabilirsin.`,
+    korunma: `🚓 Orası polis kaynıyor, ${kalan} basılamaz.`,
+    silahsiz: '🏴 Silahsız baskın olmaz. Silah: `.sulymarket`',
+    'bomba-yok': `💣 O kadar bomba yok. Cephanelikte ${eldeki}, tek baskında en çok ${BASKIN_AZAMI_BOMBA}.`,
+  }[engel] ?? KAPALI
+}
+
+function baskin({ yaz, chatJid, userJid, adMetni }) {
+  const ad = ceteAdi(adMetni)
+  if (!ad) return yaz('Kullanım: `.çete bas <çete adı> [bomba]`')
+
+  let s = ceteBaskin({ chatJid, userJid, anahtar: ad.anahtar })
+  // Sondaki sayı bombadır (`.çete bas Kara Kediler 2`); önce tam ad denenir, çete adı sayıyla bitebilir.
+  const m = s?.engel === 'rakip-yok' && /^(.+)\s+(\d{1,2})$/.exec(adMetni.trim())
+  const kisaAd = m && ceteAdi(m[1])
+  if (kisaAd) s = ceteBaskin({ chatJid, userJid, anahtar: kisaAd.anahtar, bomba: Number(m[2]) })
+  if (!s) return yaz(KAPALI)
+  if (s.engel) return yaz(baskinEngeli(s))
+
+  botGonderisi(chatJid, s.kazandi
+    ? `🏴 ${s.ad} çetesi ${s.rakip} çetesini bastı, kasadan ${binlik(s.ganimet)} XP götürdü.`
+    : `🏴 ${s.rakip} çetesi ${s.ad} baskınını püskürttü.`)
+  return yaz([
+    `🏴 *BASKIN*  ${s.ad} ⚔️ ${s.rakip}`,
+    `💪 ${binlik(s.guc)} — ${binlik(s.rakipGuc)}  •  kazanma şansı %${s.sans}`,
+    ...(s.bomba ? [`💣 ${s.bomba} bomba patladı`] : []),
+    '',
+    s.kazandi ? `🔥 *${s.ad} kazandı!* Kasadan ${binlik(s.ganimet)} XP alındı.` : `🛡️ *${s.rakip} püskürttü!*`,
+    ...(s.kayip.length ? [`🪦 ${s.ad} kaybı: ${silahYaz(s.kayip)}`] : []),
+    ...(s.rakipKayip.length ? [`🪦 ${s.rakip} kaybı: ${silahYaz(s.rakipKayip)}`] : []),
+    `💼 Kasan: ${binlik(s.kasa)} XP  •  Rakip lider: ${mentionOf(s.rakipLider)}`,
+  ].join('\n'), [s.rakipLider])
+}
+
 function durum({ yaz, chatJid, userJid }) {
   const s = ceteDurumu({ chatJid, userJid })
   if (!s) return yaz(KAPALI)
@@ -86,13 +133,15 @@ function durum({ yaz, chatJid, userJid }) {
       `👑 Lider: ${mentionOf(s.cete.lider)}`,
       `💼 Kasa: ${binlik(s.cete.kasa)} XP`,
       `👥 ${s.uyeler.map(mentionOf).join(' ')}`,
+      s.silahlar.length ? `🔫 ${silahYaz(s.silahlar)}` : '🔫 Cephanelik boş (`.sulymarket`)',
+      ...(s.bonus ? [`🥷 Üyelere soygunda +%${s.bonus} şans`] : []),
       '',
     )
   }
 
   lines.push('🏆 *Haftalık çete sıralaması*', '')
   if (s.siralama.length) {
-    lines.push(...s.siralama.map((c, i) => `${MADALYA[i] ?? `${i + 1}.`} ${c.ad} — ${binlik(c.puan)} puan, ${c.uye} üye`))
+    lines.push(...s.siralama.map((c, i) => `${MADALYA[i] ?? `${i + 1}.`} ${c.ad} — ${binlik(c.puan)} puan, ${c.uye} üye, 💪 ${binlik(c.guc)}`))
   } else {
     lines.push('Henüz çete yok.')
   }
@@ -105,11 +154,13 @@ export default {
   name: 'çete',
   aliases: ['cete', 'gang'],
   description: 'Çete kur, ortak kasa tut, haftalık sıralamada yarış',
-  usage: '.çete  —  .çete kur <ad>  —  .çete katıl <ad>  —  .çete ayrıl  —  .çete yatır <miktar>  —  .çete çek <miktar>  —  .çete at @kişi',
+  usage: '.çete  —  .çete kur <ad>  —  .çete katıl <ad>  —  .çete ayrıl  —  .çete yatır <miktar>  —  .çete çek <miktar>  —  .çete at @kişi  —  .çete bas <ad> [bomba]',
   details: [
     `Kurmak coin kurunun %1'idir, ödenen XP yanar. En çok ${AZAMI_UYE} üye, katılım serbesttir, lider istemediğini atar.`,
     `Kasaya yatırılan XP'den %${KASA_KESINTI_YUZDESI} kesilir. Kasadan yalnızca lider çeker, faiz işlemez.`,
     `Sıralama üyelerin \`.sezon\` puanlarının toplamıdır. Haftanın birincisi kasaya ${binlik(CETE_SEZON_ODULU)} XP alır.`,
+    `Silah \`.sulymarket\`'ten alınır, çetede kalır. Güç = üye başı 5 + silahlar. Silahlı çetenin üyeleri soygunda daha şanslıdır.`,
+    `\`.çete bas Kara Kediler 2\` (lider): 2 bombayla baskın. Kazanan rakip kasanın %${GANIMET_YUZDESI}'sini alır, kaybeden silahlarının yaklaşık %${KAYBEDEN_KAYIP_YUZDESI}'ini yitirir. 6 saatte bir, basılan çete 12 saat korunur.`,
     'Lider ayrılırsa en eski üye lider olur, son üye ayrılırsa kasa ona kalır.',
   ],
   category: 'toplum',
@@ -130,6 +181,7 @@ export default {
       if (islem === 'kur') return await kur({ ...ortak, adMetni })
       if (['katıl', 'katil'].includes(islem)) return await katil({ ...ortak, adMetni })
       if (['ayrıl', 'ayril'].includes(islem)) return await ayril(ortak)
+      if (['bas', 'baskın', 'baskin', 'savaş', 'savas'].includes(islem)) return await baskin({ ...ortak, adMetni })
       if (islem === 'at') return await at({ ...ortak, parsed, metadata })
 
       if (['yatır', 'yatir', 'çek', 'cek'].includes(islem)) {

@@ -520,6 +520,20 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 
 Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 XP getirir, kur 2 katına çıkınca kira da iki katına çıkar. Kira saat başı birikir, 24 saatte durur, `.mülk topla` ile alınır. Mülk satılınca kurun %90'ı üstünden XP gelir. Owner `.haciz @kişi ev` ile bir mülke el koyar, değeri botun kasasına girer.
 
+### SulyMarket (kara borsa)
+
+| Komut | Yapar |
+|---|---|
+| `.sulymarket` | Silah, hacker ve hizmetler, Suly bakiyen ve envanterin (kısa yol `.sm`). Bota özelden de yazılır |
+| `.sulymarket al 2 3` | 2 numaralı üründen 3 tane alır. Silah çetenin cephaneliğine girer |
+| `.sulymarket kullan firar` / `kullan çilingir @kişi` | Hapisten kaçar / birinin soygun kalkanını kırar |
+| `.hack` (özelden) | Hedeflerin kimliklerini listeler |
+| `.hack <kimlik> usta` (özelden) | Hedefin parasını bankana geçirir, usta 1 mülk, kara şapka coin, mülk ve NFT de alır |
+| `.çete bas <çete> [bomba]` | Lider baskın yapar, kazanan rakip kasanın %20'sini alır |
+| `.nft` | 30 piksel mahlukluk koleksiyon: `al`, `sat`, `iptal`, `ver`, `boz` |
+
+Hacklenmekten yalnızca **güvenlik duvarı** korur. Yakalanan hacker 2 saat hapse girer, VPN'i varsa kimliği gizli kalır.
+
 ### Hapis, evlilik, meslek, çete, dava
 
 | Komut | Yapar |

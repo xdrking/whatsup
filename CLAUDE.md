@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Kişisel, eğlence amaçlı bir WhatsApp botu. Tek bir arkadaş grubunda kullanılır.
 
 - **Ticari değil.** Ücretli özellik, müşteri, SLA yok.
-- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz. İstisnalar sahibin `.darbe`'si ve `.reborn` oylaması (grup üyelerine özelden yazar, Faz 49 ve Faz 63) ve susturulduğu halde yazmaya devam edene özelden giden uyarıdır (Faz 54); ikisi de bot sahibinin kararıdır, ban riski bilerek kabul edildi.
+- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz. İstisnalar sahibin `.darbe`'si ve `.reborn` oylaması (grup üyelerine özelden yazar, Faz 49 ve Faz 63) ve susturulduğu halde yazmaya devam edene özelden giden uyarıdır (Faz 54), bir de özelden yazılan `.hack`'in gruba düşen duyurusudur (Faz 73); ilk ikisi de bot sahibinin kararıdır, ban riski bilerek kabul edildi.
 - Kod kalitesi hedefi: bir kişinin altı ay sonra okuyup anlayabileceği sadelik. Üretim ölçekli soyutlama, DI container, mikroservis vb. **istenmiyor**.
 
 ## Stack
@@ -153,6 +153,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | geçmiş reborn'lar ve o anki en zenginler | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.pet` evcil hayvanlar | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kripto` Suly bakiyeleri ve son Bitcoin fiyatı | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | kara borsa envanteri, hack hakkı ve duvarı, çete cephaneliği, NFT sahipleri | `data/stats.db` (kalıcı) |
 | `lib/kripto.js` | son çekilen Bitcoin fiyatı (60 sn) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/sahipSans.js` | sahibin gizli kumar şansı açık mı (`.şans`) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
@@ -353,7 +354,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 70 (tamam):** arama, DM'de yazıyor ve görüldü, hikâye yanıtı ve tepkisi, grup sohbeti, etkinlik, haftanın gönderisi. Ayrıntı aşağıda.
 - **Faz 71 (tamam):** sosyal bölümün yeni görünümü ve SVG simgeler. Faz 66 "Tasarım" maddesine işlendi.
 - **Faz 72 (tamam):** kalıcı panel oturumu, @ önerisi, düzenleme, kaydetme, sabitleme, çevrimiçi, durum, okundu çizgisi, tema, bahşiş, kazanç kartı, profil vitrini. Ayrıntı aşağıda.
-- **Faz 73+:** yeni komutlar, her biri ayrı adım
+- **Faz 73 (tamam):** `.sulymarket`, `.hack`, `.çete bas`, `.nft`. Ayrıntı aşağıda.
+- **Faz 74+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1471,6 +1473,26 @@ sosyal_profil.sabit, durum, durum_bitis, aktif, akis_gorulen
 - **Profil vitrini** (`profilVitrini`): unvan, devir zengini, şampiyonluk, makamlar, meslek, eş, çete, pet, hapis. Hiçbir şey yazmaz: kaçmış pet gösterilmez ama silinmez.
 - **Haftanın gönderisi** şeridi ödülü yazar (`sosyal_hafta_gonderi.xp`).
 
+### Faz 73 — Kara borsa: `.sulymarket`, `.hack`, `.çete bas`, `.nft`
+
+```
+karaborsa(chat_jid, user_jid, kod, adet)                                  PK(chat_jid,user_jid,kod)
+hack(chat_jid, user_jid, day, adet, korunma_until ms, duvar_until ms)     PK(chat_jid,user_jid)
+cete_silah(chat_jid, anahtar, kod, adet)                                  PK(chat_jid,anahtar,kod)
+cete_baskin(chat_jid, anahtar, son_saldiri ms, korunma_until ms)          PK(chat_jid,anahtar)
+nft(chat_jid, no, user_jid, fiyat birim)                                  PK(chat_jid,no)
+```
+
+Kurallar `lib/sulymarket.js` ve `lib/nft.js`'te saftır, NFT çizimi `lib/nftResim.js`'te, yazma `lib/stats.js`'in sonundaki kara borsa bölümündedir. Ürün `kod`'u ve NFT `no`'su veritabanına yazılır, değiştirilmez; yeni NFT sona eklenir.
+
+- **Suly ile satılır, ödenen Suly yanar.** Fiyat tam Suly'dir ve ölçeklenmez: Suly'nin XP karşılığı kurla zaten büyür. 1 coin kabaca `REFERANS_KUR / BTC doları` Suly eder (BTC 100.000 dolarken 23).
+- **Özelden alışveriş:** kişinin botla tek ortak grubu varsa çalışır (`uyelikleriBul`, `.panel` ile ortak).
+- **`.hack`:** yalnızca özelden. Argümansız yazınca hacker'ı olana hedeflerin kimliğini listeler, grupta `.id @kişi` yazıp hedefini belli etmesin. Çalınan para hackleyenin **bankasına** girer, coin, mülk (`mulkTasi`) ve NFT ona geçer; toplam değişmez, XP basılmaz. Engeller (duvar, korunma, hak, hapis, boş hedef) hacker'ı yakmaz. Başarıda kimlik gizlidir, duyuruda yazılmaz. Başarısızlıkta VPN varsa o yanar, yoksa 2 saat hapis ve grupta teşhir. Günde 2 hack, kurban 12 saat korunur. Bot hacklenemez. `.market` kalkanı ve sigorta korumaz, yalnızca duvar korur. Duyuru susturulmuş gruba gitmez.
+- **Silah çetenindir:** üye ayrılınca cephanelikte kalır, çete kapanınca silinir. Güç = üye başı 5 + silahlar. Silah gücü üyelerin tekli `.soygun` şansına en çok 10 puan ekler (`soygunBonusu`), `.soygun herkes`'e eklenmez.
+- **`.çete bas <ad> [bomba]`:** yalnızca lider. Şans güç oranıdır (%10-90). Kazanan rakip kasanın %20'sini kendi kasasına alır, iki taraf da silah kaybeder. Çete 6 saatte bir basar, basılan 12 saat korunur. Önce tam ad denenir, sonra sondaki sayı bomba sayılır.
+- **NFT:** 30 mahluk, grupta her birinin tek sahibi vardır. Görsel `no`'dan türetilir, saklanmaz. Üyeler arası satış Suly'nin el değiştirdiği tek yoldur, bu yüzden iki taraf da `.devret` kapısından geçer (borç, ambargo; `nftTarafEngeli`). `.nft boz` liste fiyatının yarısını geri basar ve borçluya da açıktır: NFT varken `.iflas` reddedildiği için başka çıkış olmazdı. Geri alım alıştan ucuz kalmalı, yoksa Suly basılır. `.servet` ve panel geri alım değeriyle sayar.
+- Reborn beş tabloyu da siler. Darbe, haciz ve spam cezası NFT'ye ve envantere dokunmaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1609,3 +1631,7 @@ sosyal_profil.sabit, durum, durum_bitis, aktif, akis_gorulen
 120. Panelde giriş yap, sunucuda `pm2 restart panel` → sayfa yenilenince oturum duruyor, giriş ekranı gelmiyor; çıkış yapınca düşüyor
 121. Gönderi kutusuna `@ay` yaz → öneri listesinde Ayşe, Enter ile `@Ayşe ` yazılır. Kendi gönderinde ⋯ → Düzenle, kaydedince "· düzenlendi"; 10 dk sonra Düzenle yok. ⋯ → Kaydet, sol menüde Kaydedilenler'de çıkar. ⋯ → Profilde sabitle, profilde en üstte "Sabitlenmiş gönderi". Profili düzenle → Şu an "maçta ⚽" → profilde ve sağ sütunda görünür. Başka tarayıcıda panel açıkken sağ sütunda yeşil nokta ve "çevrimiçi". Akışa birkaç gönderi düşünce "Buraya kadar okudun" çizgisi. Sol menüde Koyu tema → sayfa koyu, Ayar'dan "Cihazın ayarı"na dönülür
 122. Başkasının gönderisinde ☕ Bahşiş → tutar seç → cüzdan düşer, gönderi sahibinin XP'si artar, ona bildirim düşer, gönderide "☕ 1 bahşiş"; kredi borcuyla → "Kredi borcun varken". Kumarhanede bahsin 4 katı kazanınca sonuç kartında "📣 Akışta paylaş" → akışta çarpanlı kazanç kartı; aynı kazanç ikinci kez paylaşılamaz. Profilde Vitrin kartı unvan, meslek, eş, makam ve peti gösterir. Haftanın gönderisi şeridi "+X XP ödül" yazar
+123. `.sulymarket` → ürünler ve Suly bakiyesi; Suly yokken `al 1` → "Suly gerekiyor"; çetesiz `al 2` → "çeten olmalı"; bota özelden `.sulymarket al 7` → hacker alınır, grupta iz yok
+124. Grupta `.hack` → "özelden yaz"; özelden `.hack` → hedef kimlikleri; `.hack <kimlik> usta` → başarıda `.banka` artar, grupta "kimliği bilinmiyor" duyurusu; başarısızlıkta VPN yoksa `.hapis` listeler; aynı kişiye hemen yine → "yeni hacklendi", hacker durur; hedefte duvar varken → hacker harcanmaz
+125. `.çete` → cephanelik ve güç; üye `.çete bas X` → "yalnızca lider"; lider `.çete bas X 1` → sonuç, kasa ve kayıplar; hemen yine → "çete yorgun"; hapisteyken `.sulymarket kullan firar` → çıkar
+126. `.nft` → galeri görseli; `.nft al 11` → kart görseli, Suly düşer; `.nft sat 11 5`, başkası `.nft al 11` → Suly satıcıya geçer; `.nft boz` → yarısı geri gelir; `.profil` NFT numarasını yazar

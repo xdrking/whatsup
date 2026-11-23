@@ -49,6 +49,7 @@ export default {
         ...satir('🏦', 'Banka', s.banka),
         ...(s.coinAdet ? [`🪙 Coin: ${binlik(s.coinAdet)} adet ≈ ${binlik(s.coin)} XP`] : []),
         ...(s.kriptoBirim ? [`🟠 Suly: ${sulyYaz(s.kriptoBirim)} ≈ ${binlik(s.kripto)} XP`] : []),
+        ...satir('🖼️', `NFT (${s.nftAdet} adet, geri alım)`, s.nft),
         ...satir('🏠', 'Mülk ve kira', s.mulk),
         ...satir('📈', 'Hisse', s.borsa),
         ...satir('💼', 'Yatırım', s.yatirim),

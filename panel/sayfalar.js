@@ -569,7 +569,7 @@ function servetCubugu(k) {
   // Eksi cüzdan çubukta çizilemez, oranlar artı kısımlardan hesaplanır.
   const parcalar = [
     ['cuzdan', 'Cüzdan', k.xp], ['banka', 'Banka', k.bakiye], ['portfoy', 'Portföy', k.portfoy],
-    ['coin', 'Coin', k.coinDeger], ['suly', 'Suly', k.sulyDeger], ['mulk', 'Mülk', k.mulkDeger], ['yatirim', 'Yatırım', k.yatirim],
+    ['coin', 'Coin', k.coinDeger], ['suly', 'Suly', k.sulyDeger], ['nft', 'NFT', k.nftDeger], ['mulk', 'Mülk', k.mulkDeger], ['yatirim', 'Yatırım', k.yatirim],
   ]
     .filter(([, , n]) => n > 0)
   const toplam = parcalar.reduce((t, [, , n]) => t + n, 0)

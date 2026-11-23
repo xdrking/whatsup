@@ -32,6 +32,7 @@ export default {
       if (s.coin) return await yaz('⚖️ Önce coinlerini boz: `.coinmarket sat <adet>`')
       if (s.kripto) return await yaz('⚖️ Önce Suly\'lerini sat: `.kripto sat suly hepsi`')
       if (s.mulk) return await yaz('⚖️ Önce mülklerini sat: `.mülk sat <mülk>`')
+      if (s.nft) return await yaz('⚖️ Önce NFT\'lerini boz: `.nft boz <no>`')
       if (s.cete) return await yaz('⚖️ Önce çete kasasını boşalt: `.çete çek <miktar>`')
       if (s.yatirim) return await yaz('⚖️ Önce yatırımının sonuçlanmasını bekle: `.yatırım`')
 

@@ -6,7 +6,7 @@ import {
   BASARI_YUZDESI, GUNLUK_DENEME, MIN_HIRSIZ_XP, MIN_KURBAN_XP,
 } from '../lib/soygun.js'
 import { HAPIS_SAATI } from '../lib/hapis.js'
-import { botHesabiMi, hapisDurumu, soygunYap, topluSoygun } from '../lib/stats.js'
+import { botHesabiMi, ceteSoygunBonusu, hapisDurumu, soygunYap, topluSoygun } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -52,7 +52,7 @@ export default {
   description: 'Birinin XP\'sini çalmayı dene — yakalanırsan sen ödersin',
   usage: '.soygun @kişi  —  bir mesajı yanıtlayarak .soygun  —  .soygun herkes',
   details: [
-    `Başarı şansı %${BASARI_YUZDESI}. Başarılıysan kurbanın XP'sinin %10'unu alırsın.`,
+    `Başarı şansı %${BASARI_YUZDESI}, çetenin silahları artırır (\`.sulymarket\`). Başarılıysan kurbanın XP'sinin %10'unu alırsın.`,
     `Yakalanırsan kendi XP'nin %10'unu kurbana ödersin ve ${HAPIS_SAATI} saat hapse girersin (\`.kefalet\`).`,
     `Günde ${GUNLUK_DENEME} deneme. Soyulan kişiye 6 saat dokunulamaz. Kalkan \`.market\`'te satılır.`,
     '`.soygun herkes` gruptaki herkese ayrı ayrı dener, `.coinmarket`\'ten alınan hakla çalışır. Yakalanma cezası yoktur, kalkan yine korur.',
@@ -82,11 +82,12 @@ export default {
       // Sonuç mesajı kurbanın bakiyesini yazar, botunki yalnızca .top'ta görünür.
       if (botHesabiMi(kurban)) return await yaz('🤖 Botun hesabı soyulamaz.')
 
+      const bonus = ceteSoygunBonusu(from, sender)
       const s = soygunYap({
         chatJid: from,
         hirsiz: sender,
         kurban,
-        sans: () => randomInt(100) < BASARI_YUZDESI,
+        sans: () => randomInt(100) < BASARI_YUZDESI + bonus,
       })
       if (!s) return await yaz('🥷 Polis her yerde, sonra dene.')
       if (s.engel) return await yaz(engelMetni(s, kurban), [kurban])

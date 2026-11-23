@@ -15,7 +15,7 @@ const KULLANIM = [
 ].join('\n')
 
 /** Kişinin üye olduğu gruplar ve oradaki kimliği; numara ve LID de üye listesinden öğrenilir. */
-async function uyelikleriBul(sock, kimlikler) {
+export async function uyelikleriBul(sock, kimlikler) {
   const gruplar = await sock.groupFetchAllParticipating()
   const uyelikler = []
   let numara = ''
