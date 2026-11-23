@@ -16,9 +16,9 @@ function urunNotu(u) {
   const h = u.tur === 'hacker' && HACKERLAR.find((x) => x.kod === u.kod)
   if (h) {
     const pay = [
-      `bankanın %${h.banka}'i`,
-      ...(h.cuzdan ? [`cüzdanın %${h.cuzdan}'si`] : []),
-      ...(h.coin ? [`coinin %${h.coin}'si`] : []),
+      `banka %${h.banka}`,
+      ...(h.cuzdan ? [`cüzdan %${h.cuzdan}`] : []),
+      ...(h.coin ? [`coin %${h.coin}`] : []),
       ...(h.mulkPayi ? ['mülklerin üçte biri'] : h.mulkEnAz ? ['1 mülk'] : []),
       ...(h.nft ? ['1 NFT'] : []),
     ]
