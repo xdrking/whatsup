@@ -13,25 +13,25 @@ const dakika = (ms) => {
   return dk >= 60 ? `${Math.floor(dk / 60)} sa ${dk % 60} dk` : `${dk} dk`
 }
 
-export const HESAP_SAYFALARI = ['hesap', 'banka', 'coin']
+export const HESAP_SAYFALARI = ['hesap', 'banka', 'coin', 'suly', 'sulymarket']
 
 const bildirim = (b) => (b
   ? h`<p id="bildirim" class="bildirim ${b.hata ? 'olmadi' : 'oldu'}" role="status">${b.hata ? '⚠️' : '✅'} ${b.hata ?? b.tamam}</p>`
   : '')
 
 /** `alan` verilirse tutar kutusu çıkar; `hepsi` hızlı düğmesi oyun.js ile açılır. */
-function islemFormu(chat, sayfa, islem, etiket, { alan = '', yer = '', sinif = '' } = {}) {
+export function islemFormu(chat, sayfa, islem, etiket, { alan = '', yer = '', sinif = '', urun = '', deger = '' } = {}) {
   return h`<form class="islem${alan ? '' : ' duz'}" method="post" action="/oyun/islem">
-  <input type="hidden" name="grup" value="${chat}"><input type="hidden" name="sayfa" value="${sayfa}"><input type="hidden" name="islem" value="${islem}">
-  ${alan ? h`<label class="alan"><small>${alan}</small><input name="tutar" placeholder="${yer}" autocomplete="off" required></label>` : ''}
+  <input type="hidden" name="grup" value="${chat}"><input type="hidden" name="sayfa" value="${sayfa}"><input type="hidden" name="islem" value="${islem}">${urun ? h`<input type="hidden" name="urun" value="${urun}">` : ''}
+  ${alan ? h`<label class="alan"><small>${alan}</small><input name="tutar" placeholder="${yer}" value="${deger}" autocomplete="off" required></label>` : ''}
   <button class="${sinif}">${etiket}</button>
 </form>`
 }
 
-const satir = (ikon, ad, deger, sinif = '') => h`<div class="satir"><span class="ad"><span aria-hidden="true">${ikon}</span> ${ad}</span><span class="deger ${sinif}">${deger}</span></div>`
+export const satir = (ikon, ad, deger, sinif = '') => h`<div class="satir"><span class="ad"><span aria-hidden="true">${ikon}</span> ${ad}</span><span class="deger ${sinif}">${deger}</span></div>`
 const varsa = (ikon, ad, n, sinif = '') => (n ? satir(ikon, ad, xp(n), sinif) : '')
 
-function sayfa(baslik, ust, secili, { chat, cokGrup, durum }, icerik) {
+export function sayfa(baslik, ust, secili, { chat, cokGrup, durum }, icerik) {
   return kabuk(baslik, h`
 ${kasa({ xp: durum.banka?.xp ?? durum.servet?.cuzdan ?? 0, dar: true })}
 ${bildirim(durum.bildirim)}
@@ -52,6 +52,8 @@ export function hesapSayfasi(veri) {
   ${satir('🏦', 'Banka', xp(s.banka))}
   ${s.coinAdet ? satir('🪙', `Coin · ${sayi.format(s.coinAdet)} adet`, `≈ ${xp(s.coin)}`) : ''}
   ${varsa('🟠', 'Suly', s.kripto)}
+  ${varsa('🖼️', 'NFT', s.nft)}
+  ${varsa('🏝️', 'Offshore (gizli, nete girmez)', s.offshore)}
   ${varsa('🏠', 'Mülk ve kira', s.mulk)}
   ${varsa('📈', 'Hisse', s.borsa)}
   ${varsa('💼', 'Yatırım', s.yatirim)}
@@ -59,7 +61,7 @@ export function hesapSayfasi(veri) {
   ${varsa('💳', 'Kredi borcu', s.kredi, 'eksi')}
   ${varsa('🦈', 'Tefeci borcu', s.tefeci, 'eksi')}
   <div class="satir net"><span class="ad">🧾 Net servet</span><span class="deger">${xp(s.net)}</span></div>` : h`<p class="not">Servet şu an hesaplanamıyor.</p>`}
-  <p class="hizli"><a href="${hesapLink(chat, 'banka')}">🏦 Banka ve kredi ›</a><a href="${hesapLink(chat, 'coin')}">🪙 Coin ve mülk ›</a></p>
+  <p class="hizli"><a href="${hesapLink(chat, 'banka')}">🏦 Banka ve kredi ›</a><a href="${hesapLink(chat, 'coin')}">🪙 Coin ve mülk ›</a><a href="${hesapLink(chat, 'suly')}">🟠 Suly borsası ›</a><a href="${hesapLink(chat, 'sulymarket')}">🕶️ SulyMarket ›</a></p>
 </section>
 <section class="kart hesap-kart">
   <h2>Günlük işler</h2>

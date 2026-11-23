@@ -9,6 +9,10 @@ import { girisHesaplari, oturumDeposu, panelHesaplari } from '../lib/panelHesap.
 import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru, sifreHashle } from './guvenlik.js'
 import { buyukVurgunlar, kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
 import { hesapMotoru } from './hesap.js'
+import { btcFiyati, btcGecmisi, GRAFIK_ARALIKLARI } from '../lib/kripto.js'
+import { nftBul } from '../lib/nft.js'
+import { nftGorseli } from '../lib/nftResim.js'
+import { sulyCanli, sulyMarketSayfasi, sulySayfasi } from './sulySayfalari.js'
 import { bankaSayfasi, coinSayfasi, HESAP_SAYFALARI, hesapSayfasi } from './hesapSayfalari.js'
 import { grupSecimi, hesapLink, lobi, oyunLink, oyunSayfasi, oyunVar } from './oyunSayfalari.js'
 import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisiSayfasi } from './sayfalar.js'
@@ -70,7 +74,7 @@ function bekleMetni(ms) {
 }
 
 /** @param {{ sifreHash: string, veri: object, yedekKlasoru: string }} ayar */
-export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru(), push = pushMotoru(), depo = oturumDeposu() }) {
+export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru(), push = pushMotoru(), depo = oturumDeposu(), fiyat = btcFiyati, gecmis = btcGecmisi }) {
   bildirimKancasiKur(push)
   const sinir = denemeSiniri()
   const oturum = oturumlar({ depo })
@@ -89,6 +93,24 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
   const yonlendir = (res, yer, basliklar = {}) => {
     res.writeHead(303, { ...GUVENLIK_BASLIKLARI, Location: yer, 'Cache-Control': 'no-store', ...basliklar })
     res.end()
+  }
+
+  const nftGorselleri = new Map()
+  async function nftGonder(res, no) {
+    const nft = nftBul(no)
+    if (!nft) return gonder(res, 404, hataSayfasi('Böyle bir NFT yok.'))
+    // Görsel `no`'dan türer, değişmez; ilk istekte çizilir.
+    if (!nftGorselleri.has(nft.no)) nftGorselleri.set(nft.no, await nftGorseli(nft))
+    return gonder(res, 200, nftGorselleri.get(nft.no), { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800' })
+  }
+
+  /** Suly sayfasının verisi; fiyat ve grafikler aynı anda sorulur. */
+  async function sulyVerisi(kim, url) {
+    const istenen = url.searchParams.get('aralik') ?? ''
+    const aralik = Object.hasOwn(GRAFIK_ARALIKLARI, istenen) ? istenen : '24s'
+    const simdi = Date.now()
+    const [anlik, noktalar, gunler] = await Promise.all([fiyat(), gecmis(aralik), gecmis('30g')])
+    return { chat: kim.chat, aralik, anlik, noktalar, gunler, simdi, ...hesapIsleri.suly(kim) }
   }
 
   async function girisYap(req, res) {
@@ -144,7 +166,13 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     const yol = `${yontem} ${url.pathname}`
     const hesapBul = (chat) => hesaplar.find((r) => r.chat_jid === chat)
 
-    const HESAP_CIZIMI = { hesap: hesapSayfasi, banka: bankaSayfasi, coin: coinSayfasi }
+    if (yol === 'GET /oyun/suly-canli') {
+      const hesap = hesapBul(url.searchParams.get('grup') ?? '')
+      if (!hesap) return gonder(res, 404, '')
+      return gonder(res, 200, sulyCanli(await sulyVerisi({ chat: hesap.chat_jid, user: hesap.user_jid }, url)).metin)
+    }
+
+    const HESAP_CIZIMI = { hesap: hesapSayfasi, banka: bankaSayfasi, coin: coinSayfasi, suly: sulySayfasi, sulymarket: sulyMarketSayfasi }
     const hesapSayfa = yontem === 'GET' ? HESAP_SAYFALARI.find((ad) => url.pathname === `/oyun/${ad}`) : null
 
     if (yol === 'GET /oyun' || hesapSayfa) {
@@ -159,7 +187,11 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       }
       const kim = { chat, user: hesap.user_jid }
       const cokGrup = hesaplar.length > 1
-      if (hesapSayfa) return gonder(res, 200, HESAP_CIZIMI[hesapSayfa]({ chat, cokGrup, durum: hesapIsleri.durum(kim) }))
+      if (hesapSayfa) {
+        const ek = hesapSayfa === 'suly' ? { suly: await sulyVerisi(kim, url) }
+          : hesapSayfa === 'sulymarket' ? { market: hesapIsleri.market(kim), ben: hesap.user_jid } : {}
+        return gonder(res, 200, HESAP_CIZIMI[hesapSayfa]({ chat, cokGrup, durum: hesapIsleri.durum(kim), ...ek }))
+      }
 
       const oyun = url.searchParams.get('oyun') ?? ''
       const durum = kumar.durum(kim)
@@ -176,7 +208,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       const kim = { chat, user: hesap.user_jid }
 
       if (yol === 'POST /oyun/islem') {
-        hesapIsleri.islem(kim, { islem: form.get('islem') ?? '', miktar: form.get('tutar') ?? '' })
+        const islem = form.get('islem') ?? ''
+        const usd = islem.startsWith('suly-') ? (await fiyat())?.usd : null
+        hesapIsleri.islem(kim, { islem, miktar: form.get('tutar') ?? '', urun: form.get('urun') ?? '', usd })
         const donus = HESAP_SAYFALARI.find((ad) => ad === form.get('sayfa')) ?? 'hesap'
         return yonlendir(res, hesapLink(chat, donus))
       }
@@ -276,6 +310,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       const ikon = (await ikonlar())[url.pathname]
       return gonder(res, 200, ikon, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' })
     }
+
+    const nftYolu = yontem === 'GET' && /^\/nft\/(\d{1,3})\.png$/.exec(url.pathname)
+    if (nftYolu) return nftGonder(res, nftYolu[1])
 
     const jeton = cerezOku(req)
     const kim = oturum.veri(jeton)

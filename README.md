@@ -531,8 +531,16 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | `.hack <kimlik> usta` (özelden) | Hedefin parasını bankana geçirir, usta 1 mülk, kara şapka coin, mülk ve NFT de alır |
 | `.çete bas <çete> [bomba]` | Lider baskın yapar, kazanan rakip kasanın %20'sini alır |
 | `.nft` | 30 piksel mahlukluk koleksiyon: `al`, `sat`, `iptal`, `ver`, `boz` |
+| `.sulymarket al 16` | Gizemli kutu: silah, hacker, NFT ya da polis |
+| `.sulymarket kullan kimlik` | 1 saatlik maske; özelden `.soygun <kimlik>` yazınca grupta "Maskeli" görünürsün |
+| `.hack fidye <kimlik>` (özelden) | Hedefin bankasını 6 saat kilitler, fidyeyi sen alırsın |
+| `.fidye` / `.fidye öde` | Bankanı kilitleyen fidyeyi gösterir / öder |
+| `.vurgun` | 3-5 kişilik ekiple Merkez Bankası soygunu (grupta 12 saatte bir) |
+| `.offshore yatır <miktar> [gün]` / `çek` | Parayı vergiden, hackten ve hacizden 1-3 gün saklar; %10 komisyon, baskın riski |
+| `.izsür` / `.izsür <dosya no>` | Son 24 saatin siber saldırıları / İçişleri Bakanı failin izini sürer |
+| `.muhbir kim` / `.muhbir dosya <kimlik>` (özelden) | Seni kim hackledi / hedefin gizli dosyası, Suly ile |
 
-Hacklenmekten yalnızca **güvenlik duvarı** korur. Yakalanan hacker 2 saat hapse girer, VPN'i varsa kimliği gizli kalır.
+Hacklenmekten yalnızca **güvenlik duvarı** korur. Yakalanan hacker 2 saat hapse girer. VPN her saldırıda harcanır: yakalanınca hapisten korur, başarıda izi siler.
 
 ### Hapis, evlilik, meslek, çete, dava
 
@@ -704,6 +712,10 @@ Sunucuda bir kez:
 5. `sudo certbot --nginx -d panel.alanadin.com --redirect` ile HTTPS sertifikasını al. Giriş ancak HTTPS'te çalışır.
 
 Panelde sıralama, borçlular, grup rekorları, son 30 günün grafiği, borsa fiyat çizgileri, kişi sayfasında seviye, rozet, servet dağılımı ve XP gelişimi var. Grafikler güncellemeden sonra birikmeye başlar; borsa çizgileri `.borsa` kullanıldıkça dolar.
+
+### Panelde Suly borsası ve SulyMarket
+
+Suly borsasında canlı fiyat, 1 saat ile 30 gün arası grafik, Suly'nin XP karşılığı ve coin kuru görünür; Suly oradan alınıp satılır. SulyMarket'ten ürün ve NFT alınır. Hack, baskın ve vurgun WhatsApp'ta kalır. Sunucunun `api.coinbase.com`, `api.exchange.coinbase.com` ve `api.binance.com` adreslerine çıkabilmesi gerekir.
 
 ### Panelde kumar
 

@@ -116,7 +116,8 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   const sonra = await (await fetch(`${adres}/oyun?grup=${encodeURIComponent(GRUP)}`, { headers: { Cookie } })).text()
   assert.ok(sonra.includes('Slot'))
   const { xp } = getStats(GRUP, UYE)
-  assert.notEqual(xp, 99000)
+  // Bakiyeye bakılmaz: kazanç önceki kayıpları tam kapatabilir.
+  assert.equal(db.prepare("SELECT games FROM kumar_oyun WHERE chat_jid = ? AND user_jid = ? AND oyun = 'slot'").get(GRUP, UYE).games, 1)
 
   // Üye olmadığı grubun formu gönderilirse oynanmaz.
   await new Promise((r) => setTimeout(r, 800))

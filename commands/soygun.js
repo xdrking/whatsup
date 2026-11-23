@@ -1,12 +1,15 @@
 import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import { sureYaz } from './cark.js'
+import { grupIdCoz, numaraCoz } from './xpver.js'
 import { digerUyeler, requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import {
   BASARI_YUZDESI, GUNLUK_DENEME, MIN_HIRSIZ_XP, MIN_KURBAN_XP,
 } from '../lib/soygun.js'
 import { HAPIS_SAATI } from '../lib/hapis.js'
-import { botHesabiMi, ceteSoygunBonusu, hapisDurumu, soygunYap, topluSoygun } from '../lib/stats.js'
+import { isMuted } from '../lib/mute.js'
+import { cokGrupMetni, HEDEF_YOK, ozelHedefler, ozelUyelikler } from '../lib/ozel.js'
+import { botHesabiMi, ceteSoygunBonusu, hapisDurumu, maskeBitisi, soygunYap, topluSoygun } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -46,6 +49,56 @@ async function herkesiSoy({ yaz, from, sender, metadata }) {
   )
 }
 
+function sonucMetni(s, hirsiz, kurban) {
+  return s.basarili
+    ? [
+        `🥷 *SOYGUN BAŞARILI*`,
+        `${mentionOf(hirsiz)}, ${mentionOf(kurban)} kişisinden *${binlik(s.miktar)} XP* çaldı!`,
+        ...(s.odul ? [`🎯 Başındaki *${binlik(s.odul)} XP* ödülü de aldı!`] : []),
+        `💰 ${binlik(s.hirsizXp)} XP  •  😭 ${binlik(s.kurbanXp)} XP`,
+      ].join('\n')
+    : [
+        `🚓 *YAKALANDIN*`,
+        `${mentionOf(hirsiz)}, ${mentionOf(kurban)} kişisine *${binlik(s.miktar)} XP* ceza ödedi.`,
+        `💸 ${binlik(s.hirsizXp)} XP  •  😎 ${binlik(s.kurbanXp)} XP`,
+        `🚔 ${HAPIS_SAATI} saat hapis. Kefalet: ${binlik(s.hapis.kefalet)} XP (\`.kefalet\`)`,
+      ].join('\n')
+}
+
+/**
+ * Sahte kimlikli soygun özelden yazılır: komut grupta yazılsaydı maskenin anlamı kalmazdı. Sonuç gruba duyurulur
+ * (`.hack` gibi); başarıda hırsız "Maskeli", yakalanınca maske düşer.
+ */
+async function maskeliSoygun({ sock, yaz, args, parsed }) {
+  const maskeliler = (await ozelUyelikler(sock, parsed)).filter((u) => maskeBitisi(u.chatJid, u.userJid))
+  if (!maskeliler.length) return yaz('🎭 Özelden soygun için sahte kimlik gerekir: `.sulymarket kullan kimlik`. Maskesiz soygun grupta yapılır.')
+
+  const grupArg = args.find((a) => a.endsWith('@g.us'))
+  const kimlik = numaraCoz(args.filter((a) => a !== grupArg).join(' '))
+  if (!kimlik) return yaz('Kullanım (özelden): `.soygun <numara ya da id>`')
+  const adaylar = await ozelHedefler(sock, maskeliler, kimlik, grupArg ? grupIdCoz(grupArg) : null)
+  if (!adaylar.length) return yaz(HEDEF_YOK)
+  if (adaylar.length > 1) return yaz(cokGrupMetni(adaylar))
+
+  const [{ chatJid, userJid, hedef }] = adaylar
+  const hapis = hapisDurumu(chatJid, userJid)
+  if (hapis) return yaz(`🚔 Hapistesin, ${sureYaz(hapis.bitis - Date.now())} kaldı.`)
+  if (hedef === userJid) return yaz('Kendini soyamazsın 🙃')
+  if (botHesabiMi(hedef)) return yaz('🤖 Botun hesabı soyulamaz.')
+
+  const bonus = ceteSoygunBonusu(chatJid, userJid)
+  const s = soygunYap({ chatJid, hirsiz: userJid, kurban: hedef, sans: () => randomInt(100) < BASARI_YUZDESI + bonus })
+  if (!s) return yaz('🥷 Polis her yerde, sonra dene.')
+  if (s.engel) return yaz(engelMetni(s, hedef), [hedef])
+
+  await yaz(sonucMetni(s, userJid, hedef), [userJid, hedef])
+  if (isMuted(chatJid)) return
+  const duyuru = s.basarili
+    ? `🎭 *MASKELİ SOYGUN*\nMaskeli biri ${mentionOf(hedef)} kişisinden *${binlik(s.miktar)} XP* çaldı!`
+    : `🎭 Maske düştü!\n${sonucMetni(s, userJid, hedef)}`
+  await sock.sendMessage(chatJid, { text: duyuru, mentions: s.basarili ? [hedef] : [userJid, hedef] })
+}
+
 export default {
   name: 'soygun',
   aliases: ['soy', 'rob'],
@@ -55,6 +108,7 @@ export default {
     `Başarı şansı %${BASARI_YUZDESI}, çetenin silahları artırır (\`.sulymarket\`). Başarılıysan kurbanın XP'sinin %10'unu alırsın.`,
     `Yakalanırsan kendi XP'nin %10'unu kurbana ödersin ve ${HAPIS_SAATI} saat hapse girersin (\`.kefalet\`).`,
     `Günde ${GUNLUK_DENEME} deneme. Soyulan kişiye 6 saat dokunulamaz. Kalkan \`.market\`'te satılır.`,
+    'Sahte kimlik (`.sulymarket`) takılıyken bota özelden `.soygun <kimlik>` yaz: grupta "Maskeli" görünürsün, yakalanırsan maske düşer.',
     '`.soygun herkes` gruptaki herkese ayrı ayrı dener, `.coinmarket`\'ten alınan hakla çalışır. Yakalanma cezası yoktur, kalkan yine korur.',
   ],
   category: 'toplum',
@@ -65,6 +119,8 @@ export default {
     const yaz = (text, mentions = []) => sock.sendMessage(from, { text, mentions }, { quoted: msg })
 
     try {
+      if (!parsed.isGroup) return await maskeliSoygun({ sock, yaz, args, parsed })
+
       const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
       if (!metadata) return
 
@@ -92,23 +148,7 @@ export default {
       if (!s) return await yaz('🥷 Polis her yerde, sonra dene.')
       if (s.engel) return await yaz(engelMetni(s, kurban), [kurban])
 
-      const taraflar = [sender, kurban]
-      await yaz(
-        s.basarili
-          ? [
-              `🥷 *SOYGUN BAŞARILI*`,
-              `${mentionOf(sender)}, ${mentionOf(kurban)} kişisinden *${binlik(s.miktar)} XP* çaldı!`,
-              ...(s.odul ? [`🎯 Başındaki *${binlik(s.odul)} XP* ödülü de aldı!`] : []),
-              `💰 ${binlik(s.hirsizXp)} XP  •  😭 ${binlik(s.kurbanXp)} XP`,
-            ].join('\n')
-          : [
-              `🚓 *YAKALANDIN*`,
-              `${mentionOf(sender)}, ${mentionOf(kurban)} kişisine *${binlik(s.miktar)} XP* ceza ödedi.`,
-              `💸 ${binlik(s.hirsizXp)} XP  •  😎 ${binlik(s.kurbanXp)} XP`,
-              `🚔 ${HAPIS_SAATI} saat hapis. Kefalet: ${binlik(s.hapis.kefalet)} XP (\`.kefalet\`)`,
-            ].join('\n'),
-        taraflar,
-      )
+      await yaz(sonucMetni(s, sender, kurban), [sender, kurban])
     } catch (err) {
       logger.error({ err, from }, '.soygun başarısız')
       await yaz('🥷 Bir şeyler ters gitti.').catch((e) =>

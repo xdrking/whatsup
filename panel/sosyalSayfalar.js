@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import { fnv1a } from '../lib/hash.js'
 import { ANKET_AZAMI, ANKET_GUNLERI, cevrimiciMi, DURUM_AZAMI, DUZENLEME_MS, duzenlenebilir, ETKINLIK_METIN_AZAMI, METIN_AZAMI, SOHBET_AD_AZAMI, TEPKILER, yorumSayisi } from '../lib/sosyal.js'
 import { MAKAMLAR } from '../lib/devlet.js'
+import { NADIRLIK, nftBul } from '../lib/nft.js'
 import { OYUN_ADI } from '../lib/wrapped.js'
 import { ikon } from './ikonlar.js'
 import { h } from './sayfalar.js'
@@ -128,6 +129,8 @@ ${tema ? h`<meta name="theme-color" content="${tema === 'koyu' ? '#1b2433' : '#3
     <form method="post" action="/s/tema" class="tema-form"><button name="tema" value="${tema === 'koyu' ? 'acik' : 'koyu'}"><span class="ik">${ikon(tema === 'koyu' ? 'gunes' : 'ay')}</span><span>${tema === 'koyu' ? 'Açık tema' : 'Koyu tema'}</span></button></form>
     <h3>Eğlence</h3>
     ${menu(`/oyun?${q(chat)}`, 'oyun', 'oyun', 'Oyunlar')}
+    ${menu(`/oyun/suly?${q(chat)}`, 'suly', 'borsa', 'Suly borsası')}
+    ${menu(`/oyun/sulymarket?${q(chat)}`, 'sulymarket', 'gozluk', 'SulyMarket')}
     ${cokGrup ? menu('/s', 'grup', 'degistir', 'Grubu değiştir') : ''}
     <form method="post" action="/cikis" class="cikis"><button>${ikon('cikis')}<span>Çıkış yap</span></button></form>
   </nav>
@@ -520,9 +523,11 @@ function vitrinKarti(chat, v, uyeler) {
     v.pet && [v.pet.emoji, v.pet.tur, v.pet.ad],
     v.hapis && ['⛓️', 'Durum', 'Hapiste'],
   ].filter(Boolean)
-  if (!satirlar.length) return ''
+  const nftler = (v.nftler ?? []).map(nftBul).filter(Boolean)
+  if (!satirlar.length && !nftler.length) return ''
   return h`<section class="kart vitrin"><h2>Vitrin <small>WhatsApp'taki hayatı</small></h2>
-  <ul>${satirlar.map(([simge, ad, deger]) => h`<li><span class="vt-simge" aria-hidden="true">${simge}</span><span><small>${ad}</small><strong>${deger}</strong></span></li>`)}</ul></section>`
+  <ul>${satirlar.map(([simge, ad, deger]) => h`<li><span class="vt-simge" aria-hidden="true">${simge}</span><span><small>${ad}</small><strong>${deger}</strong></span></li>`)}</ul>
+  ${nftler.length ? h`<h3>NFT koleksiyonu <small>${nftler.length} mahluk</small></h3><ul class="nft-vitrin">${nftler.map((n) => h`<li class="n-${n.sinif}"><img src="/nft/${n.no}.png" alt="" width="320" height="320" loading="lazy"><strong>${n.ad}</strong><small>#${n.no} · ${NADIRLIK[n.sinif].ad.slice(2).trim()}</small></li>`)}</ul>` : ''}</section>`
 }
 
 export function profilSayfasi({ chat, ben, kisi, profil, stats, seviye, rozetler, wrapped: w, gonderiler, uyeler, bildirim, vitrin = null, sabitGonderi = null, kayitSayisi = 0, now = Date.now() }) {

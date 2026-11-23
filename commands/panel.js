@@ -1,6 +1,7 @@
 import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import logger from '../lib/logger.js'
-import { kimlikRakam, panelKaydet, panelSil, SIFRE_EN_AZ } from '../lib/panelHesap.js'
+import { uyelikleriBul } from '../lib/ozel.js'
+import { panelKaydet, panelSil, SIFRE_EN_AZ } from '../lib/panelHesap.js'
 import { sifreHashle } from '../panel/guvenlik.js'
 import { trLower } from '../lib/turkishWords.js'
 
@@ -13,30 +14,6 @@ const KULLANIM = [
   '',
   'Girişte numaranı (905…) ya da LID\'ini yaz. Yalnızca botun olduğu gruplardaki üyeler girebilir.',
 ].join('\n')
-
-/** Kişinin üye olduğu gruplar ve oradaki kimliği; numara ve LID de üye listesinden öğrenilir. */
-export async function uyelikleriBul(sock, kimlikler) {
-  const gruplar = await sock.groupFetchAllParticipating()
-  const uyelikler = []
-  let numara = ''
-  let lid = ''
-  for (const [chatJid, metadata] of Object.entries(gruplar)) {
-    const uye = (metadata.participants || []).find((u) =>
-      [u.id, u.jid, u.lid].some((j) => j && kimlikler.has(jidNormalizedUser(j))),
-    )
-    if (!uye) continue
-    uyelikler.push({ chatJid, userJid: jidNormalizedUser(uye.id) })
-    for (const j of [uye.id, uye.jid, uye.lid].filter(Boolean).map((x) => jidNormalizedUser(x))) {
-      if (j.endsWith('@s.whatsapp.net')) numara ||= kimlikRakam(j.split('@')[0])
-      if (j.endsWith('@lid')) lid ||= kimlikRakam(j.split('@')[0])
-    }
-  }
-  for (const j of kimlikler) {
-    if (j.endsWith('@s.whatsapp.net')) numara ||= kimlikRakam(j.split('@')[0])
-    if (j.endsWith('@lid')) lid ||= kimlikRakam(j.split('@')[0])
-  }
-  return { uyelikler, numara, lid }
-}
 
 export default {
   name: 'panel',

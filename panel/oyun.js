@@ -405,6 +405,40 @@
     bahisYaz(String(Math.max(10, Math.min(yeniDeger, Math.max(bakiye, 10)))))
   })
 
+  // Suly borsası: üstüne gelinen (ya da dokunulan) noktanın değeri grafiğin başındaki satıra yazılır.
+  let sonOkuma = 0
+  function grafikOku(olay) {
+    const vuru = olay.target instanceof Element ? olay.target.closest('.cg-vuru') : null
+    if (!vuru) return
+    sonOkuma = Date.now()
+    const svg = vuru.ownerSVGElement
+    const imlec = svg.querySelector('.cg-imlec')
+    imlec.setAttribute('x1', vuru.dataset.x)
+    imlec.setAttribute('x2', vuru.dataset.x)
+    imlec.setAttribute('visibility', 'visible')
+    const nokta = svg.querySelector('.cg-son')
+    nokta.setAttribute('cx', vuru.dataset.x)
+    nokta.setAttribute('cy', vuru.dataset.y)
+    svg.closest('.grafik-kutu').querySelector('.okuma').textContent = vuru.dataset.yazi
+  }
+  document.addEventListener('pointermove', grafikOku)
+  document.addEventListener('pointerdown', grafikOku)
+
+  // Grafik okunurken (son 5 sn) yenilenmez; :hover kullanılmaz, telefonda dokununca yapışıp kalır. sayfa gizliyken istek atılmaz.
+  async function sulyYenile() {
+    const eski = document.getElementById('suly-canli')
+    if (!eski || document.hidden || Date.now() - sonOkuma < 5000 || document.body.classList.contains('bekliyor')) return
+    try {
+      const yanit = await fetch(eski.dataset.adres, { credentials: 'same-origin' })
+      if (!yanit.ok || yanit.redirected) return
+      const yeni = new DOMParser().parseFromString(await yanit.text(), 'text/html').getElementById('suly-canli')
+      if (yeni && eski.isConnected) eski.replaceWith(document.adoptNode(yeni))
+    } catch (err) {
+      console.warn('Suly fiyatı yenilenemedi', err)
+    }
+  }
+  setInterval(sulyYenile, 20_000)
+
   hazirla()
   yeniKart = kartlariEsle(null)
   canlandir(false)

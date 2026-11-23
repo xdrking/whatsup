@@ -3,17 +3,26 @@
 // fonksiyonları çağrılır; iki taraf aynı veritabanına yazar.
 import { randomInt } from 'node:crypto'
 import { MIN_KREDI } from '../lib/kredi.js'
+import { sulyCoz, sulyYaz } from '../lib/kripto.js'
 import { miktarCoz } from '../lib/kumar.js'
+import { nftBul } from '../lib/nft.js'
 import {
   bankaCek, bankaDurumu, bankaYatir, calis, claimDaily, coinAl, coinDurumu, coinSat, ekonomiDurumu, faizDurumu,
-  kiraTopla, krediCek, krediDurumu, krediOde, meslekDurumu, mulkDurumu, servetDurumu,
+  fidyeDurumu, fidyeOde, firarEt, hapisDurumu, karaborsaAl, karaborsaDurumu, kiraTopla, kriptoAl, kriptoDurumu, kriptoSat,
+  krediCek, krediDurumu, krediOde, maskeBitisi, maskeTak, meslekDurumu, mulkDurumu, nftAl, nftBoz, nftListesi, servetDurumu, sulyPiyasasi,
 } from '../lib/stats.js'
+import { botGonderisi } from '../lib/sosyal.js'
+import { displayName } from '../lib/target.js'
+import { AZAMI_ADET, kutuMetni, urunKoduyla } from '../lib/sulymarket.js'
 import { HAZINE_YOK, hazineyiTani, miktarMetni } from './kumar.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
 const ARALIK_MS = 700
 const KAPALI = 'Banka şu an kapalı, sonra dene.'
 const dakika = (ms) => `${Math.max(1, Math.ceil(ms / 60_000))} dk`
+
+const MARKET_KAPALI = 'SulyMarket şu an kapalı, sonra dene.'
+const FIYAT_YOK = 'Suly fiyatı şu an alınamıyor, alım satım kapalı. Birazdan dene.'
 
 const tamam = (metin) => ({ tamam: metin })
 const hata = (metin) => ({ hata: metin })
@@ -47,6 +56,7 @@ const ISLEMLER = {
     if (c.hata) return hata(c.hata.replace('Senin XP\'n', 'Hesabın'))
     const s = bankaCek({ chatJid: chat, userJid: user, miktar: c.miktar })
     if (!s) return hata(KAPALI)
+    if (s.kilitli) return hata(`Bankan fidye yazılımıyla kilitli, ${dakika(s.kilitli - Date.now())} kaldı. SulyMarket sayfasından fidyeyi ödeyebilirsin.`)
     if (s.yetersiz) return hata(`Hesabında o kadar yok: ${sayi.format(s.bakiye)} XP`)
     return tamam(`${sayi.format(c.miktar)} XP çekildi, kesinti ${sayi.format(s.kesinti)} XP.`)
   },
@@ -122,6 +132,88 @@ const ISLEMLER = {
     if (!s.kira) return hata('Toplanacak kira yok.')
     return tamam(`Kira toplandı: +${sayi.format(s.kira)} XP`)
   },
+
+  // `usd` sunucudan gelir (taze fiyat), formdan değil: kişi kendi fiyatını yazamasın.
+  'suly-al': ({ chat, user }, { miktar, usd }) => {
+    if (!usd) return hata(FIYAT_YOK)
+    const birim = sulyCoz(miktar)
+    if (!birim) return hata('Kaç Suly alacağını yaz: 1 ya da 0,25')
+    const s = kriptoAl({ chatJid: chat, userJid: user, birim, usd })
+    if (!s) return hata(FIYAT_YOK)
+    if (s.borclu) return hata('Borçluyken Suly alamazsın, önce borcunu kapat.')
+    if (s.yetersiz) return hata(`${sayi.format(s.ucret)} XP gerekiyor. Cüzdanın: ${sayi.format(s.xp)} XP`)
+    return tamam(`${sulyYaz(birim)} Suly aldın, ${sayi.format(s.ucret)} XP ödedin.`)
+  },
+
+  'suly-sat': ({ chat, user }, { miktar, usd }) => {
+    if (!usd) return hata(FIYAT_YOK)
+    const hepsi = /^(hepsi|tümü)$/i.test(String(miktar).trim())
+    const birim = hepsi ? null : sulyCoz(miktar)
+    if (!hepsi && !birim) return hata('Kaç Suly satacağını yaz: 1, 0,25 ya da hepsi')
+    const s = kriptoSat({ chatJid: chat, userJid: user, birim, usd })
+    if (!s) return hata(FIYAT_YOK)
+    if (s.yetersiz) return hata(`O kadar Suly yok. Sende: ${sulyYaz(s.birim)}`)
+    return tamam(`${sulyYaz(s.satilan)} Suly sattın: +${sayi.format(s.kazanc)} XP (kesinti ${sayi.format(s.kesinti)} XP)`)
+  },
+
+  'market-al': ({ chat, user }, { miktar, urun: kod }) => {
+    const urun = urunKoduyla(kod)
+    if (!urun) return hata('Böyle bir ürün yok.')
+    const adet = miktar ? tamSayi(miktar) : 1
+    if (!adet || adet > AZAMI_ADET) return hata(`Adet 1 ile ${AZAMI_ADET} arası olmalı.`)
+    if (urun.tur === 'kutu' && adet > 1) return hata('Kutular tek tek açılır.')
+    const s = karaborsaAl({ chatJid: chat, userJid: user, urun, adet })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.ceteYok) return hata('Silah için çeten olmalı. WhatsApp\'tan .çete kur')
+    if (s.yetersiz) return hata(`${sulyYaz(s.ucret)} Suly gerekiyor, sende ${sulyYaz(s.birim)} var.`)
+    if (s.kutu) return tamam(kutuMetni(s.kutu))
+    return tamam(`${urun.ad}${adet > 1 ? ` x${sayi.format(adet)}` : ''} alındı${s.cete ? `, ${s.cete} cephaneliğine girdi` : ''}. Kalan ${sulyYaz(s.birim)} Suly`)
+  },
+
+  'market-firar': ({ chat, user }) => {
+    const s = firarEt({ chatJid: chat, userJid: user })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.hapisteDegil) return hata('Hapiste değilsin.')
+    if (s.yok) return hata('Firar planın yok.')
+    return tamam('🪪 Hapisten kaçtın.')
+  },
+
+  'market-kimlik': ({ chat, user }, _alanlar, simdi) => {
+    const s = maskeTak({ chatJid: chat, userJid: user })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.yok) return hata('Sahte kimliğin yok.')
+    return tamam(`🎭 Maske takıldı, ${dakika(s.bitis - simdi)} sürer. Bota özelden .soygun yaz.`)
+  },
+
+  'fidye-ode': ({ chat, user }) => {
+    const s = fidyeOde({ chatJid: chat, userJid: user })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.yok) return hata('Bankan kilitli değil.')
+    return tamam(`🔓 ${sayi.format(s.odenen)} XP fidye ödendi, bankan açıldı.`)
+  },
+
+  'nft-al': ({ chat, user }, { urun }) => {
+    const nft = nftBul(urun)
+    if (!nft) return hata('Böyle bir NFT yok.')
+    const s = nftAl({ chatJid: chat, userJid: user, no: nft.no })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.senin) return hata('Bu NFT zaten senin.')
+    if (s.satilikDegil) return hata('Sahibi bunu satmıyor.')
+    if (s.borclu) return hata('Borçluyken üyeden NFT alamazsın.')
+    if (s.ambargo) return hata(`Ambargodasın, ${dakika(s.ambargo - Date.now())} kaldı.`)
+    if (s.saticiEngelli) return hata('Satıcı borçlu ya da ambargoda, satış yapılamıyor.')
+    if (s.yetersiz) return hata(`${sulyYaz(s.fiyat)} Suly gerekiyor, sende ${sulyYaz(s.birim)} var.`)
+    if (nft.sinif !== 'siradan') botGonderisi(chat, `🖼️ ${displayName(user)}, ${nft.ad} (#${nft.no}) NFT'sini ${sulyYaz(s.fiyat)} Suly'ye aldı.`)
+    return tamam(`🖼️ ${nft.ad} #${nft.no} artık senin. Kalan ${sulyYaz(s.birim)} Suly`)
+  },
+
+  'nft-boz': ({ chat, user }, { urun }) => {
+    const nft = nftBul(urun)
+    const s = nft && nftBoz({ chatJid: chat, userJid: user, no: nft.no })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.senDegil) return hata('Bu NFT senin değil.')
+    return tamam(`♻️ ${nft.ad} markete döndü: +${sulyYaz(s.odeme)} Suly`)
+  },
 }
 
 export function hesapMotoru({ saat = Date.now } = {}) {
@@ -166,5 +258,23 @@ export function hesapMotoru({ saat = Date.now } = {}) {
     }
   }
 
-  return { islem, durum }
+  /** Suly sayfasının kişisel ve grup verisi; fiyatı sunucu ekler. Bildirimi tüketmez, canlı yenileme de okur. */
+  function suly(h) {
+    hazineyiTani()
+    const k = kriptoDurumu({ chatJid: h.chat, userJid: h.user })
+    return k && { birim: k.birim, kur: k.kur, sonFiyat: k.fiyat, ...sulyPiyasasi({ chatJid: h.chat }), ekonomi: ekonomiDurumu({ chatJid: h.chat }) }
+  }
+
+  function market(h) {
+    const kim = { chatJid: h.chat, userJid: h.user }
+    return {
+      durum: karaborsaDurumu(kim),
+      nftler: nftListesi(h.chat),
+      fidye: fidyeDurumu(h.chat, h.user),
+      hapis: hapisDurumu(h.chat, h.user)?.bitis ?? 0,
+      maske: maskeBitisi(h.chat, h.user),
+    }
+  }
+
+  return { islem, durum, suly, market }
 }

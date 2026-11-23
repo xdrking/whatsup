@@ -28,6 +28,8 @@ const IKONLAR = {
   kahve: h`<path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2M10 2v2M14 2v2"/>`,
   ay: h`<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>`,
   gunes: h`<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>`,
+  borsa: h`<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>`,
+  gozluk: h`<circle cx="6" cy="15" r="4"/><circle cx="18" cy="15" r="4"/><path d="M10 14.5a2.5 2.5 0 0 1 4 0M2 15l2.5-8M22 15l-2.5-8"/>`,
   sil: h`<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>`,
   konum: h`<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`,
 }

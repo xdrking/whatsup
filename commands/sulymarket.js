@@ -1,39 +1,22 @@
-import { jidNormalizedUser } from '@whiskeysockets/baileys'
 import { sureYaz } from './cark.js'
-import { uyelikleriBul } from './panel.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { BIRIM, sulyYaz } from '../lib/kripto.js'
+import { ozelUyelikler } from '../lib/ozel.js'
 import { binlik } from '../lib/sayi.js'
-import { botHesabiMi, firarEt, kalkanKir, karaborsaAl, karaborsaDurumu } from '../lib/stats.js'
-import { AZAMI_ADET, HACK_GUNLUK, HACKERLAR, URUNLER, urunKoduyla } from '../lib/sulymarket.js'
+import { botHesabiMi, firarEt, kalkanKir, karaborsaAl, karaborsaDurumu, maskeTak } from '../lib/stats.js'
+import { AZAMI_ADET, HACK_GUNLUK, kutuMetni, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
 const KAPALI = '🕶️ Satıcı ortadan kayboldu, sonra dene.'
 
-function urunNotu(u) {
-  const h = u.tur === 'hacker' && HACKERLAR.find((x) => x.kod === u.kod)
-  if (h) {
-    const pay = [
-      `banka %${h.banka}`,
-      ...(h.cuzdan ? [`cüzdan %${h.cuzdan}`] : []),
-      ...(h.coin ? [`coin %${h.coin}`] : []),
-      ...(h.mulkPayi ? ['mülklerin üçte biri'] : h.mulkEnAz ? ['1 mülk'] : []),
-      ...(h.nft ? ['1 NFT'] : []),
-    ]
-    return `${pay.join(' + ')}, başarı %${h.sans}`
-  }
-  return u.not ?? `güç ${u.guc}`
-}
-
 const urunSatiri = (u) => `${URUNLER.indexOf(u) + 1}. ${u.ad} — ${u.fiyat} Suly _(${urunNotu(u)})_`
 
 /** Özelden yazılınca kişinin tek ortak grubu kullanılır; birden çoksa hangisi olduğu bilinemez. */
 async function baglam({ sock, from, sender, parsed }) {
   if (parsed.isGroup) return { chatJid: from, userJid: sender }
-  const kimlikler = new Set([parsed.sender, parsed.senderPn].filter(Boolean).map((j) => jidNormalizedUser(j)))
-  const { uyelikler } = await uyelikleriBul(sock, kimlikler)
+  const uyelikler = await ozelUyelikler(sock, parsed)
   return uyelikler.length === 1 ? uyelikler[0] : null
 }
 
@@ -50,7 +33,7 @@ function vitrin(d) {
     ...tur(['hacker']),
     '',
     '*Hizmetler*',
-    ...tur(['arac', 'duvar']),
+    ...tur(['arac', 'duvar', 'kutu']),
     '',
     `🟠 Suly: ${sulyYaz(d.birim)}`,
     ...(d.envanter.length ? [`🎒 ${d.envanter.map((e) => `${urunKoduyla(e.kod)?.ad ?? e.kod} x${e.adet}`).join('  •  ')}`] : []),
@@ -59,6 +42,7 @@ function vitrin(d) {
     '',
     'Almak: `.sulymarket al <no> [adet]`  •  Suly: `.kripto al suly <miktar>`',
     'Hack: bota özelden `.hack`  •  Baskın: `.çete bas <çete>`  •  NFT: `.nft`',
+    'Vurgun: `.vurgun`  •  Offshore: `.offshore`  •  Muhbir: özelden `.muhbir`',
   ].join('\n')
 }
 
@@ -88,18 +72,27 @@ async function kullan({ sock, msg, args, from, parsed, yaz, b }) {
     return yaz(`🗝️ ${mentionOf(uye)} kişisinin kalkanı kırıldı!`, [uye])
   }
 
-  return yaz('Kullanım: `.sulymarket kullan firar`  •  `.sulymarket kullan çilingir @kişi`')
+  if (['kimlik', 'maske', 'sahte'].includes(ad)) {
+    const s = maskeTak(b)
+    if (!s) return yaz(KAPALI)
+    if (s.yok) return yaz('🎭 Sahte kimliğin yok. `.sulymarket`')
+    return yaz(`🎭 Maske takıldı, ${sureYaz(s.bitis - Date.now())} sürer. Bota *özelden* \`.soygun <kimlik>\` yaz, adın görünmez.`)
+  }
+
+  return yaz('Kullanım: `.sulymarket kullan firar`  •  `.sulymarket kullan kimlik`  •  `.sulymarket kullan çilingir @kişi`')
 }
 
 export default {
   name: 'sulymarket',
   aliases: ['sm', 'karaborsa', 'darkweb'],
   description: 'Suly ile kara borsa: çeteye silah, hacker, VPN, firar planı',
-  usage: '.sulymarket  —  .sulymarket al <no> [adet]  —  .sulymarket kullan firar  —  .sulymarket kullan çilingir @kişi',
+  usage: '.sulymarket  —  .sulymarket al <no> [adet]  —  .sulymarket kullan firar|kimlik  —  .sulymarket kullan çilingir @kişi',
   details: [
     'Her şey Suly ile satılır, ödenen Suly yanar. Bota özelden de yazabilirsin: ne aldığını kimse görmez.',
     'Silahlar çetenin cephaneliğine girer ve orada kalır: baskında güç, üyelere soygunda ek şans verir.',
-    'Hacker aldıktan sonra bota *özelden* `.hack` yaz. VPN, yakalanınca kimliğini gizler ve hapse girmezsin.',
+    'Hacker aldıktan sonra bota *özelden* `.hack` yaz. VPN sonraki saldırıda harcanır: başarıda izini siler, yakalanınca hapse girmezsin.',
+    '`.sulymarket kullan kimlik` 1 saatlik maske takar: o sürede özelden `.soygun <kimlik>` yazınca grupta "Maskeli" görünürsün.',
+    'Gizemli kutu alındığı an açılır. Polis tuzağı da çıkabilir.',
     '`.sulymarket kullan firar` hapisten kaçırır, `.sulymarket kullan çilingir @ali` Ali\'nin soygun kalkanını kırar.',
     'Güvenlik duvarı alınca başlar, yeniden alınca süresi uzar. Kalkan ve sigorta hackten korumaz.',
   ],
@@ -121,6 +114,7 @@ export default {
         if (!urun || !Number.isSafeInteger(adet) || adet < 1 || adet > AZAMI_ADET) {
           return await yaz(`🕶️ Ürün numarası yaz: \`.sulymarket al 2 3\` (1-${URUNLER.length})`)
         }
+        if (urun.tur === 'kutu' && adet > 1) return await yaz('📦 Kutular tek tek açılır.')
 
         const s = karaborsaAl({ ...b, urun, adet })
         if (!s) return await yaz(KAPALI)
@@ -130,6 +124,8 @@ export default {
           `🕶️ *${urun.ad}${adet > 1 ? ` x${binlik(adet)}` : ''}* teslim edildi, ${sulyYaz(urun.fiyat * adet * BIRIM)} Suly ödendi.`,
           ...(s.cete ? [`🏴 ${s.cete} cephaneliğine girdi.`] : []),
           ...(s.duvar ? [`🧱 Koruma: ${sureYaz(s.duvar - Date.now())}`] : []),
+          ...(s.kutu ? [kutuMetni(s.kutu)] : []),
+          ...(urun.kod === 'fidye' ? ['🔒 Kullanmak için bota *özelden* `.hack fidye <kimlik>` yaz.'] : []),
           ...(urun.tur === 'hacker' ? ['💻 Kullanmak için bota *özelden* `.hack` yaz.'] : []),
           `🟠 Kalan: ${sulyYaz(s.birim)} Suly`,
         ].join('\n'))

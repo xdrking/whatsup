@@ -629,3 +629,89 @@ main.degisti .oyun-kutu { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .kumarhane *, .kumarhane *::before, .kumarhane *::after, .kumarhane::before { animation-duration: .01s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
+
+/* --- Suly borsası --- */
+.suly-kart { max-width: 60rem; margin: 0 auto 1rem; background: #130d20; border-color: rgb(212 118 10 / .35); }
+.suly-kart h2 { color: var(--yazi); font-size: .95rem; }
+.suly-bas { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: .5rem 1rem; }
+.suly-bas > div:first-child { display: grid; }
+.suly-bas small { color: var(--soluk); }
+.suly-fiyat { font-size: clamp(1.9rem, 8vw, 2.9rem); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.suly-yan { display: grid; gap: .2rem; justify-items: end; text-align: right; }
+.yon { font-weight: 800; font-variant-numeric: tabular-nums; }
+.yon.artis { color: #4dff9a; }
+.yon.dusus { color: #ff9a9a; }
+.canli { font-size: .8rem; color: #4dff9a; font-variant-numeric: tabular-nums; }
+.canli.kopuk { color: #ffb3b3; }
+.aralik { display: flex; gap: .35rem; margin: .8rem 0 .3rem; overflow-x: auto; }
+.aralik a { flex: 1 0 auto; min-height: 40px; display: grid; place-items: center; padding: 0 .8rem; border-radius: 10px; color: var(--soluk); text-decoration: none; background: rgb(255 255 255 / .05); font-size: .88rem; }
+.aralik a.secili { background: rgb(212 118 10 / .28); color: #ffd9ad; font-weight: 700; }
+.okuma { min-height: 1.4em; margin: .3rem 0; color: var(--soluk); font-size: .84rem; font-variant-numeric: tabular-nums; }
+.cizgi-grafik { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.cizgi-grafik.genis { display: none; }
+.cizgi-grafik.usd { --seri: #d4760a; }
+.cizgi-grafik.kur { --seri: #8b5cf6; }
+.cg-izgara { stroke: #fff; stroke-opacity: .08; }
+.cg-eksen { font-variant-numeric: tabular-nums; }
+.cg-hat { stroke: var(--seri); stroke-linejoin: round; stroke-linecap: round; }
+.cg-ust { stop-color: var(--seri); stop-opacity: .28; }
+.cg-alt { stop-color: var(--seri); stop-opacity: 0; }
+.cg-son { fill: var(--seri); stroke: #130d20; stroke-width: 2; }
+.cg-imlec { stroke: #fff; stroke-opacity: .45; }
+.kutucuklar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-top: .8rem; }
+.kutucuk { display: grid; gap: .1rem; align-content: start; padding: .6rem .7rem; border-radius: 12px; background: rgb(255 255 255 / .05); min-width: 0; }
+.kutucuk small { color: var(--soluk); font-size: .76rem; }
+.kutucuk strong { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.suly-ikili { max-width: 60rem; margin: 0 auto; display: grid; gap: 0 1rem; }
+.suly-ikili .suly-kart { width: 100%; }
+@media (min-width: 640px) {
+  .cizgi-grafik.genis { display: block; }
+  .cizgi-grafik.dar { display: none; }
+  .kutucuklar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .suly-ikili { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* --- SulyMarket: karanlık vitrin --- */
+.karanlik { --km: #39ff88; max-width: 60rem; margin: 0 auto; font-family: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace; }
+.karanlik .kart { margin: 0 0 .8rem; background: #050807; border: 1px solid rgb(57 255 136 / .22); border-radius: 10px; }
+.karanlik .kart h2 { color: var(--km); }
+.km-bas h2 { margin: .2rem 0 .5rem; font-size: clamp(1.5rem, 7.5vw, 2.4rem); letter-spacing: .12em; text-shadow: 0 0 18px rgb(57 255 136 / .45); }
+.km-satir { margin: 0; color: rgb(57 255 136 / .6); font-size: .8rem; overflow-wrap: anywhere; }
+.km-bakiye { display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; }
+.km-bakiye strong { font-size: 1.5rem; color: #ffb35c; }
+.km-bakiye a { margin-left: auto; color: var(--km); min-height: 40px; display: inline-grid; place-items: center; }
+.km-durum .satir { justify-content: space-between; gap: 1rem; min-height: 40px; padding-inline: 0; border-radius: 0; border-bottom: 1px dashed rgb(57 255 136 / .16); }
+.km-durum .satir .ad { display: flex; flex-direction: row; gap: .45rem; flex: 0 1 auto; max-width: 50%; }
+.km-durum .satir .deger { flex: 1; text-align: right; min-width: 0; white-space: normal; overflow-wrap: anywhere; font-weight: 600; font-size: .9rem; }
+.km-durum .deger.eksi { color: #ff9a9a; }
+.km-durum .isler { margin-top: .8rem; }
+.km-sekme { display: flex; gap: .4rem; overflow-x: auto; margin: .2rem 0 .8rem; }
+.km-sekme a { flex: 1 0 auto; min-height: 42px; display: grid; place-items: center; padding: 0 .8rem; border: 1px solid rgb(57 255 136 / .3); border-radius: 8px; color: var(--km); text-decoration: none; font-size: .85rem; }
+.km-baslik { margin: 1.4rem 0 .6rem; color: var(--km); font-size: 1rem; scroll-margin-top: 5rem; }
+.km-baslik small { display: block; color: var(--soluk); font-weight: 400; font-size: .76rem; }
+.mallar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin: 0; padding: 0; list-style: none; }
+.mal { display: grid; gap: .25rem; align-content: start; grid-auto-rows: max-content; min-width: 0; padding: .75rem; border: 1px solid rgb(57 255 136 / .18); border-radius: 10px; background: linear-gradient(180deg, #0a110d, #050807); }
+.mal-simge { font-size: 1.8rem; line-height: 1.1; }
+.mal strong { overflow-wrap: anywhere; line-height: 1.25; }
+.mal > small { color: #93a79b; font-size: .75rem; line-height: 1.4; }
+.mal-alt { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .1rem .5rem; font-size: .88rem; }
+.mal-alt b { color: #ffb35c; }
+.mal-alt i { color: var(--soluk); font-style: normal; font-size: .76rem; overflow-wrap: anywhere; }
+.mal .islem { grid-template-columns: minmax(0, 1fr); margin-top: .25rem; gap: .35rem; }
+.mal .islem .alan { display: flex; align-items: center; gap: .5rem; }
+.mal .islem .alan input { min-height: 38px; padding: .3rem .6rem; border-color: rgb(57 255 136 / .28); }
+.kumarhane .karanlik .islem button { width: 100%; min-width: 0; min-height: 42px; padding: .4rem; border: 1px solid var(--km); border-radius: 8px; background: rgb(57 255 136 / .12); color: var(--km); box-shadow: none; font: inherit; font-weight: 700; font-size: .82rem; text-shadow: none; }
+.kumarhane .karanlik .islem button:active { background: rgb(57 255 136 / .3); transform: scale(.98); }
+.mal.nft img { width: 100%; height: auto; border-radius: 8px; image-rendering: pixelated; }
+.mal.nft.n-efsane { border-color: rgb(255 184 0 / .6); }
+.mal.nft.n-nadir { border-color: rgb(139 61 255 / .65); }
+.mal.nft.dolu img { opacity: .5; }
+.mal.nft summary { min-height: 34px; color: var(--soluk); font-size: .8rem; cursor: pointer; }
+@media (hover: hover) {
+  .kumarhane .karanlik .islem button:hover { background: rgb(57 255 136 / .24); }
+  .mal:hover { border-color: rgb(57 255 136 / .5); }
+}
+@media (min-width: 640px) {
+  .mallar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mallar.nftler { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

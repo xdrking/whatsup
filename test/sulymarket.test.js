@@ -272,7 +272,7 @@ test('.hack: grupta reddedilir, özelden listeler, id ile hackler, gruba hackley
   await calistir([K], true)
   assert.match(son().metin, /özelden/)
   await calistir([])
-  assert.match(son().metin, /hacker yok/)
+  assert.match(son().metin, /hacker ya da fidye yazılımı yok/)
 
   sulyVer(chatJid, H, 1000)
   karaborsaAl({ chatJid, userJid: H, urun: urun('usta'), adet: 5 })

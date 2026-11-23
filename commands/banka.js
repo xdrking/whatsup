@@ -3,6 +3,7 @@ import {
 } from '../lib/banka.js'
 import { requireGroup } from '../lib/group.js'
 import { miktarCoz } from '../lib/kumar.js'
+import { sureYaz } from './cark.js'
 import { bankaCek, bankaDurumu, bankaYatir, faizDurumu } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -59,6 +60,7 @@ export default {
 
         const s = bankaCek({ chatJid: from, userJid: sender, miktar: c.miktar })
         if (!s) return await yaz('🏦 Banka şu an kapalı, sonra dene.')
+        if (s.kilitli) return await yaz(`🔒 Bankan fidye yazılımıyla kilitli. ${sayi.format(s.fidye)} XP öde: \`.fidye öde\` ya da ${sureYaz(s.kilitli - Date.now())} bekle.`)
         if (s.yetersiz) return await yaz(`🏦 Hesabında o kadar yok: ${sayi.format(s.bakiye)} XP`)
 
         return await yaz([
