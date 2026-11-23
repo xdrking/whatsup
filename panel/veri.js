@@ -10,7 +10,7 @@ import { FAIZ_YUZDESI } from '../lib/banka.js'
 import { borcIslet, krediFaizi } from '../lib/kredi.js'
 import { bozdurmaDegeri, COIN_TABAN } from '../lib/coin.js'
 import { MAKAMLAR } from '../lib/devlet.js'
-import { NFT_GERI_ALIM, nftBul } from '../lib/nft.js'
+import { nftGeriAlim } from '../lib/nft.js'
 import { BIRIM, SULY, sulyFiyati, sulySatisDegeri } from '../lib/kripto.js'
 import { MESLEKLER, meslekKoduyla } from '../lib/meslek.js'
 import { MULKLER } from '../lib/mulk.js'
@@ -104,8 +104,8 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     for (const k of tum('kripto', 'SELECT user_jid, birim FROM kripto WHERE chat_jid = ?', chatJid)) {
       Object.assign(al(k.user_jid), { suly: k.birim, sulyDeger: usd ? sulySatisDegeri(k.birim, usd, kur) : 0 })
     }
-    for (const n of tum('nft', 'SELECT user_jid, no FROM nft WHERE chat_jid = ?', chatJid)) {
-      const birim = ((nftBul(n.no)?.fiyat ?? 0) * BIRIM * NFT_GERI_ALIM) / 100
+    for (const n of tum('nft', 'SELECT * FROM nft WHERE chat_jid = ?', chatJid)) {
+      const birim = nftGeriAlim(n) * BIRIM
       if (usd) al(n.user_jid).nftDeger += sulySatisDegeri(birim, usd, kur)
     }
     for (const m of tum('mulk', 'SELECT user_jid, kod, adet, bekleyen FROM mulk WHERE chat_jid = ?', chatJid)) {

@@ -1,17 +1,18 @@
 import { sureYaz } from './cark.js'
+import { oranYaz } from '../lib/banka.js'
 import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
-import { BIRIM, sulyYaz } from '../lib/kripto.js'
+import { sulyYaz } from '../lib/kripto.js'
 import { ozelUyelikler } from '../lib/ozel.js'
 import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, firarEt, kalkanKir, karaborsaAl, karaborsaDurumu, maskeTak } from '../lib/stats.js'
-import { AZAMI_ADET, HACK_GUNLUK, kutuMetni, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
+import { AZAMI_ADET, HACK_GUNLUK, katliFiyat, kutuMetni, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
 const KAPALI = '🕶️ Satıcı ortadan kayboldu, sonra dene.'
 
-const urunSatiri = (u) => `${URUNLER.indexOf(u) + 1}. ${u.ad} — ${u.fiyat} Suly _(${urunNotu(u)})_`
+const urunSatiri = (u, kat) => `${URUNLER.indexOf(u) + 1}. ${u.ad} — ${binlik(katliFiyat(u.fiyat, kat))} Suly _(${urunNotu(u)})_`
 
 /** Özelden yazılınca kişinin tek ortak grubu kullanılır; birden çoksa hangisi olduğu bilinemez. */
 async function baglam({ sock, from, sender, parsed }) {
@@ -21,10 +22,11 @@ async function baglam({ sock, from, sender, parsed }) {
 }
 
 function vitrin(d) {
-  const tur = (t) => URUNLER.filter((u) => t.includes(u.tur)).map(urunSatiri)
+  const tur = (t) => URUNLER.filter((u) => t.includes(u.tur)).map((u) => urunSatiri(u, d.kat))
   return [
     '🕶️ *SulyMarket*',
     '_Sorular sorulmaz, iade yoktur._',
+    ...(d.kat > 1 ? [`📈 Fiyatlar grubun servetine göre anlık: taban x${oranYaz(d.kat)}`] : []),
     '',
     '*Cephane* (çetene girer)',
     ...tur(['silah']),
@@ -88,6 +90,7 @@ export default {
   description: 'Suly ile kara borsa: çeteye silah, hacker, VPN, firar planı',
   usage: '.sulymarket  —  .sulymarket al <no> [adet]  —  .sulymarket kullan firar|kimlik  —  .sulymarket kullan çilingir @kişi',
   details: [
+    'Fiyatlar anlıktır: grubun en zengin 10 üyesinin serveti büyüdükçe artar, taban fiyatın altına inmez. NFT ve muhbir de aynı.',
     'Her şey Suly ile satılır, ödenen Suly yanar. Bota özelden de yazabilirsin: ne aldığını kimse görmez.',
     'Silahlar çetenin cephaneliğine girer ve orada kalır: baskında güç, üyelere soygunda ek şans verir.',
     'Hacker aldıktan sonra bota *özelden* `.hack` yaz. VPN sonraki saldırıda harcanır: başarıda izini siler, yakalanınca hapse girmezsin.',
@@ -121,7 +124,7 @@ export default {
         if (s.ceteYok) return await yaz('🏴 Silah çeteye alınır, önce bir çeten olmalı: `.çete`')
         if (s.yetersiz) return await yaz(`🕶️ ${sulyYaz(s.ucret)} Suly gerekiyor, sende ${sulyYaz(s.birim)} var. \`.kripto al suly <miktar>\``)
         return await yaz([
-          `🕶️ *${urun.ad}${adet > 1 ? ` x${binlik(adet)}` : ''}* teslim edildi, ${sulyYaz(urun.fiyat * adet * BIRIM)} Suly ödendi.`,
+          `🕶️ *${urun.ad}${adet > 1 ? ` x${binlik(adet)}` : ''}* teslim edildi, ${sulyYaz(s.ucret)} Suly ödendi.`,
           ...(s.cete ? [`🏴 ${s.cete} cephaneliğine girdi.`] : []),
           ...(s.duvar ? [`🧱 Koruma: ${sureYaz(s.duvar - Date.now())}`] : []),
           ...(s.kutu ? [kutuMetni(s.kutu)] : []),

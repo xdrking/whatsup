@@ -6,14 +6,14 @@ process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
 const { getDb } = await import('../lib/db.js')
-const { BIRIM } = await import('../lib/kripto.js')
+const { BIRIM, sulyYaz } = await import('../lib/kripto.js')
 const { NFTLER, nftBul, nftKomisyonu } = await import('../lib/nft.js')
 const { nftGalerisi, nftKarti } = await import('../lib/nftResim.js')
-const { baskinSansi, HACK_KORUNMA_MS, HACKERLAR, hackPayi, silahKaybi, soygunBonusu, URUNLER, urunKoduyla } = await import('../lib/sulymarket.js')
+const { baskinSansi, HACK_KORUNMA_MS, HACKERLAR, hackPayi, katliFiyat, marketKati, SERVET_REFERANS, silahKaybi, soygunBonusu, URUNLER, urunKoduyla } = await import('../lib/sulymarket.js')
 const {
   bankaBakiyesi, bankaYatir, botHesabiniTani, ceteAyril, ceteBaskin, ceteDurumu, ceteKatil, ceteKur, ceteSoygunBonusu, ceteYatir,
   coinAyarla, coinDurumu, firarEt, getStats, hackYap, hapisDurumu, iflasEt, kalkanKir, karaborsaAl, karaborsaDurumu, mulkAl, mulkDurumu,
-  nftAl, nftBoz, nftIlan, nftListesi, nftVer, rebornYap, servetDurumu, xpAyarla,
+  nftAl, nftBoz, nftIlan, nftListesi, nftVer, rebornYap, servetDurumu, sulyMarketKati, xpAyarla,
 } = await import('../lib/stats.js')
 const { MULKLER } = await import('../lib/mulk.js')
 const hackKomutu = (await import('../commands/hack.js')).default
@@ -241,6 +241,37 @@ test('nft servete girer, reborn kara borsayı siler', () => {
   assert.deepEqual(karaborsaDurumu({ chatJid, userJid: 'a', now: T }).envanter, [])
 })
 
+test('anlık fiyat: servet büyüdükçe artar, tabanın altına inmez, NFT bozmak Suly basmaz', () => {
+  assert.equal(marketKati({ ortalama: 0, sulyXp: 1 }), 1)
+  assert.equal(marketKati({ ortalama: 10, sulyXp: 1 }), 1)
+  assert.equal(marketKati({ ortalama: SERVET_REFERANS * 4 * 50, sulyXp: 50 }), 4)
+  assert.equal(marketKati({ ortalama: 5, sulyXp: 0 }), 1)
+  assert.equal(katliFiyat(5, 1.1), 6)
+  assert.equal(katliFiyat(15, 2), 30)
+
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 1_000_000)
+  xpAyarla({ chatJid, userJid: 'b', miktar: 1000 })
+  const kat = () => sulyMarketKati({ chatJid, now: T })
+  getDb().prepare("INSERT OR REPLACE INTO kripto_fiyat (sembol, usd, zaman) VALUES ('BTC', 100000, ?)").run(T)
+  sulyMarketKati({ chatJid, now: T }) // günün ekonomi kaydı açılsın
+  const ilk = kat()
+  xpAyarla({ chatJid, userJid: BOT, miktar: 900_000_000_000 })
+  assert.equal(kat(), ilk, 'hazine sayılmaz')
+
+  const ucuz = nftAl({ chatJid, userJid: 'a', no: 11, now: T })
+  assert.equal(ucuz.fiyat, katliFiyat(20, ilk) * BIRIM)
+  xpAyarla({ chatJid, userJid: 'b', miktar: 300_000_000_000_000 })
+  assert.ok(kat() > ilk * 10)
+  const pahali = nftAl({ chatJid, userJid: 'a', no: 12, now: T })
+  assert.ok(!pahali.yetersiz && pahali.fiyat > ucuz.fiyat * 10)
+  assert.equal(nftBoz({ chatJid, userJid: 'a', no: 11 }).odeme, ucuz.fiyat / 2, 'ucuzken alıp pahalıyken bozan kâr etmez')
+  nftVer({ chatJid, userJid: 'a', hedef: 'b', no: 12, now: T })
+  assert.equal(nftBoz({ chatJid, userJid: 'b', no: 12 }).odeme, pahali.fiyat / 2, 'el değiştirince alış fiyatı kalır')
+  const s = karaborsaAl({ chatJid, userJid: 'a', urun: urun('karasapka'), now: T })
+  assert.ok(s.yetersiz && s.ucret > 3000 * BIRIM)
+})
+
 test('nft görselleri çizilir', async () => {
   for (const no of [1, 4, 11]) assert.equal((await nftKarti(nftBul(no))).subarray(1, 4).toString(), 'PNG')
   assert.equal((await nftGalerisi(new Set([1]))).subarray(1, 4).toString(), 'PNG')
@@ -319,12 +350,14 @@ test('.sulymarket, .nft ve .çete bas komutları', async () => {
   assert.ok(son().image)
   await calistir(nftKomutu, 'al 30')
   assert.match(son().metin, /artık senin/)
+  const { alis } = nftListesi(chatJid)[0]
+  assert.ok(alis >= 20)
   await calistir(nftKomutu, 'sat 30 0.5')
   assert.match(son().metin, /0,5 Suly/)
   await calistir(nftKomutu, '30')
   assert.match(son().metin, /Satılık/)
   await calistir(nftKomutu, 'boz 30')
-  assert.match(son().metin, /\+10 Suly/)
+  assert.match(son().metin, new RegExp(`\\+${sulyYaz((alis * BIRIM) / 2)} Suly`))
 
   ceteKur({ chatJid, userJid: H, ad: 'Aslan', anahtar: 'aslan' })
   ceteKur({ chatJid, userJid: 'r', ad: 'Tim 9', anahtar: 'tim 9' })

@@ -540,6 +540,8 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | `.izsür` / `.izsür <dosya no>` | Son 24 saatin siber saldırıları / İçişleri Bakanı failin izini sürer |
 | `.muhbir kim` / `.muhbir dosya <kimlik>` (özelden) | Seni kim hackledi / hedefin gizli dosyası, Suly ile |
 
+Fiyatlar anlıktır: grubun en zengin 10 üyesinin ortalama serveti büyüdükçe artar, taban fiyatın altına inmez.
+
 Hacklenmekten yalnızca **güvenlik duvarı** korur. Yakalanan hacker 2 saat hapse girer. VPN her saldırıda harcanır: yakalanınca hapisten korur, başarıda izi siler.
 
 ### Hapis, evlilik, meslek, çete, dava

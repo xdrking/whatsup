@@ -7,8 +7,8 @@ process.env.STATS_DB = ':memory:'
 
 const { getDb } = await import('../lib/db.js')
 const { BIRIM } = await import('../lib/kripto.js')
-const { NFT_GERI_ALIM, NADIRLIK } = await import('../lib/nft.js')
-const { URUNLER, urunKoduyla } = await import('../lib/sulymarket.js')
+const { NADIRLIK, nftGeriAlim } = await import('../lib/nft.js')
+const { katliFiyat, kutuMetni, urunKoduyla } = await import('../lib/sulymarket.js')
 const {
   IZ_SURESI_MS, KUTU_ODULLERI, kutuCek, ROLLER, rolBul, VURGUN_ARALIGI_MS, vurgunGanimeti, vurgunSansi, OFFSHORE_BASKIN_YUZDESI,
   FIDYE_MS, fidyeTutari, MUHBIR_KIM, OFFSHORE_KOMISYON, OFFSHORE_RISK,
@@ -52,17 +52,20 @@ test('saf kurallar: roller, vurgun şansı ve ganimet sınırı', () => {
 
 test('gizemli kutu: ağırlıklar 100, her ürün katalogda, beklenen değer fiyatın altında', () => {
   assert.equal(KUTU_ODULLERI.reduce((t, o) => t + o.agirlik, 0), 100)
-  const vpn = urunKoduyla('vpn').fiyat
-  const beklenen = KUTU_ODULLERI.reduce((t, o) => {
-    const u = o.kod && urunKoduyla(o.kod)
-    if (o.kod) assert.ok(u, o.kod)
-    const deger = o.tur === 'nft' ? Math.max(NADIRLIK.siradan.fiyat, vpn) : !u ? 0 : u.tur === 'silah' ? Math.max(u.fiyat * o.adet, vpn) : u.fiyat * o.adet
-    return t + (o.agirlik / 100) * deger
-  }, 0)
-  assert.ok(beklenen < urunKoduyla('kutu').fiyat, `beklenen ${beklenen}`)
+  const fiyat = (u, kat) => katliFiyat(u.fiyat, kat)
+  for (const kat of [1, 1.1, 2.7, 40.3]) {
+    const vpn = fiyat(urunKoduyla('vpn'), kat)
+    const beklenen = KUTU_ODULLERI.reduce((t, o) => {
+      const u = o.kod && urunKoduyla(o.kod)
+      if (o.kod) assert.ok(u, o.kod)
+      const deger = o.tur === 'nft' ? Math.max(katliFiyat(NADIRLIK.siradan.fiyat, kat), vpn) : !u ? 0 : u.tur === 'silah' ? Math.max(fiyat(u, kat) * o.adet, vpn) : fiyat(u, kat) * o.adet
+      return t + (o.agirlik / 100) * deger
+    }, 0)
+    assert.ok(beklenen < fiyat(urunKoduyla('kutu'), kat), `x${kat} beklenen ${beklenen}`)
+  }
   assert.equal(kutuCek(() => 0).tur, 'bos')
   assert.equal(kutuCek(() => 99).tur, 'nft')
-  assert.ok((NADIRLIK.siradan.fiyat * NFT_GERI_ALIM) / 100 < urunKoduyla('kutu').fiyat)
+  assert.ok(nftGeriAlim({ no: 30, alis: 0 }) < urunKoduyla('kutu').fiyat)
 })
 
 test('gizemli kutu: polis, NFT ve silah; ceza kısalmaz', () => {
@@ -73,7 +76,9 @@ test('gizemli kutu: polis, NFT ve silah; ceza kısalmaz', () => {
 
   db.prepare('INSERT INTO hapis (chat_jid, user_jid, bitis, kefalet) VALUES (?, ?, ?, 0)').run(chatJid, 'a', T + 5 * SAAT)
   assert.equal(ac(sira((o) => o.tur === 'polis')).hapis.bitis, T + 5 * SAAT)
-  assert.ok(ac(99).nft)
+  const nftli = ac(99)
+  assert.match(kutuMetni(nftli), /NFT çıktı/)
+  assert.match(kutuMetni({ hapis: { kefalet: 1000 } }), /polis tuzağı/)
   assert.deepEqual(ac(sira((o) => o.kod === 'tabanca')), { kod: 'vpn', adet: 1 }, 'çetesize silah yerine VPN')
   xpVer(chatJid, 'b', 100_000_000)
   sulyVer(chatJid, 'b', 100)

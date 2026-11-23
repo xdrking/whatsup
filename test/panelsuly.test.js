@@ -11,7 +11,7 @@ process.env.STATS_DB = path.join(klasor, 'test.db')
 
 const { getDb } = await import('../lib/db.js')
 const { BIRIM } = await import('../lib/kripto.js')
-const { URUNLER } = await import('../lib/sulymarket.js')
+const { katliFiyat, URUNLER } = await import('../lib/sulymarket.js')
 const { sifreHashle } = await import('../panel/guvenlik.js')
 const { panelKaydet } = await import('../lib/panelHesap.js')
 const { getStats, karaborsaDurumu, nftListesi } = await import('../lib/stats.js')
@@ -98,13 +98,17 @@ test('fiyat servisi düşünce alım satım kapanır, sayfa açılır', async ()
 })
 
 test('SulyMarket: ürün, kutu, NFT al ve boz', async () => {
-  db.prepare('INSERT OR REPLACE INTO kripto (chat_jid, user_jid, birim) VALUES (?, ?, ?)').run(GRUP, UYE, 1000 * BIRIM)
+  db.prepare('INSERT OR REPLACE INTO kripto (chat_jid, user_jid, birim) VALUES (?, ?, ?)').run(GRUP, UYE, 1_000_000 * BIRIM)
+  const kat = () => karaborsaDurumu({ chatJid: GRUP, userJid: UYE }).kat
+  let once = birim()
+  let ucret = katliFiyat(15, kat()) * 2 * BIRIM
   const html = await al(`/oyun/sulymarket?grup=${g}`)
   for (const u of URUNLER) assert.ok(html.includes(`name="urun" value="${u.kod}"`), u.kod)
   assert.ok(html.includes('src="/nft/30.png"'))
 
   assert.ok((await islem('sulymarket', 'market-al', { urun: 'vpn', tutar: '2' })).includes('VPN x2'))
-  assert.equal(birim(), 970 * BIRIM)
+  assert.ok(kat() > 1 && html.includes('taban x'))
+  assert.equal(birim(), once - ucret, 'sayfada yazan anlık fiyat düşer')
   assert.ok((await islem('sulymarket', 'market-al', { urun: 'tabanca', tutar: '1' })).includes('çeten olmalı'))
   assert.ok((await islem('sulymarket', 'market-al', { urun: 'kutu', tutar: '3' })).includes('tek tek'))
   assert.ok((await islem('sulymarket', 'market-al', { urun: 'constructor' })).includes('Böyle bir ürün yok'))
@@ -114,8 +118,10 @@ test('SulyMarket: ürün, kutu, NFT al ve boz', async () => {
   assert.ok((await islem('sulymarket', 'nft-boz', { urun: '30' })).includes('markete döndü'))
   assert.ok((await islem('sulymarket', 'nft-boz', { urun: '30' })).includes('senin değil'))
   await bekle()
+  once = birim()
+  ucret = katliFiyat(25, kat()) * BIRIM
   await post('/oyun/islem', { grup: GRUP, sayfa: 'sulymarket', islem: 'market-al', urun: 'kutu' }, Cookie)
-  assert.equal(birim(), 935 * BIRIM)
+  assert.equal(birim(), once - ucret)
 })
 
 test('NFT görseli PNG olarak gelir, bilinmeyen numara 404', async () => {

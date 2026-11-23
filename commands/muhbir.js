@@ -14,18 +14,20 @@ const KAPALI = '🐀 Muhbir gelmedi, sonra dene.'
 const KULLANIM = [
   '🐀 *Muhbir* (yalnızca özelden)',
   '',
-  `\`.muhbir kim\` — seni son hackleyeni söyler, ${MUHBIR_KIM} Suly`,
-  `\`.muhbir dosya <numara ya da id>\` — offshore hesabı, hackerları, duvarı ve cephaneliği, ${MUHBIR_DOSYA} Suly`,
+  `\`.muhbir kim\` — seni son hackleyeni söyler, en az ${MUHBIR_KIM} Suly`,
+  `\`.muhbir dosya <numara ya da id>\` — offshore hesabı, hackerları, duvarı ve cephaneliği, en az ${MUHBIR_DOSYA} Suly`,
+  '',
+  '_Ücret SulyMarket fiyatlarıyla birlikte anlık değişir._',
 ].join('\n')
 
-const yetersiz = (ucret, birim) => `🐀 ${ucret} Suly istiyor, sende ${sulyYaz(birim)} var. \`.kripto al suly <miktar>\``
+const yetersiz = ({ ucret, birim }) => `🐀 ${sulyYaz(ucret)} Suly istiyor, sende ${sulyYaz(birim)} var. \`.kripto al suly <miktar>\``
 const urunler = (liste) => liste.map((e) => `${urunKoduyla(e.kod)?.ad ?? e.kod} x${binlik(e.adet)}`).join('  •  ')
 
 function kimMetni(s) {
   if (!s) return KAPALI
   if (s.yok) return '🐀 Son bir haftada seni hackleyen olmamış. Para almadı.'
   if (s.vpn) return '🐀 "VPN kullanmış, ben de bulamadım." Para almadı.'
-  if (s.yetersiz) return yetersiz(MUHBIR_KIM, s.birim)
+  if (s.yetersiz) return yetersiz(s)
   return `🐀 "${s.tur === 'fidye' ? 'Bankanı kilitleyen' : 'Seni soyan'}: *${displayName(s.saldiran)}*. Benden duymadın."\n🟠 Kalan: ${sulyYaz(s.birim)} Suly`
 }
 
@@ -48,8 +50,8 @@ export default {
   description: 'Suly karşılığı gizli bilgi satar (bota özelden)',
   usage: '.muhbir kim  —  .muhbir dosya <numara ya da id> (bota özelden)',
   details: [
-    `\`.muhbir kim\` son 7 günde seni son hackleyeni söyler (${MUHBIR_KIM} Suly). VPN kullandıysa bulamaz, para almaz.`,
-    `\`.muhbir dosya 905551234567\` kişinin offshore hesabını, yeraltı envanterini ve çetesinin silahlarını yazar (${MUHBIR_DOSYA} Suly).`,
+    `\`.muhbir kim\` son 7 günde seni son hackleyeni söyler (en az ${MUHBIR_KIM} Suly). VPN kullandıysa bulamaz, para almaz.`,
+    `\`.muhbir dosya 905551234567\` kişinin offshore hesabını, yeraltı envanterini ve çetesinin silahlarını yazar (en az ${MUHBIR_DOSYA} Suly). Ücret anlıktır, \`.sulymarket\` gibi.`,
     'Birden çok ortak grubun varsa sonuna grup id ekle. Ödenen Suly yanar.',
   ],
   category: 'toplum',
@@ -85,7 +87,7 @@ export default {
         const s = muhbirDosya(a)
         if (!s) return await yaz(KAPALI)
         if (s.bot) return await yaz('🐀 "Hazineye bulaşmam." Para almadı.')
-        if (s.yetersiz) return await yaz(yetersiz(MUHBIR_DOSYA, s.birim))
+        if (s.yetersiz) return await yaz(yetersiz(s))
         return await yaz(dosyaMetni(displayName(a.hedef), s))
       }
 

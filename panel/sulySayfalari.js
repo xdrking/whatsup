@@ -1,8 +1,8 @@
 // Suly borsası (canlı fiyat, grafikler, alım satım) ve SulyMarket'in HTML'i. Grafikler sunucuda SVG çizilir:
 // betik yoksa da görünür, oyun.js yalnızca canlı yeniler ve üstüne gelinen noktayı okur.
 import { BIRIM, GRAFIK_ARALIKLARI, SATIS_KESINTI, sulyDegeri, sulyFiyati, sulySatisDegeri, sulyYaz } from '../lib/kripto.js'
-import { NADIRLIK, NFT_GERI_ALIM, NFTLER } from '../lib/nft.js'
-import { HACK_GUNLUK, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
+import { NADIRLIK, nftGeriAlim, NFTLER } from '../lib/nft.js'
+import { HACK_GUNLUK, katliFiyat, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
 import { displayName } from '../lib/target.js'
 import { h } from './sayfalar.js'
 import { islemFormu, satir, sayfa } from './hesapSayfalari.js'
@@ -173,28 +173,28 @@ const BOLUMLER = [
   ['arac', 'araclar', 'Araçlar', 'Envanterine girer'],
 ]
 
-function urunKutusu(chat, u, elde) {
+function urunKutusu(chat, u, elde, kat) {
   const [emoji, ...ad] = u.ad.split(' ')
   return h`<li class="mal">
   <span class="mal-simge" aria-hidden="true">${emoji}</span>
   <strong>${ad.join(' ')}</strong>
   <small>${urunNotu(u)}</small>
-  <span class="mal-alt"><b>${sayi.format(u.fiyat)} Ⓢ</b>${elde ? h`<i>sende ${sayi.format(elde)}</i>` : ''}</span>
+  <span class="mal-alt"><b>${sayi.format(katliFiyat(u.fiyat, kat))} Ⓢ</b>${elde ? h`<i>sende ${sayi.format(elde)}</i>` : ''}</span>
   ${islemFormu(chat, 'sulymarket', 'market-al', 'SATIN AL', { urun: u.kod, ...(u.tur === 'kutu' || u.tur === 'duvar' ? {} : { alan: 'Adet', deger: '1' }) })}
 </li>`
 }
 
-function nftKutusu(chat, n, sahiplik, ben) {
+function nftKutusu(chat, n, sahiplik, ben, kat) {
   const senin = sahiplik?.user_jid === ben
   const alinir = !sahiplik || (!senin && sahiplik.fiyat)
-  const fiyat = sahiplik?.fiyat ? sahiplik.fiyat : n.fiyat * BIRIM
+  const fiyat = sahiplik?.fiyat ? sahiplik.fiyat : katliFiyat(n.fiyat, kat) * BIRIM
   return h`<li class="mal nft n-${n.sinif}${sahiplik && !alinir && !senin ? ' dolu' : ''}">
   <img src="/nft/${n.no}.png" alt="" width="320" height="320" loading="lazy">
   <strong>${n.ad}</strong>
   <small>#${n.no} · ${NADIRLIK[n.sinif].ad.slice(2).trim()}</small>
   <span class="mal-alt">${alinir ? h`<b>${sulyYaz(fiyat)} Ⓢ</b>` : ''}${senin ? h`<i>senin${sahiplik.fiyat ? ` · ${sulyYaz(sahiplik.fiyat)} Ⓢ ilanda` : ''}</i>` : sahiplik ? h`<i>${displayName(sahiplik.user_jid)}</i>` : ''}</span>
   ${alinir ? islemFormu(chat, 'sulymarket', 'nft-al', 'SATIN AL', { urun: String(n.no) }) : ''}
-  ${senin ? h`<details><summary>Boz</summary>${islemFormu(chat, 'sulymarket', 'nft-boz', `${sulyYaz((n.fiyat * BIRIM * NFT_GERI_ALIM) / 100)} Ⓢ al, boz`, { urun: String(n.no), sinif: 'ikincil' })}</details>` : ''}
+  ${senin ? h`<details><summary>Boz</summary>${islemFormu(chat, 'sulymarket', 'nft-boz', `${sulyYaz(nftGeriAlim(sahiplik) * BIRIM)} Ⓢ al, boz`, { urun: String(n.no), sinif: 'ikincil' })}</details>` : ''}
 </li>`
 }
 
@@ -217,7 +217,7 @@ export function sulyMarketSayfasi(veri) {
   <p class="km-satir" aria-hidden="true">root@sulymarket:~$ ./vitrin --gizli</p>
   <h2>SULYMARKET</h2>
   <div class="km-bakiye"><strong>${sulyYaz(d.birim)}</strong> Suly <a href="${hesapLink(chat, 'suly')}">Suly al ›</a></div>
-  <p class="not">Ödenen Suly yanar, iade yok. Hack, baskın ve vurgun WhatsApp'tan yapılır.</p>
+  <p class="not">Ödenen Suly yanar, iade yok. Fiyatlar anlıktır: grubun servetine göre şu an taban x${yuzde.format(d.kat)}. Hack, baskın ve vurgun WhatsApp'tan yapılır.</p>
 </section>
 <section class="kart km-durum">
   <h2>Sende ne var</h2>
@@ -232,8 +232,8 @@ export function sulyMarketSayfasi(veri) {
 </section>
 <nav class="km-sekme" aria-label="Bölümler">${[...BOLUMLER, ['', 'nft', 'NFT']].map(([, yer, ad]) => h`<a href="#${yer}">${ad}</a>`)}</nav>
 ${BOLUMLER.map(([tur, yer, ad, not]) => h`<h2 class="km-baslik" id="${yer}">${ad} <small>${not}</small></h2>
-<ul class="mallar">${URUNLER.filter((u) => u.tur === tur || (tur === 'arac' && ['duvar', 'kutu'].includes(u.tur))).map((u) => urunKutusu(chat, u, eldeki.get(u.kod)))}</ul>`)}
+<ul class="mallar">${URUNLER.filter((u) => u.tur === tur || (tur === 'arac' && ['duvar', 'kutu'].includes(u.tur))).map((u) => urunKutusu(chat, u, eldeki.get(u.kod), d.kat))}</ul>`)}
 <h2 class="km-baslik" id="nft">NFT galerisi <small>Her mahluktan grupta bir tane</small></h2>
-<ul class="mallar nftler">${NFTLER.map((n) => nftKutusu(chat, n, sahipler.get(n.no), ben))}</ul>
+<ul class="mallar nftler">${NFTLER.map((n) => nftKutusu(chat, n, sahipler.get(n.no), ben, d.kat))}</ul>
 </div>`)
 }

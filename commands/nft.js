@@ -3,8 +3,10 @@ import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { BIRIM, sulyCoz, sulyYaz } from '../lib/kripto.js'
 import { NADIRLIK, NFT_GERI_ALIM, NFT_KOMISYON, nftBul, NFTLER } from '../lib/nft.js'
 import { nftGalerisi, nftKarti } from '../lib/nftResim.js'
+import { binlik } from '../lib/sayi.js'
 import { botGonderisi } from '../lib/sosyal.js'
-import { botHesabiMi, nftAl, nftBoz, nftIlan, nftListesi, nftVer } from '../lib/stats.js'
+import { botHesabiMi, nftAl, nftBoz, nftIlan, nftListesi, nftVer, sulyMarketKati } from '../lib/stats.js'
+import { katliFiyat } from '../lib/sulymarket.js'
 import { displayName, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -16,14 +18,15 @@ const BORCLU = '💳 Kredi borcun ya da eksi cüzdanın varken NFT alıp veremez
 /** `.nft sat 7 0.5` → "0.5". Ham metinden okunur: handler "0.001"i binlik sanıp 1 yapardı. */
 export const fiyatMetni = (text) => String(text || '').trim().split(/\s+/)[2] ?? ''
 
-function sinifSatiri(sinif, satilan) {
+function sinifSatiri(sinif, satilan, kat) {
   const hepsi = NFTLER.filter((n) => n.sinif === sinif)
   const bos = hepsi.filter((n) => !satilan.has(n.no)).length
-  return `${NADIRLIK[sinif].ad} — ${NADIRLIK[sinif].fiyat} Suly  (${bos}/${hepsi.length} sahipsiz)`
+  return `${NADIRLIK[sinif].ad} — ${binlik(katliFiyat(NADIRLIK[sinif].fiyat, kat))} Suly  (${bos}/${hepsi.length} sahipsiz)`
 }
 
 async function galeri({ sock, msg, from, sender }) {
   const liste = nftListesi(from)
+  const kat = sulyMarketKati({ chatJid: from })
   const satilan = new Set(liste.map((r) => r.no))
   const benim = liste.filter((r) => r.user_jid === sender)
   const ilanlar = liste.filter((r) => r.fiyat)
@@ -31,7 +34,7 @@ async function galeri({ sock, msg, from, sender }) {
   const caption = [
     '🖼️ *Suly Mahlukatı*  —  her birinden dünyada tek tane',
     '',
-    ...Object.keys(NADIRLIK).map((s) => sinifSatiri(s, satilan)),
+    ...Object.keys(NADIRLIK).map((s) => sinifSatiri(s, satilan, kat)),
     ...(ilanlar.length
       ? ['', '*Satılık*', ...ilanlar.map((r) => `#${r.no} ${nftBul(r.no)?.ad} — ${sulyYaz(r.fiyat)} Suly (${displayName(r.user_jid)})`)]
       : []),
@@ -45,7 +48,7 @@ async function galeri({ sock, msg, from, sender }) {
 async function goster({ sock, msg, from, nft }) {
   const satir = nftListesi(from).find((r) => r.no === nft.no)
   const durum = !satir
-    ? `Sahipsiz, ${nft.fiyat} Suly: \`.nft al ${nft.no}\``
+    ? `Sahipsiz, ${binlik(katliFiyat(nft.fiyat, sulyMarketKati({ chatJid: from })))} Suly: \`.nft al ${nft.no}\``
     : `Sahibi: ${displayName(satir.user_jid)}${satir.fiyat ? `\nSatılık: ${sulyYaz(satir.fiyat)} Suly, \`.nft al ${nft.no}\`` : ''}`
   await sock.sendMessage(from, {
     image: await nftKarti(nft),

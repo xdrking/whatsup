@@ -357,7 +357,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 72 (tamam):** kalıcı panel oturumu, @ önerisi, düzenleme, kaydetme, sabitleme, çevrimiçi, durum, okundu çizgisi, tema, bahşiş, kazanç kartı, profil vitrini. Ayrıntı aşağıda.
 - **Faz 73 (tamam):** `.sulymarket`, `.hack`, `.çete bas`, `.nft`. Ayrıntı aşağıda.
 - **Faz 74 (tamam):** `.vurgun`, `.offshore`, `.izsür`, `.fidye`, `.muhbir`, sahte kimlik, gizemli kutu; panelde Suly borsası, SulyMarket ve NFT vitrini. Ayrıntı aşağıda.
-- **Faz 75+:** yeni komutlar, her biri ayrı adım
+- **Faz 75 (tamam):** SulyMarket'te anlık fiyat. Faz 73 bölümüne işlendi.
+- **Faz 76+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1482,17 +1483,18 @@ karaborsa(chat_jid, user_jid, kod, adet)                                  PK(cha
 hack(chat_jid, user_jid, day, adet, korunma_until ms, duvar_until ms)     PK(chat_jid,user_jid)
 cete_silah(chat_jid, anahtar, kod, adet)                                  PK(chat_jid,anahtar,kod)
 cete_baskin(chat_jid, anahtar, son_saldiri ms, korunma_until ms)          PK(chat_jid,anahtar)
-nft(chat_jid, no, user_jid, fiyat birim)                                  PK(chat_jid,no)
+nft(chat_jid, no, user_jid, fiyat birim, alis Suly)                       PK(chat_jid,no)
 ```
 
 Kurallar `lib/sulymarket.js` ve `lib/nft.js`'te saftır, NFT çizimi `lib/nftResim.js`'te, yazma `lib/stats.js`'in sonundaki kara borsa bölümündedir. Ürün `kod`'u ve NFT `no`'su veritabanına yazılır, değiştirilmez; yeni NFT sona eklenir.
 
-- **Suly ile satılır, ödenen Suly yanar.** Fiyat tam Suly'dir ve ölçeklenmez: Suly'nin XP karşılığı kurla zaten büyür. 1 coin kabaca `REFERANS_KUR / BTC doları` Suly eder (BTC 100.000 dolarken 23).
+- **Suly ile satılır, ödenen Suly yanar.** 1 coin kabaca `REFERANS_KUR / BTC doları` Suly eder (BTC 100.000 dolarken 23).
+- **Anlık fiyat (Faz 75, bot sahibinin kararı):** `URUNLER` ve `NADIRLIK` fiyatları tabandır, satışta `marketKati()` ile çarpılır (`katliFiyat`, yukarı yuvarlanır): en zengin 10 üyenin (bot hariç) ortalama `.servet` neti / Suly'nin XP fiyatı / `SERVET_REFERANS` (400 Suly), en az 1. Servetin çoğu coin ve mülkte durduğu için kurla büyüyen Suly tek başına yetmiyordu. Muhbir ücreti de aynı katladır. Kat saklanmaz, her okumada hesaplanır. Suly'nin kendi XP fiyatı büyütülmedi: elinde Suly olana bedava XP basardı. `.sulymarket`, `.nft` ve panel aynı katı gösterir.
 - **Özelden alışveriş:** kişinin botla tek ortak grubu varsa çalışır (`lib/ozel.js`).
 - **`.hack`:** yalnızca özelden. Argümansız yazınca hacker'ı olana hedeflerin kimliğini listeler, grupta `.id @kişi` yazıp hedefini belli etmesin. Çalınan para hackleyenin **bankasına** girer, coin, mülk (`mulkTasi`) ve NFT ona geçer; toplam değişmez, XP basılmaz. Engeller (duvar, korunma, hak, hapis, boş hedef) hacker'ı yakmaz. Başarıda kimlik gizlidir, duyuruda yazılmaz. Başarısızlıkta VPN yoksa 2 saat hapis ve grupta teşhir (VPN kuralı Faz 74'te). Günde 2 hack, kurban 12 saat korunur. Bot hacklenemez. `.market` kalkanı ve sigorta korumaz, yalnızca duvar korur. Duyuru susturulmuş gruba gitmez.
 - **Silah çetenindir:** üye ayrılınca cephanelikte kalır, çete kapanınca silinir. Güç = üye başı 5 + silahlar. Silah gücü üyelerin tekli `.soygun` şansına en çok 10 puan ekler (`soygunBonusu`), `.soygun herkes`'e eklenmez.
 - **`.çete bas <ad> [bomba]`:** yalnızca lider. Şans güç oranıdır (%10-90). Kazanan rakip kasanın %20'sini kendi kasasına alır, iki taraf da silah kaybeder. Çete 6 saatte bir basar, basılan 12 saat korunur. Önce tam ad denenir, sonra sondaki sayı bomba sayılır.
-- **NFT:** 30 mahluk, grupta her birinin tek sahibi vardır. Görsel `no`'dan türetilir, saklanmaz. Üyeler arası satış Suly'nin el değiştirdiği tek yoldur, bu yüzden iki taraf da `.devret` kapısından geçer (borç, ambargo; `nftTarafEngeli`). `.nft boz` liste fiyatının yarısını geri basar ve borçluya da açıktır: NFT varken `.iflas` reddedildiği için başka çıkış olmazdı. Geri alım alıştan ucuz kalmalı, yoksa Suly basılır. `.servet` ve panel geri alım değeriyle sayar.
+- **NFT:** 30 mahluk, grupta her birinin tek sahibi vardır. Görsel `no`'dan türetilir, saklanmaz. Üyeler arası satış Suly'nin el değiştirdiği tek yoldur, bu yüzden iki taraf da `.devret` kapısından geçer (borç, ambargo; `nftTarafEngeli`). `.nft boz` markete ödenenin (`alis`, el değiştirince kalır; 0 ise taban) yarısını geri basar; anlık fiyata bağlanmaz, yoksa ucuzken alıp pahalıyken bozan Suly basardı ve borçluya da açıktır: NFT varken `.iflas` reddedildiği için başka çıkış olmazdı. Geri alım alıştan ucuz kalmalı, yoksa Suly basılır. `.servet` ve panel geri alım değeriyle sayar.
 - Reborn tabloların hepsini siler. Darbe, haciz ve spam cezası NFT'ye ve envantere dokunmaz.
 
 ### Faz 74 — Yeraltı, panelde Suly borsası ve SulyMarket
@@ -1667,3 +1669,4 @@ Kurallar `lib/yeralti.js`'te saftır, yazma `lib/stats.js`'in sonundaki yeraltı
 131. Özelden `.muhbir kim` ve `.muhbir dosya <kimlik>` → bilgi gelir, Suly düşer; grupta → "özelden yaz". `.sulymarket kullan kimlik`, sonra özelden `.soygun <kimlik>` → grupta "Maskeli biri"
 132. `.sulymarket al 16` → kutu açılır; `al 16 2` → "tek tek"
 133. Panelde Suly borsası → fiyat ve üç grafik, saat 20 sn'de bir değişir, parmakla gezince değer üst satırda; `0,5` al → cüzdan düşer, WhatsApp'ta `.kripto` aynı bakiyeyi gösterir. SulyMarket → ürün ve NFT alınır, profilde NFT koleksiyonu çıkar; telefonda yatay taşma yok
+134. `.sulymarket` → başta "taban x…" satırı; panelde aynı kat ve fiyatlar; `.sulymarket al 10` yazan fiyatı düşer; `.nft al 30` sonra `.nft boz 30` → ödenenin yarısı
