@@ -7,7 +7,7 @@ import logger from '../lib/logger.js'
 import { getStats } from '../lib/stats.js'
 import { girisHesaplari, oturumDeposu, panelHesaplari } from '../lib/panelHesap.js'
 import { denemeSiniri, OTURUM_SANIYE, oturumlar, sifreDogru, sifreHashle } from './guvenlik.js'
-import { buyukVurgunlar, kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
+import { buyukVurgunlar, hazineyiTani, kumarMotoru, TEK_OYUNLAR as TEK } from './kumar.js'
 import { hesapMotoru } from './hesap.js'
 import { btcFiyati, btcGecmisi, GRAFIK_ARALIKLARI } from '../lib/kripto.js'
 import { nftBul } from '../lib/nft.js'
@@ -161,6 +161,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
   const ortak = { gonder, yonlendir, govdeOku, grupAdlari: () => grupAdlari(), guvenlik: GUVENLIK_BASLIKLARI, vurgunAl: (kim) => kumar.vurgunAl(kim) }
 
   async function oyuncuIsle(req, res, url, yontem, hesaplar) {
+    // Bot (hazine) kimliği her istekte tanınır: tanınmadan açılan sayfada hazine en zenginler ortalamasına girip
+    // SulyMarket fiyatını şişiriyor, WhatsApp'takinden pahalı satıyordu.
+    hazineyiTani()
     if (url.pathname === '/') return yonlendir(res, '/s')
     if (await sosyalIsle({ req, res, url, yontem, hesaplar, ortak, motor: sosyal })) return
     const yol = `${yontem} ${url.pathname}`
