@@ -40,6 +40,15 @@ test('katalog: kodlar benzersiz, her hacker satılıyor', () => {
   assert.ok(NFTLER.every((n, i) => n.no === i + 1 && nftBul(n.no) === n))
 })
 
+test('hackerlar zayıftan güçlüye: her biri öncekinden pahalı, şanslı ve en az onun kadar alır', () => {
+  for (let i = 1; i < HACKERLAR.length; i++) {
+    const [a, b] = [HACKERLAR[i - 1], HACKERLAR[i]]
+    assert.ok(urun(b.kod).fiyat > urun(a.kod).fiyat, `${b.kod} fiyatı`)
+    assert.ok(b.sans > a.sans, `${b.kod} şansı`)
+    for (const alan of ['banka', 'cuzdan', 'coin', 'mulkPayi', 'mulkEnAz']) assert.ok(b[alan] >= a[alan], `${b.kod} ${alan}`)
+  }
+})
+
 test('saf kurallar: baskın şansı, silah kaybı, soygun bonusu, hack payı', () => {
   assert.equal(baskinSansi(50, 50), 50)
   assert.equal(baskinSansi(1, 10_000), 10)

@@ -16,7 +16,7 @@ import { FIDYE_MS, FIDYE_SANSI, FIDYE_YUZDESI } from '../lib/yeralti.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 
-const KULLANIM = 'Kullanım (bota özelden): `.hack <numara ya da id> [çaylak|usta|kara]` ya da `.hack fidye <numara ya da id>`'
+const KULLANIM = 'Kullanım (bota özelden): `.hack <numara ya da id> [çaylak|usta|kara|elit|zeroday]` ya da `.hack fidye <numara ya da id>`'
 
 function engelMetni({ engel, bitis }) {
   const kalan = bitis ? sureYaz(bitis - Date.now()) : ''
@@ -77,7 +77,7 @@ export default {
   name: 'hack',
   aliases: ['hackle'],
   description: 'Hacker\'la birinin parasına el koy (bota özelden)',
-  usage: '.hack  —  .hack <numara ya da id> [çaylak|usta|kara]  —  .hack fidye <numara ya da id> (bota özelden)',
+  usage: '.hack  —  .hack <numara ya da id> [çaylak|usta|kara|elit|zeroday]  —  .hack fidye <numara ya da id> (bota özelden)',
   details: [
     'Önce `.sulymarket`\'ten hacker al. Bota *özelden* `.hack` yazınca hedeflerin kimlikleri listelenir.',
     '`.hack 905551234567 usta` — para doğrudan senin *bankana* geçer, coin ve mülkler senin olur. Kimliğin gizli kalır.',

@@ -358,7 +358,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 73 (tamam):** `.sulymarket`, `.hack`, `.çete bas`, `.nft`. Ayrıntı aşağıda.
 - **Faz 74 (tamam):** `.vurgun`, `.offshore`, `.izsür`, `.fidye`, `.muhbir`, sahte kimlik, gizemli kutu; panelde Suly borsası, SulyMarket ve NFT vitrini. Ayrıntı aşağıda.
 - **Faz 75 (tamam):** SulyMarket'te anlık fiyat. Faz 73 bölümüne işlendi.
-- **Faz 76+:** yeni komutlar, her biri ayrı adım
+- **Faz 76 (tamam):** SulyMarket'e elit ve zero-day hacker, hackerlara zam. Faz 73 bölümüne işlendi.
+- **Faz 77+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1491,6 +1492,7 @@ Kurallar `lib/sulymarket.js` ve `lib/nft.js`'te saftır, NFT çizimi `lib/nftRes
 - **Suly ile satılır, ödenen Suly yanar.** 1 coin kabaca `REFERANS_KUR / BTC doları` Suly eder (BTC 100.000 dolarken 23).
 - **Anlık fiyat (Faz 75, bot sahibinin kararı):** `URUNLER` ve `NADIRLIK` fiyatları tabandır, satışta `marketKati()` ile çarpılır (`katliFiyat`, yukarı yuvarlanır): en zengin 10 üyenin (bot hariç) ortalama `.servet` neti / Suly'nin XP fiyatı / `SERVET_REFERANS` (400 Suly), en az 1. Servetin çoğu coin ve mülkte durduğu için kurla büyüyen Suly tek başına yetmiyordu. Muhbir ücreti de aynı katladır. Kat saklanmaz, her okumada hesaplanır. Suly'nin kendi XP fiyatı büyütülmedi: elinde Suly olana bedava XP basardı. `.sulymarket`, `.nft` ve panel aynı katı gösterir.
 - **Özelden alışveriş:** kişinin botla tek ortak grubu varsa çalışır (`lib/ozel.js`).
+- **Hackerlar (Faz 76, bot sahibinin kararı):** çaylak 50, usta 160, kara şapka 450, elit 900, zero-day 1800 Suly (taban). `HACKERLAR` zayıftan güçlüye sıralıdır: hacker yazılmazsa en güçlüsü kullanılır, `.vurgun`'da da en güçlüsü harcanır (`HACKER_PUANI`). Yeni hacker sona, öncekinden pahalı ve şanslı yazılır, `test/sulymarket.test.js` denetler. `URUNLER`'de yeni hackerlar listenin sonundadır (17, 18): numara kaymasın.
 - **`.hack`:** yalnızca özelden. Argümansız yazınca hacker'ı olana hedeflerin kimliğini listeler, grupta `.id @kişi` yazıp hedefini belli etmesin. Çalınan para hackleyenin **bankasına** girer, coin, mülk (`mulkTasi`) ve NFT ona geçer; toplam değişmez, XP basılmaz. Engeller (duvar, korunma, hak, hapis, boş hedef) hacker'ı yakmaz. Başarıda kimlik gizlidir, duyuruda yazılmaz. Başarısızlıkta VPN yoksa 2 saat hapis ve grupta teşhir (VPN kuralı Faz 74'te). Günde 2 hack, kurban 12 saat korunur. Bot hacklenemez. `.market` kalkanı ve sigorta korumaz, yalnızca duvar korur. Duyuru susturulmuş gruba gitmez.
 - **Silah çetenindir:** üye ayrılınca cephanelikte kalır, çete kapanınca silinir. Güç = üye başı 5 + silahlar. Silah gücü üyelerin tekli `.soygun` şansına en çok 10 puan ekler (`soygunBonusu`), `.soygun herkes`'e eklenmez.
 - **`.çete bas <ad> [bomba]`:** yalnızca lider. Şans güç oranıdır (%10-90). Kazanan rakip kasanın %20'sini kendi kasasına alır, iki taraf da silah kaybeder. Çete 6 saatte bir basar, basılan 12 saat korunur. Önce tam ad denenir, sonra sondaki sayı bomba sayılır.

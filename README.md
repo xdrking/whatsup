@@ -528,7 +528,7 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | `.sulymarket al 2 3` | 2 numaralı üründen 3 tane alır. Silah çetenin cephaneliğine girer |
 | `.sulymarket kullan firar` / `kullan çilingir @kişi` | Hapisten kaçar / birinin soygun kalkanını kırar |
 | `.hack` (özelden) | Hedeflerin kimliklerini listeler |
-| `.hack <kimlik> usta` (özelden) | Hedefin parasını bankana geçirir, usta 1 mülk, kara şapka coin, mülk ve NFT de alır |
+| `.hack <kimlik> usta` (özelden) | Hedefin parasını bankana geçirir, usta 1 mülk, kara şapka coin, mülk ve NFT de alır; elit ve zero-day daha büyük pay alır, daha sık tutar |
 | `.çete bas <çete> [bomba]` | Lider baskın yapar, kazanan rakip kasanın %20'sini alır |
 | `.nft` | 30 piksel mahlukluk koleksiyon: `al`, `sat`, `iptal`, `ver`, `boz` |
 | `.sulymarket al 16` | Gizemli kutu: silah, hacker, NFT ya da polis |

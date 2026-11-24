@@ -82,7 +82,7 @@ export default {
     `${NFTLER.length} mahluk var, grupta her birinin tek sahibi olur. Sahipsiz olan liste fiyatından alınır, ödenen Suly yanar.`,
     `\`.nft sat 7 12,5\` ilana koyar; alan olursa Suly sana geçer, %${NFT_KOMISYON} komisyon yanar. Fiyatı sen belirlersin.`,
     `\`.nft boz 7\` market liste fiyatının %${NFT_GERI_ALIM}'sine geri alır, mahluk yeniden satışa çıkar.`,
-    'Kara şapka hacker NFT de çalabilir. Borçlu ya da ambargolu kişi üyelerle NFT alıp veremez.',
+    'Kara şapka, elit ve zero-day hacker NFT de çalabilir. Borçlu ya da ambargolu kişi üyelerle NFT alıp veremez.',
   ],
   category: 'ekonomi',
   cooldown: 8,
