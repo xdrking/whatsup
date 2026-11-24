@@ -101,6 +101,8 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   await new Promise((r) => setTimeout(r, 800))
   await post('/oyun/islem', { grup: GRUP, sayfa: 'hesap', islem: 'constructor' }, Cookie)
   assert.ok((await al(`/oyun/hesap?grup=${g}`)).includes('Böyle bir işlem yok.'))
+  const bankaSayfa = await al(`/oyun/banka?grup=${g}`)
+  assert.ok(bankaSayfa.includes('Ziraat Bankası') && bankaSayfa.includes('Mega Kredi') && bankaSayfa.includes('name="vade"'))
 
   // Crash hedefi ve rulet seçimi elden sonra formda kalır, varsayılana dönmez.
   await new Promise((r) => setTimeout(r, 800))
@@ -209,6 +211,24 @@ test('hesap motoru: günlük ödül bir kez, olmayan coin bozdurulmaz', () => {
   simdi += 1000
   hm.islem(kim, { islem: 'coin-sat', miktar: '1' })
   assert.ok(hm.durum(kim).bildirim.hata.includes('coinin yok'))
+})
+
+test('hesap motoru: bankadan seçilen vadeyle kredi, vade dışı reddedilir', () => {
+  db.prepare("INSERT OR REPLACE INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, 'bot@s.whatsapp.net', 0, 0, 0, 10000000, 1)").run(GRUP)
+  db.prepare('INSERT OR REPLACE INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, ?, 0, 0, 0, 5000, 1)').run(GRUP, 'kr@lid')
+  let simdi = 9_000_000
+  const hm = hesapMotoru({ saat: () => simdi })
+  const kim = { chat: GRUP, user: 'kr@lid' }
+  hm.islem(kim, { islem: 'kredi-cek', miktar: '10 bin', urun: '5', vade: '1' })
+  assert.ok(hm.durum(kim).bildirim.hata.includes('2-12 saat'))
+  simdi += 1000
+  hm.islem(kim, { islem: 'kredi-cek', miktar: '10 bin', urun: '5', vade: '3' })
+  assert.ok(hm.durum(kim).bildirim.tamam.startsWith('TEB · Mega Kredi'))
+  const d = hm.durum(kim)
+  assert.equal(d.kredi.kredi.urun, 5)
+  assert.equal(d.kredi.urunler.length, 12)
+  assert.equal(getStats(GRUP, 'kr@lid').xp, 5000 + 10_000 - 300)
+  db.prepare('DELETE FROM kredi WHERE user_jid = ?').run('kr@lid')
 })
 
 // Sabit deste: sırayla oyuncu, oyuncu, krupiye (açık), krupiye (kapalı), sonra çekilenler.

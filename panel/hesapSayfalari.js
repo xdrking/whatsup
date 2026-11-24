@@ -1,7 +1,7 @@
 // Panelin hesap bölümünün HTML'i: servet dökümü, banka ve kredi, coin ve mülk.
 // Tutar alanının adı `tutar`'dır, `miktar` değil: oyun.js bahis alanlarını (`miktar`) birbirine eşitler.
 import { CEKIM_KESINTI_YUZDESI, oranYaz } from '../lib/banka.js'
-import { KREDI_VADE_SAATI, MIN_KREDI } from '../lib/kredi.js'
+import { BANKALAR, KUR_LIMIT_ORANI, KREDI_LIMITI, krediBankasi, krediUrunu, MIN_KREDI, tahsisUcreti, vadeBorcu } from '../lib/kredi.js'
 import { h, kabuk } from './sayfalar.js'
 import { hesapLink, kasa, yanMenu } from './oyunSayfalari.js'
 
@@ -92,19 +92,76 @@ export function bankaSayfasi(veri) {
   </div>
   <p class="not">Bankadaki XP soyulamaz, kumarda kullanılmaz. Yeni yatırılan para tam bir saat durmadan faiz almaz.</p>
 </section>
-<section class="kart hesap-kart">
+${krediBolumu(chat, kredi, simdi)}`)
+}
+
+const kat = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 })
+const saatYaz = (ms) => new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(ms)
+
+/** Kredi ürününün vade seçenekleri ve limitin tamamı çekilirse vadedeki borç. */
+function vadeTablosu(u) {
+  const [en, boy] = u.vade
+  const vadeler = [...new Set([en, Math.round((en + boy) / 2), boy])]
+  const miktar = Math.max(u.limit, MIN_KREDI)
+  return h`<table class="kredi-tablo"><caption>Limitin tamamı çekilirse (${xp(miktar)})</caption><thead><tr><th>Vade</th><th>Vadede borç</th><th>Faiz</th><th>Kat</th></tr></thead><tbody>
+    ${vadeler.map((v) => {
+      const borc = vadeBorcu(miktar, v, u.faiz)
+      return h`<tr><td>${v} saat</td><td>${sayi.format(borc)}</td><td>${sayi.format(borc - miktar)}</td><td>${kat.format(borc / miktar)}x</td></tr>`
+    })}
+  </tbody></table>`
+}
+
+function krediFormu(chat, u) {
+  const vadeler = Array.from({ length: u.vade[1] - u.vade[0] + 1 }, (_, i) => u.vade[0] + i)
+  return h`<form class="islem kredi-form" method="post" action="/oyun/islem">
+  <input type="hidden" name="grup" value="${chat}"><input type="hidden" name="sayfa" value="banka"><input type="hidden" name="islem" value="kredi-cek"><input type="hidden" name="urun" value="${u.no}">
+  <label class="alan"><small>Tutar · en az ${MIN_KREDI} XP</small><input name="tutar" placeholder="1000, 5m, max" autocomplete="off" required></label>
+  <label class="alan vade"><small>Vade</small><select name="vade">${vadeler.map((v) => h`<option value="${v}"${v === u.vade[1] ? ' selected' : ''}>${v} saat</option>`)}</select></label>
+  <button>KREDİ ÇEK</button>
+</form>`
+}
+
+function urunKarti(chat, u, borcVar) {
+  return h`<div class="kredi-urun">
+  <h4>${u.no}. ${u.ad}</h4>
+  ${satir('🏷️', 'Limit', xp(u.limit))}
+  ${satir('📈', 'Saatlik faiz', `%${oranYaz(u.faiz)} (banka +${oranYaz(u.fark)})`)}
+  ${satir('⏰', 'Vade', `${u.vade[0]}-${u.vade[1]} saat, sen seçersin`)}
+  ${satir('🧾', 'Tahsis ücreti', u.ucret ? `%${oranYaz(u.ucret)} · limitte ${xp(tahsisUcreti(u, u.limit))}` : 'yok')}
+  ${satir('📊', 'Limit katı', `taban × ${u.limitKat}`)}
+  ${vadeTablosu(u)}
+  ${borcVar ? '' : krediFormu(chat, u)}
+</div>`
+}
+
+function krediBolumu(chat, kredi, simdi) {
+  if (!kredi) return h`<section class="kart hesap-kart"><h2>Kredi</h2><p class="not">Kredi servisi şu an kapalı.</p></section>`
+  const k = kredi.kredi
+  const u = k ? krediUrunu(k.urun) : null
+  const b = u ? krediBankasi(u.banka) : null
+  const kalanSaat = k ? Math.max(0, Math.ceil((k.vade - simdi) / 3_600_000)) : 0
+  return h`<section class="kart hesap-kart">
   <h2>Kredi</h2>
-  ${kredi ? h`
-  ${kredi.borc
-    ? h`${satir('📉', 'Borç', xp(kredi.borc), 'eksi')}${satir('⏰', 'Vadeye', kredi.vade > simdi ? dakika(kredi.vade - simdi) : 'doldu')}`
-    : satir('✅', 'Borç', 'yok')}
-  ${satir('🏷️', 'Limit', xp(kredi.limit))}
-  ${satir('📈', 'Saatlik faiz', `%${oranYaz(faiz.kredi)}`)}
-  <div class="islemler">
-    ${kredi.borc
-      ? islemFormu(chat, 'banka', 'kredi-ode', 'ÖDE', { alan: 'Borç öde', yer: '1000, hepsi' })
-      : islemFormu(chat, 'banka', 'kredi-cek', 'KREDİ ÇEK', { alan: `Tutar · en az ${MIN_KREDI} XP`, yer: '1000' })}
-  </div>
-  <p class="not">Vade ${KREDI_VADE_SAATI} saat. Dolunca borç cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Borç varken yatırılan para önce borcu keser.</p>` : h`<p class="not">Kredi servisi şu an kapalı.</p>`}
-</section>`)
+  ${k ? h`
+  ${satir('🏦', 'Banka', b ? `${b.simge} ${b.ad} · ${u.ad}` : 'Eski kredi')}
+  ${k.anapara ? satir('💰', 'Çekilen', xp(k.anapara)) : ''}
+  ${satir('📉', 'Şu anki borç', xp(k.borc), 'eksi')}
+  ${satir('📈', 'Saatlik faiz', `%${oranYaz(k.faiz)}`)}
+  ${k.baslangic ? satir('🕐', 'Çekildi', saatYaz(k.baslangic)) : ''}
+  ${satir('⏰', 'Vade', k.vade > simdi ? `${saatYaz(k.vade)} · ${dakika(k.vade - simdi)} kaldı` : 'doldu')}
+  ${satir('🔮', 'Hiç ödemezsen vadede', xp(vadeBorcu(k.borc, kalanSaat, k.faiz)), 'eksi')}
+  <div class="islemler">${islemFormu(chat, 'banka', 'kredi-ode', 'ÖDE', { alan: 'Borç öde', yer: '1000, hepsi' })}</div>
+  <p class="not">Vade dolunca borç cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Borç varken yatırılan para önce borcu keser. Yeni kredi için önce bunu kapat.</p>`
+  : satir('✅', 'Borç', 'yok')}
+  ${satir('📊', 'Taban limit', xp(kredi.tabanLimit))}
+  ${satir('🪙', 'Coin kuru (anlık)', xp(kredi.kur))}
+  ${satir('🏛️', 'Merkez hazine', xp(kredi.kasa))}
+  ${satir('📈', 'Banka faizi', `%${oranYaz(kredi.bankaFaizi)}/saat`)}
+  <p class="not">Bütün bankalar merkez hazineden verir, ödemeler hazineye döner. Taban limit anlık coin kurunun %${KUR_LIMIT_ORANI * 100}'idir, en az ${xp(KREDI_LIMITI)}: enflasyon arttıkça limitler büyür. Tek kredi hazinenin yarısını geçemez. Faiz saat başlarında bileşik işler, tahsis ücreti peşin kesilir.</p>
+</section>
+${BANKALAR.map((bk) => h`<section class="kart hesap-kart kredi-banka">
+  <h2>${bk.simge} ${bk.ad}</h2>
+  <p class="not">${bk.not}</p>
+  ${kredi.urunler.filter((x) => x.banka === bk.kod).map((x) => urunKarti(chat, x, Boolean(k)))}
+</section>`)}`
 }

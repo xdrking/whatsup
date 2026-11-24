@@ -7,7 +7,7 @@ import { HISSELER, SAAT_MS } from '../lib/borsa.js'
 import { istanbulDay } from '../lib/dataset.js'
 import { SETLER } from '../lib/kart.js'
 import { FAIZ_YUZDESI } from '../lib/banka.js'
-import { borcIslet, krediFaizi } from '../lib/kredi.js'
+import { borcIslet, krediBankasi, krediFaizi, krediUrunu, KREDI_FAIZ_FARKI } from '../lib/kredi.js'
 import { bozdurmaDegeri, COIN_TABAN } from '../lib/coin.js'
 import { MAKAMLAR } from '../lib/devlet.js'
 import { nftGeriAlim } from '../lib/nft.js'
@@ -351,16 +351,17 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
   }
 
   function borclular(chatJid, liste, now) {
-    const krediOrani = krediFaizi(bankaFaizi(chatJid))
+    const bFaiz = bankaFaizi(chatJid)
     const adlar = new Map(liste.map((u) => [u.user_jid, u]))
-    const krediler = db.prepare('SELECT user_jid, borc, faiz_saat, vade FROM kredi WHERE chat_jid = ?').all(chatJid)
+    const krediler = db.prepare('SELECT * FROM kredi WHERE chat_jid = ?').all(chatJid)
       .map((k) => {
         const saat = Math.min(Math.floor(now / SAAT_MS), Math.floor(k.vade / SAAT_MS))
         return {
           user_jid: k.user_jid,
           uye: adlar.get(k.user_jid) ?? null,
-          borc: borcIslet(k.borc, Math.max(0, saat - k.faiz_saat), krediOrani),
+          borc: borcIslet(k.borc, Math.max(0, saat - k.faiz_saat), krediFaizi(bFaiz, k.fark ?? KREDI_FAIZ_FARKI)),
           vade: k.vade,
+          banka: krediBankasi(krediUrunu(k.urun)?.banka)?.ad ?? '',
           gecti: now >= k.vade,
         }
       })
@@ -377,7 +378,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
     const adlar = new Map(liste.map((u) => [u.user_jid, u]))
     const yatirim = tek('yatirim', 'SELECT miktar, risk, bitis FROM yatirim WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
     const t = tek('tefeci', "SELECT alacakli, borc, vade FROM tefeci WHERE chat_jid = ? AND borclu = ? AND durum = 'acik'", chatJid, userJid)
-    const k = tek('kredi', 'SELECT borc, faiz_saat, vade FROM kredi WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
+    const k = tek('kredi', 'SELECT * FROM kredi WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
     const saat = Math.floor(now / SAAT_MS)
     const pet = tek('pet', 'SELECT * FROM pet WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)
     const kalkan = tek('market', 'SELECT kalkan_until FROM market WHERE chat_jid = ? AND user_jid = ?', chatJid, userJid)?.kalkan_until ?? 0
@@ -392,7 +393,7 @@ export function veriAc(dbYolu = process.env.STATS_DB || path.join(DATA_DIR, 'sta
         .map((m) => ({ ad: MULKLER.find((x) => x.kod === m.kod)?.ad ?? m.kod, adet: m.adet })),
       mulkDeger: uye.mulkDeger,
       yatirim: yatirim ? { ...yatirim, risk: RISKLER[yatirim.risk]?.ad ?? yatirim.risk } : null,
-      kredi: k ? { borc: borcIslet(k.borc, Math.max(0, Math.min(saat, Math.floor(k.vade / SAAT_MS)) - k.faiz_saat), krediFaizi(bankaFaizi(chatJid))), vade: k.vade } : null,
+      kredi: k ? { borc: borcIslet(k.borc, Math.max(0, Math.min(saat, Math.floor(k.vade / SAAT_MS)) - k.faiz_saat), krediFaizi(bankaFaizi(chatJid), k.fark ?? KREDI_FAIZ_FARKI)), vade: k.vade, banka: krediBankasi(krediUrunu(k.urun)?.banka)?.ad ?? '' } : null,
       tefeci: t ? { ...t, uye: adlar.get(t.alacakli) ?? null } : null,
       alacaklar: tum('tefeci', "SELECT borclu, borc, vade FROM tefeci WHERE chat_jid = ? AND alacakli = ? AND durum = 'acik'", chatJid, userJid)
         .map((a) => ({ ...a, uye: adlar.get(a.borclu) ?? null })),

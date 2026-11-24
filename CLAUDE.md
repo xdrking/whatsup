@@ -362,7 +362,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 77 (tamam):** duvarı delen hackerlar, 24 saatlik duvar, EMP, rüşvet, sahte pasaport, hileli zar, efsanevi mülk ve `.mülk yükselt`, yeni NFT serisi. Ayrıntı aşağıda.
 - **Faz 78 (tamam):** panelde coin borsası, coin ve Suly'yi XP tutarıyla alma. Faz 74 bölümüne işlendi.
 - **Faz 79 (tamam):** SulyMarket'e mantık bombası, kimlik hırsızlığı, casus yazılımı, soğuk cüzdan, ayarlı makine, nazar boncuğu, korsan yayın, sahte ihbar; Omar NFT'si. Faz 77 bölümüne işlendi.
-- **Faz 80+:** yeni komutlar, her biri ayrı adım
+- **Faz 80 (tamam):** banka kredileri, enflasyona bağlı limit. Faz 34 bölümüne işlendi.
+- **Faz 81+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1043,7 +1044,8 @@ kredi(chat_jid, user_jid, borc, faiz_saat, vade ms)   PK(chat_jid,user_jid)
 Kurallar `lib/kredi.js`'te saftır. Bot sahibinin amacı kısa sürede bol para, sonra enflasyondur: banka %15 kalır, kredi saatlik %19'dur.
 **Kredi faizi banka faizinin üstünde kalmalı**, yoksa kredi çekip bankaya yatıran XP basar; `test/kredi.test.js` denetler.
 
-- **Kasa:** botun banka hesabıdır. Hazineden çıkan her para (kredi, kumar kazancı, kira, `.hazine ver`, `.teşvik`) önce botun cüzdanından, yetmezse bankasından alınır, ödemeler hep bankaya girer (`kasadanCek`, `kasayaYatir`). Sıra bot sahibinin kararıdır: banka önce harcanınca sahibin faiz için bankaya yatırdığı para gün içinde ödemelerle eriyordu. Limit 50.000 XP'dir (sıfır atmada 1000'e bölündü), tek kredi kasanın yarısını geçemez (`azamiKredi`): verilen kadar XP kasada kalmalı.
+- **Kasa:** botun banka hesabıdır. Hazineden çıkan her para (kredi, kumar kazancı, kira, `.hazine ver`, `.teşvik`) önce botun cüzdanından, yetmezse bankasından alınır, ödemeler hep bankaya girer (`kasadanCek`, `kasayaYatir`). Sıra bot sahibinin kararıdır: banka önce harcanınca sahibin faiz için bankaya yatırdığı para gün içinde ödemelerle eriyordu. Limit Faz 80'den beri anlık kura bağlıdır (en az 50.000 XP), tek kredi kasanın yarısını geçemez (`azamiKredi`): verilen kadar XP kasada kalmalı.
+- **Bankalar (Faz 80, bot sahibinin isteği):** `BANKALAR` ve `KREDI_URUNLERI` `lib/kredi.js`'tedir (Ziraat, Garanti BBVA, TEB, İş, Akbank, Yapı Kredi; bankaya 2 ürün). Ürünün `no`'su kredi satırına `urun` olarak yazılır, sıra değiştirilmez, yeni ürün sona eklenir. Hepsi merkez hazineden verir (`kasadanCek`, `kasayaYatir`), ayrı kasa yoktur. Limit `krediLimiti(anlikKur) × limitKat`'tır: taban anlık kurun %5'i (`KUR_LIMIT_ORANI`), en az `KREDI_LIMITI` (50.000; kurun tabanında tam bu). Kasanın yarısı sınırı sürer. Faiz `krediFaizi(banka, fark)`'tır, `fark` çekilirken satıra yazılır, ürün sonradan değişse de açık kredi eski farkla işler; `fark` en az 1 olmalı (`test/kredi.test.js`), yoksa kredi çekip bankaya yatıran XP basardı. Vadeyi kullanıcı seçer (ürünün aralığı, 1-12 saat). Tahsis ücreti (`ucret` yüzdesi) peşin kesilir: kişiye `miktar - ücret` geçer, borç `miktar`'dır, ücret hazineden hiç çıkmaz. `krediCek` ürün verilmezse 11'i (Yapı Kredi World: +4, ücretsiz, 12 saat) kullanır, eski davranışın aynısı. Eski satırlar `urun = 0`, `fark = 4` ile taşınır. `.kredi` ve panelin Banka sayfası bütün ürünleri limit, faiz, vade ve ücretle gösterir; panel ayrıca vadedeki borç tablosunu ve açık kredinin dökümünü çizer.
 - **Vade:** `krediGuncelle()` faizi işler, vade geçtiyse tahsil eder. `recordMessage` her mesajda çağırır, çünkü bot kendiliğinden yazmaz. Tahsilat sırası cüzdan, banka, eksi. Satır silinir.
 - **Eksi bakiye** `stats.xp`'nin eksi olmasıdır, ayrı alan yoktur. Faiz vadede durur, yoksa borç hiç kapanmazdı. Eksiyi kapatan XP bota gitmez, yanar.
 - **`.banka yatır`** borçluyken önce borcu keser. `.devret` borçluyken kapalıdır, para arkadaşa aktarılıp borçtan kaçılmasın. Sahibin başkası adına yaptığı devir (`sahipDevri`) muaftır, grup adminleri değil.
@@ -1711,3 +1713,4 @@ Bot sahibinin isteğiyle. Ürünler `URUNLER`'in sonuna eklendi (19-22), numara 
 143. Özelden `.sulymarket kullan korsan merhaba` → grupta "KORSAN YAYIN", ad yok; ikinci kez → bekleme. Grupta `.sulymarket kullan ihbar @kişi` → gözaltı ya da "sen yakalandın"
 144. Kimlik hırsızlığı varken başarılı `.hack` → grupta "İzler X'i gösteriyor"; `.izsür` asıl faili bulur. Soğuk cüzdanlı kurban → coin ve NFT alınmaz. Nazar boncuğuyla `.slot` kaybı → "kaybın yarısı kurtuldu"
 145. `.nft 53` → Omar kartı, Efsane
+146. `.kredi` → altı banka ve 12 ürün, taban limit ve hazine; `.kredi teb` → yalnızca TEB; `.kredi hesapla 5 10m 6` → ücret ve vadedeki borç, hiçbir şey değişmez; `.kredi çek 5 10m 1` → "2-12 saat"; `.kredi çek 5 1m 6` → %3 ücret kesilir, `.kredi` bankayı ve vadeyi yazar. Panelde Banka sayfası her ürünü tablo ve vade seçmeli formla gösterir, açık kredide döküm çıkar

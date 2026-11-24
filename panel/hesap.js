@@ -2,7 +2,7 @@
 // çalış, kira) buradan da yapılır. Kurallar kopyalanmaz, komutların çağırdığı `lib/stats.js`
 // fonksiyonları çağrılır; iki taraf aynı veritabanına yazar.
 import { randomInt } from 'node:crypto'
-import { MIN_KREDI } from '../lib/kredi.js'
+import { krediBankasi, krediUrunu, MIN_KREDI, vadeBorcu } from '../lib/kredi.js'
 import { sulyCoz, sulyYaz } from '../lib/kripto.js'
 import { miktarCoz } from '../lib/kumar.js'
 import { nftBul } from '../lib/nft.js'
@@ -61,19 +61,27 @@ const ISLEMLER = {
     return tamam(`${sayi.format(c.miktar)} XP çekildi, kesinti ${sayi.format(s.kesinti)} XP.${s.mantik ? ` 💣 Mantık bombası patladı: ${sayi.format(s.mantik)} XP bilinmeyen bir hesaba aktı.` : ''}`)
   },
 
-  'kredi-cek': ({ chat, user }, { miktar }, simdi) => {
-    const tutar = tamSayi(miktar)
-    if (tutar < MIN_KREDI) return hata(`En az ${MIN_KREDI} XP kredi çekilir.`)
-    const s = krediCek({ chatJid: chat, userJid: user, miktar: tutar })
+  'kredi-cek': ({ chat, user }, { miktar, urun: urunNo, vade }, simdi) => {
+    const urun = krediUrunu(Number(urunNo))
+    if (!urun) return hata('Bir kredi seç.')
+    const vadeSaat = Number(vade) || urun.vade[1]
+    const maks = ['max', 'maks', 'hepsi', 'limit'].includes(String(miktar).trim().toLocaleLowerCase('tr'))
+    const tutar = maks
+      ? krediDurumu({ chatJid: chat, userJid: user })?.urunler.find((u) => u.no === urun.no)?.limit ?? 0
+      : tamSayi(miktar)
+    if (tutar < MIN_KREDI) return hata(maks ? 'Hazinede bu kredi için yeterli XP yok.' : `En az ${MIN_KREDI} XP kredi çekilir.`)
+    const s = krediCek({ chatJid: chat, userJid: user, miktar: tutar, urun: urun.no, vade: vadeSaat })
     if (!s || s.kapali) return hata('Kredi servisi şu an kapalı, sonra dene.')
     if (s.acik) return hata(`Önce mevcut borcunu kapat: ${sayi.format(s.borc)} XP`)
     if (s.eksi) return hata('Cüzdanın ekside, kredi verilmez.')
-    if (s.limit) return hata(`Limitin ${sayi.format(s.limit)} XP.`)
+    if (s.limit) return hata(`${urun.ad} limiti ${sayi.format(s.limit)} XP.`)
+    if (s.vadeHata) return hata(`${urun.ad} vadesi ${s.vadeHata[0]}-${s.vadeHata[1]} saat arasında seçilir.`)
     if (s.yasak) return hata(`İflas ettiğin için kredi yasağın var, ${dakika(s.yasak - simdi)} kaldı.`)
     if (s.kasaLimit !== undefined) {
       return hata(s.kasaLimit < MIN_KREDI ? 'Kasada kredi verecek kadar XP yok.' : `Kasa az, en çok ${sayi.format(s.kasaLimit)} XP çekebilirsin.`)
     }
-    return tamam(`${sayi.format(tutar)} XP kredi çekildi.`)
+    const banka = krediBankasi(urun.banka)
+    return tamam(`${banka.ad} · ${urun.ad}: ${sayi.format(tutar)} XP kredi çekildi${s.ucret ? `, ${sayi.format(s.ucret)} XP tahsis ücreti kesildi` : ''}. Vade ${s.vade} saat, vadede borç ${sayi.format(vadeBorcu(tutar, s.vade, s.faiz))} XP.`)
   },
 
   'kredi-ode': ({ chat, user }, { miktar }) => {

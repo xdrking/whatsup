@@ -392,32 +392,55 @@ Süre, faiz alınan saat başı sayısıdır. Yatırdıktan sonraki ilk saat ba�
 
 ### Kredi ve eksi bakiye
 
-Botun bankasından faizli XP çekilir. Ödenmeyen borç cüzdanı eksiye düşürür.
+Altı bankadan faizli XP çekilir: Ziraat Bankası, Garanti BBVA, TEB, İş Bankası, Akbank, Yapı Kredi. Hepsi merkez hazineye (botun kasası) bağlıdır, kredi oradan çıkar, ödemeler oraya döner. Ödenmeyen borç cüzdanı eksiye düşürür.
 
 | Komut | Yapar |
 |---|---|
-| `.kredi` | Borcu, vadeye kalan süreyi ve güncel limiti gösterir |
-| `.kredi çek 1000` | Kredi çeker, XP cüzdana gelir. En az 100 XP |
+| `.kredi` | Borcu, bütün bankaların ürünlerini (limit, faiz, vade aralığı, tahsis ücreti) gösterir |
+| `.kredi teb` | Yalnızca o bankanın ürünleri |
+| `.kredi hesapla 5 10m 6` | 5 numaralı üründen 10 milyon, 6 saat vadeyle çekilse ücreti ve vadedeki borcu yazar, bir şey çekmez |
+| `.kredi çek 5 10m 6` | 5 numaralı üründen 10 milyon çeker, vade 6 saat. Vade yazılmazsa ürünün en uzunu, `max` limitin tamamı |
 | `.kredi öde 500` | Cüzdandan borç öder; `hepsi` ve `yarısı` da olur |
 | `.iflas` | Eksi cüzdanı sıfırlar, karşılığında yasak alınır |
+
+Panelde **Banka** sayfası her ürünü ayrı kartta gösterir: limit, faiz, vade, ücret, limitin tamamı çekilirse vadedeki borç tablosu ve vade seçmeli kredi formu. Açık kredide bankası, çekilen tutar, şu anki borç ve hiç ödenmezse vadedeki borç yazar.
+
+#### Ürünler
+
+| No | Banka | Kredi | Limit | Faiz (banka +) | Vade | Tahsis ücreti |
+|---|---|---|---|---|---|---|
+| 1 | Ziraat | Esnaf Kredisi | taban × 2 | +2 | 4-12 saat | %1 |
+| 2 | Ziraat | Çiftçi Destek | taban × 1 | +1,5 | 6-12 saat | %0,5 |
+| 3 | Garanti BBVA | Bonus İhtiyaç | taban × 5 | +4 | 1-12 saat | %2 |
+| 4 | Garanti BBVA | Hızlı Nakit | taban × 3 | +5 | 1-4 saat | yok |
+| 5 | TEB | Mega Kredi | taban × 20 | +7 | 2-12 saat | %3 |
+| 6 | TEB | Girişimci | taban × 10 | +5,5 | 3-10 saat | %2 |
+| 7 | İş Bankası | Maxi İhtiyaç | taban × 8 | +4,5 | 2-12 saat | %1,5 |
+| 8 | İş Bankası | Bireysel Paket | taban × 4 | +3 | 3-8 saat | %1 |
+| 9 | Akbank | Anında Kredi | taban × 6 | +6 | 1-3 saat | yok |
+| 10 | Akbank | Axess Nakit | taban × 12 | +6,5 | 1-6 saat | %1 |
+| 11 | Yapı Kredi | World Kredi | taban × 7 | +4 | 2-12 saat | yok |
+| 12 | Yapı Kredi | Vadeli Avantaj | taban × 15 | +5 | 6-12 saat | yok |
 
 #### Kurallar
 
 | Konu | Değer |
 |---|---|
-| Faiz | Saatlik %19 bileşik, her saat başında işler. Hep banka faizinin 4 puan üstündedir |
-| Vade | 12 saat, sonrasında faiz durur |
+| Taban limit | Anlık coin kurunun %5'i, en az 50.000 XP. Kur piyasadaki paranın yüzde biri olduğu için limit enflasyonla birlikte büyür |
+| Limit | Ürünün katı × taban limit, ama tek kredi hazinenin yarısını geçemez |
+| Faiz | Saatlik bileşik, her saat başında işler. Banka faizinin ürüne göre 1,5-7 puan üstündedir, `.faizkararı` değişince birlikte değişir |
+| Vade | Kullanıcı seçer, 1-12 saat (her ürünün kendi aralığı). Sonrasında faiz durur, borç tahsil edilir |
+| Tahsis ücreti | Peşin kesilir, hazinede kalır: 10.000 çekilirse %3'te eline 9.700 geçer, borç 10.000'dir |
 | Aynı anda | Tek kredi |
-| Limit | 50.000.000 XP, ama kasanın yarısını geçemez |
 | Erken ödeme | Serbest, cezası yok, kalan borca faiz işlemeye devam eder |
 
-Kasa, botun bankası ve cüzdanıdır. Kredi önce bankadan, yetmezse cüzdandan çıkar, ödemeler hep botun bankasına gider. Kasada 90.000 XP varsa tek seferde en çok 45.000 XP çekilir, fazlası istenirse bot sınırı yazar.
+Kasa, botun bankası ve cüzdanıdır. Kredi önce cüzdandan, yetmezse bankadan çıkar, ödemeler hep botun bankasına gider. Kasada 90.000 XP varsa tek seferde en çok 45.000 XP çekilir, fazlası istenirse bot sınırı yazar.
 
-Faiz bankanın %15'inden yüksektir, bu yüzden kredi çekip bankaya yatırmak kazandırmaz.
+Kredi faizi hep bankanınkinden yüksektir, bu yüzden kredi çekip bankaya yatırmak kazandırmaz.
 
 #### Borç nasıl büyür
 
-Hiç ödeme yapılmazsa:
+Hiç ödeme yapılmazsa (banka %15, ürün +4, yani %19):
 
 | Çekilen | 1 saat | 6 saat | 12 saat (vade) |
 |---|---|---|---|

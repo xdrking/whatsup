@@ -719,3 +719,16 @@ main.degisti .oyun-kutu { animation: none; }
   .mallar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .mallar.nftler { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* Banka kredileri (Faz 80) */
+.kredi-urun { margin-top: 1rem; padding: .8rem; border: 1px solid rgb(255 255 255 / .1); border-radius: 12px; background: rgb(0 0 0 / .18); }
+.kredi-urun h4 { margin: 0 0 .4rem; color: var(--altin2); font-size: 1rem; }
+.kredi-tablo { width: 100%; margin: .6rem 0; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.kredi-tablo th, .kredi-tablo td { padding: .35rem .3rem; text-align: right; border-bottom: 1px solid rgb(255 255 255 / .06); overflow-wrap: anywhere; }
+.kredi-tablo th:first-child, .kredi-tablo td:first-child { text-align: left; white-space: nowrap; }
+.kredi-tablo td:last-child { white-space: nowrap; }
+.kredi-tablo caption { text-align: left; font-size: .8rem; color: rgb(255 255 255 / .6); padding-bottom: .2rem; }
+.kredi-tablo th { color: rgb(255 255 255 / .6); font-weight: 600; }
+.kredi-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-end; }
+.kredi-form .alan { flex: 1 1 10rem; }
+.kredi-form .alan.vade { flex: 0 1 7rem; }

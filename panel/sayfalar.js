@@ -167,7 +167,7 @@ function podyum(chatJid, ilkUc, alan) {
 }
 
 function borcDurumu(b) {
-  const tur = b.tefeci !== undefined ? `Tefeci${b.tefeci ? ` (${adi(b.tefeci)})` : ''}` : 'Kredi'
+  const tur = b.tefeci !== undefined ? `Tefeci${b.tefeci ? ` (${adi(b.tefeci)})` : ''}` : `Kredi${b.banka ? ` (${b.banka})` : ''}`
   if (b.gecti) return `${tur} · vadesi geçti, ilk mesajında tahsil edilir`
   return b.vade ? `${tur} · vade ${tarih.format(b.vade)}` : 'Eksi bakiye'
 }
@@ -604,7 +604,7 @@ function varlikKarti(v) {
 function borcKarti(chatJid, v) {
   if (!v.kredi && !v.tefeci && !v.alacaklar.length) return ''
   return h`<section class="kart liste"><h2>Borç ve alacak</h2>
-    ${v.kredi ? duzSatir('💳 Kredi', h`<span class="dusus">${sayi.format(v.kredi.borc)}</span>`, `Vade ${tarih.format(v.kredi.vade)}`) : ''}
+    ${v.kredi ? duzSatir(`💳 Kredi${v.kredi.banka ? ` · ${v.kredi.banka}` : ''}`, h`<span class="dusus">${sayi.format(v.kredi.borc)}</span>`, `Vade ${tarih.format(v.kredi.vade)}`) : ''}
     ${v.tefeci ? uyeSatiri(chatJid, v.tefeci.alacakli, v.tefeci.uye, `Tefeci borcu · vade ${tarih.format(v.tefeci.vade)}`, h`<span class="dusus">${sayi.format(v.tefeci.borc)}</span>`) : ''}
     ${v.alacaklar.map((a) => uyeSatiri(chatJid, a.borclu, a.uye, `Alacak · vade ${tarih.format(a.vade)}`, h`<span class="artis">${sayi.format(a.borc)}</span>`))}
   </section>`

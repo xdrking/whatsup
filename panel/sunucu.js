@@ -220,7 +220,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       if (yol === 'POST /oyun/islem') {
         const islem = form.get('islem') ?? ''
         const usd = islem.startsWith('suly-') ? (await fiyat())?.usd : null
-        hesapIsleri.islem(kim, { islem, miktar: form.get('tutar') ?? '', urun: form.get('urun') ?? '', usd })
+        hesapIsleri.islem(kim, { islem, miktar: form.get('tutar') ?? '', urun: form.get('urun') ?? '', vade: form.get('vade') ?? '', usd })
         const donus = HESAP_SAYFALARI.find((ad) => ad === form.get('sayfa')) ?? 'hesap'
         return yonlendir(res, hesapLink(chat, donus))
       }
