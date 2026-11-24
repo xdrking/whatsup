@@ -487,6 +487,7 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 | `.tüik` | Piyasadaki para, enflasyon, coin kuru ve en zenginler (`.enflasyon` da olur) |
 | `.servet` | Cüzdan, banka, coin, mülk, hisse, yatırım ve borçlarla net servet. `.servet top` gerçek zengin sıralaması |
 | `.mülk` | Mülkleri ve kiranı gösterir; `.mülk al ev`, `.mülk sat ev`, `.mülk topla` |
+| `.mülk yükselt dükkan [1-4]` | Aynı mülkten 4 tanesi kesin, daha azı tanesi %25 şansla Efsanevi Dükkan verir; tutmazsa konanlar yanar |
 | `.hacizall` | 90 coin karşılığı toplu haciz yapar |
 
 | No | Ürün | Fiyat |
@@ -520,6 +521,8 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 
 Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 XP getirir, kur 2 katına çıkınca kira da iki katına çıkar. Kira saat başı birikir, 24 saatte durur, `.mülk topla` ile alınır. Mülk satılınca kurun %90'ı üstünden XP gelir. Owner `.haciz @kişi ev` ile bir mülke el koyar, değeri botun kasasına girer.
 
+Efsanevi mülkler satın alınmaz, `.mülk yükselt` ile çıkar. Efsanevi mülk konan 4 mülk değerindedir, kira yüzdesi 3 katıdır (dükkan saatlik %2,5, efsanevi dükkan %7,5; kirasız arabanın efsanevisi %1). Satılır ve devredilir: `.mülk sat efsane dükkan`.
+
 ### SulyMarket (kara borsa)
 
 | Komut | Yapar |
@@ -527,10 +530,13 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 | `.sulymarket` | Silah, hacker ve hizmetler, Suly bakiyen ve envanterin (kısa yol `.sm`). Bota özelden de yazılır |
 | `.sulymarket al 2 3` | 2 numaralı üründen 3 tane alır. Silah çetenin cephaneliğine girer |
 | `.sulymarket kullan firar` / `kullan çilingir @kişi` | Hapisten kaçar / birinin soygun kalkanını kırar |
+| `.sulymarket kullan emp @kişi` | Birinin güvenlik duvarını yakar |
+| `.sulymarket kullan rüşvet` / `kullan pasaport` | Hakkındaki açık hack dosyalarını sildirir / ambargoyu kaldırır |
+| Hileli zar (`.sulymarket al 22`) | 2 saat tek elde biten kumarda kaybeden el %50 yeniden atılır, panelde de |
 | `.hack` (özelden) | Hedeflerin kimliklerini listeler |
 | `.hack <kimlik> usta` (özelden) | Hedefin parasını bankana geçirir, usta 1 mülk, kara şapka coin, mülk ve NFT de alır; elit ve zero-day daha büyük pay alır, daha sık tutar |
 | `.çete bas <çete> [bomba]` | Lider baskın yapar, kazanan rakip kasanın %20'sini alır |
-| `.nft` | 30 piksel mahlukluk koleksiyon: `al`, `sat`, `iptal`, `ver`, `boz` |
+| `.nft` | 52 NFT'lik koleksiyon (mitik Suly, şirket NFT'leri, mahluklar): `al`, `sat`, `iptal`, `ver`, `boz` |
 | `.sulymarket al 16` | Gizemli kutu: silah, hacker, NFT ya da polis |
 | `.sulymarket kullan kimlik` | 1 saatlik maske; özelden `.soygun <kimlik>` yazınca grupta "Maskeli" görünürsün |
 | `.hack fidye <kimlik>` (özelden) | Hedefin bankasını 6 saat kilitler, fidyeyi sen alırsın |
@@ -542,7 +548,7 @@ Kira günün coin kuruyla hesaplanır: kur 1.000.000 XP iken ev saatte 300.000 X
 
 Fiyatlar anlıktır: grubun en zengin 10 üyesinin ortalama serveti büyüdükçe artar, taban fiyatın altına inmez.
 
-Hacklenmekten yalnızca **güvenlik duvarı** korur. Yakalanan hacker 2 saat hapse girer. VPN her saldırıda harcanır: yakalanınca hapisten korur, başarıda izi siler.
+Hacklenmekten yalnızca **güvenlik duvarı** korur: 24 saat sürer, bitmeden yenisi alınmaz. Zero-day hacker duvarı deler, elit %50 deler; delemeyen hacker yanar, hapis yok. Yakalanan hacker 2 saat hapse girer. VPN her saldırıda harcanır: yakalanınca hapisten korur, başarıda izi siler.
 
 ### Hapis, evlilik, meslek, çete, dava
 

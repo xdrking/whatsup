@@ -4,8 +4,8 @@ import { requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { sulyYaz } from '../lib/kripto.js'
 import { ozelUyelikler } from '../lib/ozel.js'
 import { binlik } from '../lib/sayi.js'
-import { botHesabiMi, firarEt, kalkanKir, karaborsaAl, karaborsaDurumu, maskeTak } from '../lib/stats.js'
-import { AZAMI_ADET, HACK_GUNLUK, katliFiyat, kutuMetni, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
+import { botHesabiMi, duvarYak, firarEt, kalkanKir, karaborsaAl, karaborsaDurumu, maskeTak, pasaportKullan, rusvetVer } from '../lib/stats.js'
+import { AZAMI_ADET, HACK_GUNLUK, katliFiyat, kutuMetni, URUNLER, urunKoduyla, urunNotu, ZAR_SANSI } from '../lib/sulymarket.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -35,11 +35,12 @@ function vitrin(d) {
     ...tur(['hacker']),
     '',
     '*Hizmetler*',
-    ...tur(['arac', 'duvar', 'kutu']),
+    ...tur(['arac', 'duvar', 'zar', 'kutu']),
     '',
     `🟠 Suly: ${sulyYaz(d.birim)}`,
     ...(d.envanter.length ? [`🎒 ${d.envanter.map((e) => `${urunKoduyla(e.kod)?.ad ?? e.kod} x${e.adet}`).join('  •  ')}`] : []),
     ...(d.duvar ? [`🧱 Duvar: ${sureYaz(d.duvar - Date.now())} kaldı`] : []),
+    ...(d.zar ? [`🎲 Hileli zar: ${sureYaz(d.zar - Date.now())} kaldı`] : []),
     `💻 Bugünkü hack hakkın: ${d.hackHakki}/${HACK_GUNLUK}`,
     '',
     'Almak: `.sulymarket al <no> [adet]`  •  Suly: `.kripto al suly <miktar>`',
@@ -74,6 +75,35 @@ async function kullan({ sock, msg, args, from, parsed, yaz, b }) {
     return yaz(`🗝️ ${mentionOf(uye)} kişisinin kalkanı kırıldı!`, [uye])
   }
 
+  if (['emp'].includes(ad)) {
+    const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
+    if (!metadata) return
+    const [hedef] = resolveTargets(parsed)
+    const uye = hedef && uyeKimligiBul(metadata, hedef)
+    if (!uye) return yaz('Kullanım: `.sulymarket kullan emp @kişi`')
+    const s = duvarYak({ ...b, hedef: uye })
+    if (!s) return yaz(KAPALI)
+    if (s.duvarYok) return yaz('⚡ Bu kişinin güvenlik duvarı yok, EMP harcanmadı.')
+    if (s.yok) return yaz('⚡ EMP bomban yok. `.sulymarket`')
+    return yaz(`⚡ ${mentionOf(uye)} kişisinin güvenlik duvarı yandı!`, [uye])
+  }
+
+  if (['rüşvet', 'rusvet'].includes(ad)) {
+    const s = rusvetVer(b)
+    if (!s) return yaz(KAPALI)
+    if (s.dosyaYok) return yaz('💼 Hakkında açık dosya yok, rüşvet harcanmadı.')
+    if (s.yok) return yaz('💼 Rüşvet çantan yok. `.sulymarket`')
+    return yaz(`💼 Çanta masaya bırakıldı. ${s.silinen} dosya "kayboldu", \`.izsür\` seni bulamaz.`)
+  }
+
+  if (['pasaport', 'sahtepasaport'].includes(ad)) {
+    const s = pasaportKullan(b)
+    if (!s) return yaz(KAPALI)
+    if (s.ambargoYok) return yaz('🛂 Ambargon yok, pasaport harcanmadı.')
+    if (s.yok) return yaz('🛂 Sahte pasaportun yok. `.sulymarket`')
+    return yaz('🛂 Yeni kimlikle sınırı geçtin, ambargo kalktı.')
+  }
+
   if (['kimlik', 'maske', 'sahte'].includes(ad)) {
     const s = maskeTak(b)
     if (!s) return yaz(KAPALI)
@@ -81,14 +111,14 @@ async function kullan({ sock, msg, args, from, parsed, yaz, b }) {
     return yaz(`🎭 Maske takıldı, ${sureYaz(s.bitis - Date.now())} sürer. Bota *özelden* \`.soygun <kimlik>\` yaz, adın görünmez.`)
   }
 
-  return yaz('Kullanım: `.sulymarket kullan firar`  •  `.sulymarket kullan kimlik`  •  `.sulymarket kullan çilingir @kişi`')
+  return yaz('Kullanım: `.sulymarket kullan firar|kimlik|rüşvet|pasaport`  •  `.sulymarket kullan çilingir|emp @kişi`')
 }
 
 export default {
   name: 'sulymarket',
   aliases: ['sm', 'karaborsa', 'darkweb'],
   description: 'Suly ile kara borsa: çeteye silah, hacker, VPN, firar planı',
-  usage: '.sulymarket  —  .sulymarket al <no> [adet]  —  .sulymarket kullan firar|kimlik  —  .sulymarket kullan çilingir @kişi',
+  usage: '.sulymarket  —  .sulymarket al <no> [adet]  —  .sulymarket kullan firar|kimlik|rüşvet|pasaport  —  .sulymarket kullan çilingir|emp @kişi',
   details: [
     'Fiyatlar anlıktır: grubun en zengin 10 üyesinin serveti büyüdükçe artar, taban fiyatın altına inmez. NFT ve muhbir de aynı.',
     'Her şey Suly ile satılır, ödenen Suly yanar. Bota özelden de yazabilirsin: ne aldığını kimse görmez.',
@@ -97,7 +127,9 @@ export default {
     '`.sulymarket kullan kimlik` 1 saatlik maske takar: o sürede özelden `.soygun <kimlik>` yazınca grupta "Maskeli" görünürsün.',
     'Gizemli kutu alındığı an açılır. Polis tuzağı da çıkabilir.',
     '`.sulymarket kullan firar` hapisten kaçırır, `.sulymarket kullan çilingir @ali` Ali\'nin soygun kalkanını kırar.',
-    'Güvenlik duvarı alınca başlar, yeniden alınca süresi uzar. Kalkan ve sigorta hackten korumaz.',
+    'Güvenlik duvarı alınca başlar, 24 saat sürer, bitmeden yenisi alınmaz. Zero-day duvarı deler, elit %50 deler (delemezse hacker yanar). Kalkan ve sigorta hackten korumaz.',
+    '`.sulymarket kullan emp @ali` Ali\'nin duvarını yakar. `kullan rüşvet` hakkındaki açık hack dosyalarını sildirir, `kullan pasaport` ambargoyu kaldırır.',
+    `Hileli zar alındığı an başlar: süresi boyunca tek elde biten kumarda (bahis, slot, rulet, kazı, plinko, crash; panelde de) kaybeden el %${ZAR_SANSI} olasılıkla yeniden atılır. Bitmeden yenisi alınmaz.`,
   ],
   category: 'ekonomi',
   cooldown: 5,
@@ -118,15 +150,18 @@ export default {
           return await yaz(`🕶️ Ürün numarası yaz: \`.sulymarket al 2 3\` (1-${URUNLER.length})`)
         }
         if (urun.tur === 'kutu' && adet > 1) return await yaz('📦 Kutular tek tek açılır.')
+        if (['duvar', 'zar'].includes(urun.tur) && adet > 1) return await yaz(`${urun.ad} tek tek alınır.`)
 
         const s = karaborsaAl({ ...b, urun, adet })
         if (!s) return await yaz(KAPALI)
         if (s.ceteYok) return await yaz('🏴 Silah çeteye alınır, önce bir çeten olmalı: `.çete`')
+        if (s.suruyor) return await yaz(`${urun.ad} hâlâ sürüyor, ${sureYaz(s.suruyor - Date.now())} kaldı. Bitince yenisini alabilirsin.`)
         if (s.yetersiz) return await yaz(`🕶️ ${sulyYaz(s.ucret)} Suly gerekiyor, sende ${sulyYaz(s.birim)} var. \`.kripto al suly <miktar>\``)
         return await yaz([
           `🕶️ *${urun.ad}${adet > 1 ? ` x${binlik(adet)}` : ''}* teslim edildi, ${sulyYaz(s.ucret)} Suly ödendi.`,
           ...(s.cete ? [`🏴 ${s.cete} cephaneliğine girdi.`] : []),
           ...(s.duvar ? [`🧱 Koruma: ${sureYaz(s.duvar - Date.now())}`] : []),
+          ...(s.zar ? [`🎲 Zar ${sureYaz(s.zar - Date.now())} hileli. Kumarhaneye koş.`] : []),
           ...(s.kutu ? [kutuMetni(s.kutu)] : []),
           ...(urun.kod === 'fidye' ? ['🔒 Kullanmak için bota *özelden* `.hack fidye <kimlik>` yaz.'] : []),
           ...(urun.tur === 'hacker' ? ['💻 Kullanmak için bota *özelden* `.hack` yaz.'] : []),

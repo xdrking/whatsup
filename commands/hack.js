@@ -27,7 +27,7 @@ function engelMetni({ engel, bitis }) {
     kendin: '💻 Kendini hackleyemezsin.',
     hapis: `🚔 Hapishanede internet yok, ${kalan} kaldı.`,
     hak: `💻 Bugünlük ${HACK_GUNLUK} hack hakkın bitti.`,
-    duvar: `🧱 Hedefin güvenlik duvarı var (${kalan}). Bir şey harcanmadı.`,
+    duvar: `🧱 Hedefin güvenlik duvarı var (${kalan}). Bir şey harcanmadı. Duvarı elit ya da zero-day hacker deler.`,
     korunma: `🚨 Hedef yeni hacklendi, ${kalan} izleniyor. Bir şey harcanmadı.`,
     bos: '💻 Hedefte çalacak bir şey yok, bir şey harcanmadı.',
   }[engel]
@@ -84,7 +84,8 @@ export default {
     `Başarısız olursan yakalanır, ${HAPIS_SAATI} saat hapse girersin. VPN her saldırıda harcanır: yakalanınca hapisten korur, başarıda izini siler.`,
     'VPN\'siz başarılı saldırının izini İçişleri Bakanı 24 saat sürebilir (`.izsür`).',
     `\`.hack fidye <kimlik>\` hedefin bankasını ${FIDYE_MS / 3_600_000} saat kilitler (başarı %${FIDYE_SANSI}); açmak isterse bankasının %${FIDYE_YUZDESI}'sini sana öder.`,
-    `Günde ${HACK_GUNLUK} hack. Hacklenen kişi ${HACK_KORUNMA_MS / 3_600_000} saat korunur. Güvenlik duvarı hepsini durdurur.`,
+    `Günde ${HACK_GUNLUK} hack. Hacklenen kişi ${HACK_KORUNMA_MS / 3_600_000} saat korunur.`,
+    'Güvenlik duvarını yalnızca zero-day kesin, elit %50 deler; delinen duvar çöker. Delemeyen hacker yanar, hak gider, hapis yok. Fidye duvarı delemez.',
   ],
   category: 'toplum',
   cooldown: 15,
@@ -123,12 +124,13 @@ export default {
       const s = fidyeArg ? fidyeKilitle(taraflar) : hackYap({ ...taraflar, kod: hacker?.kod })
       if (!s) return await yaz('💻 Bağlantı koptu, sonra dene.')
       if (s.engel) return await yaz(engelMetni(s))
+      if (s.duvarDayandi) return await yaz(`🧱 Güvenlik duvarı dayandı! ${urunKoduyla(hacker.kod).ad} yandı, bugünkü bir hakkın gitti. Alarm çalmadı, iz yok.`)
 
       const ad = displayName(a.hedef)
       await yaz(s.basarili && s.tutar
         ? `✅ *KİLİTLENDİ* — ${ad}\n🔒 Fidye: ${binlik(s.tutar)} XP, öderse bankana gelir.`
         : s.basarili
-        ? [`✅ *SIZMA BAŞARILI* — ${ad}`, ganimet(s), `🏦 Bankan: ${binlik(s.banka)} XP`, s.vpn ? '🛰️ VPN harcandı, iz kalmadı.' : '🕶️ Kimliğin gizli, ama VPN yoktu: İçişleri Bakanı 24 saat izini sürebilir.'].join('\n')
+        ? [`✅ *SIZMA BAŞARILI* — ${ad}`, ...(s.duvarDelindi ? ['🧱 Güvenlik duvarı delindi ve çöktü.'] : []), ganimet(s), `🏦 Bankan: ${binlik(s.banka)} XP`, s.vpn ? '🛰️ VPN harcandı, iz kalmadı.' : '🕶️ Kimliğin gizli, ama VPN yoktu: İçişleri Bakanı 24 saat izini sürebilir.'].join('\n')
         : s.gizli
           ? `❌ ${ad} hesabına sızılamadı. 🛰️ VPN seni sakladı (VPN harcandı).`
           : `🚨 Yakalandın! ${HAPIS_SAATI} saat hapis. Kefalet: ${binlik(s.hapis.kefalet)} XP`)

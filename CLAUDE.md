@@ -154,7 +154,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/stats.js` | `.pet` evcil hayvanlar | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kripto` Suly bakiyeleri ve son Bitcoin fiyatı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | kara borsa envanteri, hack hakkı ve duvarı, çete cephaneliği, NFT sahipleri | `data/stats.db` (kalıcı) |
-| `lib/db.js` + `lib/stats.js` | offshore hesapları, saldırı kayıtları, fidye kilidi, maske, son vurgun | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | offshore hesapları, saldırı kayıtları, fidye kilidi, maske, son vurgun, hileli zar | `data/stats.db` (kalıcı) |
 | `lib/kripto.js` | son çekilen Bitcoin fiyatı (20 sn) ve panel grafiğinin geçmişi (30 sn) | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/sahipSans.js` | sahibin gizli kumar şansı açık mı (`.şans`) | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/mute.js` | `.sus` ile susturulan gruplar (bellekte de önbellekli) | `data/stats.db` (kalıcı) |
@@ -359,7 +359,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 74 (tamam):** `.vurgun`, `.offshore`, `.izsür`, `.fidye`, `.muhbir`, sahte kimlik, gizemli kutu; panelde Suly borsası, SulyMarket ve NFT vitrini. Ayrıntı aşağıda.
 - **Faz 75 (tamam):** SulyMarket'te anlık fiyat. Faz 73 bölümüne işlendi.
 - **Faz 76 (tamam):** SulyMarket'e elit ve zero-day hacker, hackerlara zam. Faz 73 bölümüne işlendi.
-- **Faz 77+:** yeni komutlar, her biri ayrı adım
+- **Faz 77 (tamam):** duvarı delen hackerlar, 24 saatlik duvar, EMP, rüşvet, sahte pasaport, hileli zar, efsanevi mülk ve `.mülk yükselt`, yeni NFT serisi. Ayrıntı aşağıda.
+- **Faz 78+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1522,6 +1523,21 @@ Kurallar `lib/yeralti.js`'te saftır, yazma `lib/stats.js`'in sonundaki yeraltı
 - **Panel, Suly borsası** (`/oyun/suly`, `panel/sulySayfalari.js`): alım satım `kriptoAl`/`kriptoSat`'tır, dolar fiyatı formdan değil sunucudan gelir (`btcFiyati`). Grafik geçmişi Coinbase, olmazsa Binance mumlarıdır (`btcGecmisi`), saklanmaz. XP grafiği günlük kapanış × o günün `ekonomi` kurudur; iki ölçek tek grafikte çift eksenle çizilmez, ayrı grafiktir. Grafikler sunucuda SVG'dir; `oyun.js` `#suly-canli`'yi 20 sn'de bir `/oyun/suly-canli` ile yeniler (bildirimi tüketmesin diye ayrı yol) ve üstüne gelinen noktayı `.okuma` satırına yazar. Renkler (`#d4760a`, `#8b5cf6`) koyu zeminde renk körlüğü denetiminden geçti.
 - **Panel, SulyMarket** (`/oyun/sulymarket`): alma, firar, maske takma, fidye ödeme, NFT alma ve bozma. Hack, baskın, vurgun, ilan ve çilingir WhatsApp'ta kalır. NFT görselleri `/nft/<no>.png`, girişsiz ve önbellekli: `no`'dan türer, kişisel veri taşımaz. Profil vitrininde koleksiyon çizilir.
 
+### Faz 77 — Duvar delme, yeni yasa dışı ürünler, efsanevi mülk, yeni NFT'ler
+
+```
+kumar_zar(chat_jid, user_jid, bitis ms)   PK(chat_jid,user_jid)
+```
+
+Bot sahibinin isteğiyle. Ürünler `URUNLER`'in sonuna eklendi (19-22), numara kaymaz.
+
+- **Duvar delme:** `HACKERLAR[].delme` yüzdedir: zero-day 100, elit 50, öbürleri 0. `saldiriHazirla` delebilen hacker için duvar engelini atlar, `hackYap` zar atar. Delinen duvar çöker (`duvar_until = 0`). Delemeyen hacker ve günün bir hakkı yanar, VPN harcanmaz, hapis yoktur: bedava olsaydı elit deneye deneye %100 delerdi. Fidye duvarı delemez.
+- **Duvar 24 saat** (`DUVAR_MS`), süresi bitmeden yenisi alınmaz, tek tek alınır (`karaborsaAl` → `suruyor`). Duvarı süren kişiye kutudan duvar yerine VPN çıkar.
+- **EMP** hedefin duvarını yakar, **rüşvet** kişinin çözülmemiş VPN'siz hack ve fidye dosyalarını siler (`.izsür` bulamaz), **sahte pasaport** ambargoyu kaldırır. Gereksizse (duvar, dosya, ambargo yok) harcanmaz. Rüşvet ve pasaport panelden de kullanılır, EMP hedef istediği için WhatsApp'tadır.
+- **Hileli zar** (`tur: 'zar'`) alındığı an 2 saat (`ZAR_MS`) başlar, bitmeden yenisi alınmaz. `bahisOyna` içinde uygulanır, bu yüzden WhatsApp'ın ve panelin tek elde biten bütün oyunlarına (`.bahis`, `.slot`, `.rulet`, `.kazı`, `.plinko`, `.crash`) işler: kaybeden çekiliş %50 (`ZAR_SANSI`) olasılıkla bir kez daha atılır, iyisi kalır (`zarliCevir`, `sansliCevir`'in kopyası: `kumar.js` `stats.js`'i çağırdığı için import edilmez). Çok adımlı oyunlara (`.blackjack`, `.mayın`, `.hilo`, `.kule`) işlemez. Beklenen dönüş %100'ü geçer, bilerek: pahalıdır. WhatsApp'ta günlük kumar tavanı yine işler. Reborn tabloyu siler.
+- **Efsanevi mülk** (`lib/mulk.js`): her satılık mülkün `<kod>_efsane` sürümü `MULKLER`'in sonundadır, `efsane: true`, `taban` satılık mülkün kodu. Satın alınmaz (`mulkAl` → `satilmaz`), `.mülk yükselt <mülk> [1-4]` ile çıkar (`mulkYukselt`): `adet × %25` olasılıkla bir efsanevi gelir, gelmezse konanlar yanar. Konanların birikmiş kirası önce ödenir. Fiyatı konan 4 mülkün fiyatı, kira yüzdesi 3 katıdır (`EFSANE_KIRA_KATI`): beklenen satış değeri konanlarla aynıdır, kazanç kiradadır. Kirasız arabanın efsanevisi %1 alır. `MULKLER` her yerde koddan bulunduğu için satış, devir, haciz, darbe, hack ve panel ek iş istemez. Adla bulma `mulkCoz()`: "efsane dükkan" ya da "efsanedükkan".
+- **NFT serisi 2** (`lib/nft.js:YENI_SERI`, 31-52): `mitik` sınıfında tek NFT, Suly (gözlüklü, kumral bir kız; `lib/nftResim.js:sulyKiz`, vektör çizim), `sirket` sınıfında 9 şirket NFT'si. Şirketlerin logosu çizilmez, kartta yalnızca borsa kodu (`kod`) yazar. NFT'ler zaten tekildir (`nft` PK'si `chat_jid, no`): sahibi satışa koymadan başkası alamaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1672,3 +1688,8 @@ Kurallar `lib/yeralti.js`'te saftır, yazma `lib/stats.js`'in sonundaki yeraltı
 132. `.sulymarket al 16` → kutu açılır; `al 16 2` → "tek tek"
 133. Panelde Suly borsası → fiyat ve üç grafik, saat 20 sn'de bir değişir, parmakla gezince değer üst satırda; `0,5` al → cüzdan düşer, WhatsApp'ta `.kripto` aynı bakiyeyi gösterir. SulyMarket → ürün ve NFT alınır, profilde NFT koleksiyonu çıkar; telefonda yatay taşma yok
 134. `.sulymarket` → başta "taban x…" satırı; panelde aynı kat ve fiyatlar; `.sulymarket al 10` yazan fiyatı düşer; `.nft al 30` sonra `.nft boz 30` → ödenenin yarısı
+135. Özelden `.hack <kimlik> zeroday` duvarlı hedefe → "duvar delindi ve çöktü"; `.hack <kimlik> elit` → ya delinir ya "duvar dayandı", hacker yanar, hapis yok; `.hack <kimlik> kara` → "duvarı var", hiçbir şey harcanmaz
+136. `.sulymarket al 11` iki kez → ikincisi "hâlâ sürüyor"; `.sulymarket al 11 2` → "tek tek alınır"; `.sulymarket kullan emp @kişi` → duvarı yanar; ambargoluyken `kullan pasaport` → kalkar
+137. `.sulymarket al 22` → hileli zar başlar, `.sulymarket` kalan süreyi yazar; 2 saat içinde `.slot` kayıpları seyrekleşir; panelde SulyMarket "Hileli zar" satırını gösterir
+138. 4 dükkanla `.mülk yükselt dükkan` → "TUTTU", `.mülk` efsanevi dükkanı %7,5 kirayla listeler; `.mülk al efsane dükkan` → "satın alınmaz"; `.mülk sat efsane dükkan` → satılır
+139. `.nft` → galeri 52 kutu, en üstte Mitik ve Mavi Çip satırları; `.nft 31` → Suly kartı; biri alınca `.nft al 31` başkasına "satmıyor" der

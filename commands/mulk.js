@@ -1,9 +1,9 @@
 import { requireGroup, requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { BOZDURMA_YUZDESI } from '../lib/coin.js'
 import { ambargoMesaji } from '../lib/devlet.js'
-import { KIRA_AZAMI_SAAT, MULKLER, mulkBul } from '../lib/mulk.js'
+import { EFSANE_KIRA_KATI, KIRA_AZAMI_SAAT, MULKLER, mulkCoz, YUKSELTME_ADEDI, yukseltmeSansi } from '../lib/mulk.js'
 import { binlik } from '../lib/sayi.js'
-import { botHesabiMi, kiraTopla, mulkAl, mulkDevret, mulkDurumu, mulkSat } from '../lib/stats.js'
+import { botHesabiMi, kiraTopla, mulkAl, mulkDevret, mulkDurumu, mulkSat, mulkYukselt } from '../lib/stats.js'
 import { mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -15,7 +15,7 @@ async function devret({ sock, msg, from, sender, args, parsed, yaz }) {
   const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
   if (!metadata) return
 
-  const mulk = args.slice(1).map(mulkBul).find(Boolean)
+  const mulk = mulkCoz(args.slice(1))
   // Adet kısa sayıdır: etiket yerine elle yazılmış numara adet sanılmasın.
   const adetHam = args.slice(1).find((a) => /^\d{1,4}$/.test(a))
   const adet = adetHam ? Number(adetHam) : 1
@@ -44,16 +44,42 @@ async function devret({ sock, msg, from, sender, args, parsed, yaz }) {
   }, { quoted: msg })
 }
 
+const kiraYaz = (m) => (m.kiraYuzde ? `saatlik kira %${String(m.kiraYuzde).replace('.', ',')}` : 'kira yok')
+const YUKSELT_KULLANIM = `Kullanım: \`.mülk yükselt <mülk> [1-${YUKSELTME_ADEDI}]\`\nÖrnek: \`.mülk yükselt dükkan 4\` (kesin)  •  \`.mülk yükselt dükkan 2\` (%${yukseltmeSansi(2)})`
+
+async function yukselt({ from, sender, args, yaz }) {
+  const mulk = mulkCoz(args.slice(1))
+  const adetHam = args.slice(1).find((a) => /^\d{1,2}$/.test(a))
+  const adet = adetHam ? Number(adetHam) : YUKSELTME_ADEDI
+  if (!mulk || adet < 1 || adet > YUKSELTME_ADEDI) return await yaz(YUKSELT_KULLANIM)
+
+  const s = mulkYukselt({ chatJid: from, userJid: sender, mulk, adet })
+  if (!s) return await yaz(KAPALI)
+  if (s.efsaneYok) return await yaz('✨ Efsanevi mülk daha fazla yükseltilmez.')
+  if (s.yetersiz) return await yaz(`🏠 ${adet} tane ${mulk.ad} gerekiyor. Sende: ${s.adet}`)
+  return await yaz([
+    `🎰 ${adet} ${mulk.ad} masaya kondu, şans %${s.sans}...`,
+    s.basarili
+      ? `✨ *TUTTU!* ${s.efsane.ad} senin! (${s.efsaneAdet} tane, ${kiraYaz(s.efsane)})`
+      : `💥 Tutmadı, ${adet} ${mulk.ad} yandı.`,
+    ...(s.kira ? [`💵 Birikmiş kira ödendi: +${binlik(s.kira)} XP`] : []),
+    `🏠 Kalan ${mulk.ad}: ${s.kalan}`,
+  ].join('\n'))
+}
+
 export default {
   name: 'mülk',
   aliases: ['mulk', 'emlak'],
   description: 'Coinle mülk al, kira topla',
-  usage: '.mülk  —  .mülk al <mülk>  —  .mülk sat <mülk>  —  .mülk topla  —  .mülk devret @kişi <mülk> [adet]',
+  usage: '.mülk  —  .mülk al <mülk>  —  .mülk sat <mülk>  —  .mülk topla  —  .mülk devret @kişi <mülk> [adet]  —  .mülk yükselt <mülk> [adet]',
   details: [
     'Mülk coinle alınır. Kira saat başı birikir ve coin kuruna bağlıdır, enflasyonda büyür.',
     `Kira ${KIRA_AZAMI_SAAT} saatte durur, \`.mülk topla\` yazmak gerekir.`,
     '`.mülk devret @ali ev 2` — iki evini Ali\'ye verir. Birikmiş kira sende kalır. Borçluyken devredilemez, bota verilmez.',
     `Satış coin kurunun %${BOZDURMA_YUZDESI}'inden XP olarak ödenir. Owner \`.haciz @kişi ev\` ile mülke el koyabilir.`,
+    `*Efsanevi mülk* satın alınmaz. \`.mülk yükselt dükkan\` ${YUKSELTME_ADEDI} dükkanı koyar, kesin bir Efsanevi Dükkan gelir: ${YUKSELTME_ADEDI} dükkan değerinde, kira yüzdesi ${EFSANE_KIRA_KATI} katı.`,
+    `Daha az da konabilir: tanesi %${yukseltmeSansi(1)} şans. \`.mülk yükselt dükkan 2\` %${yukseltmeSansi(2)} tutar, tutmazsa iki dükkan yanar.`,
+    'Efsanevi mülk adıyla satılır ve devredilir: `.mülk sat efsane dükkan`.',
   ],
   category: 'ekonomi',
   cooldown: 5,
@@ -75,14 +101,16 @@ export default {
       }
 
       if (islem === 'devret' || islem === 'ver') return await devret({ sock, msg, from, sender, args, parsed, yaz })
+      if (['yükselt', 'yukselt', 'up', 'tradeup'].includes(islem)) return await yukselt({ from, sender, args, yaz })
 
       if (islem === 'al' || islem === 'sat') {
-        const mulk = mulkBul(args[1])
-        if (!mulk) return await yaz(`🏠 Hangi mülk? ${MULKLER.map((m) => `\`${m.adlar[0]}\``).join(', ')}`)
+        const mulk = mulkCoz(args.slice(1))
+        if (!mulk) return await yaz(`🏠 Hangi mülk? ${MULKLER.filter((m) => !m.efsane).map((m) => `\`${m.adlar[0]}\``).join(', ')}`)
 
         if (islem === 'al') {
           const s = mulkAl({ chatJid: from, userJid: sender, mulk })
           if (!s) return await yaz(KAPALI)
+          if (s.satilmaz) return await yaz(`✨ ${mulk.ad} satın alınmaz, yükseltmeyle çıkar: \`.mülk yükselt ${mulk.taban}\``)
           if (s.yetersiz) return await yaz(`🏠 ${mulk.fiyat} coin gerekiyor. Senin coinin: ${binlik(s.bakiye)}`)
           return await yaz(`🏠 *${mulk.ad}* senin! (${s.adet} tane)\n🪙 Kalan coin: ${binlik(s.bakiye)}`)
         }
@@ -101,12 +129,15 @@ export default {
       await yaz([
         '🏠 *Emlak*',
         '',
-        ...MULKLER.map((m) => `${m.ad} — ${m.fiyat} coin${m.kiraYuzde ? `, saatlik kira %${String(m.kiraYuzde).replace('.', ',')}` : ', kira yok'}`),
+        ...MULKLER.filter((m) => !m.efsane).map((m) => `${m.ad} — ${m.fiyat} coin, ${kiraYaz(m)}`),
+        '',
+        `*Efsanevi* (satılmaz, \`.mülk yükselt\` ile ${YUKSELTME_ADEDI} taneden çıkar)`,
+        ...MULKLER.filter((m) => m.efsane).map((m) => `${m.ad} — ${m.fiyat} coin değerinde, ${kiraYaz(m)}`),
         '',
         ...(mulkler.length
           ? ['*Mülklerin*', ...mulkler.map((m) => `${m.mulk.ad} x${m.adet}${m.kira ? ` — ${binlik(m.kira)} XP kira` : ''}`), '']
           : []),
-        'Kullanım: `.mülk al ev`  •  `.mülk sat ev`  •  `.mülk topla`  •  `.mülk devret @kişi ev`',
+        'Kullanım: `.mülk al ev`  •  `.mülk sat ev`  •  `.mülk topla`  •  `.mülk devret @kişi ev`  •  `.mülk yükselt ev 4`',
       ].join('\n'))
     } catch (err) {
       logger.error({ err, from }, '.mülk başarısız')

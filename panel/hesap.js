@@ -9,7 +9,7 @@ import { nftBul } from '../lib/nft.js'
 import {
   bankaCek, bankaDurumu, bankaYatir, calis, claimDaily, coinAl, coinDurumu, coinSat, ekonomiDurumu, faizDurumu,
   fidyeDurumu, fidyeOde, firarEt, hapisDurumu, karaborsaAl, karaborsaDurumu, kiraTopla, kriptoAl, kriptoDurumu, kriptoSat,
-  krediCek, krediDurumu, krediOde, maskeBitisi, maskeTak, meslekDurumu, mulkDurumu, nftAl, nftBoz, nftListesi, servetDurumu, sulyPiyasasi,
+  krediCek, krediDurumu, krediOde, maskeBitisi, maskeTak, meslekDurumu, mulkDurumu, nftAl, nftBoz, nftListesi, pasaportKullan, rusvetVer, servetDurumu, sulyPiyasasi,
 } from '../lib/stats.js'
 import { botGonderisi } from '../lib/sosyal.js'
 import { displayName } from '../lib/target.js'
@@ -162,9 +162,11 @@ const ISLEMLER = {
     const adet = miktar ? tamSayi(miktar) : 1
     if (!adet || adet > AZAMI_ADET) return hata(`Adet 1 ile ${AZAMI_ADET} arası olmalı.`)
     if (urun.tur === 'kutu' && adet > 1) return hata('Kutular tek tek açılır.')
+    if (['duvar', 'zar'].includes(urun.tur) && adet > 1) return hata(`${urun.ad} tek tek alınır.`)
     const s = karaborsaAl({ chatJid: chat, userJid: user, urun, adet })
     if (!s) return hata(MARKET_KAPALI)
     if (s.ceteYok) return hata('Silah için çeten olmalı. WhatsApp\'tan .çete kur')
+    if (s.suruyor) return hata(`${urun.ad} hâlâ sürüyor, ${dakika(s.suruyor - Date.now())} kaldı.`)
     if (s.yetersiz) return hata(`${sulyYaz(s.ucret)} Suly gerekiyor, sende ${sulyYaz(s.birim)} var.`)
     if (s.kutu) return tamam(kutuMetni(s.kutu))
     return tamam(`${urun.ad}${adet > 1 ? ` x${sayi.format(adet)}` : ''} alındı${s.cete ? `, ${s.cete} cephaneliğine girdi` : ''}. Kalan ${sulyYaz(s.birim)} Suly`)
@@ -183,6 +185,22 @@ const ISLEMLER = {
     if (!s) return hata(MARKET_KAPALI)
     if (s.yok) return hata('Sahte kimliğin yok.')
     return tamam(`🎭 Maske takıldı, ${dakika(s.bitis - simdi)} sürer. Bota özelden .soygun yaz.`)
+  },
+
+  'market-rusvet': ({ chat, user }) => {
+    const s = rusvetVer({ chatJid: chat, userJid: user })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.dosyaYok) return hata('Hakkında açık dosya yok, rüşvet harcanmadı.')
+    if (s.yok) return hata('Rüşvet çantan yok.')
+    return tamam(`💼 ${s.silinen} dosya kayboldu.`)
+  },
+
+  'market-pasaport': ({ chat, user }) => {
+    const s = pasaportKullan({ chatJid: chat, userJid: user })
+    if (!s) return hata(MARKET_KAPALI)
+    if (s.ambargoYok) return hata('Ambargon yok, pasaport harcanmadı.')
+    if (s.yok) return hata('Sahte pasaportun yok.')
+    return tamam('🛂 Ambargo kalktı.')
   },
 
   'fidye-ode': ({ chat, user }) => {

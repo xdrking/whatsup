@@ -9,13 +9,14 @@ const { getDb } = await import('../lib/db.js')
 const { BIRIM, sulyYaz } = await import('../lib/kripto.js')
 const { NFTLER, nftBul, nftKomisyonu } = await import('../lib/nft.js')
 const { nftGalerisi, nftKarti } = await import('../lib/nftResim.js')
-const { baskinSansi, HACK_KORUNMA_MS, HACKERLAR, hackPayi, katliFiyat, marketKati, SERVET_REFERANS, silahKaybi, soygunBonusu, URUNLER, urunKoduyla } = await import('../lib/sulymarket.js')
+const { baskinSansi, DUVAR_MS, HACK_KORUNMA_MS, HACKERLAR, hackPayi, katliFiyat, marketKati, SERVET_REFERANS, silahKaybi, soygunBonusu, URUNLER, urunKoduyla, ZAR_MS, zarliCevir } = await import('../lib/sulymarket.js')
 const {
   bankaBakiyesi, bankaYatir, botHesabiniTani, ceteAyril, ceteBaskin, ceteDurumu, ceteKatil, ceteKur, ceteSoygunBonusu, ceteYatir,
   coinAyarla, coinDurumu, firarEt, getStats, hackYap, hapisDurumu, iflasEt, kalkanKir, karaborsaAl, karaborsaDurumu, mulkAl, mulkDurumu,
   nftAl, nftBoz, nftIlan, nftListesi, nftVer, rebornYap, servetDurumu, sulyMarketKati, xpAyarla,
+  bahisOyna, duvarYak, kiraTopla, mulkYukselt, pasaportKullan, rusvetVer, zarBitisi,
 } = await import('../lib/stats.js')
-const { MULKLER } = await import('../lib/mulk.js')
+const { EFSANE_KIRA_KATI, efsaneviMulk, MULKLER, mulkCoz, YUKSELTME_ADEDI, yukseltmeSansi } = await import('../lib/mulk.js')
 const hackKomutu = (await import('../commands/hack.js')).default
 const marketKomutu = (await import('../commands/sulymarket.js')).default
 const nftKomutu = (await import('../commands/nft.js')).default
@@ -70,15 +71,17 @@ test('saf kurallar: baskın şansı, silah kaybı, soygun bonusu, hack payı', (
   }
 })
 
-test('satın alma: Suly yanar, silah için çete gerekir, duvar süresi uzar', () => {
+test('satın alma: Suly yanar, silah için çete gerekir, duvar 24 saat ve bitmeden yenisi alınmaz', () => {
   const chatJid = yeniGrup()
   assert.equal(karaborsaAl({ chatJid, userJid: 'a', urun: urun('vpn'), now: T }).yetersiz, true)
   sulyVer(chatJid, 'a', 200)
   assert.equal(karaborsaAl({ chatJid, userJid: 'a', urun: urun('tabanca'), now: T }).ceteYok, true)
   assert.equal(karaborsaAl({ chatJid, userJid: 'a', urun: urun('vpn'), adet: 2, now: T }).birim, 170 * BIRIM)
   const bir = karaborsaAl({ chatJid, userJid: 'a', urun: urun('duvar'), now: T })
-  const iki = karaborsaAl({ chatJid, userJid: 'a', urun: urun('duvar'), now: T })
-  assert.equal(iki.duvar - bir.duvar, bir.duvar - T)
+  assert.equal(bir.duvar - T, DUVAR_MS)
+  assert.equal(DUVAR_MS, 24 * 3_600_000)
+  assert.equal(karaborsaAl({ chatJid, userJid: 'a', urun: urun('duvar'), now: T + 1000 }).suruyor, bir.duvar)
+  assert.ok(karaborsaAl({ chatJid, userJid: 'a', urun: urun('duvar'), now: bir.duvar }).duvar)
   assert.deepEqual(karaborsaDurumu({ chatJid, userJid: 'a', now: T }).envanter, [{ kod: 'vpn', adet: 2 }])
 })
 
@@ -380,4 +383,162 @@ test('.sulymarket, .nft ve .çete bas komutları', async () => {
   assert.match(son().metin, /BASKIN/)
   await calistir(ceteKomutu, '')
   assert.match(son().metin, /Tabanca|boş/)
+})
+
+// --- Faz 77: duvarı delen hacker, 24 saatlik duvar, yeni yasa dışı ürünler, efsanevi mülk, yeni NFT'ler ---
+
+const kurbanHazirla = (chatJid) => {
+  sulyVer(chatJid, 'h', 50_000)
+  sulyVer(chatJid, 'k', 100)
+  xpAyarla({ chatJid, userJid: 'k', miktar: 1_000_000 })
+  bankaYatir({ chatJid, userJid: 'k', miktar: 500_000, now: T })
+  karaborsaAl({ chatJid, userJid: 'k', urun: urun('duvar'), now: T })
+}
+const elde = (chatJid, user, kod) => karaborsaDurumu({ chatJid, userJid: user, now: T }).envanter.find((e) => e.kod === kod)?.adet ?? 0
+
+test('zero-day duvarı deler ve duvar çöker; kara şapka duvarda hiçbir şey harcamaz', () => {
+  const chatJid = yeniGrup()
+  kurbanHazirla(chatJid)
+  karaborsaAl({ chatJid, userJid: 'h', urun: urun('karasapka'), now: T })
+  karaborsaAl({ chatJid, userJid: 'h', urun: urun('zeroday'), now: T })
+  const dene = (kod) => hackYap({ chatJid, hacker: 'h', kurban: 'k', kod, sans: tutar, rnd: () => 99, now: T })
+
+  assert.equal(dene('karasapka').engel, 'duvar')
+  assert.equal(elde(chatJid, 'h', 'karasapka'), 1)
+  const s = dene('zeroday')
+  assert.equal(s.basarili, true)
+  assert.equal(s.duvarDelindi, true)
+  assert.equal(s.para, 250_000 + 200_000)
+  assert.equal(karaborsaDurumu({ chatJid, userJid: 'k', now: T }).duvar, 0)
+})
+
+test('elit duvarı %50 deler; delemezse hacker ve hak yanar, hapis yok, duvar kalır', () => {
+  const chatJid = yeniGrup()
+  kurbanHazirla(chatJid)
+  karaborsaAl({ chatJid, userJid: 'h', urun: urun('elit'), adet: 2, now: T })
+  const dene = (rnd) => hackYap({ chatJid, hacker: 'h', kurban: 'k', kod: 'elit', sans: tutar, rnd: () => rnd, now: T })
+
+  const dayandi = dene(50)
+  assert.equal(dayandi.duvarDayandi, true)
+  assert.equal(elde(chatJid, 'h', 'elit'), 1)
+  assert.equal(karaborsaDurumu({ chatJid, userJid: 'h', now: T }).hackHakki, 1)
+  assert.equal(hapisDurumu(chatJid, 'h', T)?.bitis ?? 0, 0)
+  assert.ok(karaborsaDurumu({ chatJid, userJid: 'k', now: T }).duvar > T)
+
+  const delindi = dene(49)
+  assert.equal(delindi.basarili, true)
+  assert.equal(delindi.duvarDelindi, true)
+  assert.equal(karaborsaDurumu({ chatJid, userJid: 'h', now: T }).hackHakki, 0)
+})
+
+test('hacker sıralaması duvar delmeyi de artırır; fidye duvarı delemez', () => {
+  const delme = HACKERLAR.map((h) => h.delme ?? 0)
+  assert.deepEqual(delme, [...delme].sort((a, b) => a - b))
+  assert.equal(HACKERLAR.at(-1).delme, 100)
+})
+
+test('EMP duvarı yakar, rüşvet dosyaları siler, pasaport ambargoyu kaldırır; gereksizse yanmazlar', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  sulyVer(chatJid, 'k', 100)
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('emp'), now: T })
+  assert.equal(duvarYak({ chatJid, userJid: 'a', hedef: 'k', now: T }).duvarYok, true)
+  karaborsaAl({ chatJid, userJid: 'k', urun: urun('duvar'), now: T })
+  assert.equal(duvarYak({ chatJid, userJid: 'a', hedef: 'k', now: T }).yakildi, true)
+  assert.equal(karaborsaDurumu({ chatJid, userJid: 'k', now: T }).duvar, 0)
+  assert.equal(elde(chatJid, 'a', 'emp'), 0)
+
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('rusvet'), now: T })
+  assert.equal(rusvetVer({ chatJid, userJid: 'a' }).dosyaYok, true)
+  xpAyarla({ chatJid, userJid: 'k', miktar: 1_000_000 })
+  bankaYatir({ chatJid, userJid: 'k', miktar: 500_000, now: T })
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('caylak'), now: T })
+  assert.equal(hackYap({ chatJid, hacker: 'a', kurban: 'k', kod: 'caylak', sans: tutar, now: T }).basarili, true)
+  assert.equal(rusvetVer({ chatJid, userJid: 'a' }).silinen, 1)
+  assert.equal(elde(chatJid, 'a', 'rusvet'), 0)
+
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('pasaport'), now: T })
+  assert.equal(pasaportKullan({ chatJid, userJid: 'a', now: T }).ambargoYok, true)
+  getDb().prepare('INSERT OR REPLACE INTO ambargo (chat_jid, user_jid, bitis) VALUES (?, ?, ?)').run(chatJid, 'a', T + 3_600_000)
+  assert.equal(pasaportKullan({ chatJid, userJid: 'a', now: T }).kalkti, true)
+  assert.equal(pasaportKullan({ chatJid, userJid: 'a', now: T }).ambargoYok, true)
+})
+
+test('hileli zar: 2 saat sürer, bitmeden yenisi alınmaz, kaybeden çekilişi yeniden atar', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  const s = karaborsaAl({ chatJid, userJid: 'a', urun: urun('zar'), now: T })
+  assert.equal(s.zar, T + ZAR_MS)
+  assert.equal(karaborsaAl({ chatJid, userJid: 'a', urun: urun('zar'), now: T + 1 }).suruyor, T + ZAR_MS)
+  assert.equal(zarBitisi(chatJid, 'a', T), T + ZAR_MS)
+  assert.equal(zarBitisi(chatJid, 'a', T + ZAR_MS), 0)
+
+  let n = 0
+  const cevir = () => ({ carpan: n++ === 0 ? 0 : 2 })
+  assert.equal(zarliCevir(cevir, 50, () => 10)(100).carpan, 2)
+  n = 0
+  assert.equal(zarliCevir(cevir, 50, () => 60)(100).carpan, 0)
+
+  xpAyarla({ chatJid, userJid: 'a', miktar: 10_000 })
+  xpAyarla({ chatJid, userJid: 'b', miktar: 10_000 })
+  const dene = (user) => {
+    let i = 0
+    return bahisOyna({ chatJid, userJid: user, miktar: 100, cevir: () => ({ carpan: i++ === 0 ? 0 : 2 }), oyun: 'test', at: T, tavansiz: true }).sonuc.carpan
+  }
+  assert.equal(dene('b'), 0, 'zarsız kayıp kalır')
+  const sonuclar = Array.from({ length: 40 }, () => dene('a'))
+  assert.ok(sonuclar.includes(2), 'zarlı kaybın bir kısmı yeniden atılır')
+})
+
+test('efsanevi mülk: satılmaz, 4 tane kesin, azı şansa; değer konanlara eşit, kira yüzdesi 3 katı', () => {
+  const dukkan = MULKLER.find((m) => m.kod === 'dukkan')
+  const efsane = efsaneviMulk(dukkan)
+  assert.equal(efsane.fiyat, dukkan.fiyat * YUKSELTME_ADEDI)
+  assert.equal(efsane.kiraYuzde, dukkan.kiraYuzde * EFSANE_KIRA_KATI)
+  assert.ok(MULKLER.filter((m) => !m.efsane).every((m) => efsaneviMulk(m)?.kiraYuzde > 0))
+  assert.equal(new Set(MULKLER.map((m) => m.kod)).size, MULKLER.length)
+  assert.equal(mulkCoz(['efsane', 'dükkan']), efsane)
+  assert.equal(mulkCoz(['efsanedükkan']), efsane)
+  assert.equal(mulkCoz(['dükkan']), dukkan)
+  assert.deepEqual([1, 2, 3, 4].map(yukseltmeSansi), [25, 50, 75, 100])
+
+  const chatJid = yeniGrup()
+  coinAyarla({ chatJid, userJid: 'a', adet: 1000 })
+  assert.equal(mulkAl({ chatJid, userJid: 'a', mulk: efsane, now: T }).satilmaz, true)
+  for (let i = 0; i < 7; i++) mulkAl({ chatJid, userJid: 'a', mulk: dukkan, now: T })
+
+  assert.equal(mulkYukselt({ chatJid, userJid: 'a', mulk: efsane, now: T }).efsaneYok, true)
+  assert.equal(mulkYukselt({ chatJid, userJid: 'a', mulk: dukkan, adet: 5, now: T }).yetersiz, true)
+  const kesin = mulkYukselt({ chatJid, userJid: 'a', mulk: dukkan, adet: 4, rnd: () => 99, now: T })
+  assert.equal(kesin.basarili, true)
+  assert.equal(kesin.kalan, 3)
+  assert.equal(kesin.efsaneAdet, 1)
+
+  const yandi = mulkYukselt({ chatJid, userJid: 'a', mulk: dukkan, adet: 2, rnd: () => 50, now: T })
+  assert.equal(yandi.basarili, false)
+  assert.equal(yandi.kalan, 1)
+  const tuttu = mulkYukselt({ chatJid, userJid: 'a', mulk: dukkan, adet: 1, rnd: () => 24, now: T })
+  assert.equal(tuttu.basarili, true)
+  assert.equal(tuttu.kalan, 0)
+  const benim = mulkDurumu({ chatJid, userJid: 'a', now: T })
+  assert.deepEqual(benim.map((m) => [m.mulk.kod, m.adet]), [['dukkan_efsane', 2]])
+  assert.ok(kiraTopla({ chatJid, userJid: 'a', now: T + 3 * 3_600_000 }).kira > 0)
+})
+
+test('yeni NFT serisi: Suly tek mitik ve en pahalısı, şirketlerin borsa kodu var, numaralar kaymadı', () => {
+  assert.equal(nftBul(30).ad, 'Ping 999')
+  const suly = NFTLER.filter((n) => n.sinif === 'mitik')
+  assert.equal(suly.length, 1)
+  assert.equal(suly[0].ad, 'Suly')
+  assert.ok(NFTLER.every((n) => n.fiyat <= suly[0].fiyat))
+  assert.ok(NFTLER.filter((n) => n.sinif === 'sirket').every((n) => /^[A-Z]{3,5}$/.test(n.kod)))
+})
+
+test('aynı NFT iki kişiye satılmaz', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  sulyVer(chatJid, 'b', 50_000)
+  const no = NFTLER.find((n) => n.ozel === 'suly').no
+  assert.ok(nftAl({ chatJid, userJid: 'a', no, now: T }).fiyat > 0)
+  assert.equal(nftAl({ chatJid, userJid: 'b', no, now: T }).satilikDegil, 'a')
 })

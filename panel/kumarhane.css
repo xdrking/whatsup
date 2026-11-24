@@ -703,6 +703,8 @@ main.degisti .oyun-kutu { animation: none; }
 .kumarhane .karanlik .islem button { width: 100%; min-width: 0; min-height: 42px; padding: .4rem; border: 1px solid var(--km); border-radius: 8px; background: rgb(57 255 136 / .12); color: var(--km); box-shadow: none; font: inherit; font-weight: 700; font-size: .82rem; text-shadow: none; }
 .kumarhane .karanlik .islem button:active { background: rgb(57 255 136 / .3); transform: scale(.98); }
 .mal.nft img { width: 100%; height: auto; border-radius: 8px; image-rendering: pixelated; }
+.mal.nft.n-mitik { border-color: rgb(255 143 208 / .85); box-shadow: 0 0 18px rgb(255 143 208 / .35); }
+.mal.nft.n-sirket { border-color: rgb(41 199 255 / .7); }
 .mal.nft.n-efsane { border-color: rgb(255 184 0 / .6); }
 .mal.nft.n-nadir { border-color: rgb(139 61 255 / .65); }
 .mal.nft.dolu img { opacity: .5; }
