@@ -104,7 +104,8 @@ test('SulyMarket: ürün, kutu, NFT al ve boz', async () => {
   let ucret = katliFiyat(15, kat()) * 2 * BIRIM
   const html = await al(`/oyun/sulymarket?grup=${g}`)
   for (const u of URUNLER) assert.ok(html.includes(`name="urun" value="${u.kod}"`), u.kod)
-  assert.ok(html.includes('src="/nft/30.png"'))
+  // Adres çizimin sürümünü taşır: çizim değişince tarayıcı önbelleği eski görseli göstermesin.
+  assert.match(html, /src="\/nft\/30\.png\?v=[^"]+"/)
 
   assert.ok((await islem('sulymarket', 'market-al', { urun: 'vpn', tutar: '2' })).includes('VPN x2'))
   assert.ok(kat() > 1 && html.includes('taban x'))
@@ -129,5 +130,5 @@ test('NFT görseli PNG olarak gelir, bilinmeyen numara 404', async () => {
   assert.equal(y.headers.get('content-type'), 'image/png')
   assert.ok((await y.arrayBuffer()).byteLength > 500)
   assert.equal((await fetch(`${adres}/nft/0.png`)).status, 404)
-  assert.equal((await fetch(`${adres}/nft/99.png`)).status, 404)
+  assert.equal((await fetch(`${adres}/nft/999.png`)).status, 404)
 })

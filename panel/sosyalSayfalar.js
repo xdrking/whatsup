@@ -8,7 +8,7 @@ import { MAKAMLAR } from '../lib/devlet.js'
 import { NADIRLIK, nftBul } from '../lib/nft.js'
 import { OYUN_ADI } from '../lib/wrapped.js'
 import { ikon } from './ikonlar.js'
-import { h } from './sayfalar.js'
+import { h, nftAdresi } from './sayfalar.js'
 
 const surum = (dosya) => fnv1a(readFileSync(new URL(dosya, import.meta.url), 'utf8'))
 export const SOSYAL_SURUMU = `${surum('./sosyal.css')}-${surum('./sosyal-istemci.js')}`
@@ -528,7 +528,7 @@ function vitrinKarti(chat, v, uyeler) {
   if (!satirlar.length && !nftler.length) return ''
   return h`<section class="kart vitrin"><h2>Vitrin <small>WhatsApp'taki hayatı</small></h2>
   <ul>${satirlar.map(([simge, ad, deger]) => h`<li><span class="vt-simge" aria-hidden="true">${simge}</span><span><small>${ad}</small><strong>${deger}</strong></span></li>`)}</ul>
-  ${nftler.length ? h`<h3>NFT koleksiyonu <small>${nftler.length} mahluk</small></h3><ul class="nft-vitrin">${nftler.map((n) => h`<li class="n-${n.sinif}"><img src="/nft/${n.no}.png" alt="" width="320" height="320" loading="lazy"><strong>${n.ad}</strong><small>#${n.no} · ${NADIRLIK[n.sinif].ad.slice(2).trim()}</small></li>`)}</ul>` : ''}</section>`
+  ${nftler.length ? h`<h3>NFT koleksiyonu <small>${nftler.length} mahluk</small></h3><ul class="nft-vitrin">${nftler.map((n) => h`<li class="n-${n.sinif}"><img src="${nftAdresi(n.no)}" alt="" width="320" height="320" loading="lazy"><strong>${n.ad}</strong><small>#${n.no} · ${NADIRLIK[n.sinif].ad.slice(2).trim()}</small></li>`)}</ul>` : ''}</section>`
 }
 
 export function profilSayfasi({ chat, ben, kisi, profil, stats, seviye, rozetler, wrapped: w, gonderiler, uyeler, bildirim, vitrin = null, sabitGonderi = null, kayitSayisi = 0, now = Date.now() }) {

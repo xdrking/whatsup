@@ -5,7 +5,7 @@ import { BIRIM, GRAFIK_ARALIKLARI, SATIS_KESINTI, sulyDegeri, sulyFiyati, sulySa
 import { NADIRLIK, nftGeriAlim, NFTLER } from '../lib/nft.js'
 import { HACK_GUNLUK, katliFiyat, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
 import { displayName } from '../lib/target.js'
-import { h } from './sayfalar.js'
+import { h, nftAdresi } from './sayfalar.js'
 import { islemFormu, satir, sayfa } from './hesapSayfalari.js'
 import { hesapLink } from './oyunSayfalari.js'
 
@@ -259,7 +259,7 @@ function nftKutusu(chat, n, sahiplik, ben, kat) {
   const alinir = !sahiplik || (!senin && sahiplik.fiyat)
   const fiyat = sahiplik?.fiyat ? sahiplik.fiyat : katliFiyat(n.fiyat, kat) * BIRIM
   return h`<li class="mal nft n-${n.sinif}${sahiplik && !alinir && !senin ? ' dolu' : ''}">
-  <img src="/nft/${n.no}.png" alt="" width="320" height="320" loading="lazy">
+  <img src="${nftAdresi(n.no)}" alt="" width="320" height="320" loading="lazy">
   <strong>${n.ad}</strong>
   <small>#${n.no} · ${NADIRLIK[n.sinif].ad.slice(2).trim()}</small>
   <span class="mal-alt">${alinir ? h`<b>${sulyYaz(fiyat)} Ⓢ</b>` : ''}${senin ? h`<i>senin${sahiplik.fiyat ? ` · ${sulyYaz(sahiplik.fiyat)} Ⓢ ilanda` : ''}</i>` : sahiplik ? h`<i>${displayName(sahiplik.user_jid)}</i>` : ''}</span>

@@ -9,6 +9,9 @@ import { ARALIKLAR, SIRALAMALAR } from './veri.js'
 const surum = (dosya) => fnv1a(readFileSync(new URL(dosya, import.meta.url), 'utf8'))
 const STIL_SURUMU = surum('./stil.css')
 const KUMARHANE_SURUMU = `${surum('./kumarhane.css')}-${surum('./oyun.js')}`
+// NFT görselleri 7 gün önbelleklenir: çizim değişince adres de değişmeli, yoksa panel eski görseli gösterir.
+const NFT_SURUMU = `${surum('../lib/nftResim.js')}-${surum('../lib/nft.js')}`
+export const nftAdresi = (no) => `/nft/${no}.png?v=${NFT_SURUMU}`
 
 class Ham {
   constructor(metin) {
