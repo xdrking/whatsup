@@ -363,7 +363,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 78 (tamam):** panelde coin borsası, coin ve Suly'yi XP tutarıyla alma. Faz 74 bölümüne işlendi.
 - **Faz 79 (tamam):** SulyMarket'e mantık bombası, kimlik hırsızlığı, casus yazılımı, soğuk cüzdan, ayarlı makine, nazar boncuğu, korsan yayın, sahte ihbar; Omar NFT'si. Faz 77 bölümüne işlendi.
 - **Faz 80 (tamam):** banka kredileri, enflasyona bağlı limit. Faz 34 bölümüne işlendi.
-- **Faz 81+:** yeni komutlar, her biri ayrı adım
+- **Faz 81 (tamam):** panelde Şeker Fırtınası. Ayrıntı aşağıda.
+- **Faz 82+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1552,6 +1553,16 @@ Bot sahibinin isteğiyle. Ürünler `URUNLER`'in sonuna eklendi (19-22), numara 
   - **Sahte ihbar** grupta etiketle (`sahteIhbar`): hedef 30 dk hapse girer (`hapseAt`, kefalet hapisteki gibi; kumar, soygun, hack kapanır). VPN varsa harcanır ve risk yoktur; yoksa %30 ihbarcı 1 saat içeri girer, hedef dokunulmaz. Hapisteki hedefe ihbar harcanmaz.
 - **NFT serisi 2** (`lib/nft.js:YENI_SERI`, 31-53): `mitik` sınıfında tek NFT, Suly (gözlüklü, kumral bir kız; `lib/nftResim.js:sulyKiz`, vektör çizim), `sirket` sınıfında 9 şirket NFT'si, `efsane` sınıfında Omar (#53, `lib/nftResim.js:omarCizimi`, fotoğraftan aktarılmış vektör çizim; tişörtteki marka çizilmez). Şirketlerin logosu çizilmez, kartta yalnızca borsa kodu (`kod`) yazar. NFT'ler zaten tekildir (`nft` PK'si `chat_jid, no`): sahibi satışa koymadan başkası alamaz.
 
+### Faz 81 — Şeker Fırtınası (yalnızca panel)
+
+Bot sahibi Sweet Bonanza istedi; oyun o türün (düşen semboller, her yerde 8+ öder, kombo, bedava dönüş) **özgün** bir örneğidir, adı, sembolleri, görünümü ve sesi kopyalanmadı. WhatsApp'ta yoktur (bot sahibinin onayı): animasyonsuz hali sıkıcıdır. Kurallar `lib/seker.js`'te saftır, oynatma `panel/seker.js`'tedir.
+
+- **Tek adımlı oyundur:** `TEK_OYUNLAR['şeker']`, `bahisOyna` ile tek transaction; bedava dönüşler dahil bütün el sunucuda baştan hesaplanır, tarayıcı yalnızca oynatır. Adımlar `data-seker`'e kısaltılmış yazılır (tahta 30 harf, `abcdefghz`; sıra `SEKERLER` + dağınık). Sembol sırası değişirse harfler de değişir, sorun değildir: saklanmaz.
+- **Matematik:** beklenen dönüş ~%95, bonus ~%96 (`test/seker.test.js` tohumlu simülasyonla %90-100 aralığını denetler). Ödeme, ağırlık, kombo ya da bedava dönüş sayısı değişirse bu test geçmeli; bonus fiyatı (`BONUS_FIYATI`) bonusun ortalamasından yeniden hesaplanır. Tavan `AZAMI_KAT` (5000x).
+- **Bonus satın alma:** `hazirla` `kat: BONUS_FIYATI` döner, `tekOyna` bahsi katıyla çarpar; çarpan `sekerCevir` içinde fiyata bölünmüştür. `sonuc.taban` taban bahistir (form onunla dolar).
+- **Hileli zar, nazar** `bahisOyna`'dan geçtiği için işler; ayarlı makine yalnızca `slot`'a işler. Sahip şansı panelde yoktur.
+- **Tarayıcı:** hareketler Web Animations API iledir (CSSOM, CSP'ye takılmaz; satır içi `style` özniteliği yine yazılmaz). `panel/seker.js` `oyun.js`'ten önce yüklenir; `oyun.js` `window.KumarhaneSes`'i verir, `canlandir` şekerde Promise döner, bakiye oynatma bitince sayılır. Otomatik çevirme yalnızca tarayıcıdadır: bittiğinde formu `requestSubmit` ile yeniden gönderir, hata gelince (boş makine) durur. Turbo tercihi `localStorage`'dadır. Betik yoksa son tahta ve özet görünür.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1714,3 +1725,4 @@ Bot sahibinin isteğiyle. Ürünler `URUNLER`'in sonuna eklendi (19-22), numara 
 144. Kimlik hırsızlığı varken başarılı `.hack` → grupta "İzler X'i gösteriyor"; `.izsür` asıl faili bulur. Soğuk cüzdanlı kurban → coin ve NFT alınmaz. Nazar boncuğuyla `.slot` kaybı → "kaybın yarısı kurtuldu"
 145. `.nft 53` → Omar kartı, Efsane
 146. `.kredi` → altı banka ve 12 ürün, taban limit ve hazine; `.kredi teb` → yalnızca TEB; `.kredi hesapla 5 10m 6` → ücret ve vadedeki borç, hiçbir şey değişmez; `.kredi çek 5 10m 1` → "2-12 saat"; `.kredi çek 5 1m 6` → %3 ücret kesilir, `.kredi` bankayı ve vadeyi yazar. Panelde Banka sayfası her ürünü tablo ve vade seçmeli formla gösterir, açık kredide döküm çıkar
+147. Panelde Şeker Fırtınası → şekerler yağar; 8+ aynı şeker parlar, patlar, parçacık saçar, üsttekiler düşer; ikinci patlamada "KOMBO x2" ve sarsıntı; bakiye animasyon bitince sayar. 🎁 Bonus al → onay sorar, 12 bedava dönüş, makine mora döner, kombo dönüşler arasında sürer. Otomatik 10 → alt çubukta kalan sayı, DURDUR keser; XP yetmeyince kendiliğinden durur. Turbo hızlanır, makineye dokunmak çevirmeyi hızlandırır. Telefonda yatay taşma yok

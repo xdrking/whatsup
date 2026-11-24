@@ -8,7 +8,7 @@ import { ARALIKLAR, SIRALAMALAR } from './veri.js'
 // Stil tarayıcıda önbelleklenir: adres içerikle değişmezse yeni HTML eski stille açılır.
 const surum = (dosya) => fnv1a(readFileSync(new URL(dosya, import.meta.url), 'utf8'))
 const STIL_SURUMU = surum('./stil.css')
-const KUMARHANE_SURUMU = `${surum('./kumarhane.css')}-${surum('./oyun.js')}`
+const KUMARHANE_SURUMU = `${surum('./kumarhane.css')}-${surum('./oyun.js')}-${surum('./seker.js')}`
 // NFT görselleri 7 gün önbelleklenir: çizim değişince adres de değişmeli, yoksa panel eski görseli gösterir.
 const NFT_SURUMU = `${surum('../lib/nftResim.js')}-${surum('../lib/nft.js')}`
 export const nftAdresi = (no) => `/nft/${no}.png?v=${NFT_SURUMU}`
@@ -64,6 +64,7 @@ export function kabuk(baslik, icerik, { cikis = true, geri = null, ust = baslik,
 <title>${baslik}</title>
 <link rel="stylesheet" href="/stil.css?v=${STIL_SURUMU}">
 ${kumarhane ? h`<link rel="stylesheet" href="/kumarhane.css?v=${KUMARHANE_SURUMU}">
+<script src="/seker.js?v=${KUMARHANE_SURUMU}" defer></script>
 <script src="/oyun.js?v=${KUMARHANE_SURUMU}" defer></script>` : ''}
 </head>
 <body${kumarhane ? h` class="kumarhane${yan ? ' yanli' : ''}"` : ''}>

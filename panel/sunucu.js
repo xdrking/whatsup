@@ -28,6 +28,7 @@ const KLASOR = path.dirname(fileURLToPath(import.meta.url))
 const STIL = readFileSync(path.join(KLASOR, 'stil.css'))
 const KUMARHANE_STIL = readFileSync(path.join(KLASOR, 'kumarhane.css'))
 const OYUN_BETIGI = readFileSync(path.join(KLASOR, 'oyun.js'))
+const SEKER_BETIGI = readFileSync(path.join(KLASOR, 'seker.js'))
 const SOSYAL_STIL = readFileSync(path.join(KLASOR, 'sosyal.css'))
 const SOSYAL_BETIGI = readFileSync(path.join(KLASOR, 'sosyal-istemci.js'))
 const SERVIS_ISCISI = readFileSync(path.join(KLASOR, 'sw.js'))
@@ -304,6 +305,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     }
     if (yol === 'GET /oyun.js') {
       return gonder(res, 200, OYUN_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /seker.js') {
+      return gonder(res, 200, SEKER_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
     }
     if (yol === 'GET /sosyal.css') {
       return gonder(res, 200, SOSYAL_STIL, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })

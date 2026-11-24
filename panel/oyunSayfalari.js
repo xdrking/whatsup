@@ -2,6 +2,7 @@
 // yenilemeden gönderir, ses çalar. Animasyonlar CSS'tedir, betik olmadan da oynar.
 // Satır içi `style` CSP'ye takılır: gecikme ve konumlar sınıflarla verilir (d1, d2…).
 import { IKILI_CARPAN, KAZI_ODULLERI, PLINKO_RISK, renk, SEMBOLLER } from '../lib/kumar.js'
+import { AZAMI_KAT, BEDAVA_DONUS, BONUS_FIYATI, DAGINIK, DAGINIK_ODEME, EK_DONUS, EK_ESIK, KOMBO, SATIR, SEKERLER, SUTUN, tahtaKur } from '../lib/seker.js'
 import { COK_OYUNLAR, TEK_OYUNLAR, VURGUN_KAT } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
 
@@ -34,6 +35,20 @@ const RULET_SECIMLERI = [['kırmızı', '🔴 Kırmızı · 2x'], ['siyah', '⚫
 
 /** Lobideki kutu ve oyun sayfasındaki bahis formu aynı tanımdan çıkar. */
 const VITRIN = {
+  şeker: {
+    aciklama: '8+ aynı şeker patlar, kombo büyür, 4 🌈 bedava dönüş', etiket: `${sayi.format(AZAMI_KAT)}x`,
+    govde: () => h`<button class="buyuk-dugme seker-cevir">🍬 ÇEVİR</button>
+<div class="seker-arac">
+  <button name="secim" value="bonus" class="ikincil seker-bonus">🎁 BONUS AL · ${BONUS_FIYATI}x</button>
+  <div class="seker-oto" hidden>
+    <label class="alan"><small>Otomatik</small><select class="oto-adet">${[10, 25, 50, 100, 500].map((n) => h`<option value="${n}">${n} çevirme</option>`)}</select></label>
+    <label class="kutu-sec"><input type="checkbox" class="oto-bonus" checked> Bonus gelince dur</label>
+    <label class="kutu-sec"><input type="checkbox" class="oto-buyuk"> 50x üstü kazançta dur</label>
+    <label class="kutu-sec"><input type="checkbox" class="seker-turbo"> ⚡ Turbo</label>
+    <button type="button" class="oto-basla ikincil">▶ OTOMATİK BAŞLAT</button>
+  </div>
+</div>`,
+  },
   slot: { aciklama: 'Üçlü 3x-50x, ikili 1,5x', etiket: 'JACKPOT 50x', govde: () => h`<button class="buyuk-dugme">ÇEVİR</button>` },
   kazı: { aciklama: '3 aynı sembol 1x-50x', etiket: '50x', govde: () => h`<button class="buyuk-dugme">KAZI</button>` },
   blackjack: { aciklama: 'Çift, böl, sigorta, teslim', etiket: '2,5x', govde: () => h`<button class="buyuk-dugme">MASAYA OTUR</button>` },
@@ -53,7 +68,7 @@ const VITRIN = {
 }
 
 export const KATEGORILER = [
-  { ad: 'Slot ve kazı', ikon: '🎰', oyunlar: ['slot', 'kazı'] },
+  { ad: 'Slot ve kazı', ikon: '🎰', oyunlar: ['şeker', 'slot', 'kazı'] },
   { ad: 'Kart ve masa', ikon: '🃏', oyunlar: ['blackjack', 'hilo', 'rulet', 'bahis'] },
   { ad: 'Çarpan oyunları', ikon: '🚀', oyunlar: ['crash', 'plinko', 'mayın', 'kule'] },
 ]
@@ -106,7 +121,7 @@ function oyunKarti(chat, oyun, varsayilan, secim = '') {
   const t = OYUN_ADI[oyun]
   const { aciklama, etiket, govde } = VITRIN[oyun]
   const icerik = govde(secim)
-  const tek = icerik.metin.startsWith('<button')
+  const tek = icerik.metin.startsWith('<button') && oyun !== 'şeker'
   return h`<form class="masa-kart k-${oyun}${tek ? ' tek' : ''}" method="post" action="/oyun/oyna">
   ${gizli(chat)}<input type="hidden" name="oyun" value="${oyun}">
   <div class="masa-ust">
@@ -281,7 +296,8 @@ export function ruletCarki(sayi = null, sinif = '') {
 }
 
 /** Tek adımlı oyunun canlandırması; sonuç metni `gecikmeli` ile animasyon bitince görünür. */
-function tekCizim(oyun, s) {
+function tekCizim(oyun, s, sonuc) {
+  if (oyun === 'şeker') return sekerMakinesi(s, sonuc)
   if (oyun === 'slot') {
     return h`<div class="slot-makine"><div class="makaralar">${s.makaralar.map((m, i) => h`<div class="makara m${i + 1}">${serit(m)}</div>`)}</div></div>`
   }
@@ -321,7 +337,7 @@ function sonucKarti(chat, s) {
   data-oyun="${s.oyun}" data-durum="${durum}" data-carpan="${carpan}" data-nokta="${s.sonuc?.nokta ?? ''}">
   ${buyuk ? konfeti() : ''}
   <h2>${baslik}</h2>
-  ${s.el ? elCizimi(chat, s.el, true) : tekCizim(s.oyun, s.sonuc)}
+  ${s.el ? elCizimi(chat, s.el, true) : tekCizim(s.oyun, s.sonuc, s)}
   <div class="gecikmeli">
     ${s.sebep ? h`<p class="orta">${s.sebep}</p>` : ''}
     ${buyuk ? h`<p class="pankart">BÜYÜK KAZANÇ</p>` : ''}
@@ -336,6 +352,7 @@ function sonucKarti(chat, s) {
 
 /** Hangi sembol kaç kat öder; değerler oyunun kendi tablosundan okunur, elle yazılmaz. */
 function odemeTablosu(oyun) {
+  if (oyun === 'şeker') return sekerTablosu()
   const satirlar = oyun === 'slot'
     ? [...SEMBOLLER.map((x) => [`${x.s}${x.s}${x.s}`, x.uclu]), ['İkili', IKILI_CARPAN]]
     : oyun === 'kazı' ? KAZI_ODULLERI.map((o) => [`${o.s}${o.s}${o.s}`, o.carpan]) : null
@@ -381,9 +398,68 @@ export function oyunSayfasi({ chat, oyun, cokGrup, durum }) {
       : h`<section class="oyunlar tekli">${oyunKarti(chat, oyun, String(sonuc?.taban ?? sonuc?.bahis ?? sonuc?.yazilan ?? ''), sonuc?.oyun === oyun ? sonuc.secim ?? '' : '')}</section>`
   return kabuk(t.ad, h`
 ${kasa({ xp, dar: true })}
-${sonucKarti(chat, sonuc)}
+${oyun === 'şeker' && !(sonuc?.oyun === 'şeker' && !sonuc.hata)
+    ? h`${sonuc?.hata ? h`<p id="bildirim" class="bildirim olmadi" role="alert">⚠️ ${sonuc.hata}</p>` : ''}${bosMakine()}`
+    : sonucKarti(chat, sonuc)}
 ${masa}
 ${odemeTablosu(oyun)}
 ${oyun === 'rulet' ? h`<template id="rulet-sablon">${ruletCarki(null, 'donuyor')}</template>` : ''}
 ${altNot}`, { ust: `${t.ikon} ${t.ad}`, kumarhane: true, yan: yanMenu({ chat, cokGrup, secili: oyun }) })
+}
+
+// --- Şeker Fırtınası ---
+// Tahta sunucuda son haliyle çizilir (betik yoksa görünen budur); bütün patlama ve düşme adımları
+// `data-seker`'de kısaltılmış durur, panel/seker.js onları oynatır. Sembol dizini tek harfe çevrilir.
+const SEKER_SEMBOLLERI = [...SEKERLER.map((x) => x.s), DAGINIK]
+const HARF = 'abcdefghz'
+const harfle = (tahta) => tahta.flat().map((x) => HARF[SEKER_SEMBOLLERI.indexOf(x)]).join('')
+const adimlar = (liste) => liste.map((a) => ({
+  t: harfle(a.tahta), p: a.patlayan, c: a.carpan, k: a.kazanc,
+  o: a.odemeler.map((o) => [SEKER_SEMBOLLERI.indexOf(o.s), o.adet, o.kat]),
+}))
+
+export function sekerVerisi(s, sonuc) {
+  return JSON.stringify({
+    s: SEKER_SEMBOLLERI, sut: SUTUN, sat: SATIR, taban: sonuc?.taban ?? sonuc?.bahis ?? 0, bonus: s.bonus, kat: s.kat, tavan: s.tavan,
+    dk: s.daginikKazanc, ana: adimlar(s.ana.adimlar), ek: EK_DONUS,
+    fs: s.bedava ? s.bedava.donusler.map((d) => ({ ek: d.ek, a: adimlar(d.adimlar) })) : null,
+  })
+}
+
+function tahtaCiz(tahta) {
+  // Hücreler satır satır yazılır (CSS grid), tahta sütun sütun tutulur.
+  const hucreler = []
+  for (let r = 0; r < SATIR; r += 1) for (let c = 0; c < SUTUN; c += 1) hucreler.push(tahta[c][r])
+  return h`<div class="seker-tahta">${hucreler.map((x) => h`<span class="seker${x === DAGINIK ? ' daginik' : ''}">${x}</span>`)}</div>`
+}
+
+function makine(tahta, { veri = '', ust = '', alt = '' } = {}) {
+  return h`<div class="seker-makine"${veri ? h` data-seker="${veri}"` : ''}>
+  <div class="seker-ust"><span class="seker-kombo">KOMBO <b>x1</b></span><span class="seker-tur">${ust}</span><span class="seker-kazanc">0</span></div>
+  <div class="seker-cerceve">${tahta}<div class="seker-sahne" aria-hidden="true"></div></div>
+  ${alt}
+</div>
+<button type="button" class="buyuk-dugme seker-hizli" hidden>🍬 ÇEVİR</button>`
+}
+
+function sekerMakinesi(s, sonuc) {
+  const son = s.bedava?.donusler.at(-1)?.adimlar.at(-1) ?? s.ana.adimlar.at(-1)
+  const tur = s.bedava ? `🌈 ${s.bedava.donusler.length} bedava dönüş` : s.bonus ? '🎁 Bonus' : ''
+  const ozet = h`<p class="not orta gecikmeli">${s.ana.adimlar.length - 1 ? `${s.ana.adimlar.length - 1} patlama` : 'Patlama yok'}${s.bedava ? ` · bedava dönüşlerden ${virgul(Math.round(s.bedava.kazanc * 100) / 100)}x` : ''}${s.tavan ? ` · ${sayi.format(AZAMI_KAT)}x tavanı` : ''}</p>`
+  return h`${makine(tahtaCiz(son.tahta), { veri: sekerVerisi(s, sonuc), ust: tur })}${ozet}`
+}
+
+/** Sayfa ilk açıldığında boş durmasın: rastgele bir tahta, sonuç yok. */
+export function bosMakine() {
+  return h`<section id="sonuc" class="sonuc bos" data-oyun="şeker" data-durum="bos"><h2>🍬 Şeker Fırtınası</h2>${makine(tahtaCiz(tahtaKur()))}</section>`
+}
+
+function sekerTablosu() {
+  const kat = (x) => `${virgul(x)}x`
+  return h`<section class="odeme-tablosu seker-tablo"><h3>ÖDEME TABLOSU</h3>
+<p class="not">Tahtanın herhangi bir yerinde aynı şekerden en az 8 tane olunca öder. Kazandıran şekerler patlar, üsttekiler düşer, yenileri yağar. Aynı çevirmedeki her yeni patlama kombo çarpanını büyütür: ${KOMBO.map((x) => `x${x}`).join(' → ')}.</p>
+<ul>${[...SEKERLER].reverse().map((x) => h`<li><span>${x.s} ${x.ad}</span><strong>8+ ${kat(x.odeme[0])} · 10+ ${kat(x.odeme[1])} · 13+ ${kat(x.odeme[2])}</strong></li>`)}
+<li><span>${DAGINIK} Gökkuşağı</span><strong>${Object.entries(DAGINIK_ODEME).map(([n, k]) => `${n}: ${kat(k)}`).join(' · ')}</strong></li></ul>
+<p class="not">4, 5, 6 ${DAGINIK} → ${Object.values(BEDAVA_DONUS).join(', ')} bedava dönüş. Bedava dönüşlerde kombo dönüşler arasında sıfırlanmaz, ${EK_ESIK} ${DAGINIK} +${EK_DONUS} dönüş verir. 🎁 Bonus al: bahsin ${BONUS_FIYATI} katına doğrudan bedava dönüş. En çok ${sayi.format(AZAMI_KAT)}x.</p>
+</section>`
 }

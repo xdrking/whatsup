@@ -786,6 +786,29 @@ Paneldeki blackjack'te `kart` ve `dur` dışında gerçek masa hamleleri de vard
 
 Blackjack, mayın, kule ve hi-lo'da 3 dakika hamle yapılmazsa el kapanır (blackjack "dur", ötekiler "çek" sayılır). Panel yeniden başlatılırsa yarım eldeki bahis yanar.
 
+#### 🍬 Şeker Fırtınası (yalnızca panelde)
+
+6x5 tahtada şekerler yağar. Aynı şekerden tahtanın **herhangi bir yerinde** en az 8 tane olunca öder ve patlar, üsttekiler düşer, boşluğa yenileri yağar. Aynı çevirmedeki her yeni patlama kombo çarpanını büyütür: x1 → x2 → x3 → x5 → x8 → x13 → x21.
+
+| Şeker | 8-9 | 10-12 | 13+ |
+|---|---|---|---|
+| 💖 Kalp şeker | 2,75x | 7x | 27,5x |
+| 🍰 Pasta | 1x | 3,5x | 10x |
+| 🍬 Akide | 0,7x | 1,4x | 7x |
+| 🍫 Çikolata | 0,5x | 1x | 4x |
+| 🍮 Puding | 0,35x | 0,7x | 2,75x |
+| 🧁 Kek | 0,25x | 0,6x | 2x |
+| 🍩 Halka | 0,2x | 0,5x | 1,4x |
+| 🍪 Kurabiye | 0,15x | 0,35x | 1x |
+
+- 🌈 Gökkuşağı patlamaz. 4, 5, 6 tane gelirse 3x, 5x, 100x öder ve 12, 15, 20 bedava dönüş başlar. Bedava dönüşlerde kombo dönüşler arasında **sıfırlanmaz**, 3 🌈 +5 dönüş verir.
+- 🎁 **Bonus al:** bahsin 62 katına doğrudan bedava dönüş.
+- En çok 5.000x kazanılır. Beklenen dönüş yaklaşık %95.
+- **Otomatik çevirme:** 10-500 çevirme; "bonus gelince dur" ve "50x üstü kazançta dur" seçilebilir. Altta çıkan çubuktaki DURDUR ile kesilir.
+- **⚡ Turbo** animasyonları hızlandırır. Oynarken makineye dokunmak (ya da boşluk tuşu) o çevirmeyi hızlı bitirir, boşluk tuşu çevirir.
+
+WhatsApp'ta yoktur: patlamasız, düşmesiz bir metin sürümü oyunun tadını vermiyor.
+
 Panel her gün `data/yedek/` altına yedek alır, son 14'ü kalır. Yedekler aynı sunucuda durduğu için ara ara panelden **Son yedeği indir** ile bilgisayarına al.
 
 ## Yeni komut ekleme

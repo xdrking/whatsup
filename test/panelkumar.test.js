@@ -16,6 +16,8 @@ const { bahisOyna, bankaDurumu, getStats, kumarYasagi } = await import('../lib/s
 const { kumarMotoru } = await import('../panel/kumar.js')
 const { hesapMotoru } = await import('../panel/hesap.js')
 const { sunucuKur } = await import('../panel/sunucu.js')
+const { oyunSayfasi } = await import('../panel/oyunSayfalari.js')
+const { BONUS_FIYATI } = await import('../lib/seker.js')
 const { veriAc } = await import('../panel/veri.js')
 
 const GRUP = 'g1@g.us'
@@ -211,6 +213,35 @@ test('hesap motoru: günlük ödül bir kez, olmayan coin bozdurulmaz', () => {
   simdi += 1000
   hm.islem(kim, { islem: 'coin-sat', miktar: '1' })
   assert.ok(hm.durum(kim).bildirim.hata.includes('coinin yok'))
+})
+
+test('panel şeker fırtınası: makine sayfada, çevirme ve bonus XP\'ye yazılır', async () => {
+  db.prepare('INSERT OR REPLACE INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, ?, 0, 0, 0, 1000000, 1)').run(GRUP, 'sk@lid')
+  let simdi = 50_000_000
+  const m = kumarMotoru({ saat: () => simdi })
+  const kim = { chat: GRUP, user: 'sk@lid' }
+  m.tekOyna(kim, { oyun: 'şeker', miktar: '1000' })
+  const s = m.durum(kim).sonuc
+  assert.equal(s.hata, undefined)
+  assert.equal(s.bahis, 1000)
+  assert.equal(getStats(GRUP, 'sk@lid').xp, 1_000_000 + s.fark)
+  assert.ok(s.sonuc.ana.adimlar.length >= 1)
+  const html = String(oyunSayfasi({ chat: GRUP, oyun: 'şeker', durum: { xp: 0, el: null, sonuc: s } }))
+  assert.ok(html.includes('data-seker="') && html.includes('seker-tahta'))
+  assert.equal(String(oyunSayfasi({ chat: GRUP, oyun: 'şeker', durum: { xp: 0, el: null, sonuc: null } })).match(/class="seker[ "]/g).length, 30)
+
+  simdi += 1000
+  const once = getStats(GRUP, 'sk@lid').xp
+  m.tekOyna(kim, { oyun: 'şeker', miktar: '1000', secim: 'bonus' })
+  const b = m.durum(kim).sonuc
+  assert.equal(b.bahis, 1000 * BONUS_FIYATI)
+  assert.equal(b.taban, 1000)
+  assert.ok(b.sonuc.bedava)
+  assert.equal(getStats(GRUP, 'sk@lid').xp, once + b.fark)
+
+  simdi += 1000
+  m.tekOyna(kim, { oyun: 'şeker', miktar: 'hepsi', secim: 'bonus' })
+  assert.match(m.durum(kim).sonuc.hata, /Bonus .* XP tutar/)
 })
 
 test('hesap motoru: bankadan seçilen vadeyle kredi, vade dışı reddedilir', () => {

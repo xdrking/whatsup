@@ -9,6 +9,7 @@ import {
   plinkoRiskCoz, ruletCevir, ruletSecimCoz, sansliCevir, slotCevir, yaziTura, yuzCoz,
 } from '../lib/kumar.js'
 import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
+import { BONUS_FIYATI, sekerCevir } from '../lib/seker.js'
 import { miktarlariCoz } from '../lib/sayi.js'
 import { getDb } from '../lib/db.js'
 import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, kumarOde, rebornSansiVar, sonReborn, xpCek } from '../lib/stats.js'
@@ -18,6 +19,7 @@ import { KAT, kuleCarpani, kuleKur, ZORLUK, zorlukCoz } from '../games/kule.js'
 import { HILO_TAVAN, hiloCarpani, hiloTuttu, kartCek, kartYaz } from '../games/hilo.js'
 
 export const SURE_MS = 3 * 60_000
+const binlik = new Intl.NumberFormat('tr-TR')
 // Form iki kez gönderilirse ya da tuşa basılı tutulursa aynı el iki kez oynanmasın.
 const ARALIK_MS = 700
 
@@ -51,6 +53,14 @@ export const TEK_OYUNLAR = {
       const yuz = yuzCoz(secim)
       return yuz ? { cevir: () => ({ ...yaziTura(yuz), secim: yuz }) } : { hata: 'Yazı ya da tura seç.' }
     },
+  },
+  // Yalnızca panelde (bot sahibinin isteği): animasyonsuz WhatsApp'ta tadı çıkmaz. `kat`: bonus satın almada
+  // ödenen, bahsin katıdır; çarpan zaten bu kata bölünmüş gelir.
+  şeker: {
+    ad: 'Şeker Fırtınası', ikon: '🍬',
+    hazirla: (secim) => (secim === 'bonus'
+      ? { cevir: () => sekerCevir(undefined, { bonus: true }), kat: BONUS_FIYATI }
+      : { cevir: () => sekerCevir() }),
   },
   slot: { ad: 'Slot', ikon: '🎰', hazirla: () => ({ cevir: () => slotCevir() }) },
   rulet: {
@@ -177,10 +187,11 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
 
     // Reborn'dan sonraki gizli şans WhatsApp'taki `.crash` ile aynıdır, sayfada görünmez (lib/reborn.js).
     const cevir = oyun === 'crash' && rebornSansiVar(h.chat, saat()) ? sansliCevir(hazir.cevir, REBORN_CRASH_SANSI) : hazir.cevir
-    const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: g.miktar, cevir, oyun, tavansiz: true })
+    const bahis = g.miktar * (hazir.kat ?? 1)
+    const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: bahis, cevir, oyun, tavansiz: true })
     if (!s) return sonucYaz(k, { oyun, hata: 'Kumarhane şu an kapalı, sonra dene.' })
-    if (s.yetersiz) return sonucYaz(k, { oyun, hata: 'O kadar XP\'n yok.' })
-    sonucYaz(k, { oyun, bahis: g.miktar, sonuc: s.sonuc, once: s.once, xp: s.xp, fark: s.fark, kesilen: s.kesilen })
+    if (s.yetersiz) return sonucYaz(k, { oyun, hata: hazir.kat ? `Bonus ${binlik.format(bahis)} XP tutar (bahsin ${hazir.kat} katı).` : 'O kadar XP\'n yok.' })
+    sonucYaz(k, { oyun, bahis, taban: g.miktar, sonuc: s.sonuc, once: s.once, xp: s.xp, fark: s.fark, kesilen: s.kesilen })
   }
 
   /** Eli kapatır, ödemeyi yazar, sonucu bırakır. */

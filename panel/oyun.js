@@ -85,6 +85,9 @@
     patla: (g = 0) => hisirti(0.6, { guc: 0.35, gecikme: g, filtre: 700 }),
   }
 
+  // Şeker Fırtınası (panel/seker.js) kendi seslerini bunlarla çalar.
+  window.KumarhaneSes = { ton, hisirti, sesler }
+
   let donme = null
   function donmeDurdur() {
     clearInterval(donme)
@@ -166,6 +169,8 @@
     const { oyun, durum } = kutu.dataset
     const kat = Number(kutu.dataset.carpan) || 0
     let bitis = 0.25
+    // Şeker Fırtınası'nın süresi adım sayısına bağlıdır: oynatma bitince çözülen Promise döner.
+    if (oyun === 'şeker') return window.SekerFirtinasi?.oynat(kutu) ?? 0
 
     if (oyun === 'slot') {
       for (let i = 0; i < 22; i += 1) sesler.tik(i * 0.09)
@@ -257,7 +262,9 @@
   /** Yanıt beklenirken dönen makara, çark ya da para gösterilir. */
   function beklemeGoster(oyun, baslik) {
     let gorsel = null
-    if (oyun === 'slot') {
+    if (oyun === 'şeker') {
+      gorsel = window.SekerFirtinasi?.bekleme() ?? null
+    } else if (oyun === 'slot') {
       gorsel = yeni('div', 'slot-makine')
       const makaralar = yeni('div', 'makaralar')
       for (let i = 0; i < 3; i += 1) {
@@ -326,7 +333,14 @@
     document.querySelector('main').replaceWith(document.adoptNode(govde))
     yeniKart = kartlariEsle(oncekiKartlar)
     hazirla()
-    bakiyeSay(eskiXp, canlandir(hamleSonrasi))
+    const sure = canlandir(hamleSonrasi)
+    if (sure instanceof Promise) {
+      // Şekerler düşerken sonuç belli olmasın: bakiye eski değerde bekler.
+      const yazi = document.querySelector('.bakiye-sayi')
+      if (yazi && Number.isFinite(eskiXp)) yazi.textContent = binlik.format(eskiXp)
+      sure.then(() => bakiyeSay(eskiXp, 0), (err) => console.error('Animasyon bitmedi', err))
+    }
+    else bakiyeSay(eskiXp, sure)
     const bildirim = document.getElementById('bildirim')
     if (bildirim?.classList.contains('oldu')) sesler.para()
     else if (bildirim) sesler.kaybet()
@@ -377,6 +391,7 @@
   /** Betikle gelen parçaları açar: ses düğmesi ve hızlı bahis düğmeleri. */
   function hazirla() {
     sesDugmesi()
+    window.SekerFirtinasi?.hazirla()
     for (const cipler of document.querySelectorAll('.cipler')) cipler.hidden = false
   }
 
