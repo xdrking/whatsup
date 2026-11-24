@@ -1,6 +1,6 @@
 import { requireGroup } from '../lib/group.js'
 import { btcFiyati, ONDALIK, SATIS_KESINTI, SULY, sulyCoz, sulyDegeri, sulyFiyati, sulyYaz } from '../lib/kripto.js'
-import { binlik } from '../lib/sayi.js'
+import { binlik, xpButcesi } from '../lib/sayi.js'
 import { getStats, kriptoAl, kriptoDurumu, kriptoSat } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -20,10 +20,11 @@ export default {
   name: 'kripto',
   aliases: ['kriptopara', 'crypto'],
   description: 'Bitcoin fiyatına endeksli Suly al, sat, piyasayı gör',
-  usage: '.kripto  —  .kripto al suly <miktar>  —  .kripto sat suly <miktar|hepsi>',
+  usage: '.kripto  —  .kripto al suly <miktar|XP xp|hepsi>  —  .kripto sat suly <miktar|hepsi>',
   details: [
     '1 Suly, gerçek Bitcoin\'in anlık dolar fiyatına endekslidir. XP karşılığı coin kuruyla büyür, enflasyonda değerini korur.',
     `Ondalıklı alınır: \`.kripto al suly 12,46\` ya da \`.kripto al suly 0.001\` (en çok ${ONDALIK} basamak).`,
+    '`.kripto al suly 1 milyar xp` 1 milyar XP\'nin aldığı kadar küsuratlı Suly alır, `.kripto al suly hepsi` bütün cüzdanla.',
     `\`.kripto sat suly hepsi\` değerin %${100 - SATIS_KESINTI}'ini öder, %${SATIS_KESINTI} hazineye gider. Ödenen XP yanar, satınca geri basılır.`,
     'Suly soyulmaz, `.hacizall` ve bakanlar alamaz. Yalnızca bot sahibinin `.haciz`\'i alabilir. Darbede destek vermeyenin %60\'ı yanar.',
     'Borçluyken alınamaz, elinde Suly varken `.iflas` edilemez.',
@@ -42,18 +43,23 @@ export default {
       const miktarHam = miktarMetni(text)
 
       if (['al', 'satınal', 'satinal', 'buy'].includes(islem)) {
-        const birim = sulyCoz(miktarHam)
-        if (!birim) return await yaz('🟠 Kaç Suly? `.kripto al suly 0,5`')
+        const KULLANIM = '🟠 Kaç Suly? `.kripto al suly 0,5` ya da XP ile: `.kripto al suly 1 milyar xp`'
+        // XP bütçesi `args`'tan okunur ("1 milyar" orada rakamdır), Suly miktarı ham metinden.
+        const butce = xpButcesi(args.slice(1), getStats(from, sender).xp)
+        if (butce?.hata) return await yaz(KULLANIM)
+        const birim = butce ? null : sulyCoz(miktarHam)
+        if (!butce && !birim) return await yaz(KULLANIM)
 
         const fiyat = await btcFiyati()
         if (!fiyat) return await yaz(FIYAT_YOK)
 
-        const s = kriptoAl({ chatJid: from, userJid: sender, birim, usd: fiyat.usd })
+        const s = kriptoAl({ chatJid: from, userJid: sender, ...(butce ? { xpButce: butce.butce } : { birim }), usd: fiyat.usd })
         if (!s) return await yaz(KAPALI)
         if (s.borclu) return await yaz('🟠 Borçluyken Suly alamazsın. Önce `.kredi öde`.')
+        if (s.azXp) return await yaz('🟠 O para Suly\'nin en küçük biriminin bile altında.')
         if (s.yetersiz) return await yaz(`🟠 ${binlik(s.ucret)} XP gerekiyor. Senin XP'n: ${binlik(s.xp)}`)
         return await yaz([
-          `🟠 *${sulyYaz(birim)} Suly* aldın, ${binlik(s.ucret)} XP ödedin.`,
+          `🟠 *${sulyYaz(s.alinan)} Suly* aldın, ${binlik(s.ucret)} XP ödedin.`,
           `₿ 1 Suly = $${dolar.format(fiyat.usd)}`,
           `💰 Suly: ${sulyYaz(s.birim)}  •  XP'n: ${binlik(s.xp)}`,
         ].join('\n'))

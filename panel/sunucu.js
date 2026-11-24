@@ -12,8 +12,8 @@ import { hesapMotoru } from './hesap.js'
 import { btcFiyati, btcGecmisi, GRAFIK_ARALIKLARI } from '../lib/kripto.js'
 import { nftBul } from '../lib/nft.js'
 import { nftGorseli } from '../lib/nftResim.js'
-import { sulyCanli, sulyMarketSayfasi, sulySayfasi } from './sulySayfalari.js'
-import { bankaSayfasi, coinSayfasi, HESAP_SAYFALARI, hesapSayfasi } from './hesapSayfalari.js'
+import { coinCanli, coinSayfasi, sulyCanli, sulyMarketSayfasi, sulySayfasi } from './sulySayfalari.js'
+import { bankaSayfasi, HESAP_SAYFALARI, hesapSayfasi } from './hesapSayfalari.js'
 import { grupSecimi, hesapLink, lobi, oyunLink, oyunSayfasi, oyunVar } from './oyunSayfalari.js'
 import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisiSayfasi } from './sayfalar.js'
 import { sonYedek } from './yedek.js'
@@ -172,6 +172,12 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       return gonder(res, 200, sulyCanli(await sulyVerisi({ chat: hesap.chat_jid, user: hesap.user_jid }, url)).metin)
     }
 
+    if (yol === 'GET /oyun/coin-canli') {
+      const hesap = hesapBul(url.searchParams.get('grup') ?? '')
+      if (!hesap) return gonder(res, 404, '')
+      return gonder(res, 200, coinCanli({ chat: hesap.chat_jid, ...hesapIsleri.coinBorsa({ chat: hesap.chat_jid, user: hesap.user_jid }) }).metin)
+    }
+
     const HESAP_CIZIMI = { hesap: hesapSayfasi, banka: bankaSayfasi, coin: coinSayfasi, suly: sulySayfasi, sulymarket: sulyMarketSayfasi }
     const hesapSayfa = yontem === 'GET' ? HESAP_SAYFALARI.find((ad) => url.pathname === `/oyun/${ad}`) : null
 
@@ -189,6 +195,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       const cokGrup = hesaplar.length > 1
       if (hesapSayfa) {
         const ek = hesapSayfa === 'suly' ? { suly: await sulyVerisi(kim, url) }
+          : hesapSayfa === 'coin' ? { borsa: { chat, ...hesapIsleri.coinBorsa(kim) } }
           : hesapSayfa === 'sulymarket' ? { market: hesapIsleri.market(kim), ben: hesap.user_jid } : {}
         return gonder(res, 200, HESAP_CIZIMI[hesapSayfa]({ chat, cokGrup, durum: hesapIsleri.durum(kim), ...ek }))
       }

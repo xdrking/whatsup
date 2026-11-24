@@ -110,3 +110,26 @@ function eksiyeIndir(chatJid, userJid) {
   addXp({ chatJid, userJid, amount: 1 })
   getDb().prepare('UPDATE stats SET xp = -100 WHERE chat_jid = ? AND user_jid = ?').run(chatJid, userJid)
 }
+
+test('XP bütçesiyle Suly: küsuratlı alınır, ücret bütçeyi geçmez', () => {
+  const chatJid = yeniGrup()
+  xpVer(chatJid, 'a@s', 5_000_000_000)
+  const kur = ekonomiDurumu({ chatJid, now: T }).gunKur
+  const fiyat = sulyFiyati(USD, kur)
+  const butce = Math.floor(fiyat * 0.37) + 123
+  const s = kriptoAl({ chatJid, userJid: 'a@s', xpButce: butce, usd: USD, now: T })
+  assert.ok(s.ucret <= butce)
+  assert.ok(s.alinan > 0 && s.alinan < BIRIM, 'bir Suly\'den az, küsuratlı')
+  assert.ok(butce - s.ucret <= Math.ceil(fiyat / BIRIM) + 1, 'artan XP en küçük birimden az')
+  assert.equal(getStats(chatJid, 'a@s').xp, 5_000_000_000 - s.ucret)
+  assert.equal(kriptoAl({ chatJid, userJid: 'a@s', xpButce: 0, usd: USD, now: T }).azXp, true)
+})
+
+test('xpButcesi: "xp" kelimesi ya da hepsi bütçedir, yoksa adet', async () => {
+  const { xpButcesi } = await import('../lib/sayi.js')
+  assert.deepEqual(xpButcesi(['1000000000', 'xp'], 5), { butce: 1_000_000_000 })
+  assert.deepEqual(xpButcesi(['suly', '5000xp'], 5), { butce: 5000 })
+  assert.deepEqual(xpButcesi(['hepsi'], 777), { butce: 777 })
+  assert.equal(xpButcesi(['3'], 5), null)
+  assert.deepEqual(xpButcesi(['xp'], 5), { hata: true })
+})

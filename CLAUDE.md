@@ -360,7 +360,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 75 (tamam):** SulyMarket'te anlık fiyat. Faz 73 bölümüne işlendi.
 - **Faz 76 (tamam):** SulyMarket'e elit ve zero-day hacker, hackerlara zam. Faz 73 bölümüne işlendi.
 - **Faz 77 (tamam):** duvarı delen hackerlar, 24 saatlik duvar, EMP, rüşvet, sahte pasaport, hileli zar, efsanevi mülk ve `.mülk yükselt`, yeni NFT serisi. Ayrıntı aşağıda.
-- **Faz 78+:** yeni komutlar, her biri ayrı adım
+- **Faz 78 (tamam):** panelde coin borsası, coin ve Suly'yi XP tutarıyla alma. Faz 74 bölümüne işlendi.
+- **Faz 79+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1521,6 +1522,8 @@ Kurallar `lib/yeralti.js`'te saftır, yazma `lib/stats.js`'in sonundaki yeraltı
 - **Sahte kimlik:** maskeli soygun özelden yazılır, grupta yazılsaydı maskenin anlamı kalmazdı. Sonuç gruba "Maskeli" duyurulur, yakalanınca maske düşer ve ad yazılır.
 - **Gizemli kutu:** alındığı an açılır, tek tek alınır. Beklenen değeri fiyatının altında kalmalı (`test/yeralti.test.js`). Çetesize silah yerine VPN verilir. `hapseAt` cezayı kısaltmaz: kutudaki polis uzun cezayı 1 saate indirmesin.
 - **Panel, Suly borsası** (`/oyun/suly`, `panel/sulySayfalari.js`): alım satım `kriptoAl`/`kriptoSat`'tır, dolar fiyatı formdan değil sunucudan gelir (`btcFiyati`). Grafik geçmişi Coinbase, olmazsa Binance mumlarıdır (`btcGecmisi`), saklanmaz. XP grafiği günlük kapanış × o günün `ekonomi` kurudur; iki ölçek tek grafikte çift eksenle çizilmez, ayrı grafiktir. Grafikler sunucuda SVG'dir; `oyun.js` `#suly-canli`'yi 20 sn'de bir `/oyun/suly-canli` ile yeniler (bildirimi tüketmesin diye ayrı yol) ve üstüne gelinen noktayı `.okuma` satırına yazar. Renkler (`#d4760a`, `#8b5cf6`) koyu zeminde renk körlüğü denetiminden geçti.
+- **Panel, coin borsası (Faz 78)** (`/oyun/coin`, `panel/sulySayfalari.js:coinSayfasi`, eski "Coin ve mülk" sayfasının yerine): anlık kur, bugünkü değişim (günün açılışına göre), bozdurma, dolaşımdaki coin (`coinPiyasasi`, bot hariç), kur ve piyasadaki para grafiği. Kur gün içinde saklanmadığı için grafik son 30 günün açılış kurudur (`ekonomi`), en sağdaki nokta anlıktır. `#coin-canli` Suly'deki gibi 20 sn'de bir `/oyun/coin-canli` ile yenilenir (`oyun.js` ikisinden hangisi sayfadaysa onu yeniler). Mülkler aynı sayfanın altındadır.
+- **XP tutarıyla alım (Faz 78, bot sahibinin isteği):** `coinAl({ xpButce })` o XP'nin aldığı en çok tam coini alır, coin küsuratlı olmaz, artan XP cüzdanda kalır; `kriptoAl({ xpButce })` 8 basamağa kadar küsuratlı Suly alır, ücret bütçeyi geçmez (kayan nokta yuvarlaması için birim bütçeye sığana kadar düşürülür). WhatsApp'ta `xp` kelimesi ya da `hepsi` bütçe demektir (`lib/sayi.js:xpButcesi`, `args`'tan okunur: "1 milyar" orada rakamdır): `.coinmarket coin 1 milyar xp`, `.kripto al suly 50m xp`, `.coinmarket coin hepsi`. Panelde ayrı "XP İLE AL" formu vardır (`coin-al-xp`, `suly-al-xp`, `miktarCoz` ile okunur).
 - **Panel, SulyMarket** (`/oyun/sulymarket`): alma, firar, maske takma, fidye ödeme, NFT alma ve bozma. Hack, baskın, vurgun, ilan ve çilingir WhatsApp'ta kalır. NFT görselleri `/nft/<no>.png`, girişsiz ve önbellekli: `no`'dan türer, kişisel veri taşımaz. Profil vitrininde koleksiyon çizilir.
 
 ### Faz 77 — Duvar delme, yeni yasa dışı ürünler, efsanevi mülk, yeni NFT'ler
@@ -1693,3 +1696,5 @@ Bot sahibinin isteğiyle. Ürünler `URUNLER`'in sonuna eklendi (19-22), numara 
 137. `.sulymarket al 22` → hileli zar başlar, `.sulymarket` kalan süreyi yazar; 2 saat içinde `.slot` kayıpları seyrekleşir; panelde SulyMarket "Hileli zar" satırını gösterir
 138. 4 dükkanla `.mülk yükselt dükkan` → "TUTTU", `.mülk` efsanevi dükkanı %7,5 kirayla listeler; `.mülk al efsane dükkan` → "satın alınmaz"; `.mülk sat efsane dükkan` → satılır
 139. `.nft` → galeri 52 kutu, en üstte Mitik ve Mavi Çip satırları; `.nft 31` → Suly kartı; biri alınca `.nft al 31` başkasına "satmıyor" der
+140. Panelde Coin borsası → anlık kur, grafikler, saat 20 sn'de bir değişir; XP İLE AL'a `1 milyar` → "N coin aldın", cüzdanda kurdan küçük artık kalır; 1 coinden az XP → "1 coine yetmiyor"
+141. `.coinmarket coin 1 milyar xp` → tam coin alır; `.kripto al suly 50m xp` → küsuratlı Suly alır, ödenen 50 milyonu geçmez; `.kripto al suly hepsi` → bütün cüzdanla

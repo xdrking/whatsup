@@ -651,6 +651,8 @@ main.degisti .oyun-kutu { animation: none; }
 .cizgi-grafik.genis { display: none; }
 .cizgi-grafik.usd { --seri: #d4760a; }
 .cizgi-grafik.kur { --seri: #8b5cf6; }
+.cizgi-grafik.arz { --seri: #2bb3a3; }
+.coin-kart { border-color: rgb(139 92 246 / .35); }
 .cg-izgara { stroke: #fff; stroke-opacity: .08; }
 .cg-eksen { font-variant-numeric: tabular-nums; }
 .cg-hat { stroke: var(--seri); stroke-linejoin: round; stroke-linecap: round; }

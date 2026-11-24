@@ -86,7 +86,9 @@ test('panel: oyuncu girer, kumarhaneyi görür, yönetici sayfalarına giremez',
   assert.ok((await al(`/oyun?grup=${g}&oyun=crash`)).includes('Hedef çarpan'))
   assert.ok((await al(`/oyun?grup=${g}&oyun=slot`)).includes('ÖDEME TABLOSU'))
   assert.ok((await al(`/oyun/hesap?grup=${g}`)).includes('Net servet'))
-  assert.ok((await al(`/oyun/coin?grup=${g}`)).includes('Anlık kur'))
+  const coinSayfa = await al(`/oyun/coin?grup=${g}`)
+  assert.ok(coinSayfa.includes('Coin borsası') && coinSayfa.includes('XP İLE AL') && coinSayfa.includes('id="coin-canli"'))
+  assert.ok((await al(`/oyun/coin-canli?grup=${g}`)).includes('Dolaşımdaki coin'))
 
   const yatir = await post('/oyun/islem', { grup: GRUP, sayfa: 'banka', islem: 'banka-yatir', tutar: '20 bin' }, Cookie)
   assert.equal(yatir.headers.get('location'), `/oyun/banka?grup=${g}`)

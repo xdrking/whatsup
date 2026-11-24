@@ -43,8 +43,22 @@ test('coin alımı: XP yanar, yetmezse hiçbir şey değişmez', () => {
   assert.deepEqual(coinAl({ chatJid, userJid, adet: 3 }), { yetersiz: true, xp: COIN_FIYATI * 2 + 5, ucret: COIN_FIYATI * 3 })
   assert.equal(coinDurumu(chatJid, userJid).bakiye, 0)
 
-  assert.deepEqual(coinAl({ chatJid, userJid, adet: 2 }), { bakiye: 2, xp: 5, ucret: COIN_FIYATI * 2 })
+  assert.deepEqual(coinAl({ chatJid, userJid, adet: 2 }), { bakiye: 2, adet: 2, xp: 5, ucret: COIN_FIYATI * 2 })
   assert.equal(getStats(chatJid, userJid).xp, 5)
+})
+
+test('XP bütçesiyle coin: alabildiği kadar tam coin, artan XP cüzdanda kalır', () => {
+  // yeniGrup() kullanılmaz: sayacı kaydırınca sonraki testlerin piyasa olayı (grup adının hash'i) değişir.
+  const chatJid = 'xpbutce@g.us'
+  const userJid = 'a@s'
+  xpVer(chatJid, userJid, COIN_FIYATI * 3 + 7)
+
+  assert.deepEqual(coinAl({ chatJid, userJid, xpButce: COIN_FIYATI - 1 }), { azXp: true, kur: COIN_FIYATI })
+  const s = coinAl({ chatJid, userJid, xpButce: COIN_FIYATI * 2 + 999 })
+  assert.equal(s.adet, 2)
+  assert.equal(s.ucret, COIN_FIYATI * 2)
+  assert.equal(getStats(chatJid, userJid).xp, COIN_FIYATI + 7)
+  assert.equal(coinAl({ chatJid, userJid, xpButce: COIN_FIYATI * 5 }).yetersiz, true)
 })
 
 test('açık krediyle coin alınamaz', () => {

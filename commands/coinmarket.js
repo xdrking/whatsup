@@ -1,7 +1,7 @@
 import { sureYaz } from './cark.js'
 import { BOZDURMA_YUZDESI, bozdurmaDegeri, COIN_TABAN, COIN_URUNLERI } from '../lib/coin.js'
 import { requireGroup } from '../lib/group.js'
-import { binlik } from '../lib/sayi.js'
+import { binlik, xpButcesi } from '../lib/sayi.js'
 import { coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getStats, sigortaBitisi } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
@@ -10,9 +10,10 @@ export default {
   name: 'coinmarket',
   aliases: ['cm', 'coinmarketi'],
   description: 'XP ile coin al, coinle özel ürünler satın al',
-  usage: '.coinmarket  —  .coinmarket coin <adet>  —  .coinmarket sat <adet>  —  .coinmarket al <numara>',
+  usage: '.coinmarket  —  .coinmarket coin <adet|XP xp|hepsi>  —  .coinmarket sat <adet>  —  .coinmarket al <numara>',
   details: [
     `Kur piyasadaki paraya göre anlık değişir, en az ${binlik(COIN_TABAN)} XP. \`.coinmarket coin 2\` cüzdandaki XP ile 2 coin alır.`,
+    '`.coinmarket coin 1 milyar xp` 1 milyar XP\'nin aldığı kadar coin alır, `.coinmarket coin hepsi` bütün cüzdanla. Coin küsuratlı olmaz: artan XP cüzdanda kalır.',
     `\`.coinmarket sat 2\` coini kurun %${BOZDURMA_YUZDESI}'ine bozdurur. Kur gün içinde çıktıysa bozdurma günün ilk kuruyla yapılır. Ödenen XP yanar. Açık kredin varken coin alamazsın.`,
     '`.coinmarket al 1` ürünü coinle alır. Unvan `.market` unvanının yerine geçer.',
     'Toplu soygun hakkı `.soygun herkes` ile kullanılır. Coin her grupta ayrıdır.',
@@ -31,14 +32,18 @@ export default {
       const islem = trLower(args[0] || '')
 
       if (islem === 'coin') {
+        const KULLANIM = '🪙 Kaç coin? `.coinmarket coin 2` ya da XP ile: `.coinmarket coin 1 milyar xp`'
+        const butce = xpButcesi(args.slice(1), getStats(from, sender).xp)
+        if (butce?.hata) return await yaz(KULLANIM)
         const adet = Number(args[1])
-        if (!Number.isSafeInteger(adet) || adet < 1) return await yaz('🪙 Kaç coin? `.coinmarket coin 2`')
+        if (!butce && (!Number.isSafeInteger(adet) || adet < 1)) return await yaz(KULLANIM)
 
-        const s = coinAl({ chatJid: from, userJid: sender, adet })
+        const s = coinAl({ chatJid: from, userJid: sender, ...(butce ? { xpButce: butce.butce } : { adet }) })
         if (!s) return await yaz('🪙 Coin market şu an kapalı, sonra dene.')
         if (s.kredili) return await yaz('🪙 Açık kredin varken coin alamazsın. Önce `.kredi öde`.')
+        if (s.azXp) return await yaz(`🪙 O para 1 coine yetmiyor. 1 coin = ${binlik(s.kur)} XP`)
         if (s.yetersiz) return await yaz(`🪙 ${binlik(s.ucret)} XP gerekiyor. Senin XP'n: ${binlik(s.xp)}`)
-        return await yaz(`🪙 *${binlik(adet)} coin* aldın, ${binlik(s.ucret)} XP ödedin.\n💰 Coin: ${binlik(s.bakiye)}  •  XP'n: ${binlik(s.xp)}`)
+        return await yaz(`🪙 *${binlik(s.adet)} coin* aldın, ${binlik(s.ucret)} XP ödedin.\n💰 Coin: ${binlik(s.bakiye)}  •  XP'n: ${binlik(s.xp)}`)
       }
 
       if (['sat', 'boz', 'bozdur'].includes(islem)) {
@@ -78,7 +83,7 @@ export default {
         ...(topluHak ? [`💣 Toplu soygun hakkın: ${topluHak}`] : []),
         ...(sigorta ? [`☂️ Haciz sigortası: ${sureYaz(sigorta - Date.now())} kaldı`] : []),
         '',
-        'Coin almak için `.coinmarket coin <adet>`',
+        'Coin almak için `.coinmarket coin <adet>` ya da `.coinmarket coin 1 milyar xp`',
         'Bozdurmak için `.coinmarket sat <adet>`',
         'Ürün almak için `.coinmarket al <numara>`',
         'Mülkler için `.mülk`',

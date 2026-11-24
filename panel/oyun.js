@@ -426,15 +426,15 @@
 
   // Grafik okunurken (son 5 sn) yenilenmez; :hover kullanılmaz, telefonda dokununca yapışıp kalır. sayfa gizliyken istek atılmaz.
   async function sulyYenile() {
-    const eski = document.getElementById('suly-canli')
+    const eski = document.querySelector('#suly-canli, #coin-canli')
     if (!eski || document.hidden || Date.now() - sonOkuma < 5000 || document.body.classList.contains('bekliyor')) return
     try {
       const yanit = await fetch(eski.dataset.adres, { credentials: 'same-origin' })
       if (!yanit.ok || yanit.redirected) return
-      const yeni = new DOMParser().parseFromString(await yanit.text(), 'text/html').getElementById('suly-canli')
+      const yeni = new DOMParser().parseFromString(await yanit.text(), 'text/html').getElementById(eski.id)
       if (yeni && eski.isConnected) eski.replaceWith(document.adoptNode(yeni))
     } catch (err) {
-      console.warn('Suly fiyatı yenilenemedi', err)
+      console.warn('Canlı fiyat yenilenemedi', err)
     }
   }
   setInterval(sulyYenile, 20_000)

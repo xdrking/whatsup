@@ -7,7 +7,7 @@ import { sulyCoz, sulyYaz } from '../lib/kripto.js'
 import { miktarCoz } from '../lib/kumar.js'
 import { nftBul } from '../lib/nft.js'
 import {
-  bankaCek, bankaDurumu, bankaYatir, calis, claimDaily, coinAl, coinDurumu, coinSat, ekonomiDurumu, faizDurumu,
+  bankaCek, bankaDurumu, bankaYatir, calis, claimDaily, coinAl, coinDurumu, coinPiyasasi, coinSat, ekonomiDurumu, faizDurumu, getStats,
   fidyeDurumu, fidyeOde, firarEt, hapisDurumu, karaborsaAl, karaborsaDurumu, kiraTopla, kriptoAl, kriptoDurumu, kriptoSat,
   krediCek, krediDurumu, krediOde, maskeBitisi, maskeTak, meslekDurumu, mulkDurumu, nftAl, nftBoz, nftListesi, pasaportKullan, rusvetVer, servetDurumu, sulyPiyasasi,
 } from '../lib/stats.js'
@@ -99,6 +99,18 @@ const ISLEMLER = {
     return tamam(`${sayi.format(adet)} coin aldın, ${sayi.format(s.ucret)} XP ödedin.`)
   },
 
+  // XP bütçesiyle: o paranın aldığı en çok tam coin, artan XP cüzdanda kalır.
+  'coin-al-xp': ({ chat, user }, { miktar }) => {
+    const c = miktarCoz(miktarMetni(miktar), getStats(chat, user).xp)
+    if (c.hata) return hata(c.hata.replace('basıyorsun', 'harcıyorsun').replace('basabilirsin', 'harcayabilirsin'))
+    const s = coinAl({ chatJid: chat, userJid: user, xpButce: c.miktar })
+    if (!s) return hata('Coin market şu an kapalı, sonra dene.')
+    if (s.kredili) return hata('Açık kredin varken coin alamazsın, önce krediyi öde.')
+    if (s.azXp) return hata(`O para 1 coine yetmiyor. 1 coin = ${sayi.format(s.kur)} XP`)
+    if (s.yetersiz) return hata(`${sayi.format(s.ucret)} XP gerekiyor. Cüzdanın: ${sayi.format(s.xp)} XP`)
+    return tamam(`${sayi.format(s.adet)} coin aldın, ${sayi.format(s.ucret)} XP ödedin.`)
+  },
+
   'coin-sat': ({ chat, user }, { miktar }) => {
     const adet = tamSayi(miktar)
     if (!adet) return hata('Kaç coin bozduracağını yaz.')
@@ -143,6 +155,18 @@ const ISLEMLER = {
     if (s.borclu) return hata('Borçluyken Suly alamazsın, önce borcunu kapat.')
     if (s.yetersiz) return hata(`${sayi.format(s.ucret)} XP gerekiyor. Cüzdanın: ${sayi.format(s.xp)} XP`)
     return tamam(`${sulyYaz(birim)} Suly aldın, ${sayi.format(s.ucret)} XP ödedin.`)
+  },
+
+  'suly-al-xp': ({ chat, user }, { miktar, usd }) => {
+    if (!usd) return hata(FIYAT_YOK)
+    const c = miktarCoz(miktarMetni(miktar), getStats(chat, user).xp)
+    if (c.hata) return hata(c.hata.replace('basıyorsun', 'harcıyorsun').replace('basabilirsin', 'harcayabilirsin'))
+    const s = kriptoAl({ chatJid: chat, userJid: user, xpButce: c.miktar, usd })
+    if (!s) return hata(FIYAT_YOK)
+    if (s.borclu) return hata('Borçluyken Suly alamazsın, önce borcunu kapat.')
+    if (s.azXp) return hata('O para Suly\'nin en küçük biriminin bile altında.')
+    if (s.yetersiz) return hata(`${sayi.format(s.ucret)} XP gerekiyor. Cüzdanın: ${sayi.format(s.xp)} XP`)
+    return tamam(`${sulyYaz(s.alinan)} Suly aldın, ${sayi.format(s.ucret)} XP ödedin.`)
   },
 
   'suly-sat': ({ chat, user }, { miktar, usd }) => {
@@ -283,6 +307,11 @@ export function hesapMotoru({ saat = Date.now } = {}) {
     return k && { birim: k.birim, kur: k.kur, sonFiyat: k.fiyat, ...sulyPiyasasi({ chatJid: h.chat }), ekonomi: ekonomiDurumu({ chatJid: h.chat }) }
   }
 
+  /** Coin borsasının grup verisi; bildirimi tüketmez, canlı yenileme de okur. */
+  function coinBorsa(h) {
+    return { ekonomi: ekonomiDurumu({ chatJid: h.chat }), ...coinPiyasasi({ chatJid: h.chat }), coin: coinDurumu(h.chat, h.user), simdi: saat() }
+  }
+
   function market(h) {
     const kim = { chatJid: h.chat, userJid: h.user }
     return {
@@ -294,5 +323,5 @@ export function hesapMotoru({ saat = Date.now } = {}) {
     }
   }
 
-  return { islem, durum, suly, market }
+  return { islem, durum, suly, coinBorsa, market }
 }

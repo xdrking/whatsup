@@ -481,6 +481,7 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 |---|---|
 | `.coinmarket` | Ürünleri, coinini ve XP'ni gösterir (kısa yol `.cm`) |
 | `.coinmarket coin 2` | Cüzdandaki XP ile 2 coin alır |
+| `.coinmarket coin 1 milyar xp` / `coin hepsi` | O XP'nin aldığı kadar tam coin alır, artan XP cüzdanda kalır |
 | `.coinmarket sat 2` | 2 coini kurun %90'ına bozdurur |
 | `.coindevret @kişi 5` | Kendi coininden 5 tanesini gönderir; kredi borcu ya da eksi cüzdanla kapalı |
 | `.coinmarket al 1` | Ürünü coinle alır |
@@ -741,7 +742,7 @@ Kumarhanede yan menü vardır (telefonda ☰ ile açılır): oyunlar kategoriler
 |---|---|---|
 | Hesabım | Servet dökümü, günlük ödül, çalış, kira topla | `.servet`, `.günlük`, `.çalış`, `.mülk topla` |
 | Banka ve kredi | Yatır, çek, kredi çek, kredi öde | `.banka`, `.kredi` |
-| Coin ve mülk | Coin al, coin bozdur, mülk listesi | `.coinmarket coin`, `.coinmarket sat`, `.mülk` |
+| Coin borsası | Canlı kur, 30 günlük kur ve piyasa grafiği; adetle ya da XP ile coin al, bozdur, mülk listesi | `.coinmarket coin`, `.coinmarket sat`, `.mülk` |
 
 Meslek seçimi, market, mülk alım satımı, borsa ve grup oyunları WhatsApp'ta kalır.
 

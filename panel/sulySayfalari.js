@@ -1,5 +1,6 @@
-// Suly borsası (canlı fiyat, grafikler, alım satım) ve SulyMarket'in HTML'i. Grafikler sunucuda SVG çizilir:
+// Suly ve coin borsası (canlı fiyat, grafikler, alım satım) ve SulyMarket'in HTML'i. Grafikler sunucuda SVG çizilir:
 // betik yoksa da görünür, oyun.js yalnızca canlı yeniler ve üstüne gelinen noktayı okur.
+import { BOZDURMA_YUZDESI, bozdurmaDegeri } from '../lib/coin.js'
 import { BIRIM, GRAFIK_ARALIKLARI, SATIS_KESINTI, sulyDegeri, sulyFiyati, sulySatisDegeri, sulyYaz } from '../lib/kripto.js'
 import { NADIRLIK, nftGeriAlim, NFTLER } from '../lib/nft.js'
 import { HACK_GUNLUK, katliFiyat, URUNLER, urunKoduyla, urunNotu } from '../lib/sulymarket.js'
@@ -157,11 +158,80 @@ ${sulyCanli(v)}
   ${usd && v.birim ? satir('💸', 'Satarsan', xp(sulySatisDegeri(v.birim, usd, v.kur))) : ''}
   ${satir('👛', 'Cüzdan', xp(durum.banka?.xp ?? 0), (durum.banka?.xp ?? 0) < 0 ? 'eksi' : '')}
   <div class="islemler">
-    ${islemFormu(chat, 'suly', 'suly-al', 'AL', { alan: 'Suly al', yer: '1 ya da 0,25' })}
+    ${islemFormu(chat, 'suly', 'suly-al', 'AL', { alan: 'Suly al · adet', yer: '1 ya da 0,25' })}
+    ${islemFormu(chat, 'suly', 'suly-al-xp', 'XP İLE AL', { alan: 'XP harca · küsuratlı Suly gelir', yer: '1 milyar, 50m, hepsi' })}
     ${islemFormu(chat, 'suly', 'suly-sat', 'SAT', { alan: `Suly sat · %${SATIS_KESINTI} kesinti`, yer: '0,25 ya da hepsi', sinif: 'ikincil' })}
   </div>
   <p class="not">İşlem düğmeye bastığın andaki fiyatla yapılır. Suly gerçek Bitcoin'in dolar fiyatına endekslidir, XP karşılığı kurla büyür. Alım, kredi borcun varken kapalıdır.</p>
   <p class="hizli"><a href="${hesapLink(chat, 'sulymarket')}">🕶️ SulyMarket'te harca ›</a></p>
+</section>`)
+}
+
+// --- Coin borsası -----------------------------------------------------------
+
+/** Canlı bölüm: 20 sn'de bir `/oyun/coin-canli` ile yerinde yenilenir. Kur gün içinde kaydedilmez, grafik günün açılışlarıdır. */
+export function coinCanli(v) {
+  const { chat, ekonomi: e, gecmis = [], dolasim = 0, simdi } = v
+  if (!e) return h`<div id="coin-canli"><section class="kart suly-kart coin-kart"><p class="not">Coin borsası şu an kapalı.</p></section></div>`
+  const gunZamani = (day) => Date.parse(`${day}T00:00:00+03:00`)
+  const kurSerisi = [...gecmis.map((r) => ({ zaman: gunZamani(r.day), deger: r.kur })), { zaman: simdi, deger: e.kur }]
+  const arzSerisi = [...gecmis.map((r) => ({ zaman: gunZamani(r.day), deger: r.arz })), { zaman: simdi, deger: e.anlik }]
+  const oran = e.gunKur ? ((e.kur - e.gunKur) / e.gunKur) * 100 : 0
+  const ipucu = (t) => (simdi - t < 1000 ? 'şimdi' : `${gunBicimi.format(t)} açılış`)
+
+  return h`<div id="coin-canli" data-adres="/oyun/coin-canli?grup=${encodeURIComponent(chat)}">
+<section class="kart suly-kart coin-kart">
+  <div class="suly-bas">
+    <div><small>1 🪙 Coin</small><strong class="suly-fiyat">${xp(e.kur)}</strong></div>
+    <div class="suly-yan">
+      <span class="yon ${oran >= 0 ? 'artis' : 'dusus'}">${oran >= 0 ? '▲' : '▼'} %${yuzde.format(Math.abs(oran))} <small>bugün</small></span>
+      <span class="canli">● Canlı · ${saniyeBicimi.format(simdi)}</span>
+    </div>
+  </div>
+  ${grafik(kurSerisi, {
+    kimlik: 'coin', sinif: 'kur', ad: 'Coin kuru', bos: 'Veri birikiyor: kur her gün bir kez kaydedilir.', okuma: '1 coin kaç XP · son 30 gün, en sağdaki anlık',
+    eksen: (d) => kisa(d), yaz: xp, ipucu, zaman: (t) => gunBicimi.format(t),
+  })}
+  <div class="kutucuklar">
+    ${kutucuk('Bozdurma', xp(bozdurmaDegeri(1, e.bozdurmaKur)), `1 coin · %${BOZDURMA_YUZDESI}`)}
+    ${kutucuk('Günün açılışı', xp(e.gunKur))}
+    ${kutucuk('Dolaşımdaki coin', sayi.format(dolasim), `≈ ${kisa(dolasim * e.kur)} XP`)}
+    ${kutucuk('Piyasadaki para', `${kisa(e.anlik)} XP`, 'kuru o belirler')}
+  </div>
+</section>
+<section class="kart suly-kart coin-kart"><h2>Piyasadaki para</h2>${grafik(arzSerisi, {
+  kimlik: 'arz', sinif: 'arz', ad: 'Piyasadaki para', bos: 'Veri birikiyor: piyasa her gün bir kez kaydedilir.', okuma: 'Üyelerin cüzdan ve bankası · son 30 gün',
+  eksen: (d) => kisa(d), yaz: (d) => `${kisa(d)} XP`, ipucu, zaman: (t) => gunBicimi.format(t),
+})}</section>
+</div>`
+}
+
+/** Coin borsası, alım satım ve mülkler. */
+export function coinSayfasi(veri) {
+  const { chat, borsa: v, durum } = veri
+  const e = v.ekonomi
+  const kira = durum.mulkler.reduce((t, m) => t + m.kira, 0)
+  return sayfa('Coin borsası', '🪙 Coin borsası', 'coin', veri, h`
+${coinCanli(v)}
+<section class="kart hesap-kart">
+  <h2>Al ve sat</h2>
+  ${satir('🪙', 'Coinin', sayi.format(v.coin.bakiye))}
+  ${e && v.coin.bakiye ? satir('💸', 'Bozdurursan', xp(bozdurmaDegeri(v.coin.bakiye, e.bozdurmaKur))) : ''}
+  ${satir('👛', 'Cüzdan', xp(durum.banka?.xp ?? 0), (durum.banka?.xp ?? 0) < 0 ? 'eksi' : '')}
+  ${e ? h`<div class="islemler">
+    ${islemFormu(chat, 'coin', 'coin-al', 'AL', { alan: 'Coin al · adet', yer: '5' })}
+    ${islemFormu(chat, 'coin', 'coin-al-xp', 'XP İLE AL', { alan: 'XP harca · alabildiğin kadar tam coin', yer: '1 milyar, 50m, hepsi' })}
+    ${islemFormu(chat, 'coin', 'coin-sat', 'BOZDUR', { alan: `Coin bozdur · %${BOZDURMA_YUZDESI}`, yer: 'adet', sinif: 'ikincil' })}
+  </div>
+  <p class="not">Coin küsuratlı olmaz: XP ile alınca o paranın aldığı en çok tam coin gelir, artan XP cüzdanda kalır. Kur gün içinde çıktıysa bozdurma günün ilk kuruyla yapılır. Açık kredin varken coin alamazsın.</p>` : h`<p class="not">Coin market şu an kapalı.</p>`}
+</section>
+<section class="kart hesap-kart">
+  <h2>Mülkler</h2>
+  ${durum.mulkler.length
+    ? h`${durum.mulkler.map((m) => satir('🏠', `${m.mulk.ad} · ${m.adet} adet`, m.kira ? `kira ${xp(m.kira)}` : 'kira yok'))}
+  <div class="isler">${islemFormu(chat, 'coin', 'kira', `🏠 Kira topla${kira ? ` · ${xp(kira)}` : ''}`)}</div>`
+    : h`<p class="not">Mülkün yok.</p>`}
+  <p class="not">Mülk alım satımı ve yükseltme WhatsApp'ta: <code>.mülk</code></p>
 </section>`)
 }
 

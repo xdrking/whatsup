@@ -1,7 +1,6 @@
 // Panelin hesap bölümünün HTML'i: servet dökümü, banka ve kredi, coin ve mülk.
 // Tutar alanının adı `tutar`'dır, `miktar` değil: oyun.js bahis alanlarını (`miktar`) birbirine eşitler.
 import { CEKIM_KESINTI_YUZDESI, oranYaz } from '../lib/banka.js'
-import { BOZDURMA_YUZDESI, bozdurmaDegeri } from '../lib/coin.js'
 import { KREDI_VADE_SAATI, MIN_KREDI } from '../lib/kredi.js'
 import { h, kabuk } from './sayfalar.js'
 import { hesapLink, kasa, yanMenu } from './oyunSayfalari.js'
@@ -61,7 +60,7 @@ export function hesapSayfasi(veri) {
   ${varsa('💳', 'Kredi borcu', s.kredi, 'eksi')}
   ${varsa('🦈', 'Tefeci borcu', s.tefeci, 'eksi')}
   <div class="satir net"><span class="ad">🧾 Net servet</span><span class="deger">${xp(s.net)}</span></div>` : h`<p class="not">Servet şu an hesaplanamıyor.</p>`}
-  <p class="hizli"><a href="${hesapLink(chat, 'banka')}">🏦 Banka ve kredi ›</a><a href="${hesapLink(chat, 'coin')}">🪙 Coin ve mülk ›</a><a href="${hesapLink(chat, 'suly')}">🟠 Suly borsası ›</a><a href="${hesapLink(chat, 'sulymarket')}">🕶️ SulyMarket ›</a></p>
+  <p class="hizli"><a href="${hesapLink(chat, 'banka')}">🏦 Banka ve kredi ›</a><a href="${hesapLink(chat, 'coin')}">🪙 Coin borsası ›</a><a href="${hesapLink(chat, 'suly')}">🟠 Suly borsası ›</a><a href="${hesapLink(chat, 'sulymarket')}">🕶️ SulyMarket ›</a></p>
 </section>
 <section class="kart hesap-kart">
   <h2>Günlük işler</h2>
@@ -107,33 +106,5 @@ export function bankaSayfasi(veri) {
       : islemFormu(chat, 'banka', 'kredi-cek', 'KREDİ ÇEK', { alan: `Tutar · en az ${MIN_KREDI} XP`, yer: '1000' })}
   </div>
   <p class="not">Vade ${KREDI_VADE_SAATI} saat. Dolunca borç cüzdandan, sonra bankadan alınır, kalanı cüzdana eksi yazılır. Borç varken yatırılan para önce borcu keser.</p>` : h`<p class="not">Kredi servisi şu an kapalı.</p>`}
-</section>`)
-}
-
-export function coinSayfasi(veri) {
-  const { chat, durum } = veri
-  const { coin, ekonomi, mulkler } = durum
-  const kira = mulkler.reduce((t, m) => t + m.kira, 0)
-
-  return sayfa('Coin', '🪙 Coin ve mülk', 'coin', veri, h`
-<section class="kart hesap-kart">
-  <h2>Coin</h2>
-  ${satir('🪙', 'Coinin', sayi.format(coin.bakiye))}
-  ${ekonomi ? h`
-  ${satir('💱', 'Anlık kur', xp(ekonomi.kur))}
-  ${satir('↩️', `Bozdurma · %${BOZDURMA_YUZDESI}`, xp(bozdurmaDegeri(1, ekonomi.bozdurmaKur)))}
-  <div class="islemler">
-    ${islemFormu(chat, 'coin', 'coin-al', 'AL', { alan: 'Coin al', yer: 'adet' })}
-    ${islemFormu(chat, 'coin', 'coin-sat', 'BOZDUR', { alan: 'Coin bozdur', yer: 'adet', sinif: 'ikincil' })}
-  </div>
-  <p class="not">Kur gün içinde çıktıysa bozdurma günün ilk kuruyla yapılır. Açık kredin varken coin alamazsın.</p>` : h`<p class="not">Coin market şu an kapalı.</p>`}
-</section>
-<section class="kart hesap-kart">
-  <h2>Mülkler</h2>
-  ${mulkler.length
-    ? h`${mulkler.map((m) => satir('🏠', `${m.mulk.ad} · ${m.adet} adet`, m.kira ? `kira ${xp(m.kira)}` : 'kira yok'))}
-  <div class="isler">${islemFormu(chat, 'coin', 'kira', `🏠 Kira topla${kira ? ` · ${xp(kira)}` : ''}`)}</div>`
-    : h`<p class="not">Mülkün yok.</p>`}
-  <p class="not">Mülk alım satımı WhatsApp'ta: <code>.mülk</code></p>
 </section>`)
 }

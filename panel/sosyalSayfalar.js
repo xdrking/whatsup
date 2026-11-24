@@ -129,6 +129,7 @@ ${tema ? h`<meta name="theme-color" content="${tema === 'koyu' ? '#1b2433' : '#3
     <form method="post" action="/s/tema" class="tema-form"><button name="tema" value="${tema === 'koyu' ? 'acik' : 'koyu'}"><span class="ik">${ikon(tema === 'koyu' ? 'gunes' : 'ay')}</span><span>${tema === 'koyu' ? 'Açık tema' : 'Koyu tema'}</span></button></form>
     <h3>Eğlence</h3>
     ${menu(`/oyun?${q(chat)}`, 'oyun', 'oyun', 'Oyunlar')}
+    ${menu(`/oyun/coin?${q(chat)}`, 'coin', 'borsa', 'Coin borsası')}
     ${menu(`/oyun/suly?${q(chat)}`, 'suly', 'borsa', 'Suly borsası')}
     ${menu(`/oyun/sulymarket?${q(chat)}`, 'sulymarket', 'gozluk', 'SulyMarket')}
     ${cokGrup ? menu('/s', 'grup', 'degistir', 'Grubu değiştir') : ''}
