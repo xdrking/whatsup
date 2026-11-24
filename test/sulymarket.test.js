@@ -15,6 +15,7 @@ const {
   coinAyarla, coinDurumu, firarEt, getStats, hackYap, hapisDurumu, iflasEt, kalkanKir, karaborsaAl, karaborsaDurumu, mulkAl, mulkDurumu,
   nftAl, nftBoz, nftIlan, nftListesi, nftVer, rebornYap, servetDurumu, sulyMarketKati, xpAyarla,
   bahisOyna, duvarYak, kiraTopla, mulkYukselt, pasaportKullan, rusvetVer, zarBitisi,
+  bankaCek, casusRaporu, korsanYayin, kumarOde, mantikKur, sahteIhbar,
 } = await import('../lib/stats.js')
 const { EFSANE_KIRA_KATI, efsaneviMulk, MULKLER, mulkCoz, YUKSELTME_ADEDI, yukseltmeSansi } = await import('../lib/mulk.js')
 const hackKomutu = (await import('../commands/hack.js')).default
@@ -541,4 +542,110 @@ test('aynı NFT iki kişiye satılmaz', () => {
   const no = NFTLER.find((n) => n.ozel === 'suly').no
   assert.ok(nftAl({ chatJid, userJid: 'a', no, now: T }).fiyat > 0)
   assert.equal(nftAl({ chatJid, userJid: 'b', no, now: T }).satilikDegil, 'a')
+})
+
+// --- Faz 79: yeni yasa dışı ürünler ve Omar ---
+
+test('mantık bombası: hedefin sonraki çekiminin %10\'u kuranın bankasına, bir kez', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  xpAyarla({ chatJid, userJid: 'k', miktar: 2_000_000 })
+  bankaYatir({ chatJid, userJid: 'k', miktar: 1_000_000, now: T })
+  assert.equal(mantikKur({ chatJid, userJid: 'a', hedef: 'k', now: T }).yok, true)
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('mantik'), adet: 2, now: T })
+  assert.equal(mantikKur({ chatJid, userJid: 'a', hedef: 'a', now: T }).kendin, true)
+  assert.ok(mantikKur({ chatJid, userJid: 'a', hedef: 'k', now: T }).kuruldu)
+  assert.equal(mantikKur({ chatJid, userJid: 'a', hedef: 'k', now: T }).zatenVar, true)
+
+  const cek = bankaCek({ chatJid, userJid: 'k', miktar: 100_000, now: T })
+  assert.equal(cek.mantik, Math.floor((100_000 - cek.kesinti) / 10))
+  assert.equal(bankaBakiyesi(chatJid, 'a'), cek.mantik)
+  assert.equal(bankaCek({ chatJid, userJid: 'k', miktar: 100_000, now: T }).mantik, undefined)
+})
+
+test('casus raporu varlıkları ve korumaları döner, yazılım harcanır', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  xpAyarla({ chatJid, userJid: 'k', miktar: 700 })
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('casus'), now: T })
+  const r = casusRaporu({ chatJid, userJid: 'a', hedef: 'k', now: T })
+  assert.equal(r.cuzdan, 700)
+  assert.equal(r.duvar, 0)
+  assert.equal(casusRaporu({ chatJid, userJid: 'a', hedef: 'k', now: T }).yok, true)
+})
+
+test('soğuk cüzdan coin ve NFT\'yi hack\'ten korur; kimlik hırsızlığı başarıda harcanır', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'h', 50_000)
+  sulyVer(chatJid, 'k', 50_000)
+  xpAyarla({ chatJid, userJid: 'k', miktar: 1_000_000 })
+  bankaYatir({ chatJid, userJid: 'k', miktar: 500_000, now: T })
+  coinAyarla({ chatJid, userJid: 'k', adet: 50 })
+  const s = karaborsaAl({ chatJid, userJid: 'k', urun: urun('sogukcuzdan'), now: T })
+  assert.ok(s.sure > T)
+  assert.ok(karaborsaAl({ chatJid, userJid: 'k', urun: urun('sogukcuzdan'), now: T + 1 }).suruyor)
+  karaborsaAl({ chatJid, userJid: 'h', urun: urun('karasapka'), now: T })
+  karaborsaAl({ chatJid, userJid: 'h', urun: urun('kimlikhirsiz'), now: T })
+  const hack = hackYap({ chatJid, hacker: 'h', kurban: 'k', kod: 'karasapka', sans: tutar, rnd: () => 0, now: T })
+  assert.equal(hack.basarili, true)
+  assert.equal(hack.coin, 0)
+  assert.equal(hack.soguk, true)
+  assert.equal(hack.sucluGoster, true)
+  assert.equal(coinDurumu(chatJid, 'k').bakiye, 50)
+  assert.equal(elde(chatJid, 'h', 'kimlikhirsiz'), 0)
+})
+
+test('nazar boncuğu kaybın yarısını kurtarır, kazançta harcanmaz', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  xpAyarla({ chatJid, userJid: 'a', miktar: 10_000 })
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('nazar'), now: T })
+  const kazan = bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 2 }), oyun: 'test', at: T, tavansiz: true })
+  assert.equal(kazan.nazar, undefined)
+  const kayip = bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 0 }), oyun: 'test', at: T, tavansiz: true })
+  assert.equal(kayip.nazar, 50)
+  assert.equal(kayip.fark, -50)
+  assert.equal(bahisOyna({ chatJid, userJid: 'a', miktar: 100, cevir: () => ({ carpan: 0 }), oyun: 'test', at: T, tavansiz: true }).fark, -100)
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('nazar'), now: T })
+  assert.equal(kumarOde({ chatJid, userJid: 'a', bahis: 200, odeme: 0, oyun: 'test', tavansiz: true }).fark, -100)
+})
+
+test('ayarlı makine yalnızca slotta kaybeden çevirmeyi yeniden döndürür', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  xpAyarla({ chatJid, userJid: 'a', miktar: 100_000 })
+  // Satın alma burada denenmez: elindeki Suly servete sayıldığı için fiyat katı onu aşabilir (alım sogukcuzdan testinde).
+  getDb().prepare("INSERT INTO sureli (chat_jid, user_jid, kod, bitis) VALUES (?, ?, 'makine', ?)").run(chatJid, 'a', T + 60_000)
+  const dene = (oyun) => {
+    let i = 0
+    return bahisOyna({ chatJid, userJid: 'a', miktar: 10, cevir: () => ({ carpan: i++ === 0 ? 0 : 3 }), oyun, at: T, tavansiz: true }).sonuc.carpan
+  }
+  assert.ok(Array.from({ length: 30 }, () => dene('slot')).includes(3))
+  assert.ok(Array.from({ length: 30 }, () => dene('rulet')).every((c) => c === 0))
+})
+
+test('korsan yayın günde bir; sahte ihbar hedefi gözaltına alır ya da ihbarcıyı yakalatır', () => {
+  const chatJid = yeniGrup()
+  sulyVer(chatJid, 'a', 50_000)
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('korsan'), adet: 2, now: T })
+  assert.equal(korsanYayin({ chatJid, userJid: 'a', now: T }).tamam, true)
+  assert.ok(korsanYayin({ chatJid, userJid: 'a', now: T + 1000 }).bekle)
+  assert.equal(elde(chatJid, 'a', 'korsan'), 1)
+
+  karaborsaAl({ chatJid, userJid: 'a', urun: urun('ihbar'), adet: 2, now: T })
+  const g = sahteIhbar({ chatJid, userJid: 'a', hedef: 'k', rnd: () => 99, now: T })
+  assert.equal(g.gozalti.bitis, T + 30 * 60_000)
+  assert.equal(hapisDurumu(chatJid, 'k', T).bitis, T + 30 * 60_000)
+  assert.equal(sahteIhbar({ chatJid, userJid: 'a', hedef: 'k', rnd: () => 99, now: T }).zatenHapiste, true)
+  const y = sahteIhbar({ chatJid, userJid: 'a', hedef: 'b', rnd: () => 0, now: T })
+  assert.ok(y.yakalandin)
+  assert.equal(hapisDurumu(chatJid, 'a', T).bitis, T + 3_600_000)
+})
+
+test('Omar efsane NFT\'dir, çizilir', async () => {
+  const omar = NFTLER.find((n) => n.ozel === 'omar')
+  assert.equal(omar.ad, 'Omar')
+  assert.equal(omar.sinif, 'efsane')
+  assert.equal(omar.no, NFTLER.length)
+  assert.ok((await nftKarti(omar)).length > 1000)
 })

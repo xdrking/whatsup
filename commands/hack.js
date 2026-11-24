@@ -42,19 +42,27 @@ function ganimet(s) {
   ].join('  •  ')
 }
 
+/** Kimlik hırsızlığında duyuruda suçlanacak üye: saldırgan, kurban ve bot dışında rastgele biri. */
+async function gunahKecisi(sock, chatJid, haric) {
+  const adaylar = digerUyeler(await groupMetadata(sock, chatJid), '').filter((j) => !haric.includes(j) && !botHesabiMi(j))
+  return adaylar.length ? adaylar[randomInt(adaylar.length)] : null
+}
+
 /** Kurban ve grup olanı öğrensin; susturulmuş gruba yazılmaz. Başarıda saldırgan hiç yazılmaz. */
 async function duyur(sock, { chatJid, userJid }, kurban, s) {
+  const keci = s.sucluGoster ? await gunahKecisi(sock, chatJid, [userJid, kurban]) : null
+  const iz = keci ? `🔎 İzler ${mentionOf(keci)} kişisini gösteriyor!` : '🕶️ Saldırganın kimliği bilinmiyor.'
   const metin = s.basarili && s.tutar
-    ? `🔒 *FİDYE YAZILIMI*\n${mentionOf(kurban)} bankası ${FIDYE_MS / 3_600_000} saat kilitlendi.\nAçmak için: \`.fidye öde\` (${binlik(s.tutar)} XP)\n🕶️ Saldırganın kimliği bilinmiyor.`
+    ? `🔒 *FİDYE YAZILIMI*\n${mentionOf(kurban)} bankası ${FIDYE_MS / 3_600_000} saat kilitlendi.\nAçmak için: \`.fidye öde\` (${binlik(s.tutar)} XP)\n${iz}`
     : s.basarili
-    ? `💻 *SİBER SALDIRI*\n${mentionOf(kurban)} hacklendi!\n${ganimet(s)}\n🕶️ Saldırganın kimliği bilinmiyor.`
+    ? `💻 *SİBER SALDIRI*\n${mentionOf(kurban)} hacklendi!\n${ganimet(s)}${s.soguk ? '\n🔐 Soğuk cüzdan coinleri ve NFT\'leri korudu.' : ''}\n${iz}`
     : s.gizli
       ? `🧑‍💻 ${mentionOf(kurban)} hesabına sızma girişimi püskürtüldü. Saldırgan VPN ardında kayboldu.`
       : `🚨 ${mentionOf(userJid)}, ${mentionOf(kurban)} hesabını hacklerken yakalandı!\n🚔 ${HAPIS_SAATI} saat hapis. Kefalet: ${binlik(s.hapis.kefalet)} XP (\`.kefalet\`)`
-  if (s.basarili) botGonderisi(chatJid, `💻 ${displayName(kurban)} ${s.tutar ? 'fidye yazılımına yakalandı' : 'hacklendi'}. Saldırganın kimliği bilinmiyor.`)
+  if (s.basarili) botGonderisi(chatJid, `💻 ${displayName(kurban)} ${s.tutar ? 'fidye yazılımına yakalandı' : 'hacklendi'}. ${keci ? `İzler ${displayName(keci)} kişisini gösteriyor.` : 'Saldırganın kimliği bilinmiyor.'}`)
   if (isMuted(chatJid)) return
   try {
-    await sock.sendMessage(chatJid, { text: metin, mentions: s.basarili || s.gizli ? [kurban] : [userJid, kurban] })
+    await sock.sendMessage(chatJid, { text: metin, mentions: s.basarili || s.gizli ? [kurban, ...(keci ? [keci] : [])] : [userJid, kurban] })
   } catch (err) {
     logger.error({ err, chatJid }, '.hack duyurusu gönderilemedi')
   }
@@ -130,7 +138,7 @@ export default {
       await yaz(s.basarili && s.tutar
         ? `✅ *KİLİTLENDİ* — ${ad}\n🔒 Fidye: ${binlik(s.tutar)} XP, öderse bankana gelir.`
         : s.basarili
-        ? [`✅ *SIZMA BAŞARILI* — ${ad}`, ...(s.duvarDelindi ? ['🧱 Güvenlik duvarı delindi ve çöktü.'] : []), ganimet(s), `🏦 Bankan: ${binlik(s.banka)} XP`, s.vpn ? '🛰️ VPN harcandı, iz kalmadı.' : '🕶️ Kimliğin gizli, ama VPN yoktu: İçişleri Bakanı 24 saat izini sürebilir.'].join('\n')
+        ? [`✅ *SIZMA BAŞARILI* — ${ad}`, ...(s.duvarDelindi ? ['🧱 Güvenlik duvarı delindi ve çöktü.'] : []), ...(s.soguk ? ['🔐 Soğuk cüzdanı vardı: coin ve NFT alınamadı.'] : []), ...(s.sucluGoster ? ['🎭 Kimlik hırsızlığı devrede: suç başkasına atılacak.'] : []), ganimet(s), `🏦 Bankan: ${binlik(s.banka)} XP`, s.vpn ? '🛰️ VPN harcandı, iz kalmadı.' : '🕶️ Kimliğin gizli, ama VPN yoktu: İçişleri Bakanı 24 saat izini sürebilir.'].join('\n')
         : s.gizli
           ? `❌ ${ad} hesabına sızılamadı. 🛰️ VPN seni sakladı (VPN harcandı).`
           : `🚨 Yakalandın! ${HAPIS_SAATI} saat hapis. Kefalet: ${binlik(s.hapis.kefalet)} XP`)

@@ -250,7 +250,7 @@ function urunKutusu(chat, u, elde, kat) {
   <strong>${ad.join(' ')}</strong>
   <small>${urunNotu(u)}</small>
   <span class="mal-alt"><b>${sayi.format(katliFiyat(u.fiyat, kat))} Ⓢ</b>${elde ? h`<i>sende ${sayi.format(elde)}</i>` : ''}</span>
-  ${islemFormu(chat, 'sulymarket', 'market-al', 'SATIN AL', { urun: u.kod, ...(['kutu', 'duvar', 'zar'].includes(u.tur) ? {} : { alan: 'Adet', deger: '1' }) })}
+  ${islemFormu(chat, 'sulymarket', 'market-al', 'SATIN AL', { urun: u.kod, ...(['kutu', 'duvar', 'zar', 'sure'].includes(u.tur) ? {} : { alan: 'Adet', deger: '1' }) })}
 </li>`
 }
 
@@ -289,7 +289,7 @@ export function sulyMarketSayfasi(veri) {
   <p class="km-satir" aria-hidden="true">root@sulymarket:~$ ./vitrin --gizli</p>
   <h2>SULYMARKET</h2>
   <div class="km-bakiye"><strong>${sulyYaz(d.birim)}</strong> Suly <a href="${hesapLink(chat, 'suly')}">Suly al ›</a></div>
-  <p class="not">Ödenen Suly yanar, iade yok. Fiyatlar anlıktır: grubun servetine göre şu an taban x${yuzde.format(d.kat)}. Hack, baskın, vurgun, çilingir ve EMP WhatsApp'tan yapılır.</p>
+  <p class="not">Ödenen Suly yanar, iade yok. Fiyatlar anlıktır: grubun servetine göre şu an taban x${yuzde.format(d.kat)}. Hack, baskın, vurgun, çilingir, EMP, casus, mantık bombası, ihbar ve korsan yayın WhatsApp'tan yapılır.</p>
 </section>
 <section class="kart km-durum">
   <h2>Sende ne var</h2>
@@ -298,6 +298,7 @@ export function sulyMarketSayfasi(veri) {
   ${satir('💻', 'Bugünkü hack hakkın', `${d.hackHakki}/${HACK_GUNLUK}`)}
   ${d.duvar ? satir('🧱', 'Güvenlik duvarı', `${dakika(d.duvar - simdi)} kaldı`) : ''}
   ${d.zar ? satir('🎲', 'Hileli zar', `${dakika(d.zar - simdi)} kaldı`) : ''}
+  ${(d.etkiler ?? []).map((e) => { const [ik, ...ad] = urunKoduyla(e.kod).ad.split(' '); return satir(ik, ad.join(' '), `${dakika(e.bitis - simdi)} kaldı`) })}
   ${m.maske ? satir('🎭', 'Maske', `${dakika(m.maske - simdi)} kaldı`) : ''}
   ${m.hapis > simdi ? satir('🚔', 'Hapis', `${dakika(m.hapis - simdi)} kaldı`, 'eksi') : ''}
   ${m.fidye ? satir('🔒', 'Bankan kilitli', `${dakika(m.fidye.bitis - simdi)} kaldı`, 'eksi') : ''}
@@ -305,7 +306,7 @@ export function sulyMarketSayfasi(veri) {
 </section>
 <nav class="km-sekme" aria-label="Bölümler">${[...BOLUMLER, ['', 'nft', 'NFT']].map(([, yer, ad]) => h`<a href="#${yer}">${ad}</a>`)}</nav>
 ${BOLUMLER.map(([tur, yer, ad, not]) => h`<h2 class="km-baslik" id="${yer}">${ad} <small>${not}</small></h2>
-<ul class="mallar">${URUNLER.filter((u) => u.tur === tur || (tur === 'arac' && ['duvar', 'zar', 'kutu'].includes(u.tur))).map((u) => urunKutusu(chat, u, eldeki.get(u.kod), d.kat))}</ul>`)}
+<ul class="mallar">${URUNLER.filter((u) => u.tur === tur || (tur === 'arac' && ['duvar', 'zar', 'sure', 'kutu'].includes(u.tur))).map((u) => urunKutusu(chat, u, eldeki.get(u.kod), d.kat))}</ul>`)}
 <h2 class="km-baslik" id="nft">NFT galerisi <small>Her mahluktan grupta bir tane</small></h2>
 <ul class="mallar nftler">${NFTLER.map((n) => nftKutusu(chat, n, sahipler.get(n.no), ben, d.kat))}</ul>
 </div>`)

@@ -534,10 +534,16 @@ Efsanevi mülkler satın alınmaz, `.mülk yükselt` ile çıkar. Efsanevi mülk
 | `.sulymarket kullan emp @kişi` | Birinin güvenlik duvarını yakar |
 | `.sulymarket kullan rüşvet` / `kullan pasaport` | Hakkındaki açık hack dosyalarını sildirir / ambargoyu kaldırır |
 | Hileli zar (`.sulymarket al 22`) | 2 saat tek elde biten kumarda kaybeden el %50 yeniden atılır, panelde de |
+| `.sulymarket kullan casus <kimlik>` (özelden) | Hedefin cüzdanını, bankasını, coinini, Suly'sini ve korumalarını raporlar |
+| `.sulymarket kullan mantık <kimlik>` (özelden) | Hedefin sonraki banka çekiminin %10'u senin bankana akar |
+| `.sulymarket kullan korsan <mesaj>` (özelden) | Gruba adsız "korsan yayın", günde bir |
+| `.sulymarket kullan ihbar @kişi` | Hedef 30 dk gözaltı; VPN'in yoksa %30 sen 1 saat içeri girersin |
+| Kimlik hırsızlığı, nazar boncuğu | Kendiliğinden işler: başarılı hack ya da fidyede suç başkasına atılır / kaybettiğin bahsin yarısı geri gelir |
+| Soğuk cüzdan, ayarlı makine | Alındığı an başlar: 12 saat hack coinini ve NFT'ni alamaz / 30 dk slotta kaybeden çevirme %60 yeniden döner |
 | `.hack` (özelden) | Hedeflerin kimliklerini listeler |
 | `.hack <kimlik> usta` (özelden) | Hedefin parasını bankana geçirir, usta 1 mülk, kara şapka coin, mülk ve NFT de alır; elit ve zero-day daha büyük pay alır, daha sık tutar |
 | `.çete bas <çete> [bomba]` | Lider baskın yapar, kazanan rakip kasanın %20'sini alır |
-| `.nft` | 52 NFT'lik koleksiyon (mitik Suly, şirket NFT'leri, mahluklar): `al`, `sat`, `iptal`, `ver`, `boz` |
+| `.nft` | 53 NFT'lik koleksiyon (mitik Suly, şirket NFT'leri, mahluklar): `al`, `sat`, `iptal`, `ver`, `boz` |
 | `.sulymarket al 16` | Gizemli kutu: silah, hacker, NFT ya da polis |
 | `.sulymarket kullan kimlik` | 1 saatlik maske; özelden `.soygun <kimlik>` yazınca grupta "Maskeli" görünürsün |
 | `.hack fidye <kimlik>` (özelden) | Hedefin bankasını 6 saat kilitler, fidyeyi sen alırsın |

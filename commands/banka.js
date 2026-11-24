@@ -65,6 +65,7 @@ export default {
 
         return await yaz([
           `🏦 ${sayi.format(c.miktar)} XP çekildi, kesinti ${sayi.format(s.kesinti)} XP.`,
+          ...(s.mantik ? [`💣 Sistemine mantık bombası kurulmuş! ${sayi.format(s.mantik)} XP bilinmeyen bir hesaba aktı.`] : []),
           `💰 Hesap: ${sayi.format(s.bakiye)} XP  •  👛 Cüzdan: ${sayi.format(s.xp)} XP`,
         ].join('\n'))
       }

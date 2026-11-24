@@ -58,7 +58,7 @@ const ISLEMLER = {
     if (!s) return hata(KAPALI)
     if (s.kilitli) return hata(`Bankan fidye yazılımıyla kilitli, ${dakika(s.kilitli - Date.now())} kaldı. SulyMarket sayfasından fidyeyi ödeyebilirsin.`)
     if (s.yetersiz) return hata(`Hesabında o kadar yok: ${sayi.format(s.bakiye)} XP`)
-    return tamam(`${sayi.format(c.miktar)} XP çekildi, kesinti ${sayi.format(s.kesinti)} XP.`)
+    return tamam(`${sayi.format(c.miktar)} XP çekildi, kesinti ${sayi.format(s.kesinti)} XP.${s.mantik ? ` 💣 Mantık bombası patladı: ${sayi.format(s.mantik)} XP bilinmeyen bir hesaba aktı.` : ''}`)
   },
 
   'kredi-cek': ({ chat, user }, { miktar }, simdi) => {
