@@ -798,12 +798,12 @@ Blackjack, mayın, kule ve hi-lo'da 3 dakika hamle yapılmazsa el kapanır (blac
 | 🍫 Çikolata | 0,5x | 1x | 4x |
 | 🍮 Puding | 0,35x | 0,7x | 2,75x |
 | 🧁 Kek | 0,25x | 0,6x | 2x |
-| 🍩 Halka | 0,2x | 0,5x | 1,4x |
-| 🍪 Kurabiye | 0,15x | 0,35x | 1x |
+| 🍩 Halka | 0,25x | 0,5x | 1,4x |
+| 🍪 Kurabiye | 0,2x | 0,4x | 1x |
 
-- 🌈 Gökkuşağı patlamaz. 4, 5, 6 tane gelirse 3x, 5x, 100x öder ve 12, 15, 20 bedava dönüş başlar. Bedava dönüşlerde kombo dönüşler arasında **sıfırlanmaz**, 3 🌈 +5 dönüş verir.
-- 🎁 **Bonus al:** bahsin 62 katına doğrudan bedava dönüş.
-- En çok 5.000x kazanılır. Beklenen dönüş yaklaşık %95.
+- 🌈 Gökkuşağı patlamaz. 4, 5, 6 tane gelirse 3x, 5x, 100x öder ve 10, 12, 16 bedava dönüş başlar (ortalama 175 çevirmede bir). Bedava dönüşlerde kombo dönüşler arasında **sıfırlanmaz**, 3 🌈 +5 dönüş verir.
+- 🎁 **Bonus al:** bahsin 52 katına doğrudan bedava dönüş.
+- En çok 5.000x kazanılır. Beklenen dönüş yaklaşık %99 (bot sahibinin isteğiyle kumarhanenin en cömert oyunu).
 - **Otomatik çevirme:** 10-500 çevirme; "bonus gelince dur" ve "50x üstü kazançta dur" seçilebilir. Altta çıkan çubuktaki DURDUR ile kesilir.
 - **⚡ Turbo** animasyonları hızlandırır. Oynarken makineye dokunmak (ya da boşluk tuşu) o çevirmeyi hızlı bitirir, boşluk tuşu çevirir.
 

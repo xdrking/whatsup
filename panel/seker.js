@@ -49,6 +49,8 @@
       makine, tahta, sahne, veri,
       hucre: [],
       kazanc: 0,
+      enerji: 0,
+      efekt: efektKur(makine),
       yukseklik: () => tahta.firstElementChild?.offsetHeight || 48,
     }
   }
@@ -99,28 +101,200 @@
     await son?.finished.catch(() => {})
   }
 
-  /** Patlayan hücrenin yerinden parçacık ve şok dalgası çıkar. */
-  function parcala(d, el, sembol, buyukluk) {
-    const tr = d.sahne.getBoundingClientRect()
-    const hr = el.getBoundingClientRect()
-    const x = hr.left - tr.left + hr.width / 2
-    const y = hr.top - tr.top + hr.height / 2
-    const dalga = yeni('i', 'seker-dalga')
-    d.sahne.append(dalga)
-    dalga.animate([{ transform: `translate(${x}px, ${y}px) scale(.2)`, opacity: 0.9 }, { transform: `translate(${x}px, ${y}px) scale(${1.6 + buyukluk * 0.15})`, opacity: 0 }],
-      { duration: 520 * hiz(), easing: 'ease-out' }).finished.then(() => dalga.remove(), () => dalga.remove())
-    const adet = 7 + Math.min(buyukluk, 6)
-    for (let i = 0; i < adet; i += 1) {
-      const p = yeni('i', 'seker-parca')
-      p.style.background = RENK[sembol] ?? '#fff'
-      d.sahne.append(p)
-      const aci = (Math.PI * 2 * i) / adet + Math.random() * 0.6
-      const mesafe = 38 + Math.random() * 50 + buyukluk * 6
-      p.animate([
-        { transform: `translate(${x}px, ${y}px) scale(1)`, opacity: 1 },
-        { transform: `translate(${x + Math.cos(aci) * mesafe}px, ${y + Math.sin(aci) * mesafe + 30}px) scale(.1) rotate(${Math.random() * 360}deg)`, opacity: 0 },
-      ], { duration: (520 + Math.random() * 300) * hiz(), easing: 'cubic-bezier(.2,.7,.4,1)' }).finished.then(() => p.remove(), () => p.remove())
+  // Zayıf telefonda (az çekirdek ya da "hareketi azalt") parçacık bütçesi küçülür.
+  const azGuc = (navigator.hardwareConcurrency || 4) <= 4 || matchMedia('(prefers-reduced-motion: reduce)').matches
+  const BUTCE = azGuc ? 160 : 420
+
+  /**
+   * Bütün parçacıklar tek bir <canvas>'ta çizilir: her parçacık ayrı DOM öğesi olunca telefon
+   * patlama anında kare atlıyordu. Kanvas makinenin üstündedir, tıklamayı geçirir.
+   */
+  function efektKur(makine) {
+    let tuval = makine.querySelector('.seker-tuval')
+    if (!tuval) {
+      tuval = yeni('canvas', 'seker-tuval')
+      tuval.setAttribute('aria-hidden', 'true')
+      makine.append(tuval)
     }
+    const ctx = tuval.getContext('2d')
+    const oran = Math.min(window.devicePixelRatio || 1, azGuc ? 1.5 : 2)
+    let parcalar = []
+    let halkalar = []
+    let flas = null
+    let calisiyor = false
+    let onceki = 0
+
+    function boyutla() {
+      const w = makine.clientWidth
+      const hh = makine.clientHeight
+      if (tuval.width !== Math.round(w * oran) || tuval.height !== Math.round(hh * oran)) {
+        tuval.width = Math.round(w * oran)
+        tuval.height = Math.round(hh * oran)
+      }
+    }
+
+    function ciz(simdi) {
+      const dt = Math.min(0.05, (simdi - onceki) / 1000 || 0.016) / Math.max(hiz(), 0.3)
+      onceki = simdi
+      const w = tuval.width / oran
+      const hh = tuval.height / oran
+      ctx.setTransform(oran, 0, 0, oran, 0, 0)
+      ctx.clearRect(0, 0, w, hh)
+      if (flas) {
+        flas.omur -= dt
+        if (flas.omur <= 0) flas = null
+        else {
+          const g = ctx.createRadialGradient(flas.x, flas.y, 0, flas.x, flas.y, Math.max(w, hh) * 0.75)
+          g.addColorStop(0, flas.renk)
+          g.addColorStop(1, 'rgba(255,255,255,0)')
+          ctx.globalAlpha = (flas.omur / flas.sure) * flas.guc
+          ctx.fillStyle = g
+          ctx.fillRect(0, 0, w, hh)
+        }
+      }
+      halkalar = halkalar.filter((r) => (r.omur -= dt) > 0)
+      for (const r of halkalar) {
+        const t = 1 - r.omur / r.sure
+        ctx.globalAlpha = (1 - t) * 0.9
+        ctx.strokeStyle = r.renk
+        ctx.lineWidth = r.kalin * (1 - t) + 1
+        ctx.beginPath()
+        ctx.arc(r.x, r.y, 6 + r.yaricap * (1 - (1 - t) ** 3), 0, Math.PI * 2)
+        ctx.stroke()
+      }
+      parcalar = parcalar.filter((p) => (p.omur -= dt) > 0)
+      for (const p of parcalar) {
+        p.vy += p.yercekimi * dt
+        p.vx *= 1 - 1.6 * dt
+        p.x += p.vx * dt
+        p.y += p.vy * dt
+        p.aci += p.donme * dt
+        ctx.globalAlpha = Math.min(1, (p.omur / p.sure) * 1.6)
+        ctx.fillStyle = p.renk
+        if (p.tur === 'kivilcim') {
+          ctx.strokeStyle = p.renk
+          ctx.lineWidth = p.boy * 0.5
+          ctx.beginPath()
+          ctx.moveTo(p.x, p.y)
+          ctx.lineTo(p.x - p.vx * 0.04, p.y - p.vy * 0.04)
+          ctx.stroke()
+        } else if (p.tur === 'serit') {
+          ctx.save()
+          ctx.translate(p.x, p.y)
+          ctx.rotate(p.aci)
+          ctx.fillRect(-p.boy, -p.boy * 0.35, p.boy * 2, p.boy * 0.7 * Math.abs(Math.cos(p.aci * 1.7)) + 1)
+          ctx.restore()
+        } else if (p.tur === 'yildiz') {
+          ctx.save()
+          ctx.translate(p.x, p.y)
+          ctx.rotate(p.aci)
+          ctx.beginPath()
+          for (let i = 0; i < 8; i += 1) {
+            const yr = i % 2 ? p.boy * 0.4 : p.boy
+            ctx.lineTo(Math.cos((i * Math.PI) / 4) * yr, Math.sin((i * Math.PI) / 4) * yr)
+          }
+          ctx.fill()
+          ctx.restore()
+        } else {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, p.boy, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+      ctx.globalAlpha = 1
+      if (parcalar.length || halkalar.length || flas) requestAnimationFrame(ciz)
+      else calisiyor = false
+    }
+
+    function baslat() {
+      if (calisiyor) return
+      calisiyor = true
+      boyutla()
+      onceki = performance.now()
+      requestAnimationFrame(ciz)
+    }
+
+    const ekle = (p) => {
+      if (parcalar.length >= BUTCE) parcalar.shift()
+      parcalar.push(p)
+    }
+
+    return {
+      /** (x, y) makineye göre; `guc` 0-10, kombo büyüdükçe artar. */
+      patlat(x, y, renk, guc) {
+        const adet = Math.round((azGuc ? 6 : 10) + guc * (azGuc ? 1 : 2))
+        for (let i = 0; i < adet; i += 1) {
+          const aci = Math.random() * Math.PI * 2
+          const hizi = 90 + Math.random() * 170 + guc * 22
+          const tur = i % 5 === 0 ? 'yildiz' : i % 3 === 0 ? 'kivilcim' : 'daire'
+          ekle({
+            x, y, vx: Math.cos(aci) * hizi, vy: Math.sin(aci) * hizi - 60, yercekimi: 520, aci, donme: 6,
+            boy: tur === 'yildiz' ? 5 + Math.random() * 3 : 2.5 + Math.random() * 3.5,
+            renk: tur === 'yildiz' ? '#fff8c4' : renk, tur, omur: 0.55 + Math.random() * 0.45, sure: 1,
+          })
+        }
+        halkalar.push({ x, y, renk: '#ffffff', kalin: 5, yaricap: 26 + guc * 5, omur: 0.45, sure: 0.45 })
+        baslat()
+      },
+      halka(x, y, renk, yaricap, sure = 0.8) {
+        halkalar.push({ x, y, renk, kalin: 10, yaricap, omur: sure, sure })
+        baslat()
+      },
+      flas(renk, guc = 0.6, x = makine.clientWidth / 2, y = makine.clientHeight / 2) {
+        flas = { renk, guc, x, y, omur: 0.35, sure: 0.35 }
+        baslat()
+      },
+      /** Tepeden konfeti yağar (büyük kazanç, bedava dönüş). */
+      yagmur(adet, renkler) {
+        const w = makine.clientWidth
+        for (let i = 0; i < (azGuc ? Math.round(adet / 2) : adet); i += 1) {
+          ekle({
+            x: Math.random() * w, y: -20 - Math.random() * 120, vx: Math.random() * 60 - 30, vy: 60 + Math.random() * 120,
+            yercekimi: 140, aci: Math.random() * 6, donme: Math.random() * 8 - 4, boy: 4 + Math.random() * 4,
+            renk: renkler[i % renkler.length], tur: i % 4 ? 'serit' : 'yildiz', omur: 2.6 + Math.random(), sure: 3.6,
+          })
+        }
+        baslat()
+      },
+    }
+  }
+
+  /** Hücrenin makineye göre ortası. */
+  function merkez(d, el) {
+    const m = d.makine.getBoundingClientRect()
+    const h = el.getBoundingClientRect()
+    return [h.left - m.left + h.width / 2, h.top - m.top + h.height / 2]
+  }
+
+  /** Kazancın tutarı patlayan kümenin ortasından yükselir. */
+  function tutarUcur(d, hucreler, xp) {
+    if (!hucreler.length || !xp) return
+    const m = d.makine.getBoundingClientRect()
+    let x = 0
+    let y = 0
+    for (const el of hucreler) {
+      const [cx, cy] = merkez(d, el)
+      x += cx
+      y += cy
+    }
+    const yazi = yeni('div', 'seker-tutar', `+${binlik.format(Math.round(xp))}`)
+    d.makine.append(yazi)
+    const sol = Math.min(Math.max(x / hucreler.length, 50), m.width - 50)
+    yazi.animate([
+      { transform: `translate(${sol}px, ${y / hucreler.length}px) translate(-50%, -50%) scale(.5)`, opacity: 0 },
+      { transform: `translate(${sol}px, ${y / hucreler.length - 20}px) translate(-50%, -50%) scale(1.25)`, opacity: 1, offset: 0.2 },
+      { transform: `translate(${sol}px, ${y / hucreler.length - 70}px) translate(-50%, -50%) scale(1)`, opacity: 0 },
+    ], { duration: 1100 * hiz(), easing: 'ease-out' }).finished.then(() => yazi.remove(), () => yazi.remove())
+  }
+
+  /** Kombo enerji çubuğu: her patlamada dolar, en üst basamakta yanar. */
+  function enerjiYaz(d, basamak) {
+    const cubuk = d.makine.querySelector('.seker-enerji i')
+    if (!cubuk) return
+    const oran = Math.min(1, basamak / 6)
+    cubuk.animate([{ transform: `scaleX(${d.enerji ?? 0})` }, { transform: `scaleX(${oran})` }], { duration: 350 * hiz(), easing: 'cubic-bezier(.3,1.4,.6,1)', fill: 'forwards' })
+    d.enerji = oran
+    cubuk.parentElement.classList.toggle('dolu', oran >= 1)
   }
 
   function yaziUcur(d, metin, sinif = '') {
@@ -188,12 +362,31 @@
       for (let r = 0; r < sat; r += 1) {
         const mesafe = r < yeniAdet ? yeniAdet + 0.6 : r - kalanlar[r - yeniAdet]
         if (!mesafe) continue
-        son = d.hucre[c][r].animate([{ transform: `translateY(${-mesafe * y}px)`, opacity: r < yeniAdet ? 0.2 : 1 }, { transform: 'translateY(0)', opacity: 1 }],
-          { duration: (300 + mesafe * 45) * hiz(), delay: c * 25 * hiz(), easing: 'cubic-bezier(.3,1.4,.6,1)', fill: 'backwards' })
+        son = d.hucre[c][r].animate([
+          { transform: `translateY(${-mesafe * y}px)`, opacity: r < yeniAdet ? 0.2 : 1, easing: 'cubic-bezier(.5,0,.75,.4)' },
+          { transform: 'translateY(0) scale(1.1, .86)', opacity: 1, offset: 0.78, easing: 'ease-out' },
+          { transform: 'translateY(0) scale(1)', opacity: 1 },
+        ], { duration: (320 + mesafe * 45) * hiz(), delay: c * 25 * hiz(), fill: 'backwards' })
       }
     }
     setTimeout(dusmeSesi, 250 * hiz())
     await son?.finished.catch(() => {})
+  }
+
+  /** Tahtada 3 gökkuşağı varsa dördüncüsü beklenir: kalp atışı ve parlama. */
+  async function gerilim(d) {
+    const daginiklar = hepsi(d).filter((el) => el.classList.contains('daginik'))
+    if (daginiklar.length < 3) return
+    d.makine.classList.add('gerilim')
+    daginiklar.forEach((el) => {
+      el.classList.add('parlak')
+      const [x, y] = merkez(d, el)
+      d.efekt.halka(x, y, '#7cd6ff', 40, 0.6)
+    })
+    ;[0, 0.32].forEach((g) => ton(70, 0.18, { tip: 'sine', guc: 0.25, gecikme: g, kayma: 50 }))
+    await bekle(700)
+    d.makine.classList.remove('gerilim')
+    daginiklar.forEach((el) => el.classList.remove('parlak'))
   }
 
   /** Tek dönüşün adımları: parla, patla, kombo, düş. */
@@ -209,8 +402,10 @@
       await bekle(520)
 
       const buyukluk = Math.round(Math.log2(a.c) * 2)
+      d.efekt.flas(a.c >= 5 ? 'rgba(255,190,80,.95)' : 'rgba(255,255,255,.9)', Math.min(0.35 + buyukluk * 0.06, 0.75))
       hucreler.forEach((el, j) => {
-        parcala(d, el, el.textContent, buyukluk)
+        const [x, y] = merkez(d, el)
+        d.efekt.patlat(x, y, RENK[el.textContent] ?? '#fff', buyukluk)
         el.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.45) rotate(12deg)', opacity: 1, offset: 0.35 }, { transform: 'scale(0)', opacity: 0 }],
           { duration: 320 * hiz(), delay: (j % 6) * 12 * hiz(), easing: 'ease-in', fill: 'forwards' })
       })
@@ -219,6 +414,8 @@
         yaziUcur(d, `${KOMBO_ADI[a.c] ?? 'KOMBO'} x${a.c}`, `kombo k${Math.min(a.c, 21)}`)
         sars(d, 2 + Math.log2(a.c) * 2.5)
       }
+      enerjiYaz(d, i + 1 + (d.komboTaban ?? 0))
+      tutarUcur(d, hucreler, a.k * d.veri.taban)
       kazancYaz(d, a.k)
       await bekle(380)
       await dus(d, a.p, adimlar[i + 1].t)
@@ -232,6 +429,12 @@
     const daginiklar = hepsi(d).filter((el) => el.classList.contains('daginik'))
     daginiklar.forEach((el) => el.classList.add('parlak'))
     ;[523, 659, 784, 1047, 1319].forEach((f, i) => ton(f, 0.25, { tip: 'triangle', guc: 0.11, gecikme: i * 0.1 }))
+    const ox = d.makine.clientWidth / 2
+    const oy = d.makine.clientHeight / 2
+    ;['#ff5a7a', '#ffd25a', '#6dff9a', '#5ac8ff', '#b48cff'].forEach((r, i) => setTimeout(() => d.efekt.halka(ox, oy, r, 120 + i * 40, 1.1), i * 110 * hiz()))
+    d.efekt.flas('rgba(180,140,255,.95)', 0.8)
+    d.efekt.yagmur(70, ['#ff5a7a', '#ffd25a', '#6dff9a', '#5ac8ff', '#b48cff', '#ffffff'])
+    sars(d, 6)
     yaziUcur(d, `🌈 ${fs.length - fs.reduce((t, x) => t + x.ek, 0)} BEDAVA DÖNÜŞ`, 'bedava')
     await bekle(1500)
     d.makine.classList.add('firtina')
@@ -240,6 +443,8 @@
       if (tur) tur.textContent = `🌈 ${i + 1}/${toplam}`
       await bosalt(d)
       await dokulGir(d, fs[i].a[0].t)
+      await gerilim(d)
+      d.komboTaban = fs.slice(0, i).reduce((t, x) => t + x.a.length - 1, 0)
       await donusOynat(d, fs[i].a)
       if (fs[i].ek) {
         toplam += ek
@@ -260,14 +465,13 @@
     const tutar = yeni('span', '', '0')
     perde.append(baslik, tutar, yeni('small', '', `${virgul(kat)}x`))
     d.makine.append(perde)
-    for (let i = 0; i < 26; i += 1) {
-      const y = yeni('i', 'seker-yagmur', ['🍬', '🍭', '💖', '🍫', '⭐'][i % 5])
-      perde.append(y)
-      y.style.left = `${Math.random() * 94}%`
-      const boy = d.makine.offsetHeight + 40
-      y.animate([{ transform: 'translateY(-40px) rotate(0)' }, { transform: `translate(${Math.random() * 60 - 30}px, ${boy}px) rotate(${Math.random() * 720 - 360}deg)` }],
-        { duration: (1400 + Math.random() * 1600) * hiz(), delay: Math.random() * 900 * hiz(), iterations: 2, fill: 'backwards' })
-    }
+    const renkler = ['#f5c542', '#ffe08a', '#ff4d94', '#ffffff', '#b48cff']
+    d.efekt.flas('rgba(255,215,90,.95)', 0.9)
+    d.efekt.yagmur(kat >= 50 ? 150 : 100, renkler)
+    setTimeout(() => d.efekt.yagmur(80, renkler), 1300 * hiz())
+    const ox = d.makine.clientWidth / 2
+    const oy = d.makine.clientHeight / 2
+    for (let i = 0; i < 3; i += 1) setTimeout(() => d.efekt.halka(ox, oy, '#ffe08a', 160 + i * 60, 1), i * 250 * hiz())
     sayac(tutar, 0, Math.round(kat * d.veri.taban), 1800)
     for (let i = 0; i < 16; i += 1) ton(700 + i * 90, 0.08, { tip: 'triangle', guc: 0.07, gecikme: i * 0.1 * hiz() })
     sars(d, 8)
@@ -310,6 +514,8 @@
     makine.addEventListener('click', () => { atla = true }, { once: true })
     return (async () => {
       await dokulGir(d, veri.ana[0].t)
+      await gerilim(d)
+      d.komboTaban = 0
       await donusOynat(d, veri.ana)
       if (veri.dk) kazancYaz(d, veri.dk)
       if (veri.fs) await bedavaOynat(d)

@@ -769,24 +769,31 @@ main.degisti .oyun-kutu { animation: none; }
 .firtina .seker-cerceve { background: radial-gradient(120% 90% at 50% 0%, #4b2a8f, #2a1460 65%, #1a0b40); }
 .seker-tahta { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .22rem; }
 .seker {
+  position: relative; isolation: isolate; overflow: hidden;
   display: grid; place-items: center; aspect-ratio: 1; border-radius: 12px; user-select: none;
   font-size: clamp(1.35rem, 6.6vw, 2.5rem); line-height: 1;
   background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / .85), rgb(255 255 255 / .25) 60%, rgb(255 255 255 / .1));
   box-shadow: inset 0 -2px 4px rgb(160 0 90 / .12);
-  filter: drop-shadow(0 2px 2px rgb(90 0 50 / .35));
-  will-change: transform;
+  text-shadow: 0 2px 3px rgb(90 0 50 / .3);
 }
+/* Telefonda kasmasın: hareket eden her şey transform ve opacity'dir, filter animasyonu yoktur. */
 .firtina .seker { background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / .35), rgb(255 255 255 / .08) 65%); }
-.seker.daginik { background: conic-gradient(from 0deg, #ff5a7a, #ffd25a, #6dff9a, #5ac8ff, #b48cff, #ff5a7a); animation: daginik-don 3s linear infinite; }
-@keyframes daginik-don { to { filter: hue-rotate(360deg) drop-shadow(0 2px 2px rgb(90 0 50 / .35)); } }
-.seker.parlak { animation: seker-parla .26s ease-in-out infinite alternate; z-index: 1; position: relative; }
-@keyframes seker-parla {
-  from { transform: scale(1); filter: drop-shadow(0 0 4px #fff) brightness(1.1); }
-  to { transform: scale(1.14); filter: drop-shadow(0 0 14px #fff) drop-shadow(0 0 22px #ff5ab4) brightness(1.35); }
+.seker.daginik { background: none; }
+.seker.daginik::before {
+  content: ""; position: absolute; inset: -40%; z-index: -1;
+  background: conic-gradient(#ff5a7a, #ffd25a, #6dff9a, #5ac8ff, #b48cff, #ff5a7a);
+  animation: daginik-don 2.4s linear infinite;
 }
+@keyframes daginik-don { to { transform: rotate(360deg); } }
+.seker::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; opacity: 0;
+  background: radial-gradient(circle, rgb(255 255 255 / .95), rgb(255 90 180 / .55) 55%, transparent 72%);
+}
+.seker.parlak { animation: seker-parla .26s ease-in-out infinite alternate; z-index: 1; }
+.seker.parlak::after { animation: seker-hale .26s ease-in-out infinite alternate; }
+@keyframes seker-parla { from { transform: scale(1); } to { transform: scale(1.14); } }
+@keyframes seker-hale { from { opacity: .45; } to { opacity: 1; } }
 .seker-sahne { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
-.seker-parca { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 40% 60% 50% 50%; box-shadow: 0 0 8px currentColor; }
-.seker-dalga { position: absolute; left: -24px; top: -24px; width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 16px #fff, inset 0 0 12px rgb(255 120 200 / .8); }
 .seker-yazi {
   position: absolute; left: 50%; top: 45%; white-space: nowrap; font-weight: 900; letter-spacing: .02em;
   font-size: clamp(1.4rem, 7vw, 2.6rem); color: #fff;
@@ -801,7 +808,7 @@ main.degisti .oyun-kutu { animation: none; }
 }
 .seker-yazi.kombo.k8, .seker-yazi.kombo.k13, .seker-yazi.kombo.k21 { font-size: clamp(2.2rem, 11vw, 4rem); }
 .seker-yazi.bedava {
-  top: 50%; font-size: clamp(1.5rem, 7.5vw, 2.8rem); color: #fff;
+  top: 50%; font-size: clamp(1.15rem, 6vw, 2.4rem); color: #fff;
   -webkit-text-stroke: 2px #3a1066; paint-order: stroke fill;
   text-shadow: 0 4px 0 #3a1066, 0 0 14px #ff5ab4, 0 0 28px #5ac8ff, 0 0 44px #b48cff;
 }
@@ -821,7 +828,6 @@ main.degisti .oyun-kutu { animation: none; }
 .seker-buyuk span { font-size: clamp(1.6rem, 8vw, 3rem); font-weight: 900; color: var(--altin2); text-shadow: 0 0 22px rgb(245 197 66 / .8); font-variant-numeric: tabular-nums; }
 .seker-buyuk span::after { content: " XP"; font-size: .5em; }
 .seker-buyuk small { color: #fff; font-weight: 800; font-size: 1.1rem; }
-.seker-yagmur { position: absolute; top: 0; font-size: 1.7rem; pointer-events: none; }
 /* Sonuç yazısı ve kazanç halesi animasyon bitince (seker.js `bitti` yazar); betik yoksa hemen görünür. */
 .sonuc[data-oyun="şeker"] .gecikmeli { animation: none; opacity: 1; }
 .sonuc[data-oyun="şeker"].oynuyor .gecikmeli, .sonuc[data-oyun="şeker"]:not(.bitti) .konfeti { visibility: hidden; }
@@ -854,3 +860,17 @@ main.degisti .oyun-kutu { animation: none; }
 .kumarhane .seker-hizli { margin-top: .5rem; }
 .sonuc.oynuyor .seker-hizli { filter: saturate(.4) brightness(.8); }
 .seker-yazi.odeme { padding: .15rem .6rem; border-radius: 999px; background: rgb(60 0 45 / .78); }
+
+/* Faz 81 eki: kanvas parçacıkları, kombo enerjisi, uçan tutar, gerilim */
+.seker-tuval { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; border-radius: inherit; }
+.seker-tutar {
+  position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; white-space: nowrap;
+  font-weight: 900; font-size: clamp(1rem, 4.8vw, 1.5rem); color: #fff6a0;
+  -webkit-text-stroke: 1.5px #7a1050; paint-order: stroke fill; text-shadow: 0 3px 0 #7a1050, 0 0 12px rgb(255 200 80 / .9);
+}
+.seker-enerji { height: 7px; margin: -.15rem .2rem .4rem; border-radius: 999px; background: rgb(40 8 40 / .45); overflow: hidden; }
+.seker-enerji i { display: block; height: 100%; transform: scaleX(0); transform-origin: left; border-radius: inherit; background: linear-gradient(90deg, #ffd25a, #ff7b3d, #ff3d8b, #b46bff); }
+.seker-enerji.dolu i { animation: enerji-yan .4s ease-in-out infinite alternate; }
+@keyframes enerji-yan { to { opacity: .55; } }
+.seker-makine.gerilim { animation: gerilim .32s ease-in-out 2; }
+@keyframes gerilim { 50% { box-shadow: 0 0 0 3px #fff, 0 0 0 7px #5ac8ff, 0 0 60px rgb(90 200 255 / .9), 0 18px 40px rgb(0 0 0 / .5); } }

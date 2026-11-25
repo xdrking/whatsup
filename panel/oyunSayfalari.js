@@ -436,6 +436,7 @@ function tahtaCiz(tahta) {
 function makine(tahta, { veri = '', ust = '', alt = '' } = {}) {
   return h`<div class="seker-makine"${veri ? h` data-seker="${veri}"` : ''}>
   <div class="seker-ust"><span class="seker-kombo">KOMBO <b>x1</b></span><span class="seker-tur">${ust}</span><span class="seker-kazanc">0</span></div>
+  <div class="seker-enerji" aria-hidden="true"><i></i></div>
   <div class="seker-cerceve">${tahta}<div class="seker-sahne" aria-hidden="true"></div></div>
   ${alt}
 </div>
