@@ -2,7 +2,7 @@ import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { kumarOde, xpCek } from '../lib/stats.js'
-import { sonucSatirlari } from '../lib/kumar.js'
+import { sonucSatirlari, sahipKurtarir } from '../lib/kumar.js'
 import { trLower } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame, touchGame } from './gameManager.js'
 
@@ -105,7 +105,9 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   if (!yon) return devam('🃏 `yüksek`, `düşük`, `geç` ya da `çek` yaz.')
   if (yon === 'çek') return bitir(nakitCek(state, '💰 Parayı çektin'))
 
-  const yeni = kartCek()
+  let yeni = kartCek()
+  // Sahibin gizli şansı: tutmayan kart bazen bir kez daha çekilir.
+  if (yon !== 'geç' && state.sansli && hiloCarpani(state.kart.sira, yon) && !hiloTuttu(state.kart.sira, yeni.sira, yon) && sahipKurtarir()) yeni = kartCek()
   state.gecmis.push(kartYaz(yeni))
 
   if (yon === 'geç') {
@@ -131,7 +133,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
 }
 
 /** `.hilo` gövdesi. Çağıran miktarı ve boş oyun yuvasını denetlemiştir. */
-export async function start({ sock, msg, from, sender, miktar }) {
+export async function start({ sock, msg, from, sender, miktar, sansli = false }) {
   const yaz = (content) => sock.sendMessage(from, content, { quoted: msg })
 
   const cekim = xpCek({ chatJid: from, userJid: sender, miktar })
@@ -148,6 +150,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
     kart,
     carpan: 1,
     gecmis: [kartYaz(kart)],
+    sansli,
     finished: false,
     onAnswer: cevapAl,
     summarize: (s) => nakitCek(s, '🛑 Oyun elle bitirildi, kazanç çekildi'),

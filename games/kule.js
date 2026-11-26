@@ -2,7 +2,7 @@ import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { kumarOde, xpCek } from '../lib/stats.js'
-import { sonucSatirlari } from '../lib/kumar.js'
+import { sonucSatirlari, sahipKurtarir, tuzakTasi } from '../lib/kumar.js'
 import { trLower } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame, touchGame } from './gameManager.js'
 
@@ -100,6 +100,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   const kat = state.secimler.length
   state.secimler.push(n)
 
+  if (state.ejderhalar[kat].has(n) && state.sansli && sahipKurtarir()) tuzakTasi(state.ejderhalar[kat], n, ZORLUK[state.zorluk].kutu)
   if (state.ejderhalar[kat].has(n)) {
     const sonuc = sonuclandir(state, 0, `🔥 ${kat + 1}. katta ${n} numarada ejderha vardı!`)
     endGame(from)
@@ -129,7 +130,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
 }
 
 /** `.kule` gövdesi. Çağıran miktarı, zorluğu ve boş oyun yuvasını denetlemiştir. */
-export async function start({ sock, msg, from, sender, miktar, zorluk }) {
+export async function start({ sock, msg, from, sender, miktar, zorluk, sansli = false }) {
   const yaz = (content) => sock.sendMessage(from, content, { quoted: msg })
 
   const cekim = xpCek({ chatJid: from, userJid: sender, miktar })
@@ -145,6 +146,7 @@ export async function start({ sock, msg, from, sender, miktar, zorluk }) {
     zorluk,
     ejderhalar: kuleKur(zorluk),
     secimler: [],
+    sansli,
     finished: false,
     onAnswer: cevapAl,
     summarize: (s) => nakitCek(s, '🛑 Oyun elle bitirildi, kazanç çekildi'),

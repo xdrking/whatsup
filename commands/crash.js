@@ -1,3 +1,4 @@
+import { sansliMi } from '../lib/sahipSans.js'
 import { binlik } from '../lib/sayi.js'
 import { requireGroup } from '../lib/group.js'
 import {
@@ -6,7 +7,6 @@ import {
 } from '../lib/kumar.js'
 import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
 import { kumarOyunSayisi, rebornSansiVar } from '../lib/stats.js'
-import { sansAcikMi } from '../lib/sahipSans.js'
 
 /** Roketin yolu: patlama noktasına kadar birkaç ara çarpan. */
 function ucus(nokta, hedef) {
@@ -35,7 +35,7 @@ export default {
   cooldown: 5,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
+  async execute({ sock, msg, from, sender, args, parsed }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     const { miktar, secim } = argumanlariAyir(args)
@@ -49,14 +49,14 @@ export default {
       return
     }
 
-    const sahipTuru = isOwner && sansAcikMi() && (kumarOyunSayisi(from, sender, 'crash') + 1) % SAHIP_CRASH_ARALIK === 0
+    const sahipTuru = sansliMi(sender, parsed.senderPn) && (kumarOyunSayisi(from, sender, 'crash') + 1) % SAHIP_CRASH_ARALIK === 0
 
     const cevir = () => crashUc(hedef, undefined, sahipTuru ? SAHIP_CRASH_TABAN : 0)
 
     await kumarOyna({
       oyun: 'crash',
       sock, msg, from, sender,
-      sahip: isOwner,
+      sahip: sansliMi(sender, parsed.senderPn),
       miktarArg: miktar,
       // Reborn'dan sonraki gizli şans: mesajda görünmez (lib/reborn.js).
       cevir: rebornSansiVar(from) ? sansliCevir(cevir, REBORN_CRASH_SANSI) : cevir,

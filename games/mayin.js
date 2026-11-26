@@ -2,7 +2,7 @@ import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { kumarOde, xpCek } from '../lib/stats.js'
-import { sonucSatirlari } from '../lib/kumar.js'
+import { sahipKurtarir, sonucSatirlari, tuzakTasi } from '../lib/kumar.js'
 import { trLower } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame, touchGame } from './gameManager.js'
 
@@ -76,6 +76,8 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
     return
   }
 
+  // Sahibin gizli şansı (`.şans`): basılan mayın bazen başka kutuya kayar.
+  if (state.mayinlar.has(kutu) && state.sansli && sahipKurtarir()) tuzakTasi(state.mayinlar, kutu, KUTU, [...state.acilanlar])
   if (state.mayinlar.has(kutu)) {
     const sonuc = sonuclandir(state, 0, `💥 ${kutu} numara mayındı!`)
     endGame(from)
@@ -107,7 +109,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
 }
 
 /** `.mayın` gövdesi. Çağıran miktarı ve boş oyun yuvasını denetlemiştir. */
-export async function start({ sock, msg, from, sender, miktar }) {
+export async function start({ sock, msg, from, sender, miktar, sansli = false }) {
   const yaz = (content) => sock.sendMessage(from, content, { quoted: msg })
 
   const cekim = xpCek({ chatJid: from, userJid: sender, miktar })
@@ -122,6 +124,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
     bahis: miktar,
     mayinlar: mayinKur(),
     acilanlar: new Set(),
+    sansli,
     finished: false,
     onAnswer: cevapAl,
     summarize: (s) => nakitCek(s, '🛑 Oyun elle bitirildi, kazanç çekildi'),

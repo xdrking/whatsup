@@ -1,3 +1,4 @@
+import { sansliMi } from '../lib/sahipSans.js'
 import { requireGroup } from '../lib/group.js'
 import { argumanlariAyir, kumarEngeli, MIN_BAHIS, MIN_KUMAR_BAKIYESI, miktarCoz } from '../lib/kumar.js'
 import { getStats, kumarYasagi } from '../lib/stats.js'
@@ -45,6 +46,6 @@ export default {
     const cozum = miktarCoz(miktar, xp)
     if (cozum.hata) return yaz(`🐉 ${cozum.hata}`)
 
-    await start({ sock, msg, from, sender, miktar: cozum.miktar, zorluk })
+    await start({ sock, msg, from, sender, sansli: sansliMi(sender, parsed.senderPn), miktar: cozum.miktar, zorluk })
   },
 }

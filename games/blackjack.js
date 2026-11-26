@@ -2,7 +2,7 @@ import { binlik } from '../lib/sayi.js'
 import { randomInt } from 'node:crypto'
 import logger from '../lib/logger.js'
 import { kumarOde, xpCek } from '../lib/stats.js'
-import { sonucSatirlari } from '../lib/kumar.js'
+import { sonucSatirlari, sahipKurtarir } from '../lib/kumar.js'
 import { trLower } from '../lib/turkishWords.js'
 import { endGame, setLastMessage, startGame, touchGame } from './gameManager.js'
 
@@ -99,6 +99,8 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
   }
 
   state.oyuncu.push(state.deste.pop())
+  // Sahibin gizli şansı: 21'i geçtiren kart bazen geri alınıp yenisi çekilir.
+  if (elDegeri(state.oyuncu) > 21 && state.sansli && sahipKurtarir()) state.oyuncu[state.oyuncu.length - 1] = state.deste.pop()
 
   if (elDegeri(state.oyuncu) >= 21) {
     const sonuc = sonuclandir(state, elDegeri(state.oyuncu) > 21 ? '💥 21\'i geçtin!' : undefined)
@@ -113,7 +115,7 @@ async function cevapAl({ sock, msg, parsed, state, body }) {
 }
 
 /** `.blackjack` gövdesi. Çağıran miktarı ve boş oyun yuvasını denetlemiştir. */
-export async function start({ sock, msg, from, sender, miktar }) {
+export async function start({ sock, msg, from, sender, miktar, sansli = false }) {
   const yaz = (content) => sock.sendMessage(from, content, { quoted: msg })
 
   const cekim = xpCek({ chatJid: from, userJid: sender, miktar })
@@ -130,6 +132,7 @@ export async function start({ sock, msg, from, sender, miktar }) {
     deste,
     oyuncu: [deste.pop(), deste.pop()],
     krupiye: [deste.pop(), deste.pop()],
+    sansli,
     finished: false,
     onAnswer: cevapAl,
     // Elle bitirme iade değildir: kötü eli gören oyuncu kaçamasın, el `dur` sayılır.

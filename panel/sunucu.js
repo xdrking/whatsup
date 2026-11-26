@@ -195,7 +195,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
           chat: r.chat_jid, ad: adlar.get(r.chat_jid) ?? '', xp: getStats(r.chat_jid, r.user_jid).xp,
         }))))
       }
-      const kim = { chat, user: hesap.user_jid }
+      const kim = { chat, user: hesap.user_jid, numara: hesap.numara, lid: hesap.lid }
       const cokGrup = hesaplar.length > 1
       if (hesapSayfa) {
         const ek = hesapSayfa === 'suly' ? { suly: await sulyVerisi(kim, url) }
@@ -216,7 +216,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       const chat = form.get('grup') ?? ''
       const hesap = hesapBul(chat)
       if (!hesap) return yonlendir(res, '/oyun')
-      const kim = { chat, user: hesap.user_jid }
+      const kim = { chat, user: hesap.user_jid, numara: hesap.numara, lid: hesap.lid }
 
       if (yol === 'POST /oyun/islem') {
         const islem = form.get('islem') ?? ''

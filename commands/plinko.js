@@ -1,3 +1,4 @@
+import { sansliMi } from '../lib/sahipSans.js'
 import { requireGroup } from '../lib/group.js'
 import { argumanlariAyir, kumarOyna, MIN_BAHIS, MIN_KUMAR_BAKIYESI, PLINKO_RISK, PLINKO_SIRA, plinkoAt, plinkoRiskCoz } from '../lib/kumar.js'
 
@@ -25,7 +26,7 @@ export default {
   cooldown: 5,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
+  async execute({ sock, msg, from, sender, args, parsed }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     const { miktar, secim } = argumanlariAyir(args)
@@ -38,7 +39,7 @@ export default {
     await kumarOyna({
       oyun: 'plinko',
       sock, msg, from, sender,
-      sahip: isOwner,
+      sahip: sansliMi(sender, parsed.senderPn),
       miktarArg: miktar,
       cevir: () => plinkoAt(risk),
       anlat: (s) => [

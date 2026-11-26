@@ -1,3 +1,4 @@
+import { sansliMi } from '../lib/sahipSans.js'
 import { requireGroup } from '../lib/group.js'
 import { IKILI_CARPAN, kumarOyna, MIN_BAHIS, SEMBOLLER, slotCevir } from '../lib/kumar.js'
 
@@ -16,13 +17,13 @@ export default {
   cooldown: 5,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
+  async execute({ sock, msg, from, sender, args, parsed }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     await kumarOyna({
       oyun: 'slot',
       sock, msg, from, sender,
-      sahip: isOwner,
+      sahip: sansliMi(sender, parsed.senderPn),
       miktarArg: args[0],
       cevir: () => slotCevir(),
       anlat: (s) => {

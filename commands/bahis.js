@@ -1,3 +1,4 @@
+import { sansliMi } from '../lib/sahipSans.js'
 import { requireGroup } from '../lib/group.js'
 import { argumanlariAyir, kumarOyna, MIN_BAHIS, yaziTura, yuzCoz } from '../lib/kumar.js'
 
@@ -16,7 +17,7 @@ export default {
   cooldown: 5,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
+  async execute({ sock, msg, from, sender, args, parsed }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
 
     const { miktar, secim } = argumanlariAyir(args)
@@ -29,7 +30,7 @@ export default {
     await kumarOyna({
       oyun: 'bahis',
       sock, msg, from, sender,
-      sahip: isOwner,
+      sahip: sansliMi(sender, parsed.senderPn),
       miktarArg: miktar,
       cevir: () => yaziTura(yuz),
       anlat: (s) => [`🪙 Senin seçimin: *${yuz}*`, `Para döndü… *${s.sonuc}*!`],

@@ -6,8 +6,9 @@
 import logger from '../lib/logger.js'
 import {
   crashHedefCoz, crashUc, CRASH_EN_AZ, CRASH_EN_COK, kaziCevir, kumarEngeli, miktarCoz, plinkoAt,
-  plinkoRiskCoz, ruletCevir, ruletSecimCoz, sansliCevir, slotCevir, yaziTura, yuzCoz,
+  plinkoRiskCoz, ruletCevir, ruletSecimCoz, sahipKurtarir, sahipSansi, sahipSekerSansi, sansliCevir, slotCevir, tuzakTasi, yaziTura, yuzCoz,
 } from '../lib/kumar.js'
+import { sansliMi } from '../lib/sahipSans.js'
 import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
 import { BONUS_FIYATI, sekerCevir } from '../lib/seker.js'
 import { miktarlariCoz } from '../lib/sayi.js'
@@ -140,6 +141,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
   // Son büyük kazanç: akışta yalnızca sunucunun gördüğü kazanç paylaşılır, sayfadan gelen rakam değil.
   const vurgunlar = new Map()
   const anahtar = (h) => `${h.chat}|${h.user}`
+  const sahipMi = (h) => sansliMi(h.user, h.numara, h.lid)
   const vurgunNotu = (k, s) => {
     if (s.fark > 0 && s.bahis && s.fark >= s.bahis * VURGUN_KAT) {
       vurgunlar.set(k, { oyun: s.oyun, bahis: s.bahis, kazanc: s.fark, carpan: Math.floor(((s.bahis + s.fark) / s.bahis) * 100) / 100, zaman: saat() })
@@ -186,7 +188,9 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     if (g.hata) return sonucYaz(k, { oyun, hata: g.hata })
 
     // Reborn'dan sonraki gizli şans WhatsApp'taki `.crash` ile aynıdır, sayfada görünmez (lib/reborn.js).
-    const cevir = oyun === 'crash' && rebornSansiVar(h.chat, saat()) ? sansliCevir(hazir.cevir, REBORN_CRASH_SANSI) : hazir.cevir
+    let cevir = oyun === 'crash' && rebornSansiVar(h.chat, saat()) ? sansliCevir(hazir.cevir, REBORN_CRASH_SANSI) : hazir.cevir
+    // Sahibin gizli şansı (`.şans`), WhatsApp'takiyle aynı; şekerde daha güçlü. Sayfada görünmez.
+    if (sahipMi(h)) cevir = oyun === 'şeker' ? sahipSekerSansi(cevir) : sahipSansi(cevir)
     const bahis = g.miktar * (hazir.kat ?? 1)
     const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: bahis, cevir, oyun, tavansiz: true })
     if (!s) return sonucYaz(k, { oyun, hata: 'Kumarhane şu an kapalı, sonra dene.' })
@@ -245,6 +249,12 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     return sureKur(k, el)
   }
 
+  /** Oyuncuya kart verir; sahibin şansı açıksa 21'i geçtiren kart bazen geri alınıp yenisi çekilir. */
+  function bjKartVer(el, h) {
+    h.kartlar.push(el.deste.pop())
+    if (elDegeri(h.kartlar) > 21 && el.sansli && sahipKurtarir()) h.kartlar[h.kartlar.length - 1] = el.deste.pop()
+  }
+
   function blackjackHamle(k, el, secim, uyar) {
     const h = el.eller[el.aktif]
 
@@ -265,7 +275,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
       return bjIlerle(k, el)
     }
     if (secim === 'kart') {
-      h.kartlar.push(el.deste.pop())
+      bjKartVer(el, h)
       const deger = elDegeri(h.kartlar)
       if (deger < 21) return sureKur(k, el)
       h.bitti = true
@@ -276,7 +286,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
       if (!ekBahis(el, h.bahis)) return uyar('Çift için XP\'n yetmiyor.')
       h.bahis *= 2
       h.cift = true
-      h.kartlar.push(el.deste.pop())
+      bjKartVer(el, h)
       h.bitti = true
       return bjIlerle(k, el, elDegeri(h.kartlar) > 21 && el.eller.length === 1 ? '💥 Çift bastın, 21\'i geçtin!' : '')
     }
@@ -329,7 +339,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     if (!cekim) return sonucYaz(k, { oyun, hata: 'Masa şu an kapalı, sonra dene.' })
     if (cekim.yetersiz) return sonucYaz(k, { oyun, hata: 'O kadar XP\'n yok.' })
 
-    const el = { oyun, chat: h.chat, user: h.user, bahis: g.miktar, bitti: false, uyari: '', reborn: sonReborn(h.chat)?.no ?? 0 }
+    const el = { oyun, chat: h.chat, user: h.user, bahis: g.miktar, bitti: false, uyari: '', reborn: sonReborn(h.chat)?.no ?? 0, sansli: sahipMi(h) }
     if (oyun === 'blackjack') {
       el.deste = deste()
       el.taban = g.miktar
@@ -378,6 +388,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     if (el.oyun === 'mayın') {
       const n = /^\d{1,2}$/.test(secim) ? Number(secim) : 0
       if (n < 1 || n > KUTU || el.acilanlar.includes(n)) return uyar('Açılmamış bir kutu seç.')
+      if (el.mayinlar.has(n) && el.sansli && sahipKurtarir()) tuzakTasi(el.mayinlar, n, KUTU, el.acilanlar)
       el.acilanlar.push(n)
       if (el.mayinlar.has(n)) return kapat(k, el, 0, `💥 ${n} numara mayındı!`)
       if (el.acilanlar.length === KUTU - el.mayinlar.size) return nakitCek(k, el, '🏆 Bütün güvenli kutuları açtın')
@@ -389,6 +400,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
       if (n < 1 || n > ZORLUK[el.zorluk].kutu) return uyar('Bir kutu seç.')
       const kat = el.secimler.length
       el.secimler.push(n)
+      if (el.ejderhalar[kat].has(n) && el.sansli && sahipKurtarir()) tuzakTasi(el.ejderhalar[kat], n, ZORLUK[el.zorluk].kutu)
       if (el.ejderhalar[kat].has(n)) return kapat(k, el, 0, `🔥 ${kat + 1}. katta ${n} numarada ejderha vardı!`)
       if (el.secimler.length === KAT) return nakitCek(k, el, '🏆 Kulenin tepesine çıktın')
       return sureKur(k, el)
@@ -396,7 +408,8 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
 
     if (!['yüksek', 'düşük', 'geç'].includes(secim)) return uyar('Yüksek, düşük, geç ya da çek.')
     if (secim !== 'geç' && !hiloCarpani(el.kart.sira, secim)) return uyar(`${kartYaz(el.kart)} üstünde ${secim} her zaman tutar, oynanmaz.`)
-    const yeni = kartCek()
+    let yeni = kartCek()
+    if (secim !== 'geç' && el.sansli && !hiloTuttu(el.kart.sira, yeni.sira, secim) && sahipKurtarir()) yeni = kartCek()
     el.gecmis.push(kartYaz(yeni))
     if (secim === 'geç') {
       el.kart = yeni
