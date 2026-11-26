@@ -75,7 +75,7 @@ export default {
       const sigorta = sigortaBitisi(from, sender)
       await yaz([
         '🪙 *Coin Market*',
-        `Anlık kur: 1 coin = ${binlik(ekonomi.kur)} XP  •  Bozdurma: ${binlik(bozdurmaDegeri(1, ekonomi.bozdurmaKur))} XP`,
+        `Alış: 1 coin = ${binlik(ekonomi.alisKur)} XP  •  Bozdurma: ${binlik(bozdurmaDegeri(1, ekonomi.bozdurmaKur))} XP`,
         '',
         ...COIN_URUNLERI.map((u, i) => `${i + 1}. ${u.ad} — ${u.fiyat} coin`),
         '',

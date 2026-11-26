@@ -274,7 +274,7 @@ test('anlık fiyat: servet büyüdükçe artar, tabanın altına inmez, NFT bozm
 
   const ucuz = nftAl({ chatJid, userJid: 'a', no: 11, now: T })
   assert.equal(ucuz.fiyat, katliFiyat(20, ilk) * BIRIM)
-  xpAyarla({ chatJid, userJid: 'b', miktar: 300_000_000_000_000 })
+  xpAyarla({ chatJid, userJid: 'b', miktar: 100_000_000_000 })
   assert.ok(kat() > ilk * 10)
   const pahali = nftAl({ chatJid, userJid: 'a', no: 12, now: T })
   assert.ok(!pahali.yetersiz && pahali.fiyat > ucuz.fiyat * 10)

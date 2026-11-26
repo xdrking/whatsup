@@ -45,7 +45,7 @@ test('fiyat dolar fiyatıdır, kurla doğrusal büyür', () => {
   assert.equal(sulyDegeri(2 * BIRIM, USD, REFERANS_KUR * 2), Math.floor(USD * 4))
 })
 
-test('al ve sat: XP yanar, satışta %1 hazineye, piyasa değişmez', () => {
+test('al ve sat: XP yanar, satışta %1 hazineye, Suly piyasaya girmez', () => {
   const chatJid = yeniGrup()
   xpVer(chatJid, 'a@s', 1_000_000_000)
 
@@ -53,8 +53,8 @@ test('al ve sat: XP yanar, satışta %1 hazineye, piyasa değişmez', () => {
   const al = kriptoAl({ chatJid, userJid: 'a@s', birim: sulyCoz('0,5'), usd: USD, now: T })
   assert.equal(al.birim, BIRIM / 2)
   assert.equal(al.ucret, Math.ceil(0.5 * sulyFiyati(USD, al.kur)))
-  // Suly arzda sayıldığı için almak piyasayı (yuvarlama dışında) değiştirmez.
-  assert.ok(Math.abs(ekonomiDurumu({ chatJid, now: T }).anlik - once.anlik) <= 1)
+  // Suly piyasaya girmez: ödenen XP piyasadan düşer, kur/fiyat döngüsü kurulmaz.
+  assert.equal(ekonomiDurumu({ chatJid, now: T }).anlik, once.anlik - al.ucret)
 
   const kasa = bankaDurumu({ chatJid, userJid: BOT, now: T }).bakiye
   const sat = kriptoSat({ chatJid, userJid: 'a@s', birim: null, usd: USD, now: T })

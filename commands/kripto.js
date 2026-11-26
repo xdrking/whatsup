@@ -90,7 +90,7 @@ export default {
       const usd = fiyat?.usd ?? d.fiyat?.usd
       const satirlar = ['🟠 *Kripto Piyasası*', '']
       if (usd) {
-        satirlar.push(`${SULY.ad} — $${dolar.format(usd)}  •  1 Suly ≈ ${binlik(Math.floor(sulyFiyati(usd, d.kur)))} XP`)
+        satirlar.push(`${SULY.ad} — $${dolar.format(usd)}  •  Alış: 1 Suly = ${binlik(Math.ceil(sulyFiyati(usd, d.alisKur)))} XP  •  Değer: ${binlik(Math.floor(sulyFiyati(usd, d.kur)))} XP`)
         if (!fiyat) satirlar.push('_(Bitcoin fiyatı şu an alınamadı, son bilinen fiyat. Alım satım kapalı.)_')
       } else {
         satirlar.push(`${SULY.ad} — fiyat şu an alınamıyor`)

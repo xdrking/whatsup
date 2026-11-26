@@ -369,7 +369,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 84 (tamam):** Şeker Zinciri'nde süper parlak meyve, şeker yağmuru, ipucu. Faz 83 bölümüne işlendi.
 - **Faz 85 (tamam):** Şeker Zinciri kazandırır: 5 çeşit, birleşim ek ödülü yok, ödeme insan oyuncuya göre. Faz 83 bölümüne işlendi.
 - **Faz 86 (tamam):** panelde Yıldırım Kalesi. Ayrıntı aşağıda.
-- **Faz 87+:** yeni komutlar, her biri ayrı adım
+- **Faz 87 (tamam):** Suly piyasadan çıktı (kur döngüsü), alış kuru, `.tüik`'te Suly fiyatı. Faz 36 ve Faz 50 bölümlerine işlendi.
+- **Faz 88+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1071,7 +1072,7 @@ mulk(chat_jid, user_jid, kod, adet, kira_saat, bekleyen)     PK(chat_jid,user_ji
 
 XP TL ise coin altındır (bot sahibinin benzetmesi). Kurallar ve ürünler `lib/coin.js`'tedir, yeni ürün `COIN_URUNLERI`'ne bir satırdır. Komut adı `.coinmarket`'tir: `.coin` yazı-tura komutudur.
 
-- **Kur:** `coinKuru()` piyasadaki paranın yüzde biridir, en az 1.000.000 XP. Para, üyelerin artı cüzdanı ve bankasıdır (`paraArzi`). Bot sayılmaz: kasa kendi faiziyle büyür. Coin alışı ve gösterilen kur anlıktır (`anlikKur`, bot sahibinin kararı). Bozdurma anlık kurla günün kurundan düşük olanıdır (`bozdurmaKuru`), bu kaldırılmamalı: yoksa kredi çekip kuru %10 farkın üstüne şişiren kişi coinini bozup XP basardı. Maaş, kira, mülk satışı ve vergi günün ilk mesajında sabitlenen kuru kullanır (`gununEkonomisi`).
+- **Kur:** `coinKuru()` piyasadaki paranın yüzde biridir, en az 1.000.000 XP. Para, üyelerin artı cüzdanı ve bankasıdır (`paraArzi`). Bot sayılmaz: kasa kendi faiziyle büyür. Gösterilen kur anlıktır (`anlikKur`, bot sahibinin kararı). Coin ve Suly alışı anlık kurla günün kurundan yüksek olanıdır (`alisKuru`, Faz 87): yoksa parayı gün içinde harcayıp piyasayı küçülten kişi günün kurunun altından ucuza coin alırdı. Bozdurma anlık kurla günün kurundan düşük olanıdır (`bozdurmaKuru`), bu kaldırılmamalı: yoksa kredi çekip kuru %10 farkın üstüne şişiren kişi coinini bozup XP basardı. Maaş, kira, mülk satışı ve vergi günün ilk mesajında sabitlenen kuru kullanır (`gununEkonomisi`).
 - **İşlenmemiş faiz arza yazılır,** veritabanına yazılmadan hesaplanır. Yazılmazsa faizi birikmiş kişi ucuza coin alır, `.banka` ile kuru sıçratır, bozdururdu.
 - **Alış satış:** ödenen XP yanar. `.coinmarket sat` kurun %90'ını öder, bu fark kaldırılmamalı. Coin soyulmaz, hacizle alınmaz.
 - **`.coindevret`:** bot sahibinin kararıyla eklendi (`coinDevret`). Borçlu (`borcluMu`: kredi ya da eksi cüzdan) gönderemez: coin tahsilata ve hacze girmediği için arkadaşa aktarılıp `.iflas` ile borçtan kaçılırdı. Bota yalnızca sahip gönderir. Sahip `.coindevret @a @b <adet>` ile a'nın coinini b'ye taşır (`.devret` gibi, `sahipDevri` borç ve ambargo engeline takılmaz), bot da a olabilir. Tefeci borcu `.devret`'teki gibi engel değildir.
@@ -1209,8 +1210,8 @@ Kurallar `lib/kripto.js`'te, yazma `lib/stats.js`'in sonundaki kripto bölümün
 
 - **Birim:** 1 Suly = 100.000.000 `birim` (satoshi gibi), tam sayı saklanır. Miktar en çok 8 ondalıktır, virgül ve nokta ikisi de ondalıktır. Miktar `args`'tan değil ham `text`'ten okunur (`miktarMetni`): `miktarlariCoz` "0.001"i binlik sanıp 1 yapardı.
 - **Fiyat:** Coinbase, düşerse Binance (BTCUSDT), API key yok, 20 sn bellekte. Fiyat alınamazsa alım satım ve haciz yapılmaz, `.kripto` son bilinen fiyatı "alım satım kapalı" notuyla gösterir. Bayat fiyatla işlem yapılmaz: gerçek fiyatı gören kişi bayat fiyattan alıp satardı.
-- **XP fiyatı:** `usd × kur / REFERANS_KUR` (bot sahibinin kararı, market fiyatları gibi kurla büyür). Kur `kriptoKuru()`: günün kaydı, yoksa son kayıt. Anlık kur kullanılmaz: kur arzdan, arz Suly'den hesaplanır, birbirini çağırırdı. Alışta ücret yukarı, satışta ödeme aşağı yuvarlanır.
-- **Piyasa:** Suly `paraArzi`'ne son işlem fiyatıyla (`kripto_fiyat`) girer (bot sahibinin kararı). Girmeseydi Suly alıp kuru düşüren kişi ucuza coin alır, Suly'yi satıp kuru geri çıkarırdı. Alışta ödenen XP yanar, satışta basılır; arz değişmez. Bot Suly'yi yalnızca darbeden alır, onunki sayılmaz.
+- **XP fiyatı:** `usd × kur / REFERANS_KUR` (bot sahibinin kararı, market fiyatları gibi kurla büyür). Değer ve satış `kriptoKuru()` ile, yani coin bozdurma kuruyla (`bozdurmaKuru`, anlık ve günün kurunun düşüğü) hesaplanır; alış `alisKuru` iledir (Faz 87). Alışta ücret yukarı, satışta ödeme aşağı yuvarlanır.
+- **Piyasa (Faz 87, bot sahibinin kararı):** Suly `paraArzi`'ne **girmez**. Önceden girerdi; ama Suly'nin XP fiyatı kurla, kur da Suly'yi sayan arzla büyüdüğü için kur/fiyat döngüsü kendini besliyordu: grupta ~3.800 Suly'nin üstünde kur her gün katlanıyordu (242.000 Suly ile günde ~64 kat, SulyMarket'ten sonra). Alışta ödenen XP yanar ve piyasa küçülür, satışta basılır. Suly alıp kuru düşürüp ucuz coin alma açığını `alisKuru` kapatır, şişirip pahalı bozdurmayı `bozdurmaKuru`. Bot Suly'yi yalnızca darbeden alır, onunki sayılmaz.
 - **Satış:** %1 kesinti hazineye (`kasayaYatir`). Kesinti kaldırılmamalı: fiyat herkese açık, dakikalık oynama bedava kâr olurdu.
 - **Haciz:** yalnızca sahibin `.haciz @kişi suly <miktar|hepsi>`'i alır (bot sahibinin kararı), kesintisiz değer hazineye girer. `.hacizall`, soygun, bakanlar ve sigorta Suly'ye dokunmaz. Darbe %60'ını bot hesabına geçirir; bot Suly'si `paraArzi`'ne girmez (bot parası gibi).
 - Borçlu (`borcluMu`) alamaz, Suly varken `.iflas` reddedilir: Suly tahsilata girmediği için borçtan kaçış olurdu. `.servet` satış değeriyle sayar. Panelde Suly kartı vardır (Faz 55). Sıfır atma Suly'ye dokunmaz: XP fiyatı kurla kendiliğinden düşer.
@@ -1763,3 +1764,4 @@ Bot sahibi Gates of Olympus istedi; oyun o türün (düşen semboller, her yerde
 151. Şeker Zinciri'nde 3,5 sn bekle → eşleşme yapılabilecek şekerler beyaz parlar, dokununca söner. 5 aynı meyve → süper parlak meyve (arkasında dönen gökkuşağı); onu aynı meyvelerle eşleştir → geniş patlama, etraftakiler de öder. Tahtada hamle kalmayınca "ŞEKER YAĞMURU": şekerler aşağı dökülür, yenileri yağar, eşleşenler kendiliğinden patlayıp kazanca eklenir
 152. Panelde Yıldırım Kalesi → semboller yağar; 8+ aynı sembol parlar, tepeden şimşek iner, patlar; ⚡ küre düşünce şimşek çakar. Kazandıran dönüşte tahta kararır, her küreden çarpan göstergesine şimşek uzanır, "⚡ xN" yazar, kazanç çarpılır. 🎁 Bonus al → onay sorar, 15 bedava dönüş, makine mora döner, çarpan tur boyunca birikir. Sonuç yazısı animasyon bitmeden görünmez. Telefonda ve bilgisayarda yatay taşma ve takılma yok
 153. Şeker Fırtınası ya da Yıldırım Kalesi'nde 100 otomatik, "Bonus gelince duraklat" işaretli → bonus gelince alt çubukta "⏸ Bonus geldi ▶ DEVAM (N)"; DEVAM kalan çevirmelerle sürer, DURDUR bitirir; duraklamışken elle çevirme otomatiği başlatmaz
+154. `.tüik` → Suly'nin dolar fiyatı, XP karşılığı ve dolaşımdaki Suly; `.kripto al suly 0,1` → piyasadaki para ödenen kadar azalır; `.kripto` ve `.coinmarket` alış ve değer/bozdurma fiyatını ayrı yazar

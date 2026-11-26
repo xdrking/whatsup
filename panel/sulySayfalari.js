@@ -128,7 +128,8 @@ export function sulyCanli(v) {
     eksen: dolar, yaz: dolar, ipucu: (t) => tamBicim.format(t), zaman: (t) => (gunlukMu ? gunBicimi.format(t) : saatBicimi.format(t)),
   })}
   <div class="kutucuklar">
-    ${kutucuk('XP karşılığı', usd && kur ? xp(sulyFiyati(usd, kur)) : '—', '1 Suly')}
+    ${kutucuk('XP karşılığı', usd && kur ? xp(sulyFiyati(usd, kur)) : '—', '1 Suly · satış değeri')}
+    ${kutucuk('Alış', usd && ekonomi?.alisKur ? xp(Math.ceil(sulyFiyati(usd, ekonomi.alisKur))) : '—', '1 Suly')}
     ${kutucuk('Coin kuru', ekonomi ? xp(ekonomi.kur) : '—', 'anlık')}
     ${kutucuk('Piyasadaki para', ekonomi ? `${kisa(ekonomi.anlik)} XP` : '—')}
     ${kutucuk('Dolaşımdaki Suly', sulyYaz(dolasim), usd && kur ? `≈ ${kisa(sulyDegeri(dolasim, usd, kur))} XP` : '')}
@@ -182,7 +183,7 @@ export function coinCanli(v) {
   return h`<div id="coin-canli" data-adres="/oyun/coin-canli?grup=${encodeURIComponent(chat)}">
 <section class="kart suly-kart coin-kart">
   <div class="suly-bas">
-    <div><small>1 🪙 Coin</small><strong class="suly-fiyat">${xp(e.kur)}</strong></div>
+    <div><small>1 🪙 Coin · alış</small><strong class="suly-fiyat">${xp(e.alisKur ?? e.kur)}</strong></div>
     <div class="suly-yan">
       <span class="yon ${oran >= 0 ? 'artis' : 'dusus'}">${oran >= 0 ? '▲' : '▼'} %${yuzde.format(Math.abs(oran))} <small>bugün</small></span>
       <span class="canli">● Canlı · ${saniyeBicimi.format(simdi)}</span>
