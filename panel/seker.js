@@ -120,6 +120,7 @@
     const oran = Math.min(window.devicePixelRatio || 1, azGuc ? 1.5 : 2)
     let parcalar = []
     let halkalar = []
+    let simsekler = []
     let flas = null
     let calisiyor = false
     let onceki = 0
@@ -162,6 +163,35 @@
         ctx.arc(r.x, r.y, 6 + r.yaricap * (1 - (1 - t) ** 3), 0, Math.PI * 2)
         ctx.stroke()
       }
+      // Şimşek her karede yeniden zikzaklanır, titrer; parlaklık shadowBlur'suz iki çizgiyle verilir (telefonda ucuz).
+      simsekler = simsekler.filter((b) => (b.omur -= dt) > 0)
+      for (const b of simsekler) {
+        const boy = Math.hypot(b.x2 - b.x1, b.y2 - b.y1)
+        const nx = -(b.y2 - b.y1) / (boy || 1)
+        const ny = (b.x2 - b.x1) / (boy || 1)
+        const noktalar = [[b.x1, b.y1]]
+        for (let i = 1; i < b.parca; i += 1) {
+          const t = i / b.parca
+          const sapma = (Math.random() - 0.5) * boy * 0.16 * Math.sin(Math.PI * t)
+          noktalar.push([b.x1 + (b.x2 - b.x1) * t + nx * sapma, b.y1 + (b.y2 - b.y1) * t + ny * sapma])
+        }
+        noktalar.push([b.x2, b.y2])
+        const yol = () => {
+          ctx.beginPath()
+          noktalar.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)))
+          ctx.stroke()
+        }
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.globalAlpha = Math.min(1, (b.omur / b.sure) * 1.5) * 0.45
+        ctx.strokeStyle = b.renk
+        ctx.lineWidth = b.kalin * 3
+        yol()
+        ctx.globalAlpha = Math.min(1, (b.omur / b.sure) * 1.5)
+        ctx.strokeStyle = '#ffffff'
+        ctx.lineWidth = b.kalin
+        yol()
+      }
       parcalar = parcalar.filter((p) => (p.omur -= dt) > 0)
       for (const p of parcalar) {
         p.vy += p.yercekimi * dt
@@ -202,7 +232,7 @@
         }
       }
       ctx.globalAlpha = 1
-      if (parcalar.length || halkalar.length || flas) requestAnimationFrame(ciz)
+      if (parcalar.length || halkalar.length || simsekler.length || flas) requestAnimationFrame(ciz)
       else calisiyor = false
     }
 
@@ -234,6 +264,11 @@
           })
         }
         halkalar.push({ x, y, renk: '#ffffff', kalin: 5, yaricap: 26 + guc * 5, omur: 0.45, sure: 0.45 })
+        baslat()
+      },
+      /** (x1, y1)'den (x2, y2)'ye titreyen şimşek (Yıldırım Kalesi). */
+      simsek(x1, y1, x2, y2, renk = '#8fd3ff', sure = 0.4, kalin = 2.5) {
+        simsekler.push({ x1, y1, x2, y2, renk, sure, omur: sure, kalin, parca: azGuc ? 7 : 11 })
         baslat()
       },
       halka(x, y, renk, yaricap, sure = 0.8) {

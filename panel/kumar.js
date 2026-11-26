@@ -11,6 +11,7 @@ import {
 import { sansliMi } from '../lib/sahipSans.js'
 import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
 import { BONUS_FIYATI, sekerCevir } from '../lib/seker.js'
+import { BONUS_FIYATI as YILDIRIM_BONUS, yildirimCevir } from '../lib/yildirim.js'
 import { AZAMI_KAT as ZINCIR_TAVAN, BOYUT, GIRIS_TABAN, hamleYap, ipucu, kodla, komsuMu, PAKETLER, paketCoz, SAHIP_SANS, tahtaKur } from '../lib/zincir.js'
 import { miktarlariCoz } from '../lib/sayi.js'
 import { getDb } from '../lib/db.js'
@@ -65,6 +66,13 @@ export const TEK_OYUNLAR = {
     hazirla: (secim) => (secim === 'bonus'
       ? { cevir: () => sekerCevir(undefined, { bonus: true }), kat: BONUS_FIYATI }
       : { cevir: () => sekerCevir() }),
+  },
+  // Şeker Fırtınası'nın kardeşi (bot sahibinin isteği): kombo yerine yıldırım küreleri çarpar. Yalnızca panelde.
+  yıldırım: {
+    ad: 'Yıldırım Kalesi', ikon: '⚡',
+    hazirla: (secim) => (secim === 'bonus'
+      ? { cevir: () => yildirimCevir(undefined, { bonus: true }), kat: YILDIRIM_BONUS }
+      : { cevir: () => yildirimCevir() }),
   },
   slot: { ad: 'Slot', ikon: '🎰', hazirla: () => ({ cevir: () => slotCevir() }) },
   rulet: {
@@ -203,7 +211,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     // Reborn'dan sonraki gizli şans WhatsApp'taki `.crash` ile aynıdır, sayfada görünmez (lib/reborn.js).
     let cevir = oyun === 'crash' && rebornSansiVar(h.chat, saat()) ? sansliCevir(hazir.cevir, REBORN_CRASH_SANSI) : hazir.cevir
     // Sahibin gizli şansı (`.şans`), WhatsApp'takiyle aynı; şekerde daha güçlü. Sayfada görünmez.
-    if (sahipMi(h)) cevir = oyun === 'şeker' ? sahipSekerSansi(cevir) : sahipSansi(cevir)
+    if (sahipMi(h)) cevir = oyun === 'şeker' || oyun === 'yıldırım' ? sahipSekerSansi(cevir) : sahipSansi(cevir)
     const bahis = g.miktar * (hazir.kat ?? 1)
     const s = bahisOyna({ chatJid: h.chat, userJid: h.user, miktar: bahis, cevir, oyun, tavansiz: true })
     if (!s) return sonucYaz(k, { oyun, hata: 'Kumarhane şu an kapalı, sonra dene.' })

@@ -368,7 +368,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 83 (tamam):** panelde Şeker Zinciri. Ayrıntı aşağıda.
 - **Faz 84 (tamam):** Şeker Zinciri'nde süper parlak meyve, şeker yağmuru, ipucu. Faz 83 bölümüne işlendi.
 - **Faz 85 (tamam):** Şeker Zinciri kazandırır: 5 çeşit, birleşim ek ödülü yok, ödeme insan oyuncuya göre. Faz 83 bölümüne işlendi.
-- **Faz 86+:** yeni komutlar, her biri ayrı adım
+- **Faz 86 (tamam):** panelde Yıldırım Kalesi. Ayrıntı aşağıda.
+- **Faz 87+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1582,6 +1583,17 @@ Bot sahibi Candy Crush tarzı bir oyun istedi; oyun türün (yer değiştir, 3+ 
 - **Şans:** sahip şansında (`.şans`, Faz 82) yeni şekerler `SAHIP_SANS` olasılıkla son rengi atlar, az renk daha çok eşleşme demektir. Hileli zar işlemez (çok adımlı oyun), nazar boncuğu `kumarOde`'den geçtiği için işler.
 - **Tarayıcı:** parçacıklar Şeker Fırtınası'nın kanvas motorudur (`window.SekerEfekt`), hareketler Web Animations API'dir; satır içi `style` yazılmaz (ışının boyu da kare kareye yazılır). El bitince sonuç sayfası `window.KumarhaneSayfa.degistir` ile getirilir, bakiye oyun.js'teki gibi sayılır. Hızlı hamleler arasında 250 ms olmalı (`ZINCIR_ARALIK_MS`), tarayıcı zaten animasyon bitmeden yenisini göndermez.
 
+### Faz 86 — Yıldırım Kalesi (yalnızca panel)
+
+Bot sahibi Gates of Olympus istedi; oyun o türün (düşen semboller, her yerde 8+ öder, çarpan küreleri, bedava dönüşte biriken çarpan, bonus satın alma) **özgün** bir örneğidir: adı, teması (fırtına ve elementler), sembolleri, görünümü ve sesi kopyalanmadı, tanrı figürü yoktur. Kurallar `lib/yildirim.js`'te saftır, oynatma `panel/yildirim.js`'tedir. Şeker Fırtınası'nın (Faz 81) kardeşidir, aynı yoldan geçer.
+
+- **Tek adımlı oyundur:** `TEK_OYUNLAR['yıldırım']`, `bahisOyna` ile tek transaction; bütün el sunucuda baştan hesaplanır. Adımlar `data-yildirim`'e kısaltılmış yazılır: sembol harfi (`abcdefghiz`), küre `m`, küre değeri `v`'de ayrıca.
+- **Küre:** yeni düşen hücre `KURE_ONBINDE` (bedava dönüşte `KURE_ONBINDE_BEDAVA`) olasılıkla ⚡ küre olur, değeri `KURELER` ağırlığıyla 2x-500x. Küre patlamaz, düştüğü yerde kalır. Ana dönüşte kazandıran dönüşün son tahtasındaki kürelerin toplamı o dönüşün kazancını çarpar; bedava dönüşte kazandıran dönüşün küreleri toplam çarpana eklenir, toplam o dönüşü çarpar ve tur boyunca düşmez. Kombo çarpanı yoktur.
+- **Matematik:** beklenen dönüş ~%97, bonus (`BONUS_FIYATI` 90x) ~%97. `test/yildirim.test.js` tohumlu simülasyonla ana oyunu %88-102, bonusu %85-108 arasında tutar (bonusun kuyruğu ağır, örnek küçük). Ağırlık, ödeme, küre ya da bedava dönüş değişirse bu test geçmeli; bonus fiyatı bedava turun ortalamasından yeniden hesaplanır. Tavan `AZAMI_KAT` (5000x).
+- **Şans:** hileli zar ve nazar `bahisOyna`'dan geçtiği için işler; sahip şansı Şeker Fırtınası'ndaki gibi güçlüdür (`sahipSekerSansi`).
+- **Efektler telefonu yormamalı:** şimşekler Şeker Fırtınası'nın tek kanvaslı motorunda çizilir (`window.SekerEfekt().simsek`): her karede yeniden zikzaklanır, parlaklık `shadowBlur` yerine geniş yarı saydam ve ince beyaz iki çizgiyle verilir; zayıf cihazda daha az parça. Patlayan kümeye en çok 3 şimşek iner, küre düşünce şimşek çakar, sayılırken kürelerden çarpan göstergesine şimşek uzanır ve tahta kararır (`.karanlik`, küreler parlak kalır). Arka planda arada uzak şimşek çakar (`::before` opaklığı). CSS'te yalnızca `transform` ve `opacity` canlandırılır.
+- **Tarayıcı:** `oyun.js` `canlandir` ve `beklemeGoster`'da `window.YildirimKalesi`'ni çağırır; sonuç yazısı oynatma bitene kadar gizlidir (`.oynuyor .gecikmeli`). Otomatik çevirme, turbo (`localStorage` `yildirim-turbo`), boşluk tuşu ve makinenin altındaki çevir düğmesi Şeker Fırtınası'ndaki gibidir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1749,3 +1761,4 @@ Bot sahibi Candy Crush tarzı bir oyun istedi; oyun türün (yer değiştir, 3+ 
 149. Sahip özelden `.şans aç` → yanıt WhatsApp ve paneli, şekeri ve çok adımlı oyunları sayar; önceden sahiplik verilip şans açmış biri varsa "N kişinin şansı kapatıldı" yazar. O kişi panelde ve WhatsApp'ta normal şansla oynar. `.şans kapat` → sahip de normal oynar
 150. Panelde Şeker Zinciri → 20 hamle seç: cüzdan bahsin 1,4 katı ve giriş kadar düşer, `.hazine` giriş kadar artar. Şekeri komşusuna kaydır: patlar, üsttekiler düşer, "+XP" yükselir, hamle sayısı azalır; patlatmayan takas geri kayar, hamle azalmaz. 4'lü sıra çizgili, L bomba, 5'li gökkuşağı doğurur, çizgili patlayınca satır boyunca ışın çakar. 💰 BİTİR → o ana kadarki kazanç ödenir, sonuç kartı çıkar. Telefonda kaydırma sayfayı kaydırmaz, yatay taşma yok
 151. Şeker Zinciri'nde 3,5 sn bekle → eşleşme yapılabilecek şekerler beyaz parlar, dokununca söner. 5 aynı meyve → süper parlak meyve (arkasında dönen gökkuşağı); onu aynı meyvelerle eşleştir → geniş patlama, etraftakiler de öder. Tahtada hamle kalmayınca "ŞEKER YAĞMURU": şekerler aşağı dökülür, yenileri yağar, eşleşenler kendiliğinden patlayıp kazanca eklenir
+152. Panelde Yıldırım Kalesi → semboller yağar; 8+ aynı sembol parlar, tepeden şimşek iner, patlar; ⚡ küre düşünce şimşek çakar. Kazandıran dönüşte tahta kararır, her küreden çarpan göstergesine şimşek uzanır, "⚡ xN" yazar, kazanç çarpılır. 🎁 Bonus al → onay sorar, 15 bedava dönüş, makine mora döner, çarpan tur boyunca birikir. Sonuç yazısı animasyon bitmeden görünmez. Telefonda ve bilgisayarda yatay taşma ve takılma yok

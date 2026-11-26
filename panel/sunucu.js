@@ -30,6 +30,7 @@ const KUMARHANE_STIL = readFileSync(path.join(KLASOR, 'kumarhane.css'))
 const OYUN_BETIGI = readFileSync(path.join(KLASOR, 'oyun.js'))
 const SEKER_BETIGI = readFileSync(path.join(KLASOR, 'seker.js'))
 const ZINCIR_BETIGI = readFileSync(path.join(KLASOR, 'zincir.js'))
+const YILDIRIM_BETIGI = readFileSync(path.join(KLASOR, 'yildirim.js'))
 const SOSYAL_STIL = readFileSync(path.join(KLASOR, 'sosyal.css'))
 const SOSYAL_BETIGI = readFileSync(path.join(KLASOR, 'sosyal-istemci.js'))
 const SERVIS_ISCISI = readFileSync(path.join(KLASOR, 'sw.js'))
@@ -320,6 +321,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     }
     if (yol === 'GET /seker.js') {
       return gonder(res, 200, SEKER_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /yildirim.js') {
+      return gonder(res, 200, YILDIRIM_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
     }
     if (yol === 'GET /zincir.js') {
       return gonder(res, 200, ZINCIR_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })

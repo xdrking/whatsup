@@ -4,6 +4,7 @@
 import { IKILI_CARPAN, KAZI_ODULLERI, PLINKO_RISK, renk, SEMBOLLER } from '../lib/kumar.js'
 import { AZAMI_KAT, BEDAVA_DONUS, BONUS_FIYATI, DAGINIK, DAGINIK_ODEME, EK_DONUS, EK_ESIK, KOMBO, SATIR, SEKERLER, SUTUN, tahtaKur } from '../lib/seker.js'
 import { AZAMI_KAT as ZINCIR_TAVAN, BOYUT, coz, HUCRE_DEGERI, KOMBO as ZINCIR_KOMBO, OZEL_ADI, PAKETLER, RENK_ADI, RENKLER } from '../lib/zincir.js'
+import * as YK from '../lib/yildirim.js'
 import { COK_OYUNLAR, TEK_OYUNLAR, VURGUN_KAT, zincirGirisi } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
 
@@ -55,6 +56,20 @@ const VITRIN = {
     govde: (secim, chat) => h`<p class="not">Bahsin yanında giriş ücreti alınır, o hazineye gider. Fazla hamle hamle başına daha pahalıdır.</p>
 ${secenekler(Object.entries(PAKETLER).map(([no, p], i) => [no, h`${no} hamle<small>bahis x${virgul(p.kat)} · giriş ${sayi.format(chat ? zincirGirisi(chat, p) : 0)} XP</small>`, `zincir-paket${i === 2 ? ' sicak' : ''}${no === secim ? ' secili' : ''}`]))}`,
   },
+  yıldırım: {
+    aciklama: '8+ aynı sembol patlar, ⚡ küreler kazancı çarpar, 4 🌩️ bedava dönüş', etiket: `${sayi.format(YK.AZAMI_KAT)}x`,
+    govde: () => h`<button class="buyuk-dugme yk-cevir">⚡ ÇEVİR</button>
+<div class="seker-arac">
+  <button name="secim" value="bonus" class="ikincil yk-bonus">🎁 BONUS AL · ${YK.BONUS_FIYATI}x</button>
+  <div class="seker-oto yk-oto" hidden>
+    <label class="alan"><small>Otomatik</small><select class="oto-adet">${[10, 25, 50, 100, 500].map((n) => h`<option value="${n}">${n} çevirme</option>`)}</select></label>
+    <label class="kutu-sec"><input type="checkbox" class="oto-bonus" checked> Bonus gelince dur</label>
+    <label class="kutu-sec"><input type="checkbox" class="oto-buyuk"> 50x üstü kazançta dur</label>
+    <label class="kutu-sec"><input type="checkbox" class="yk-turbo"> ⚡ Turbo</label>
+    <button type="button" class="oto-basla ikincil">▶ OTOMATİK BAŞLAT</button>
+  </div>
+</div>`,
+  },
   slot: { aciklama: 'Üçlü 3x-50x, ikili 1,5x', etiket: 'JACKPOT 50x', govde: () => h`<button class="buyuk-dugme">ÇEVİR</button>` },
   kazı: { aciklama: '3 aynı sembol 1x-50x', etiket: '50x', govde: () => h`<button class="buyuk-dugme">KAZI</button>` },
   blackjack: { aciklama: 'Çift, böl, sigorta, teslim', etiket: '2,5x', govde: () => h`<button class="buyuk-dugme">MASAYA OTUR</button>` },
@@ -74,7 +89,7 @@ ${secenekler(Object.entries(PAKETLER).map(([no, p], i) => [no, h`${no} hamle<sma
 }
 
 export const KATEGORILER = [
-  { ad: 'Slot ve kazı', ikon: '🎰', oyunlar: ['şeker', 'zincir', 'slot', 'kazı'] },
+  { ad: 'Slot ve kazı', ikon: '🎰', oyunlar: ['şeker', 'yıldırım', 'zincir', 'slot', 'kazı'] },
   { ad: 'Kart ve masa', ikon: '🃏', oyunlar: ['blackjack', 'hilo', 'rulet', 'bahis'] },
   { ad: 'Çarpan oyunları', ikon: '🚀', oyunlar: ['crash', 'plinko', 'mayın', 'kule'] },
 ]
@@ -127,7 +142,7 @@ function oyunKarti(chat, oyun, varsayilan, secim = '') {
   const t = OYUN_ADI[oyun]
   const { aciklama, etiket, govde } = VITRIN[oyun]
   const icerik = govde(secim, chat)
-  const tek = icerik.metin.startsWith('<button') && oyun !== 'şeker'
+  const tek = icerik.metin.startsWith('<button') && oyun !== 'şeker' && oyun !== 'yıldırım'
   return h`<form class="masa-kart k-${oyun}${tek ? ' tek' : ''}" method="post" action="/oyun/oyna">
   ${gizli(chat)}<input type="hidden" name="oyun" value="${oyun}">
   <div class="masa-ust">
@@ -306,6 +321,7 @@ export function ruletCarki(sayi = null, sinif = '') {
 /** Tek adımlı oyunun canlandırması; sonuç metni `gecikmeli` ile animasyon bitince görünür. */
 function tekCizim(oyun, s, sonuc) {
   if (oyun === 'şeker') return sekerMakinesi(s, sonuc)
+  if (oyun === 'yıldırım') return yildirimMakinesi(s, sonuc)
   if (oyun === 'slot') {
     return h`<div class="slot-makine"><div class="makaralar">${s.makaralar.map((m, i) => h`<div class="makara m${i + 1}">${serit(m)}</div>`)}</div></div>`
   }
@@ -361,6 +377,7 @@ function sonucKarti(chat, s) {
 /** Hangi sembol kaç kat öder; değerler oyunun kendi tablosundan okunur, elle yazılmaz. */
 function odemeTablosu(oyun) {
   if (oyun === 'şeker') return sekerTablosu()
+  if (oyun === 'yıldırım') return yildirimTablosu()
   if (oyun === 'zincir') return zincirTablosu()
   const satirlar = oyun === 'slot'
     ? [...SEMBOLLER.map((x) => [`${x.s}${x.s}${x.s}`, x.uclu]), ['İkili', IKILI_CARPAN]]
@@ -407,8 +424,8 @@ export function oyunSayfasi({ chat, oyun, cokGrup, durum }) {
       : h`<section class="oyunlar tekli">${oyunKarti(chat, oyun, String(sonuc?.taban ?? sonuc?.bahis ?? sonuc?.yazilan ?? ''), sonuc?.oyun === oyun ? sonuc.secim ?? '' : '')}</section>`
   return kabuk(t.ad, h`
 ${kasa({ xp, dar: true })}
-${oyun === 'şeker' && !(sonuc?.oyun === 'şeker' && !sonuc.hata)
-    ? h`${sonuc?.hata ? h`<p id="bildirim" class="bildirim olmadi" role="alert">⚠️ ${sonuc.hata}</p>` : ''}${bosMakine()}`
+${(oyun === 'şeker' || oyun === 'yıldırım') && !(sonuc?.oyun === oyun && !sonuc.hata)
+    ? h`${sonuc?.hata ? h`<p id="bildirim" class="bildirim olmadi" role="alert">⚠️ ${sonuc.hata}</p>` : ''}${oyun === 'şeker' ? bosMakine() : yildirimBos()}`
     : sonucKarti(chat, sonuc)}
 ${masa}
 ${odemeTablosu(oyun)}
@@ -517,5 +534,71 @@ function zincirTablosu() {
 <li><span>Çizgili + çizgili</span><strong>Satır ve sütun</strong></li>
 </ul>
 <p class="not">Paketler: ${Object.entries(PAKETLER).map(([n, p]) => `${n} hamle bahsin ${virgul(p.kat)} katı`).join(', ')}. Giriş ücreti ayrıca alınır, hazineye gider, geri dönmez. Patlatmayan takas hamle harcamaz. Yapacak eşleşme kalmayınca bütün şekerler dökülür, yenileri yağar; yağarken eşleşenler kendiliğinden patlar ve öder. Bir süre hamle yapmazsan eşleşme yapılabilecek şekerler beyaz parlar. Bir el en çok bahsin ${ZINCIR_TAVAN} katını kazanır. 3 dakika hamle yapmazsan kalan hamleler yanar, o ana kadarki kazanç ödenir.</p>
+</section>`
+}
+
+// --- Yıldırım Kalesi ---
+// Şeker Fırtınası gibi: son tahta sunucuda çizilir (betik yoksa görünen budur), bütün adımlar `data-yildirim`'de
+// kısaltılmış durur, panel/yildirim.js oynatır. Sembol tek harfe çevrilir, küre `m`'dir, değeri `v`'de ayrıca yazar.
+const YK_SEMBOLLER = [...YK.SEMBOLLER.map((x) => x.s), YK.DAGINIK]
+const YK_HARF = 'abcdefghiz'
+const ykHarf = (x) => (YK.kureMi(x) ? 'm' : YK_HARF[YK_SEMBOLLER.indexOf(x)])
+const ykAdim = (a) => ({
+  t: a.tahta.flat().map(ykHarf).join(''),
+  v: a.tahta.flat().flatMap((x, i) => (YK.kureMi(x) ? [[i, x]] : [])),
+  p: a.patlayan, k: a.kazanc,
+  o: a.odemeler.map((o) => [YK_SEMBOLLER.indexOf(o.s), o.adet, o.kat]),
+})
+const ykDonus = (d, carpan) => ({ a: d.adimlar.map(ykAdim), h: d.ham, u: d.kure, c: carpan, k: d.kazanc, ek: d.ek ?? 0 })
+
+export function yildirimVerisi(s, sonuc) {
+  return JSON.stringify({
+    s: YK_SEMBOLLER, sut: YK.SUTUN, sat: YK.SATIR, taban: sonuc?.taban ?? sonuc?.bahis ?? 0, bonus: s.bonus, kat: s.kat, tavan: s.tavan,
+    dk: s.daginikKazanc, ek: YK.EK_DONUS,
+    ana: ykDonus(s.ana, s.ana.ham > 0 && s.ana.kure > 0 ? s.ana.kure : 0),
+    fs: s.bedava ? s.bedava.donusler.map((d) => ykDonus(d, d.carpan)) : null,
+  })
+}
+
+/** Kürenin rengi değerine göre: mavi, mor, kırmızı, altın. */
+const kureSinifi = (x) => (x >= 100 ? 'k4' : x >= 20 ? 'k3' : x >= 8 ? 'k2' : 'k1')
+
+function ykTahta(tahta) {
+  const hucreler = []
+  for (let r = 0; r < YK.SATIR; r += 1) for (let c = 0; c < YK.SUTUN; c += 1) hucreler.push(tahta[c][r])
+  return h`<div class="yk-tahta">${hucreler.map((x) => (YK.kureMi(x)
+    ? h`<span class="yk kure ${kureSinifi(x)}"><b>${x}x</b></span>`
+    : h`<span class="yk${x === YK.DAGINIK ? ' daginik' : ''}">${x}</span>`))}</div>`
+}
+
+function ykMakine(tahta, { veri = '', ust = '' } = {}) {
+  return h`<div class="yk-makine"${veri ? h` data-yildirim="${veri}"` : ''}>
+  <div class="yk-ust"><span class="yk-carpan">⚡ <b>x0</b></span><span class="yk-tur">${ust}</span><span class="yk-kazanc">0</span></div>
+  <div class="yk-cerceve">${ykTahta(tahta)}<div class="yk-sahne" aria-hidden="true"></div></div>
+</div>
+<button type="button" class="buyuk-dugme yk-hizli" hidden>⚡ ÇEVİR</button>`
+}
+
+function yildirimMakinesi(s, sonuc) {
+  const son = s.bedava?.donusler.at(-1)?.adimlar.at(-1) ?? s.ana.adimlar.at(-1)
+  const tur = s.bedava ? `🌩️ ${s.bedava.donusler.length} bedava dönüş` : s.bonus ? '🎁 Bonus' : ''
+  const anaPatlama = s.ana.adimlar.length - 1
+  const ozet = h`<p class="not orta gecikmeli">${anaPatlama ? `${anaPatlama} patlama` : 'Patlama yok'}${s.ana.ham > 0 && s.ana.kure > 0 ? ` · ⚡ x${s.ana.kure}` : ''}${s.bedava ? ` · bedava dönüşlerden ${virgul(Math.round(s.bedava.kazanc * 100) / 100)}x` : ''}${s.tavan ? ` · ${sayi.format(YK.AZAMI_KAT)}x tavanı` : ''}</p>`
+  return h`${ykMakine(son.tahta, { veri: yildirimVerisi(s, sonuc), ust: tur })}${ozet}`
+}
+
+/** Sayfa ilk açıldığında boş durmasın: rastgele bir tahta, sonuç yok. */
+export function yildirimBos() {
+  return h`<section id="sonuc" class="sonuc bos" data-oyun="yıldırım" data-durum="bos"><h2>⚡ Yıldırım Kalesi</h2>${ykMakine(YK.tahtaKur())}</section>`
+}
+
+function yildirimTablosu() {
+  const kat = (x) => `${virgul(x)}x`
+  const kureler = YK.KURELER.map((k) => k.x)
+  return h`<section class="odeme-tablosu seker-tablo yk-tablo"><h3>ÖDEME TABLOSU</h3>
+<p class="not">Tahtanın herhangi bir yerinde aynı sembolden en az 8 tane olunca öder. Kazandıran semboller patlar, üsttekiler düşer, yenileri yağar. ⚡ Yıldırım küreleri patlamaz: dönüş kazandırdıysa tahtadaki kürelerin toplamı dönüşün kazancını çarpar (${kat(kureler[0])} - ${kat(kureler.at(-1))}).</p>
+<ul>${[...YK.SEMBOLLER].reverse().map((x) => h`<li><span>${x.s} ${x.ad}</span><strong>8+ ${kat(x.odeme[0])} · 10+ ${kat(x.odeme[1])} · 12+ ${kat(x.odeme[2])}</strong></li>`)}
+<li><span>${YK.DAGINIK} Fırtına</span><strong>${Object.entries(YK.DAGINIK_ODEME).map(([n, k]) => `${n}: ${kat(k)}`).join(' · ')}</strong></li></ul>
+<p class="not">4+ ${YK.DAGINIK} → ${YK.BEDAVA_DONUS} bedava dönüş. Bedava dönüşlerde kazandıran dönüşün küreleri toplam çarpana eklenir, toplam çarpan her kazancı çarpar ve tur boyunca hiç sıfırlanmaz. ${YK.EK_ESIK} ${YK.DAGINIK} +${YK.EK_DONUS} dönüş verir. 🎁 Bonus al: bahsin ${YK.BONUS_FIYATI} katına doğrudan bedava dönüş. En çok ${sayi.format(YK.AZAMI_KAT)}x.</p>
 </section>`
 }

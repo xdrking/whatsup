@@ -171,6 +171,7 @@
     let bitis = 0.25
     // Şeker Fırtınası'nın süresi adım sayısına bağlıdır: oynatma bitince çözülen Promise döner.
     if (oyun === 'şeker') return window.SekerFirtinasi?.oynat(kutu) ?? 0
+    if (oyun === 'yıldırım') return window.YildirimKalesi?.oynat(kutu) ?? 0
 
     if (oyun === 'slot') {
       for (let i = 0; i < 22; i += 1) sesler.tik(i * 0.09)
@@ -264,6 +265,8 @@
     let gorsel = null
     if (oyun === 'şeker') {
       gorsel = window.SekerFirtinasi?.bekleme() ?? null
+    } else if (oyun === 'yıldırım') {
+      gorsel = window.YildirimKalesi?.bekleme() ?? null
     } else if (oyun === 'slot') {
       gorsel = yeni('div', 'slot-makine')
       const makaralar = yeni('div', 'makaralar')
@@ -396,6 +399,7 @@
     sesDugmesi()
     window.SekerFirtinasi?.hazirla()
     window.SekerZinciri?.hazirla()
+    window.YildirimKalesi?.hazirla()
     for (const cipler of document.querySelectorAll('.cipler')) cipler.hidden = false
   }
 
