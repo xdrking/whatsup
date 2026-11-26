@@ -349,6 +349,9 @@
     hedef?.scrollIntoView({ behavior: 'smooth', block: govde.classList.contains('yerinde') ? 'nearest' : 'start' })
   }
 
+  // Şeker Zinciri el bitince sonucu bu yoldan getirir (panel/zincir.js).
+  window.KumarhaneSayfa = { degistir: sayfayiDegistir }
+
   document.addEventListener('submit', async (olay) => {
     const form = olay.target
     if (!(form instanceof HTMLFormElement)) return
@@ -392,6 +395,7 @@
   function hazirla() {
     sesDugmesi()
     window.SekerFirtinasi?.hazirla()
+    window.SekerZinciri?.hazirla()
     for (const cipler of document.querySelectorAll('.cipler')) cipler.hidden = false
   }
 

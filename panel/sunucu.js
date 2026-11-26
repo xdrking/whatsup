@@ -29,6 +29,7 @@ const STIL = readFileSync(path.join(KLASOR, 'stil.css'))
 const KUMARHANE_STIL = readFileSync(path.join(KLASOR, 'kumarhane.css'))
 const OYUN_BETIGI = readFileSync(path.join(KLASOR, 'oyun.js'))
 const SEKER_BETIGI = readFileSync(path.join(KLASOR, 'seker.js'))
+const ZINCIR_BETIGI = readFileSync(path.join(KLASOR, 'zincir.js'))
 const SOSYAL_STIL = readFileSync(path.join(KLASOR, 'sosyal.css'))
 const SOSYAL_BETIGI = readFileSync(path.join(KLASOR, 'sosyal-istemci.js'))
 const SERVIS_ISCISI = readFileSync(path.join(KLASOR, 'sw.js'))
@@ -210,6 +211,17 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       return gonder(res, 200, lobi({ chat, grupAdi: grupAdlari().get(chat) ?? '', cokGrup, durum, vurgunlar: buyukVurgunlar(chat) }))
     }
 
+    // Şeker Zinciri hamlesi: sayfa yenilenmez, adımlar JSON gelir, tarayıcı oynatır (panel/zincir.js).
+    if (yol === 'POST /oyun/zincir') {
+      const form = await govdeOku(req)
+      const hesap = form && hesapBul(form.get('grup') ?? '')
+      const json = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }
+      if (!hesap) return gonder(res, 403, JSON.stringify({ hata: 'Giriş gerekiyor.', bitti: true }), json)
+      const kim = { chat: hesap.chat_jid, user: hesap.user_jid, numara: hesap.numara, lid: hesap.lid }
+      const yanit = kumar.hamle(kim, { hamle: form.get('hamle') ?? '', oyun: 'zincir' }) ?? {}
+      return gonder(res, 200, JSON.stringify(yanit), json)
+    }
+
     if (yol === 'POST /oyun/oyna' || yol === 'POST /oyun/hamle' || yol === 'POST /oyun/islem') {
       const form = await govdeOku(req)
       if (!form) return gonder(res, 413, hataSayfasi('İstek çok büyük.'))
@@ -308,6 +320,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     }
     if (yol === 'GET /seker.js') {
       return gonder(res, 200, SEKER_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /zincir.js') {
+      return gonder(res, 200, ZINCIR_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
     }
     if (yol === 'GET /sosyal.css') {
       return gonder(res, 200, SOSYAL_STIL, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })

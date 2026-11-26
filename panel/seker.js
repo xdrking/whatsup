@@ -655,4 +655,6 @@
   })
 
   window.SekerFirtinasi = { oynat, bekleme, hazirla }
+  // Şeker Zinciri aynı parçacık motorunu kullanır (panel/zincir.js).
+  window.SekerEfekt = efektKur
 })()

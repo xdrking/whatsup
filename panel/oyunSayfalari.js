@@ -3,7 +3,8 @@
 // Satır içi `style` CSP'ye takılır: gecikme ve konumlar sınıflarla verilir (d1, d2…).
 import { IKILI_CARPAN, KAZI_ODULLERI, PLINKO_RISK, renk, SEMBOLLER } from '../lib/kumar.js'
 import { AZAMI_KAT, BEDAVA_DONUS, BONUS_FIYATI, DAGINIK, DAGINIK_ODEME, EK_DONUS, EK_ESIK, KOMBO, SATIR, SEKERLER, SUTUN, tahtaKur } from '../lib/seker.js'
-import { COK_OYUNLAR, TEK_OYUNLAR, VURGUN_KAT } from './kumar.js'
+import { AZAMI_KAT as ZINCIR_TAVAN, BIRLESIM_ODULU, BOYUT, coz, HUCRE_DEGERI, KOMBO as ZINCIR_KOMBO, OZEL_ADI, PAKETLER, RENK_ADI, RENKLER } from '../lib/zincir.js'
+import { COK_OYUNLAR, TEK_OYUNLAR, VURGUN_KAT, zincirGirisi } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
@@ -49,6 +50,11 @@ const VITRIN = {
   </div>
 </div>`,
   },
+  zincir: {
+    aciklama: 'Yer değiştir, 3+ şekeri patlat, zinciri kur', etiket: `${ZINCIR_TAVAN}x`,
+    govde: (secim, chat) => h`<p class="not">Bahsin yanında giriş ücreti alınır, o hazineye gider. Fazla hamle hamle başına daha pahalıdır.</p>
+${secenekler(Object.entries(PAKETLER).map(([no, p], i) => [no, h`${no} hamle<small>bahis x${virgul(p.kat)} · giriş ${sayi.format(chat ? zincirGirisi(chat, p) : 0)} XP</small>`, `zincir-paket${i === 2 ? ' sicak' : ''}${no === secim ? ' secili' : ''}`]))}`,
+  },
   slot: { aciklama: 'Üçlü 3x-50x, ikili 1,5x', etiket: 'JACKPOT 50x', govde: () => h`<button class="buyuk-dugme">ÇEVİR</button>` },
   kazı: { aciklama: '3 aynı sembol 1x-50x', etiket: '50x', govde: () => h`<button class="buyuk-dugme">KAZI</button>` },
   blackjack: { aciklama: 'Çift, böl, sigorta, teslim', etiket: '2,5x', govde: () => h`<button class="buyuk-dugme">MASAYA OTUR</button>` },
@@ -68,7 +74,7 @@ const VITRIN = {
 }
 
 export const KATEGORILER = [
-  { ad: 'Slot ve kazı', ikon: '🎰', oyunlar: ['şeker', 'slot', 'kazı'] },
+  { ad: 'Slot ve kazı', ikon: '🎰', oyunlar: ['şeker', 'zincir', 'slot', 'kazı'] },
   { ad: 'Kart ve masa', ikon: '🃏', oyunlar: ['blackjack', 'hilo', 'rulet', 'bahis'] },
   { ad: 'Çarpan oyunları', ikon: '🚀', oyunlar: ['crash', 'plinko', 'mayın', 'kule'] },
 ]
@@ -120,7 +126,7 @@ export function kasa({ xp, grupAdi, dar = false }) {
 function oyunKarti(chat, oyun, varsayilan, secim = '') {
   const t = OYUN_ADI[oyun]
   const { aciklama, etiket, govde } = VITRIN[oyun]
-  const icerik = govde(secim)
+  const icerik = govde(secim, chat)
   const tek = icerik.metin.startsWith('<button') && oyun !== 'şeker'
   return h`<form class="masa-kart k-${oyun}${tek ? ' tek' : ''}" method="post" action="/oyun/oyna">
   ${gizli(chat)}<input type="hidden" name="oyun" value="${oyun}">
@@ -178,6 +184,8 @@ function elCizimi(chat, el, bitti = false) {
   const uyari = el.uyari ? h`<p class="hata">${el.uyari}</p>` : ''
   const cek = () => hamleDugmesi('çek', `💰 ÇEK · ${sayi.format(Math.floor(el.bahis * el.carpan))} XP`, 'cek')
   const carpanRozeti = el.carpan ? h`<p class="canli-carpan">${virgul(el.carpan)}x</p>` : ''
+
+  if (el.oyun === 'zincir') return zincirCizimi(chat, el, bitti, { sure, uyari })
 
   if (el.oyun === 'blackjack') {
     const cok = el.eller.length > 1
@@ -353,6 +361,7 @@ function sonucKarti(chat, s) {
 /** Hangi sembol kaç kat öder; değerler oyunun kendi tablosundan okunur, elle yazılmaz. */
 function odemeTablosu(oyun) {
   if (oyun === 'şeker') return sekerTablosu()
+  if (oyun === 'zincir') return zincirTablosu()
   const satirlar = oyun === 'slot'
     ? [...SEMBOLLER.map((x) => [`${x.s}${x.s}${x.s}`, x.uclu]), ['İkili', IKILI_CARPAN]]
     : oyun === 'kazı' ? KAZI_ODULLERI.map((o) => [`${o.s}${o.s}${o.s}`, o.carpan]) : null
@@ -462,5 +471,51 @@ function sekerTablosu() {
 <ul>${[...SEKERLER].reverse().map((x) => h`<li><span>${x.s} ${x.ad}</span><strong>8+ ${kat(x.odeme[0])} · 10+ ${kat(x.odeme[1])} · 13+ ${kat(x.odeme[2])}</strong></li>`)}
 <li><span>${DAGINIK} Gökkuşağı</span><strong>${Object.entries(DAGINIK_ODEME).map(([n, k]) => `${n}: ${kat(k)}`).join(' · ')}</strong></li></ul>
 <p class="not">4, 5, 6 ${DAGINIK} → ${Object.values(BEDAVA_DONUS).join(', ')} bedava dönüş. Bedava dönüşlerde kombo dönüşler arasında sıfırlanmaz, ${EK_ESIK} ${DAGINIK} +${EK_DONUS} dönüş verir. 🎁 Bonus al: bahsin ${BONUS_FIYATI} katına doğrudan bedava dönüş. En çok ${sayi.format(AZAMI_KAT)}x.</p>
+</section>`
+}
+
+// --- Şeker Zinciri ---
+// Tahta sunucudadır. Betik yoksa her hücre bir düğmedir: ilk dokunuş seçer, komşuya ikinci dokunuş takas eder.
+// Betik varsa panel/zincir.js kaydırmayı ve dokunuşu okur, hamleyi /oyun/zincir'e gönderip adımları oynatır.
+const OZEL_SINIF = { h: ' ozel-h', v: ' ozel-v', b: ' ozel-b', r: ' ozel-r' }
+export const zincirSembol = (hucre) => (hucre.o === 'r' ? '🌈' : RENKLER[hucre.r])
+
+function zincirCizimi(chat, el, bitti, { sure, uyari }) {
+  const hucreler = coz(el.tahta).map((x, i) => {
+    const sinif = `zh r${x.r < 0 ? 'x' : x.r}${OZEL_SINIF[x.o] ?? ''}${el.secili === i ? ' secili' : ''}`
+    return bitti ? h`<span class="${sinif}">${zincirSembol(x)}</span>` : h`<button name="hamle" value="${String(i)}" class="${sinif}" aria-label="${x.o ? OZEL_ADI[x.o] : RENK_ADI[x.r]}">${zincirSembol(x)}</button>`
+  })
+  const veri = JSON.stringify({ grup: chat, t: el.tahta, taban: el.taban, kalan: el.kalan, paket: el.paket, xp: el.xp, kat: el.kat, boyut: BOYUT, tavan: ZINCIR_TAVAN })
+  const makine = h`<div class="zincir-makine${bitti ? ' bitti' : ''}"${bitti ? '' : h` data-zincir="${veri}"`}>
+  <div class="zincir-ust">
+    <span class="zincir-hamle"><small>HAMLE</small><b>${el.kalan}</b><i>/${el.paket}</i></span>
+    <span class="zincir-kombo"><small>KOMBO</small><b>x1</b></span>
+    <span class="zincir-kazanc"><small>KAZANÇ</small><b>${sayi.format(el.xp)}</b></span>
+  </div>
+  <div class="zincir-enerji" aria-hidden="true"><i></i></div>
+  <div class="zincir-cerceve"><div class="zincir-tahta">${hucreler}</div><div class="zincir-sahne" aria-hidden="true"></div></div>
+</div>`
+  const ozet = h`<p class="not orta">Bahis ${sayi.format(el.taban)} XP · ${el.paket} hamle paketi ${sayi.format(el.bahis)} XP · giriş ${sayi.format(el.giris)} XP hazineye${el.enBuyuk > 1 ? ` · en uzun zincir ${el.enBuyuk} patlama` : ''}</p>`
+  if (bitti) return h`${makine}${ozet}`
+  return h`${sure}<form method="post" action="/oyun/hamle">${gizli(chat)}<input type="hidden" name="oyun" value="zincir">${makine}${uyari}
+<div class="secenekler">${hamleDugmesi('bitir', `💰 BİTİR · ${sayi.format(el.xp)} XP`, 'cek zincir-bitir')}</div></form>${ozet}`
+}
+
+function zincirTablosu() {
+  const kat = (x) => `${virgul(x)}x`
+  return h`<section class="odeme-tablosu zincir-tablo"><h3>NASIL OYNANIR</h3>
+<p class="not">Yan yana iki şekeri kaydır (ya da sırayla dokun). 3 ya da daha fazla aynı şeker yan yana gelince patlar, patlayan her şeker bahsin ${virgul(HUCRE_DEGERI)} katını öder. Üsttekiler düşer; aynı hamledeki her yeni patlama kombo çarpanını büyütür: ${ZINCIR_KOMBO.map((x) => `x${virgul(x)}`).join(' → ')}.</p>
+<ul>
+<li><span>4'lü sıra</span><strong>Çizgili şeker: satırı ya da sütunu temizler</strong></li>
+<li><span>L ya da T</span><strong>Bomba: çevresini patlatır</strong></li>
+<li><span>5'li sıra</span><strong>🌈 Gökkuşağı: takas edildiği rengin hepsini temizler</strong></li>
+<li><span>🌈 + 🌈</span><strong>Bütün tahta · +${kat(BIRLESIM_ODULU.rr)}</strong></li>
+<li><span>🌈 + bomba</span><strong>O rengin hepsi bomba olur · +${kat(BIRLESIM_ODULU.rb)}</strong></li>
+<li><span>🌈 + çizgili</span><strong>O rengin hepsi çizgili olur · +${kat(BIRLESIM_ODULU.rh)}</strong></li>
+<li><span>Bomba + bomba</span><strong>5x5 patlama · +${kat(BIRLESIM_ODULU.bb)}</strong></li>
+<li><span>Bomba + çizgili</span><strong>3 satır, 3 sütun · +${kat(BIRLESIM_ODULU.bc)}</strong></li>
+<li><span>Çizgili + çizgili</span><strong>Satır ve sütun · +${kat(BIRLESIM_ODULU.cc)}</strong></li>
+</ul>
+<p class="not">Paketler: ${Object.entries(PAKETLER).map(([n, p]) => `${n} hamle bahsin ${virgul(p.kat)} katı`).join(', ')}. Giriş ücreti ayrıca alınır, hazineye gider, geri dönmez. Patlatmayan takas hamle harcamaz. Bir el en çok bahsin ${ZINCIR_TAVAN} katını kazanır. 3 dakika hamle yapmazsan kalan hamleler yanar, o ana kadarki kazanç ödenir.</p>
 </section>`
 }

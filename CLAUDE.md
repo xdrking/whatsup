@@ -162,7 +162,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/uyeSustur.js` | susturulan üyenin silinen mesaj sayısı | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/turkishWords.js` | TDK kelime doğrulama önbelleği | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/panelHesap.js` | panel oyuncu hesapları (`.panel kayıt`) | `data/stats.db` (kalıcı) |
-| `panel/kumar.js` | paneldeki açık blackjack/mayın/kule/hi-lo eli ve son sonuç | panel belleği (panelle ölür) |
+| `panel/kumar.js` | paneldeki açık blackjack/mayın/kule/hi-lo/Şeker Zinciri eli ve son sonuç | panel belleği (panelle ölür) |
 | `panel/hesap.js` | paneldeki son hesap işleminin bildirimi | panel belleği (panelle ölür) |
 | `lib/db.js` + `lib/sosyal.js` | sosyal bölümün gönderi, yorum, beğeni, DM, grup sohbeti, hikâye, etkinlik, bildirim, profil kayıtları | `data/stats.db` + `data/medya/` (kalıcı) |
 | `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme, DM ve grup sohbetinde "yazıyor" sinyali, son çevrimiçi yazımı | panel belleği (panelle ölür) |
@@ -365,7 +365,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 80 (tamam):** banka kredileri, enflasyona bağlı limit. Faz 34 bölümüne işlendi.
 - **Faz 81 (tamam):** panelde Şeker Fırtınası. Ayrıntı aşağıda.
 - **Faz 82 (tamam):** `.şans` kişiye bağlı, panelde ve bütün kumar oyunlarında. Faz 42'deki "Sahip şansı" maddesine işlendi.
-- **Faz 83+:** yeni komutlar, her biri ayrı adım
+- **Faz 83 (tamam):** panelde Şeker Zinciri. Ayrıntı aşağıda.
+- **Faz 84+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1565,6 +1566,18 @@ Bot sahibi Sweet Bonanza istedi; oyun o türün (düşen semboller, her yerde 8+
 - **Efektler telefonu yormamalı:** parçacık, şok halkası, ekran parlaması ve konfeti tek bir `<canvas>`'ta (`efektKur`) çizilir, DOM öğesi açılmaz; zayıf cihazda (`hardwareConcurrency <= 4` ya da hareketi azalt) bütçe 160 parçacıktır. CSS'te yalnızca `transform` ve `opacity` canlandırılır, `filter` animasyonu yazılmaz (parlama `::after` opaklığıdır, gökkuşağı dönen `::before`'dur). 3 gökkuşağı düşünce kalp atışı (`gerilim`), her patlamada uçan XP tutarı ve kombo enerji çubuğu vardır.
 - **Tarayıcı:** hareketler Web Animations API iledir (CSSOM, CSP'ye takılmaz; satır içi `style` özniteliği yine yazılmaz). `panel/seker.js` `oyun.js`'ten önce yüklenir; `oyun.js` `window.KumarhaneSes`'i verir, `canlandir` şekerde Promise döner, bakiye oynatma bitince sayılır. Otomatik çevirme yalnızca tarayıcıdadır: bittiğinde formu `requestSubmit` ile yeniden gönderir, hata gelince (boş makine) durur. Turbo tercihi `localStorage`'dadır. Betik yoksa son tahta ve özet görünür.
 
+### Faz 83 — Şeker Zinciri (yalnızca panel)
+
+Bot sahibi Candy Crush tarzı bir oyun istedi; oyun türün (yer değiştir, 3+ eşleşme, düşme, özel şekerler) **özgün** bir örneğidir, adı, görselleri ve sesi kopyalanmadı. Kurallar `lib/zincir.js`'te saftır, el `panel/kumar.js`'te çok adımlı oyundur (`COK_OYUNLAR.zincir`), tarayıcı tarafı `panel/zincir.js`'tedir.
+
+- **Beceri parayı etkiler:** oyuncu hamle seçtiği için beklenen dönüş oynayana göre değişir. Ödeme (`HUCRE_DEGERI`, `KOMBO`, `BIRLESIM_ODULU`), her hamlede görünen tahtada en çok kazandıran takası seçen bot (`enIyiHamle`) bile paket fiyatını geçemesin diye ayarlıdır: usta bot ~%94, rastgele oynayan ~%40 alır. `test/zincir.test.js` tohumlu simülasyonla usta botu %85-100 arasında tutar; ödeme, kombo ya da paket değişirse bu test geçmeli. Botun yeni şekerleri bilmediği unutulmasın: önünü görebilen bir hile olsaydı dönüş yükselirdi, bu yüzden düşen şekerleri hep sunucu çeker.
+- **Tahta sunucudadır:** her hamle `POST /oyun/zincir`'e gider (JSON, `kumar.hamle`), sunucu takası doğrular, düşen şekerleri `crypto.randomInt` ile çeker, adımları döner; tarayıcı yalnızca oynatır. Tahta sayfadan gelseydi istenen tahta yazılıp XP basılırdı. Betik yoksa hücreler `/oyun/hamle` düğmesidir: ilk dokunuş seçer (`el.secili`), komşuya ikinci dokunuş takas eder.
+- **Paket ve giriş (bot sahibinin isteği):** 15, 20, 30 hamle (`PAKETLER`); paket bahsin `kat`'ıdır (1; 1,4; 2,1), fazla hamle hamle başına pahalıdır. Giriş ücreti (`GIRIS_TABAN × kat`, kurla büyür, `girisUcreti`) bahisle aynı transaction'da alınır ve doğrudan hazineye (botun bankası, `kasayaYatir`) girer (`girisliCek`); kumar karnesine yazılmaz, hiçbir durumda geri dönmez. Ödeme `kumarOde` ile `taban × kazanılan kat`'tır, karne ve hazine öteki oyunlar gibidir.
+- **Hamle:** patlatmayan takas hamle harcamaz. Özel şekerler: 4'lü çizgili (satır/sütun), L ya da T bomba (3x3), 5'li gökkuşağı (bir renk); iki özel birleşince büyük patlama ve `BIRLESIM_ODULU`. Hamle kalmayınca tahta yerinde karılır. Bir el en çok `AZAMI_KAT` (200x) kazanır, ulaşınca kapanır.
+- **Bitiş:** hamleler bitince, `bitir` ile ya da 3 dk hamle gelmezse o ana kadarki kazanç ödenir, kalan hamleler yanar.
+- **Şans:** sahip şansında (`.şans`, Faz 82) yeni şekerler `SAHIP_SANS` olasılıkla son rengi atlar, az renk daha çok eşleşme demektir. Hileli zar işlemez (çok adımlı oyun), nazar boncuğu `kumarOde`'den geçtiği için işler.
+- **Tarayıcı:** parçacıklar Şeker Fırtınası'nın kanvas motorudur (`window.SekerEfekt`), hareketler Web Animations API'dir; satır içi `style` yazılmaz (ışının boyu da kare kareye yazılır). El bitince sonuç sayfası `window.KumarhaneSayfa.degistir` ile getirilir, bakiye oyun.js'teki gibi sayılır. Hızlı hamleler arasında 250 ms olmalı (`ZINCIR_ARALIK_MS`), tarayıcı zaten animasyon bitmeden yenisini göndermez.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1730,3 +1743,4 @@ Bot sahibi Sweet Bonanza istedi; oyun o türün (düşen semboller, her yerde 8+
 147. Panelde Şeker Fırtınası → şekerler yağar; 8+ aynı şeker parlar, patlar, parçacık saçar, üsttekiler düşer; ikinci patlamada "KOMBO x2" ve sarsıntı; bakiye animasyon bitince sayar. 🎁 Bonus al → onay sorar, 12 bedava dönüş, makine mora döner, kombo dönüşler arasında sürer. Otomatik 10 → alt çubukta kalan sayı, DURDUR keser; XP yetmeyince kendiliğinden durur. Turbo hızlanır, makineye dokunmak çevirmeyi hızlandırır. Telefonda yatay taşma yok
 148. Şeker Fırtınası'nda 3 🌈 düşünce makine maviyle atar; patlamada kanvas parçacıkları ve beyaz parlama, kümenin üstünden "+XP" yükselir, enerji çubuğu dolar; bedava dönüş girişinde renkli halkalar ve konfeti. Telefonda takılma olmamalı
 149. Sahip özelden `.şans aç` → yanıt WhatsApp ve paneli, şekeri ve çok adımlı oyunları sayar; önceden sahiplik verilip şans açmış biri varsa "N kişinin şansı kapatıldı" yazar. O kişi panelde ve WhatsApp'ta normal şansla oynar. `.şans kapat` → sahip de normal oynar
+150. Panelde Şeker Zinciri → 20 hamle seç: cüzdan bahsin 1,4 katı ve giriş kadar düşer, `.hazine` giriş kadar artar. Şekeri komşusuna kaydır: patlar, üsttekiler düşer, "+XP" yükselir, hamle sayısı azalır; patlatmayan takas geri kayar, hamle azalmaz. 4'lü sıra çizgili, L bomba, 5'li gökkuşağı doğurur, çizgili patlayınca satır boyunca ışın çakar. 💰 BİTİR → o ana kadarki kazanç ödenir, sonuç kartı çıkar. Telefonda kaydırma sayfayı kaydırmaz, yatay taşma yok

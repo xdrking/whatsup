@@ -11,9 +11,10 @@ import {
 import { sansliMi } from '../lib/sahipSans.js'
 import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
 import { BONUS_FIYATI, sekerCevir } from '../lib/seker.js'
+import { AZAMI_KAT as ZINCIR_TAVAN, BOYUT, GIRIS_TABAN, hamleYap, kodla, komsuMu, PAKETLER, paketCoz, SAHIP_SANS, tahtaKur } from '../lib/zincir.js'
 import { miktarlariCoz } from '../lib/sayi.js'
 import { getDb } from '../lib/db.js'
-import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, kumarOde, rebornSansiVar, sonReborn, xpCek } from '../lib/stats.js'
+import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, girisliCek, girisUcreti, kumarOde, rebornSansiVar, sonReborn, xpCek } from '../lib/stats.js'
 import { desteKur, elDegeri, odemeCarpani } from '../games/blackjack.js'
 import { KUTU, mayinCarpani, mayinKur } from '../games/mayin.js'
 import { KAT, kuleCarpani, kuleKur, ZORLUK, zorlukCoz } from '../games/kule.js'
@@ -23,6 +24,8 @@ export const SURE_MS = 3 * 60_000
 const binlik = new Intl.NumberFormat('tr-TR')
 // Form iki kez gönderilirse ya da tuşa basılı tutulursa aynı el iki kez oynanmasın.
 const ARALIK_MS = 700
+// Şeker Zinciri'nde hamleler peş peşe gelir; tarayıcı zaten animasyon bitmeden yenisini göndermez.
+const ZINCIR_ARALIK_MS = 250
 
 const dogalMi = (el) => el.length === 2 && elDegeri(el) === 21
 const kartMetni = (k) => `${k.deger}${k.renk}`
@@ -93,7 +96,17 @@ export const COK_OYUNLAR = {
   mayın: { ad: 'Mayın', ikon: '💣' },
   kule: { ad: 'Kule', ikon: '🐉' },
   hilo: { ad: 'Hi-lo', ikon: '🂠' },
+  // Yalnızca panelde: bahsin yanında giriş ücreti alınır, o doğrudan hazineye gider (bot sahibinin kararı).
+  zincir: { ad: 'Şeker Zinciri', ikon: '🍭' },
 }
+
+/** Paketin giriş ücreti (kurla büyür, paketin katıyla çarpılır). */
+export const zincirGirisi = (chat, paket) => girisUcreti(chat, Math.round(GIRIS_TABAN * paket.kat))
+
+/** Tarayıcıya giden hamle adımları, kısaltılmış. */
+const zincirAdimlari = (adimlar) => adimlar.map((a) => ({
+  s: a.sil, o: a.olusan.map(([i, oz, r]) => [i, oz, r]), e: a.etkin, c: a.carpan, k: a.kazanc, t: kodla(a.tahta),
+}))
 
 /**
  * Kayıp ve kazanç hazineye (bot hesabına) yazılır; panel WhatsApp'a bağlanmadığı için
@@ -152,9 +165,9 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     sonuclar.set(k, sonuc)
   }
 
-  function hizKontrol(k) {
+  function hizKontrol(k, aralik = ARALIK_MS) {
     const simdi = saat()
-    if (simdi - (sonIslem.get(k) ?? 0) < ARALIK_MS) return false
+    if (simdi - (sonIslem.get(k) ?? 0) < aralik) return false
     sonIslem.set(k, simdi)
     return true
   }
@@ -215,6 +228,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
   }
 
   function nakitCek(k, el, sebep) {
+    if (el.oyun === 'zincir') return kapat(k, el, Math.floor(el.taban * el.kazanc), sebep)
     const c = el.oyun === 'mayın' ? mayinCarpani(el.acilanlar.length)
       : el.oyun === 'kule' ? kuleCarpani(el.zorluk, el.secimler.length)
         : Math.floor(el.carpan * 100) / 100
@@ -314,7 +328,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
   function sureDoldu(k, el) {
     if (el.bitti) return
     if (el.oyun === 'blackjack') blackjackBitir(k, el, '⏱️ Süre doldu, el "dur" sayıldı.')
-    else nakitCek(k, el, '⏱️ Süre doldu, kazanç çekildi')
+    else nakitCek(k, el, el.oyun === 'zincir' ? '⏱️ Süre doldu, kalan hamleler yandı, kazanç ödendi' : '⏱️ Süre doldu, kazanç çekildi')
   }
 
   function sureKur(k, el) {
@@ -332,15 +346,33 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
 
     const zorluk = oyun === 'kule' ? zorlukCoz(secim) : null
     if (oyun === 'kule' && !zorluk) return sonucYaz(k, { oyun, hata: 'Zorluk: kolay, orta ya da zor.' })
+    const paket = oyun === 'zincir' ? paketCoz(secim) : null
+    if (oyun === 'zincir' && !paket) return sonucYaz(k, { oyun, hata: `Paket seç: ${Object.keys(PAKETLER).join(', ')} hamle.` })
     const g = giris(h, miktar)
     if (g.hata) return sonucYaz(k, { oyun, hata: g.hata })
 
-    const cekim = xpCek({ chatJid: h.chat, userJid: h.user, miktar: g.miktar })
+    // Şeker Zinciri: paketin fiyatı bahsin katıdır, giriş ücreti ayrıca alınıp hazineye yatar.
+    const bahis = paket ? Math.floor(g.miktar * paket.kat) : g.miktar
+    const girisXp = paket ? zincirGirisi(h.chat, paket) : 0
+    const cekim = paket
+      ? girisliCek({ chatJid: h.chat, userJid: h.user, miktar: bahis, giris: girisXp, now: saat() })
+      : xpCek({ chatJid: h.chat, userJid: h.user, miktar: g.miktar })
     if (!cekim) return sonucYaz(k, { oyun, hata: 'Masa şu an kapalı, sonra dene.' })
-    if (cekim.yetersiz) return sonucYaz(k, { oyun, hata: 'O kadar XP\'n yok.' })
+    if (cekim.yetersiz) {
+      return sonucYaz(k, { oyun, hata: paket ? `${paket.hamle} hamle ${binlik.format(bahis)} XP, giriş ${binlik.format(girisXp)} XP: toplam ${binlik.format(bahis + girisXp)} XP gerekiyor.` : 'O kadar XP\'n yok.' })
+    }
 
-    const el = { oyun, chat: h.chat, user: h.user, bahis: g.miktar, bitti: false, uyari: '', reborn: sonReborn(h.chat)?.no ?? 0, sansli: sahipMi(h) }
-    if (oyun === 'blackjack') {
+    const el = { oyun, chat: h.chat, user: h.user, bahis, bitti: false, uyari: '', reborn: sonReborn(h.chat)?.no ?? 0, sansli: sahipMi(h) }
+    if (oyun === 'zincir') {
+      el.taban = g.miktar
+      el.giris = girisXp
+      el.paket = paket.hamle
+      el.kalan = paket.hamle
+      el.kazanc = 0
+      el.enBuyuk = 0
+      el.secili = null
+      el.tahta = tahtaKur()
+    } else if (oyun === 'blackjack') {
       el.deste = deste()
       el.taban = g.miktar
       el.eller = [{ kartlar: [el.deste.pop(), el.deste.pop()], bahis: g.miktar, bitti: false }]
@@ -370,11 +402,16 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     }
   }
 
-  function hamle(h, { hamle: ham }) {
+  function hamle(h, { hamle: ham, oyun = '' }) {
     const k = anahtar(h)
     const el = eller.get(k)
-    if (!el) return sonucYaz(k, { hata: 'Açık elin yok, süresi dolmuş olabilir.' })
-    if (!hizKontrol(k)) return
+    // Şeker Zinciri yolu yalnızca zincir elini oynatır; başka oyunun eli açıksa ona dokunmaz.
+    if (el && oyun && el.oyun !== oyun) return { hata: 'Açık başka bir elin var.', bitti: true }
+    if (!el) {
+      sonucYaz(k, { hata: 'Açık elin yok, süresi dolmuş olabilir.' })
+      return { hata: 'Açık elin yok, süresi dolmuş olabilir.', bitti: true }
+    }
+    if (!hizKontrol(k, el.oyun === 'zincir' ? ZINCIR_ARALIK_MS : ARALIK_MS)) return { bekle: true }
     const secim = String(ham ?? '')
     el.uyari = ''
     const uyar = (metin) => {
@@ -382,6 +419,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     }
 
     if (el.oyun === 'blackjack') return blackjackHamle(k, el, secim, uyar)
+    if (el.oyun === 'zincir') return zincirHamle(k, el, secim, uyar)
 
     if (secim === 'çek') return nakitCek(k, el, '💰 Parayı çektin')
 
@@ -424,9 +462,65 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     return sureKur(k, el)
   }
 
+  /**
+   * Şeker Zinciri hamlesi: `i-j` takas, tek sayı (betiksiz sayfa) seçim, `bitir` erken ödeme.
+   * Dönen nesne `/oyun/zincir` yanıtıdır, tarayıcı adımları oynatır.
+   */
+  function zincirHamle(k, el, secim, uyar) {
+    if (secim === 'bitir') {
+      kapat(k, el, Math.floor(el.taban * el.kazanc), `💰 Erken bitirdin, ${el.kalan} hamle yandı`)
+      return { bitti: true }
+    }
+    let i
+    let j
+    const takas = /^(\d{1,2})-(\d{1,2})$/.exec(secim)
+    if (takas) {
+      i = Number(takas[1])
+      j = Number(takas[2])
+    } else if (/^\d{1,2}$/.test(secim) && Number(secim) < BOYUT * BOYUT) {
+      // Betiksiz sayfa: ilk dokunuş seçer, komşuya ikinci dokunuş takas eder.
+      const n = Number(secim)
+      if (el.secili === null || el.secili === n || !komsuMu(el.secili, n)) {
+        el.secili = el.secili === n ? null : n
+        sureKur(k, el)
+        return { secili: el.secili }
+      }
+      i = el.secili
+      j = n
+    } else {
+      uyar('Yan yana iki şekerin yerini değiştir.')
+      return { hata: el.uyari }
+    }
+    el.secili = null
+    const s = komsuMu(i, j) ? hamleYap(el.tahta, i, j, { sans: el.sansli ? SAHIP_SANS : 0 }) : null
+    if (!s) {
+      uyar('Bu takas şeker patlatmıyor, hamle harcanmadı.')
+      sureKur(k, el)
+      return { gecersiz: true, uyari: el.uyari }
+    }
+    el.tahta = s.tahta
+    el.kalan -= 1
+    el.kazanc = Math.min(ZINCIR_TAVAN, el.kazanc + s.kazanc)
+    el.enBuyuk = Math.max(el.enBuyuk, s.adimlar.length)
+    const yanit = {
+      takas: [i, j], birlesim: s.birlesim, adimlar: zincirAdimlari(s.adimlar), karisti: s.karistirildi, tahta: kodla(s.tahta),
+      kalan: el.kalan, kazanc: el.kazanc, xp: Math.floor(el.taban * el.kazanc), hamleKazanci: s.kazanc, taban: el.taban,
+    }
+    if (el.kazanc >= ZINCIR_TAVAN) kapat(k, el, Math.floor(el.taban * el.kazanc), `🏆 ${ZINCIR_TAVAN}x tavanına ulaştın`)
+    else if (el.kalan <= 0) kapat(k, el, Math.floor(el.taban * el.kazanc), '🍭 Hamlelerin bitti')
+    else sureKur(k, el)
+    return { ...yanit, bitti: el.bitti }
+  }
+
   /** Sayfanın çizeceği görünüm; el sürerken gizli bilgi (mayınlar, krupiyenin kartı) çıkmaz. */
   function gorunum(el, acik = false) {
     const g = { oyun: el.oyun, bahis: el.bahis, kalanMs: Math.max(0, (el.bitis ?? 0) - saat()), uyari: el.uyari }
+    if (el.oyun === 'zincir') {
+      return {
+        ...g, tahta: kodla(el.tahta), kalan: el.kalan, paket: el.paket, taban: el.taban, giris: el.giris,
+        kat: Math.floor(el.kazanc * 100) / 100, xp: Math.floor(el.taban * el.kazanc), secili: acik ? null : el.secili, enBuyuk: el.enBuyuk,
+      }
+    }
     if (el.oyun === 'blackjack') {
       return {
         ...g,
