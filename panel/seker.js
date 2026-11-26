@@ -135,7 +135,9 @@
     }
 
     function ciz(simdi) {
-      const dt = Math.min(0.05, (simdi - onceki) / 1000 || 0.016) / Math.max(hiz(), 0.3)
+      // rAF'in zamanı baslat()'taki performance.now()'dan önce olabilir: süre eksiye düşerse halka yarıçapı eksi
+      // olur, arc() hata atar ve döngü durup efektler donar.
+      const dt = Math.max(0, Math.min(0.05, (simdi - onceki) / 1000 || 0.016)) / Math.max(hiz(), 0.3)
       onceki = simdi
       const w = tuval.width / oran
       const hh = tuval.height / oran
@@ -160,7 +162,7 @@
         ctx.strokeStyle = r.renk
         ctx.lineWidth = r.kalin * (1 - t) + 1
         ctx.beginPath()
-        ctx.arc(r.x, r.y, 6 + r.yaricap * (1 - (1 - t) ** 3), 0, Math.PI * 2)
+        ctx.arc(r.x, r.y, Math.max(0, 6 + r.yaricap * (1 - (1 - t) ** 3)), 0, Math.PI * 2)
         ctx.stroke()
       }
       // Şimşek her karede yeniden zikzaklanır, titrer; parlaklık shadowBlur'suz iki çizgiyle verilir (telefonda ucuz).
@@ -586,6 +588,10 @@
   // --- Otomatik çevirme ---
   let oto = null
 
+  /**
+   * Alttaki otomatik çubuğu. Bonus gelince otomatik duraklar (`beklemede`), kalan çevirmeler kaybolmaz:
+   * DEVAM kaldığı yerden sürdürür (bot sahibinin şikâyeti: duraklama yerine iptal ediyor, kalan haklar gidiyordu).
+   */
   function otoCubugu() {
     let cubuk = document.querySelector('.oto-cubuk')
     if (!oto) {
@@ -594,15 +600,38 @@
     }
     if (!cubuk) {
       cubuk = yeni('div', 'oto-cubuk')
-      cubuk.append(yeni('span', 'oto-yazi'), yeni('button', 'oto-dur', '■ DURDUR'))
-      cubuk.querySelector('.oto-dur').type = 'button'
-      cubuk.querySelector('.oto-dur').addEventListener('click', () => {
-        oto = null
-        otoCubugu()
-      })
       document.body.append(cubuk)
     }
-    cubuk.querySelector('.oto-yazi').textContent = `🔁 Otomatik · ${oto.kalan} kaldı`
+    const dur = yeni('button', 'oto-dur', '■ DURDUR')
+    dur.type = 'button'
+    dur.addEventListener('click', () => {
+      oto = null
+      otoCubugu()
+    })
+    if (oto.beklemede) {
+      const devam = yeni('button', 'oto-devam', `▶ DEVAM (${oto.kalan})`)
+      devam.type = 'button'
+      devam.addEventListener('click', otoDevam)
+      cubuk.replaceChildren(yeni('span', 'oto-yazi', '⏸ Bonus geldi'), devam, dur)
+    } else {
+      cubuk.replaceChildren(yeni('span', 'oto-yazi', `🔁 Otomatik · ${oto.kalan} kaldı`), dur)
+    }
+  }
+
+  function otoDevam() {
+    if (!oto) return
+    oto.beklemede = false
+    if (oto.kalan <= 0) {
+      oto = null
+      otoCubugu()
+      return
+    }
+    oto.kalan -= 1
+    otoCubugu()
+    if (!cevir()) {
+      oto = null
+      otoCubugu()
+    }
   }
 
   function cevir() {
@@ -621,7 +650,13 @@
       if (neden) console.info('Otomatik durdu:', neden)
     }
     if (kutu.dataset.durum === 'hata') return durdur('hata')
-    if (oto.bonusDur && veri?.fs) return durdur('bonus')
+    // Duraklamışken elle çevrilen el otomatiği yeniden başlatmaz, DEVAM bekler.
+    if (oto.beklemede) return
+    if (oto.bonusDur && veri?.fs) {
+      oto.beklemede = true
+      otoCubugu()
+      return
+    }
     if (oto.buyukDur && veri?.kat >= 50) return durdur('büyük kazanç')
     if (oto.kalan <= 0) return durdur()
     setTimeout(() => {

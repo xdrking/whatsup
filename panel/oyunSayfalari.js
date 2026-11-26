@@ -44,7 +44,7 @@ const VITRIN = {
   <button name="secim" value="bonus" class="ikincil seker-bonus">🎁 BONUS AL · ${BONUS_FIYATI}x</button>
   <div class="seker-oto" hidden>
     <label class="alan"><small>Otomatik</small><select class="oto-adet">${[10, 25, 50, 100, 500].map((n) => h`<option value="${n}">${n} çevirme</option>`)}</select></label>
-    <label class="kutu-sec"><input type="checkbox" class="oto-bonus" checked> Bonus gelince dur</label>
+    <label class="kutu-sec"><input type="checkbox" class="oto-bonus" checked> Bonus gelince duraklat</label>
     <label class="kutu-sec"><input type="checkbox" class="oto-buyuk"> 50x üstü kazançta dur</label>
     <label class="kutu-sec"><input type="checkbox" class="seker-turbo"> ⚡ Turbo</label>
     <button type="button" class="oto-basla ikincil">▶ OTOMATİK BAŞLAT</button>
@@ -63,7 +63,7 @@ ${secenekler(Object.entries(PAKETLER).map(([no, p], i) => [no, h`${no} hamle<sma
   <button name="secim" value="bonus" class="ikincil yk-bonus">🎁 BONUS AL · ${YK.BONUS_FIYATI}x</button>
   <div class="seker-oto yk-oto" hidden>
     <label class="alan"><small>Otomatik</small><select class="oto-adet">${[10, 25, 50, 100, 500].map((n) => h`<option value="${n}">${n} çevirme</option>`)}</select></label>
-    <label class="kutu-sec"><input type="checkbox" class="oto-bonus" checked> Bonus gelince dur</label>
+    <label class="kutu-sec"><input type="checkbox" class="oto-bonus" checked> Bonus gelince duraklat</label>
     <label class="kutu-sec"><input type="checkbox" class="oto-buyuk"> 50x üstü kazançta dur</label>
     <label class="kutu-sec"><input type="checkbox" class="yk-turbo"> ⚡ Turbo</label>
     <button type="button" class="oto-basla ikincil">▶ OTOMATİK BAŞLAT</button>

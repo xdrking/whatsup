@@ -1075,3 +1075,4 @@ main.degisti .oyun-kutu { animation: none; }
 .yk-makine { width: 100%; box-sizing: border-box; }
 /* Kararan tahtada küreler ve çarpan göstergesi parlak kalır. */
 .yk-makine.karanlik .yk.kure { z-index: 3; }
+.kumarhane .oto-cubuk button.oto-devam { background: linear-gradient(180deg, #5ee08a, #1f9e55); }

@@ -450,6 +450,10 @@
   // --- Otomatik çevirme ---
   let oto = null
 
+  /**
+   * Alttaki otomatik çubuğu. Bonus gelince otomatik duraklar (`beklemede`), kalan çevirmeler kaybolmaz:
+   * DEVAM kaldığı yerden sürdürür (bot sahibinin şikâyeti: duraklama yerine iptal ediyor, kalan haklar gidiyordu).
+   */
   function otoCubugu() {
     let cubuk = document.querySelector('.oto-cubuk')
     if (!oto) {
@@ -458,16 +462,38 @@
     }
     if (!cubuk) {
       cubuk = yeni('div', 'oto-cubuk')
-      const dur = yeni('button', 'oto-dur', '■ DURDUR')
-      dur.type = 'button'
-      dur.addEventListener('click', () => {
-        oto = null
-        otoCubugu()
-      })
-      cubuk.append(yeni('span', 'oto-yazi'), dur)
       document.body.append(cubuk)
     }
-    cubuk.querySelector('.oto-yazi').textContent = `🔁 Otomatik · ${oto.kalan} kaldı`
+    const dur = yeni('button', 'oto-dur', '■ DURDUR')
+    dur.type = 'button'
+    dur.addEventListener('click', () => {
+      oto = null
+      otoCubugu()
+    })
+    if (oto.beklemede) {
+      const devam = yeni('button', 'oto-devam', `▶ DEVAM (${oto.kalan})`)
+      devam.type = 'button'
+      devam.addEventListener('click', otoDevam)
+      cubuk.replaceChildren(yeni('span', 'oto-yazi', '⏸ Bonus geldi'), devam, dur)
+    } else {
+      cubuk.replaceChildren(yeni('span', 'oto-yazi', `🔁 Otomatik · ${oto.kalan} kaldı`), dur)
+    }
+  }
+
+  function otoDevam() {
+    if (!oto) return
+    oto.beklemede = false
+    if (oto.kalan <= 0) {
+      oto = null
+      otoCubugu()
+      return
+    }
+    oto.kalan -= 1
+    otoCubugu()
+    if (!cevir()) {
+      oto = null
+      otoCubugu()
+    }
   }
 
   function cevir() {
@@ -485,7 +511,13 @@
       otoCubugu()
     }
     if (kutu.dataset.durum === 'hata') return durdur()
-    if (oto.bonusDur && veri?.fs) return durdur()
+    // Duraklamışken elle çevrilen el otomatiği yeniden başlatmaz, DEVAM bekler.
+    if (oto.beklemede) return
+    if (oto.bonusDur && veri?.fs) {
+      oto.beklemede = true
+      otoCubugu()
+      return
+    }
     if (oto.buyukDur && veri?.kat >= 50) return durdur()
     if (oto.kalan <= 0) return durdur()
     setTimeout(() => {
