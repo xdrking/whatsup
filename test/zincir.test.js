@@ -6,7 +6,7 @@ process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
 const {
-  AZAMI_KAT, BOYUT, coz, enIyiHamle, gecerliHamleler, gruplar, hamleYap, kodla, PAKETLER, tahtaKur,
+  AZAMI_KAT, BOYUT, coz, enIyiHamle, gecerliHamleler, gruplar, hamleYap, HUCRE_DEGERI, ipucu, kodla, PAKETLER, tahtaKur, yenile,
 } = await import('../lib/zincir.js')
 const { getDb } = await import('../lib/db.js')
 const { bankaDurumu, getStats, xpAyarla } = await import('../lib/stats.js')
@@ -39,7 +39,11 @@ test('dolgu eşleşmesizdir, tahtaKur eşleşmesiz ve hamleli kurar', () => {
   }
 })
 
-test('4\'lü çizgili, L bomba, 5\'li gökkuşağı doğurur', () => {
+test('3\'lü düz patlar; 4\'lü parlak, L bomba, 5\'li süper parlak doğurur', () => {
+  const uc = dolgu()
+  for (let c = 0; c < 3; c += 1) uc[yer(7, c)] = { r: X, o: '' }
+  assert.equal(gruplar(uc)[0].ozel, '')
+
   const yatay = dolgu()
   for (let c = 0; c < 4; c += 1) yatay[yer(7, c)] = { r: X, o: '' }
   assert.equal(gruplar(yatay)[0].ozel, 'h')
@@ -57,7 +61,7 @@ test('4\'lü çizgili, L bomba, 5\'li gökkuşağı doğurur', () => {
 
   const bes = dolgu()
   for (let c = 1; c < 6; c += 1) bes[yer(4, c)] = { r: X, o: '' }
-  assert.equal(gruplar(bes)[0].ozel, 'r')
+  assert.equal(gruplar(bes)[0].ozel, 's')
 })
 
 test('takas: patlatmayan takas geçersizdir, eşleşen takas özel şekeri yerinde bırakır', () => {
@@ -71,20 +75,25 @@ test('takas: patlatmayan takas geçersizdir, eşleşen takas özel şekeri yerin
   assert.ok(s)
   assert.deepEqual(s.adimlar[0].olusan, [[yer(7, 2), 'h', X]])
   assert.equal(s.adimlar[0].adet, 4)
-  assert.ok(Math.abs(s.adimlar[0].kazanc - 4 * 0.0022) < 1e-9)
+  assert.ok(Math.abs(s.adimlar[0].kazanc - 4 * HUCRE_DEGERI) < 1e-9)
   // Özel şeker yerinde kalır (son tahta, hamle kalmadıysa karılmış olabilir).
   assert.deepEqual(s.adimlar[0].tahta[yer(7, 2)], { r: X, o: 'h' })
   assert.equal(s.tahta.length, BOYUT * BOYUT)
   assert.equal(t[yer(6, 2)].r, X, 'asıl tahta değişmez')
 })
 
-test('gökkuşağı takas edildiği rengin hepsini, çizgili satırı temizler', () => {
+test('süper parlak kendi rengiyle eşleşince 5x5 patlar, iki çizgili satır ve sütun temizler', () => {
+  // Parlak üzüm normal üzümlerle eşleşir: yalnızca renk eşleşmesiyle tetiklenir, çevresini de patlatır.
   const t = dolgu()
-  t[0] = { r: -1, o: 'r' }
-  for (const i of [1, 20, 45]) t[i] = { r: X, o: '' }
-  const s = hamleYap(t, 0, 1, { rnd: tohumlu(3) })
-  assert.equal(s.birlesim, 'r')
-  for (const i of [0, 1, 20, 45]) assert.ok(s.adimlar[0].sil.includes(i), `${i} silinmeli`)
+  t[yer(4, 3)] = { r: X, o: 's' }
+  t[yer(4, 4)] = { r: X, o: '' }
+  t[yer(3, 5)] = { r: X, o: '' }
+  const s = hamleYap(t, yer(3, 5), yer(4, 5), { rnd: tohumlu(3) })
+  assert.equal(s.birlesim, '')
+  assert.deepEqual(s.adimlar[0].etkin, [[yer(4, 3), 's']])
+  const sil0 = new Set(s.adimlar[0].sil)
+  for (let dr = -2; dr <= 2; dr += 1) for (let dc = -2; dc <= 2; dc += 1) assert.ok(sil0.has(yer(4 + dr, 3 + dc)), `${dr},${dc}`)
+  assert.equal(hamleYap(dolgu(), 0, 1, { rnd: tohumlu(3) }), null, 'özel olmadan eşleşmesiz takas geçersiz')
 
   const c = dolgu()
   c[yer(3, 5)] = { r: c[yer(3, 5)].r, o: 'h' }
@@ -99,9 +108,32 @@ test('gökkuşağı takas edildiği rengin hepsini, çizgili satırı temizler',
   }
 })
 
+test('tıkanan tahta dökülür, yenisi yağar, yağarken eşleşenler öder; ipucu geçerli bir takası gösterir', () => {
+  let odedi = false
+  for (let s = 1; s <= 30; s += 1) {
+    const y = yenile(tohumlu(s))
+    assert.ok(gecerliHamleler(y.tahta).length > 0)
+    assert.ok(y.yagmurlar.length >= 1)
+    assert.equal(gruplar(y.tahta).length, 0, 'yağmur bitince eşleşme kalmaz')
+    const toplam = y.yagmurlar.flatMap((x) => x.adimlar).reduce((a, x) => a + x.kazanc, 0)
+    assert.ok(Math.abs(toplam - y.kazanc) < 1e-9)
+    if (y.kazanc > 0) odedi = true
+  }
+  assert.ok(odedi, 'rastgele yağmurda eşleşme çıkar ve öder')
+
+  for (let s = 1; s <= 20; s += 1) {
+    const t = tahtaKur(tohumlu(s))
+    const ip = ipucu(t, tohumlu(s + 50))
+    assert.ok(ip.length >= 3)
+    // Parlayanlar en çok iki renktir (takas iki yönde de eşleştirebilir), biri geçerli bir takasın parçasıdır.
+    assert.ok(new Set(ip.map((x) => t[x].r)).size <= 2)
+    assert.ok(gecerliHamleler(t).some(([a, b]) => ip.includes(a) || ip.includes(b)))
+  }
+})
+
 test('tarayıcı kodu gidip gelir', () => {
   const t = tahtaKur(tohumlu(5))
-  t[3] = { r: -1, o: 'r' }
+  t[3] = { r: 1, o: 's' }
   t[4] = { r: 2, o: 'b' }
   assert.deepEqual(coz(kodla(t)), t)
   assert.equal(kodla(t).length, BOYUT * BOYUT * 2)
@@ -123,7 +155,7 @@ function oyna(paket, usta, adet, tohum) {
         const l = gecerliHamleler(t)
         ;[i, j] = l[gercek(l.length)]
       }
-      const s = hamleYap(t, i, j, { rnd: gercek })
+      const s = hamleYap(t, i, j, { rnd: gercek, yenilensin: m < PAKETLER[paket].hamle - 1 })
       t = s.tahta
       kazanc += s.kazanc
     }
@@ -164,9 +196,10 @@ test('panel: paket bahsin katı, giriş ücreti hazineye, erken bitirme o ana ka
   m.basla(kim, { oyun: 'zincir', miktar: '10000', secim: '30' })
   const d = m.durum(kim)
   assert.equal(d.el.oyun, 'zincir')
-  assert.equal(d.el.bahis, 21_000)
+  const bahis = Math.floor(10_000 * PAKETLER[30].kat)
+  assert.equal(d.el.bahis, bahis)
   assert.equal(d.el.kalan, 30)
-  assert.equal(getStats(GRUP, UYE).xp, 1_000_000 - 21_000 - giris)
+  assert.equal(getStats(GRUP, UYE).xp, 1_000_000 - bahis - giris)
   assert.equal((bankaDurumu({ chatJid: GRUP, userJid: BOT, now: zaman })?.bakiye ?? 0) - kasa, giris)
 
   // Geçersiz takas hamle harcamaz.
@@ -193,7 +226,7 @@ test('panel: paket bahsin katı, giriş ücreti hazineye, erken bitirme o ana ka
   const s = m.durum(kim).sonuc
   assert.equal(s.el.kalan, 29)
   assert.equal(getStats(GRUP, UYE).xp - once, r.xp)
-  assert.equal(s.fark, r.xp - 21_000)
+  assert.equal(s.fark, r.xp - bahis)
 })
 
 test('sahip şansı: yeni şekerler son rengi atlar', () => {

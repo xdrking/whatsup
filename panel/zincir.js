@@ -9,7 +9,9 @@
   const RENK = ['#ff4d6d', '#ffd23f', '#a970ff', '#7bd84a', '#ff9636', '#ff7ad9']
   const HARF = 'abcdef'
   const KOMBO_ADI = [[8, 'ŞEKER FIRTINASI'], [5, 'EFSANE'], [3, 'MUHTEŞEM'], [2, 'SÜPER'], [1.5, 'KOMBO']]
-  const BIRLESIM_ADI = { rr: 'ÇİFT GÖKKUŞAĞI!', rb: 'GÖKKUŞAĞI BOMBASI!', rh: 'GÖKKUŞAĞI ÇİZGİSİ!', rv: 'GÖKKUŞAĞI ÇİZGİSİ!', bb: 'DEV PATLAMA!', bc: 'ÇAPRAZ ATEŞ!', cc: 'ARTI ATEŞ!', r: 'GÖKKUŞAĞI!' }
+  const BIRLESIM_ADI = { ss: 'SÜPER NOVA!', sb: 'MEGA PATLAMA!', sc: 'YILDIZ YAĞMURU!', bb: 'DEV PATLAMA!', bc: 'ÇAPRAZ ATEŞ!', cc: 'ARTI ATEŞ!' }
+  // Bu kadar süre hamle yapılmazsa eşleşme yapılabilecek şekerler parlar.
+  const IPUCU_MS = 3500
   const binlik = new Intl.NumberFormat('tr-TR')
   const azGuc = (navigator.hardwareConcurrency || 4) <= 4 || matchMedia('(prefers-reduced-motion: reduce)').matches
   const bekle = (ms) => new Promise((tamam) => setTimeout(tamam, ms))
@@ -35,15 +37,14 @@
   const ozelSesi = () => [784, 1175, 1568].forEach((f, i) => ton(f, 0.12, { tip: 'sine', guc: 0.06, gecikme: i * 0.05 }))
   const dusmeSesi = () => ton(240, 0.07, { tip: 'sine', guc: 0.05, kayma: 150 })
 
-  /** Hücreye iki harfli kodu yazar (renk a-f ya da x, özel . h v b r). */
+  /** Hücreye iki harfli kodu yazar (renk a-f, özel . h v b s). Özel şeker kendi meyvesinin parlak halidir. */
   function hucreYaz(el, kod, ek = '') {
-    const r = kod[0]
     const o = kod[1]
-    el.className = `zh r${r === 'x' ? 'x' : HARF.indexOf(r)}${o !== '.' ? ` ozel-${o}` : ''}${ek}`
-    el.textContent = r === 'x' ? '🌈' : SEMBOL[HARF.indexOf(r)]
+    el.className = `zh r${HARF.indexOf(kod[0])}${o !== '.' ? ` ozel-${o}` : ''}${ek}`
+    el.textContent = SEMBOL[HARF.indexOf(kod[0])]
   }
   const kodlar = (t) => Array.from({ length: t.length / 2 }, (_, i) => t.slice(i * 2, i * 2 + 2))
-  const renkKodu = (kod) => (kod[0] === 'x' ? '#ffffff' : RENK[HARF.indexOf(kod[0])])
+  const renkKodu = (kod) => RENK[HARF.indexOf(kod[0])]
 
   function kur(makine) {
     if (makine.dataset.kuruldu) return
@@ -54,7 +55,7 @@
     const sahne = makine.querySelector('.zincir-sahne')
     const hucreler = [...tahtaEl.children]
     const efekt = window.SekerEfekt?.(makine) ?? null
-    const d = { kod: kodlar(veri.t), kilit: false, secili: null, xp: veri.xp, kalan: veri.kalan, enerji: 0 }
+    const d = { kod: kodlar(veri.t), kilit: false, secili: null, xp: veri.xp, kalan: veri.kalan, enerji: 0, ipucu: veri.ipucu ?? [], ipucuZaman: null }
     const komsu = (i, j) => (Math.floor(i / N) === Math.floor(j / N) && Math.abs(i - j) === 1) || Math.abs(i - j) === N
 
     const ciz = () => hucreler.forEach((el, i) => hucreYaz(el, d.kod[i], d.secili === i ? ' secili' : ''))
@@ -167,7 +168,12 @@
         else if (tur === 'b') {
           efekt?.halka(x, y, '#ffb13d', 120, 0.7)
           efekt?.flas('rgba(255,190,80,.9)', 0.35, x, y)
-        } else efekt?.flas('rgba(200,160,255,.95)', 0.55, x, y)
+        } else {
+          // Süper parlak: geniş halka, beyaz parlama, iki şok dalgası.
+          efekt?.halka(x, y, '#ffffff', 190, 0.8)
+          efekt?.halka(x, y, renkKodu(d.kod[i]), 140, 0.6)
+          efekt?.flas('rgba(255,250,220,.95)', 0.6, x, y)
+        }
       }
       if (a.e.length) sars(3 + a.e.length * 2)
       const guc = Math.min(10, n * 1.5 + a.e.length * 2)
@@ -233,16 +239,63 @@
       await bitince(son)
     }
 
-    async function karis(t) {
-      yazi('KARIŞTIRILIYOR', 'bilgi')
-      await Promise.all(hucreler.map((el) => bitince(el.animate([{ transform: 'scale(1)' }, { transform: 'scale(0) rotate(90deg)' }], { duration: 260, fill: 'forwards' }))))
+    /** Bütün şekerler aşağı dökülür (tahtadan çıkar). */
+    async function dok() {
+      const h = adim()
+      let son = null
+      hucreler.forEach((el, i) => {
+        el.getAnimations().forEach((x) => x.cancel())
+        const r = Math.floor(i / N)
+        son = el.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: `translateY(${(N - r + 1) * h}px)`, opacity: 0 }],
+          { duration: 420, delay: (i % N) * 35 + (N - 1 - r) * 18, easing: 'cubic-bezier(.5,0,.9,.5)', fill: 'forwards' })
+      })
+      hisirti(0.5, { guc: 0.08, filtre: 900 })
+      await bitince(son)
+    }
+
+    /** Yeni tahta yukarıdan yağar. */
+    async function yag(t) {
+      const h = adim()
       d.kod = kodlar(t)
+      let son = null
       hucreler.forEach((el, i) => {
         el.getAnimations().forEach((x) => x.cancel())
         hucreYaz(el, d.kod[i])
-        el.animate([{ transform: 'scale(0) rotate(-90deg)' }, { transform: 'scale(1)' }], { duration: 320, delay: (i % N) * 25, easing: 'cubic-bezier(.3,1.4,.5,1)', fill: 'backwards' })
+        const r = Math.floor(i / N)
+        son = el.animate([{ transform: `translateY(${-(N + 1) * h}px)`, opacity: 0.3 }, { transform: 'translateY(0)', opacity: 1 }],
+          { duration: 460, delay: (i % N) * 45 + (N - 1 - r) * 28, easing: 'cubic-bezier(.25,1.3,.55,1)', fill: 'backwards' })
       })
-      await bekle(520)
+      setTimeout(dusmeSesi, 450)
+      await bitince(son)
+    }
+
+    /** Eşleşme kalmadı: tahta dökülür, yenisi yağar, yağarken eşleşenler patlar. */
+    async function yagmur(liste) {
+      for (const y of liste) {
+        yazi('ŞEKER YAĞMURU', 'kombo')
+        await bekle(350)
+        await dok()
+        await yag(y.t)
+        let n = 0
+        for (const a of y.a) {
+          await patlat(a, n)
+          await dus(a)
+          n += 1
+        }
+        if (n >= 2) efekt?.yagmur(30, RENK)
+      }
+    }
+
+    function ipucuSil() {
+      clearTimeout(d.ipucuZaman)
+      for (const el of tahtaEl.querySelectorAll('.zh.ipucu')) el.classList.remove('ipucu')
+    }
+    function ipucuKur() {
+      ipucuSil()
+      d.ipucuZaman = setTimeout(() => {
+        if (d.kilit || d.secili !== null) return
+        for (const i of d.ipucu) hucreler[i]?.classList.add('ipucu')
+      }, IPUCU_MS)
     }
 
     /** El bitti: sonuç sayfası getirilir, oyun.js bakiyeyi sayar ve sonuç kartını açar. */
@@ -276,6 +329,7 @@
       if (d.kilit || !komsu(i, j)) return
       d.kilit = true
       d.secili = null
+      ipucuSil()
       ciz()
       const istek = fetch('/oyun/zincir', {
         method: 'POST', credentials: 'same-origin',
@@ -315,7 +369,7 @@
           await dus(a)
           n += 1
         }
-        if (r.karisti) await karis(r.tahta)
+        if (r.yagmurlar) await yagmur(r.yagmurlar)
         kazancSay(r.xp)
         ustYaz(1)
         enerjiYaz(0)
@@ -325,11 +379,13 @@
           return bitir()
         }
         if (d.kalan <= 3) makine.classList.add('az')
+        d.ipucu = r.ipucu ?? []
       } catch (err) {
         console.error('Hamle gönderilemedi', err)
         location.reload()
       } finally {
         d.kilit = false
+        if (!makine.classList.contains('bitti')) ipucuKur()
       }
     }
 
@@ -338,6 +394,7 @@
     tahtaEl.addEventListener('pointerdown', (olay) => {
       const el = olay.target.closest('.zh')
       if (!el || d.kilit) return
+      ipucuSil()
       surukle = { i: hucreler.indexOf(el), x: olay.clientX, y: olay.clientY, oldu: false }
       el.setPointerCapture?.(olay.pointerId)
     })
@@ -362,10 +419,12 @@
       if (d.secili !== null && komsu(d.secili, i)) return takas(d.secili, i)
       d.secili = d.secili === i ? null : i
       ciz()
+      ipucuKur()
       if (d.secili !== null) hucreler[i].animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1.1)' }], { duration: 200 })
     }
     tahtaEl.addEventListener('pointerup', birak)
     tahtaEl.addEventListener('pointercancel', () => { surukle = null })
+    ipucuKur()
     // Betik varken hücre düğmeleri formu göndermez (betiksiz sayfada seçim formla yapılır).
     tahtaEl.addEventListener('click', (olay) => {
       if (olay.target.closest('.zh')) olay.preventDefault()

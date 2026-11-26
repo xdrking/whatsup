@@ -11,7 +11,7 @@ import {
 import { sansliMi } from '../lib/sahipSans.js'
 import { REBORN_CRASH_SANSI } from '../lib/reborn.js'
 import { BONUS_FIYATI, sekerCevir } from '../lib/seker.js'
-import { AZAMI_KAT as ZINCIR_TAVAN, BOYUT, GIRIS_TABAN, hamleYap, kodla, komsuMu, PAKETLER, paketCoz, SAHIP_SANS, tahtaKur } from '../lib/zincir.js'
+import { AZAMI_KAT as ZINCIR_TAVAN, BOYUT, GIRIS_TABAN, hamleYap, ipucu, kodla, komsuMu, PAKETLER, paketCoz, SAHIP_SANS, tahtaKur } from '../lib/zincir.js'
 import { miktarlariCoz } from '../lib/sayi.js'
 import { getDb } from '../lib/db.js'
 import { bahisOyna, botHesabiMi, botHesabiniTani, getStats, girisliCek, girisUcreti, kumarOde, rebornSansiVar, sonReborn, xpCek } from '../lib/stats.js'
@@ -492,7 +492,8 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
       return { hata: el.uyari }
     }
     el.secili = null
-    const s = komsuMu(i, j) ? hamleYap(el.tahta, i, j, { sans: el.sansli ? SAHIP_SANS : 0 }) : null
+    // Tahta tıkanırsa dökülüp yenilenir; son hamlede gerekmez, el zaten kapanır.
+    const s = komsuMu(i, j) ? hamleYap(el.tahta, i, j, { sans: el.sansli ? SAHIP_SANS : 0, yenilensin: el.kalan > 1 }) : null
     if (!s) {
       uyar('Bu takas şeker patlatmıyor, hamle harcanmadı.')
       sureKur(k, el)
@@ -503,13 +504,14 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     el.kazanc = Math.min(ZINCIR_TAVAN, el.kazanc + s.kazanc)
     el.enBuyuk = Math.max(el.enBuyuk, s.adimlar.length)
     const yanit = {
-      takas: [i, j], birlesim: s.birlesim, adimlar: zincirAdimlari(s.adimlar), karisti: s.karistirildi, tahta: kodla(s.tahta),
+      takas: [i, j], birlesim: s.birlesim, adimlar: zincirAdimlari(s.adimlar), tahta: kodla(s.tahta),
+      yagmurlar: s.yagmurlar?.map((y) => ({ t: kodla(y.ilk), a: zincirAdimlari(y.adimlar) })) ?? null,
       kalan: el.kalan, kazanc: el.kazanc, xp: Math.floor(el.taban * el.kazanc), hamleKazanci: s.kazanc, taban: el.taban,
     }
     if (el.kazanc >= ZINCIR_TAVAN) kapat(k, el, Math.floor(el.taban * el.kazanc), `🏆 ${ZINCIR_TAVAN}x tavanına ulaştın`)
     else if (el.kalan <= 0) kapat(k, el, Math.floor(el.taban * el.kazanc), '🍭 Hamlelerin bitti')
     else sureKur(k, el)
-    return { ...yanit, bitti: el.bitti }
+    return { ...yanit, bitti: el.bitti, ipucu: el.bitti ? [] : ipucu(el.tahta) }
   }
 
   /** Sayfanın çizeceği görünüm; el sürerken gizli bilgi (mayınlar, krupiyenin kartı) çıkmaz. */
@@ -519,6 +521,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
       return {
         ...g, tahta: kodla(el.tahta), kalan: el.kalan, paket: el.paket, taban: el.taban, giris: el.giris,
         kat: Math.floor(el.kazanc * 100) / 100, xp: Math.floor(el.taban * el.kazanc), secili: acik ? null : el.secili, enBuyuk: el.enBuyuk,
+        ipucu: acik ? [] : ipucu(el.tahta),
       }
     }
     if (el.oyun === 'blackjack') {

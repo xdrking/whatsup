@@ -477,15 +477,15 @@ function sekerTablosu() {
 // --- Şeker Zinciri ---
 // Tahta sunucudadır. Betik yoksa her hücre bir düğmedir: ilk dokunuş seçer, komşuya ikinci dokunuş takas eder.
 // Betik varsa panel/zincir.js kaydırmayı ve dokunuşu okur, hamleyi /oyun/zincir'e gönderip adımları oynatır.
-const OZEL_SINIF = { h: ' ozel-h', v: ' ozel-v', b: ' ozel-b', r: ' ozel-r' }
-export const zincirSembol = (hucre) => (hucre.o === 'r' ? '🌈' : RENKLER[hucre.r])
+const OZEL_SINIF = { h: ' ozel-h', v: ' ozel-v', b: ' ozel-b', s: ' ozel-s' }
+export const zincirSembol = (hucre) => RENKLER[hucre.r]
 
 function zincirCizimi(chat, el, bitti, { sure, uyari }) {
   const hucreler = coz(el.tahta).map((x, i) => {
-    const sinif = `zh r${x.r < 0 ? 'x' : x.r}${OZEL_SINIF[x.o] ?? ''}${el.secili === i ? ' secili' : ''}`
-    return bitti ? h`<span class="${sinif}">${zincirSembol(x)}</span>` : h`<button name="hamle" value="${String(i)}" class="${sinif}" aria-label="${x.o ? OZEL_ADI[x.o] : RENK_ADI[x.r]}">${zincirSembol(x)}</button>`
+    const sinif = `zh r${x.r}${OZEL_SINIF[x.o] ?? ''}${el.secili === i ? ' secili' : ''}`
+    return bitti ? h`<span class="${sinif}">${zincirSembol(x)}</span>` : h`<button name="hamle" value="${String(i)}" class="${sinif}" aria-label="${x.o ? `${OZEL_ADI[x.o]} ${RENK_ADI[x.r]}` : RENK_ADI[x.r]}">${zincirSembol(x)}</button>`
   })
-  const veri = JSON.stringify({ grup: chat, t: el.tahta, taban: el.taban, kalan: el.kalan, paket: el.paket, xp: el.xp, kat: el.kat, boyut: BOYUT, tavan: ZINCIR_TAVAN })
+  const veri = JSON.stringify({ grup: chat, t: el.tahta, ipucu: el.ipucu ?? [], taban: el.taban, kalan: el.kalan, paket: el.paket, xp: el.xp, kat: el.kat, boyut: BOYUT, tavan: ZINCIR_TAVAN })
   const makine = h`<div class="zincir-makine${bitti ? ' bitti' : ''}"${bitti ? '' : h` data-zincir="${veri}"`}>
   <div class="zincir-ust">
     <span class="zincir-hamle"><small>HAMLE</small><b>${el.kalan}</b><i>/${el.paket}</i></span>
@@ -504,18 +504,19 @@ function zincirCizimi(chat, el, bitti, { sure, uyari }) {
 function zincirTablosu() {
   const kat = (x) => `${virgul(x)}x`
   return h`<section class="odeme-tablosu zincir-tablo"><h3>NASIL OYNANIR</h3>
-<p class="not">Yan yana iki şekeri kaydır (ya da sırayla dokun). 3 ya da daha fazla aynı şeker yan yana gelince patlar, patlayan her şeker bahsin ${virgul(HUCRE_DEGERI)} katını öder. Üsttekiler düşer; aynı hamledeki her yeni patlama kombo çarpanını büyütür: ${ZINCIR_KOMBO.map((x) => `x${virgul(x)}`).join(' → ')}.</p>
+<p class="not">Yan yana iki şekeri ya da meyveyi kaydır (ya da sırayla dokun). 3 ya da daha fazla aynısı yan yana gelince patlar, patlayan her şeker bahsin ${virgul(HUCRE_DEGERI)} katını öder. Üsttekiler düşer; aynı hamledeki her yeni patlama kombo çarpanını büyütür: ${ZINCIR_KOMBO.map((x) => `x${virgul(x)}`).join(' → ')}.</p>
 <ul>
-<li><span>4'lü sıra</span><strong>Çizgili şeker: satırı ya da sütunu temizler</strong></li>
-<li><span>L ya da T</span><strong>Bomba: çevresini patlatır</strong></li>
-<li><span>5'li sıra</span><strong>🌈 Gökkuşağı: takas edildiği rengin hepsini temizler</strong></li>
-<li><span>🌈 + 🌈</span><strong>Bütün tahta · +${kat(BIRLESIM_ODULU.rr)}</strong></li>
-<li><span>🌈 + bomba</span><strong>O rengin hepsi bomba olur · +${kat(BIRLESIM_ODULU.rb)}</strong></li>
-<li><span>🌈 + çizgili</span><strong>O rengin hepsi çizgili olur · +${kat(BIRLESIM_ODULU.rh)}</strong></li>
+<li><span>3'lü</span><strong>Düz patlar, şeker başına öder</strong></li>
+<li><span>4'lü sıra</span><strong>✨ Parlak meyve: eşleşince satırı ya da sütunu temizler</strong></li>
+<li><span>L ya da T</span><strong>💥 Parlak bomba: eşleşince çevresini (3x3) patlatır</strong></li>
+<li><span>5'li ve üstü</span><strong>🌟 Süper parlak: eşleşince geniş çevresini (5x5) patlatır</strong></li>
+<li><span>İki süper</span><strong>9x9 dev patlama · +${kat(BIRLESIM_ODULU.ss)}</strong></li>
+<li><span>Süper + bomba</span><strong>7x7 patlama · +${kat(BIRLESIM_ODULU.sb)}</strong></li>
+<li><span>Süper + çizgili</span><strong>5 satır, 5 sütun · +${kat(BIRLESIM_ODULU.sc)}</strong></li>
 <li><span>Bomba + bomba</span><strong>5x5 patlama · +${kat(BIRLESIM_ODULU.bb)}</strong></li>
 <li><span>Bomba + çizgili</span><strong>3 satır, 3 sütun · +${kat(BIRLESIM_ODULU.bc)}</strong></li>
 <li><span>Çizgili + çizgili</span><strong>Satır ve sütun · +${kat(BIRLESIM_ODULU.cc)}</strong></li>
 </ul>
-<p class="not">Paketler: ${Object.entries(PAKETLER).map(([n, p]) => `${n} hamle bahsin ${virgul(p.kat)} katı`).join(', ')}. Giriş ücreti ayrıca alınır, hazineye gider, geri dönmez. Patlatmayan takas hamle harcamaz. Bir el en çok bahsin ${ZINCIR_TAVAN} katını kazanır. 3 dakika hamle yapmazsan kalan hamleler yanar, o ana kadarki kazanç ödenir.</p>
+<p class="not">Paketler: ${Object.entries(PAKETLER).map(([n, p]) => `${n} hamle bahsin ${virgul(p.kat)} katı`).join(', ')}. Giriş ücreti ayrıca alınır, hazineye gider, geri dönmez. Patlatmayan takas hamle harcamaz. Yapacak eşleşme kalmayınca bütün şekerler dökülür, yenileri yağar; yağarken eşleşenler kendiliğinden patlar ve öder. Bir süre hamle yapmazsan eşleşme yapılabilecek şekerler beyaz parlar. Bir el en çok bahsin ${ZINCIR_TAVAN} katını kazanır. 3 dakika hamle yapmazsan kalan hamleler yanar, o ana kadarki kazanç ödenir.</p>
 </section>`
 }
