@@ -1,4 +1,5 @@
 import { bozdurmaDegeri } from '../lib/coin.js'
+import { sulyDegeri, sulyFiyati, sulyYaz } from '../lib/kripto.js'
 import { piyasaOlayi } from '../lib/olay.js'
 import { requireGroup } from '../lib/group.js'
 import { binlik } from '../lib/sayi.js'
@@ -32,6 +33,17 @@ export function uyariSatirlari(e) {
     )
   }
   return lines
+}
+
+const dolar = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 })
+
+/** Suly'nin son işlem fiyatı, XP karşılığı ve üyelerin elindeki toplamı. Fiyat hiç çekilmediyse satır yok. */
+export function sulySatirlari(suly) {
+  if (!suly?.usd) return []
+  return [
+    `🟠 Suly: $${dolar.format(suly.usd)} · 1 Suly = ${binlik(Math.floor(sulyFiyati(suly.usd, suly.kur)))} XP`,
+    `🟠 Dolaşımdaki Suly: ${sulyYaz(suly.birim)} (≈ ${binlik(sulyDegeri(suly.birim, suly.usd, suly.kur))} XP)`,
+  ]
 }
 
 function satir(etiket, oran) {
@@ -69,6 +81,7 @@ export default {
           `💰 Piyasadaki para: ${binlik(e.anlik)} XP`,
           `🪙 Anlık coin kuru: ${binlik(e.kur)} XP`,
           `🌐 Piyasa olayı: ${piyasaOlayi(from, Date.now()).ad}`,
+          ...sulySatirlari(e.suly),
           `🏦 Merkez bankası kasası: ${binlik(e.kasa)} XP`,
           `💳 Açık kredi: ${binlik(e.kredi.toplam)} XP (${e.kredi.adet} kişi)`,
           `💼 Bugün ödenen maaş: ${binlik(e.maas)} XP`,
