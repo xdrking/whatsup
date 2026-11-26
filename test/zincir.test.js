@@ -6,7 +6,7 @@ process.env.LOG_LEVEL = 'silent'
 process.env.STATS_DB = ':memory:'
 
 const {
-  AZAMI_KAT, BOYUT, coz, enIyiHamle, gecerliHamleler, gruplar, hamleYap, HUCRE_DEGERI, ipucu, kodla, PAKETLER, tahtaKur, yenile,
+  AZAMI_KAT, BOYUT, coz, enIyiHamle, gecerliHamleler, gruplar, hamleYap, HUCRE_DEGERI, insanHamlesi, ipucu, kodla, PAKETLER, RENKLER, tahtaKur, yenile,
 } = await import('../lib/zincir.js')
 const { getDb } = await import('../lib/db.js')
 const { bankaDurumu, getStats, xpAyarla } = await import('../lib/stats.js')
@@ -139,8 +139,8 @@ test('tarayıcı kodu gidip gelir', () => {
   assert.equal(kodla(t).length, BOYUT * BOYUT * 2)
 })
 
-/** `usta`: her hamlede görünen tahtada en çok kazandıran takas; değilse rastgele geçerli takas. */
-function oyna(paket, usta, adet, tohum) {
+/** `tur`: usta (her hamlede en çok kazandıran takas), insan (göze çarpan en büyük eşleşme), rastgele. */
+function oyna(paket, tur, adet, tohum) {
   const gercek = tohumlu(tohum)
   const deneme = tohumlu(tohum + 1000)
   let toplam = 0
@@ -150,7 +150,8 @@ function oyna(paket, usta, adet, tohum) {
     for (let m = 0; m < PAKETLER[paket].hamle; m += 1) {
       let i
       let j
-      if (usta) ({ i, j } = enIyiHamle(t, deneme))
+      if (tur === 'usta') ({ i, j } = enIyiHamle(t, deneme))
+      else if (tur === 'insan') ({ i, j } = insanHamlesi(t, gercek))
       else {
         const l = gecerliHamleler(t)
         ;[i, j] = l[gercek(l.length)]
@@ -164,15 +165,19 @@ function oyna(paket, usta, adet, tohum) {
   return toplam / adet / PAKETLER[paket].kat
 }
 
-test('beklenen dönüş: en iyi hamleyi bulan bot bile paket fiyatını geçemez', () => {
-  const usta = oyna(15, true, 400, 7)
-  assert.ok(usta > 0.85 && usta < 1, `usta 15 hamle: ${usta}`)
-  const rastgele = oyna(15, false, 1000, 8)
-  assert.ok(rastgele > 0.25 && rastgele < usta, `rastgele: ${rastgele}`)
-  // Fazla hamle hamle başına daha pahalıdır: büyük paketin dönüşü 15'likten yüksek olmaz.
+// Oyun kazandırmalı (bot sahibinin şikâyeti: "hiç kazandırmıyor"): makul oynayan yatırdığını kabaca geri alır,
+// özensiz oynayan kaybeder. Bütün tahtayı hesaplayan bot %100'ün çok üstüne çıkar, bilerek; o tavanı test tutar.
+test('beklenen dönüş: insan gibi oynayan yatırdığını geri alır, rastgele oynayan kaybeder', () => {
+  const insan = oyna(15, 'insan', 600, 7)
+  assert.ok(insan > 0.95 && insan < 1.15, `insan 15 hamle: ${insan}`)
+  const rastgele = oyna(15, 'rastgele', 1000, 8)
+  assert.ok(rastgele > 0.55 && rastgele < 0.85 && rastgele < insan, `rastgele: ${rastgele}`)
+  const usta = oyna(15, 'usta', 120, 10)
+  assert.ok(usta < 2.6, `usta 15 hamle: ${usta}`)
+  // Fazla hamle hamle başına daha pahalıdır: büyük paketin dönüşü 15'likten belirgin yüksek olmaz (örnek küçük, pay var).
   for (const paket of [20, 30]) {
-    const r = oyna(paket, true, 200, 9)
-    assert.ok(r < 1 && r <= usta + 0.03, `usta ${paket} hamle: ${r}`)
+    const r = oyna(paket, 'insan', 250, 9)
+    assert.ok(r < 1.15 && r <= insan + 0.08, `insan ${paket} hamle: ${r} (15 hamle ${insan})`)
   }
 })
 
@@ -235,5 +240,5 @@ test('sahip şansı: yeni şekerler son rengi atlar', () => {
   const s = hamleYap(t, yer(6, 2), yer(7, 2), { rnd: tohumlu(11), sans: 1 })
   // Patlayan dört hücrenin yerine üstten gelenler: dolgudaki sütunların tepesi yenidir.
   const yeniler = [yer(0, 0), yer(0, 1), yer(0, 3)].map((i) => s.adimlar[0].tahta[i].r)
-  assert.ok(yeniler.every((r) => r !== 5), String(yeniler))
+  assert.ok(yeniler.every((r) => r !== RENKLER.length - 1), String(yeniler))
 })

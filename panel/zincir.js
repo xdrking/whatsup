@@ -5,8 +5,9 @@
 (() => {
   'use strict'
 
-  const SEMBOL = ['🍓', '🍋', '🍇', '🍏', '🍊', '🍬']
-  const RENK = ['#ff4d6d', '#ffd23f', '#a970ff', '#7bd84a', '#ff9636', '#ff7ad9']
+  // lib/zincir.js:RENKLER ile aynı sırada olmalı.
+  const SEMBOL = ['🍓', '🍋', '🍇', '🍏', '🍬']
+  const RENK = ['#ff4d6d', '#ffd23f', '#a970ff', '#7bd84a', '#ff7ad9']
   const HARF = 'abcdef'
   const KOMBO_ADI = [[8, 'ŞEKER FIRTINASI'], [5, 'EFSANE'], [3, 'MUHTEŞEM'], [2, 'SÜPER'], [1.5, 'KOMBO']]
   const BIRLESIM_ADI = { ss: 'SÜPER NOVA!', sb: 'MEGA PATLAMA!', sc: 'YILDIZ YAĞMURU!', bb: 'DEV PATLAMA!', bc: 'ÇAPRAZ ATEŞ!', cc: 'ARTI ATEŞ!' }

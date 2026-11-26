@@ -3,7 +3,7 @@
 // Satır içi `style` CSP'ye takılır: gecikme ve konumlar sınıflarla verilir (d1, d2…).
 import { IKILI_CARPAN, KAZI_ODULLERI, PLINKO_RISK, renk, SEMBOLLER } from '../lib/kumar.js'
 import { AZAMI_KAT, BEDAVA_DONUS, BONUS_FIYATI, DAGINIK, DAGINIK_ODEME, EK_DONUS, EK_ESIK, KOMBO, SATIR, SEKERLER, SUTUN, tahtaKur } from '../lib/seker.js'
-import { AZAMI_KAT as ZINCIR_TAVAN, BIRLESIM_ODULU, BOYUT, coz, HUCRE_DEGERI, KOMBO as ZINCIR_KOMBO, OZEL_ADI, PAKETLER, RENK_ADI, RENKLER } from '../lib/zincir.js'
+import { AZAMI_KAT as ZINCIR_TAVAN, BOYUT, coz, HUCRE_DEGERI, KOMBO as ZINCIR_KOMBO, OZEL_ADI, PAKETLER, RENK_ADI, RENKLER } from '../lib/zincir.js'
 import { COK_OYUNLAR, TEK_OYUNLAR, VURGUN_KAT, zincirGirisi } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
 
@@ -502,7 +502,6 @@ function zincirCizimi(chat, el, bitti, { sure, uyari }) {
 }
 
 function zincirTablosu() {
-  const kat = (x) => `${virgul(x)}x`
   return h`<section class="odeme-tablosu zincir-tablo"><h3>NASIL OYNANIR</h3>
 <p class="not">Yan yana iki şekeri ya da meyveyi kaydır (ya da sırayla dokun). 3 ya da daha fazla aynısı yan yana gelince patlar, patlayan her şeker bahsin ${virgul(HUCRE_DEGERI)} katını öder. Üsttekiler düşer; aynı hamledeki her yeni patlama kombo çarpanını büyütür: ${ZINCIR_KOMBO.map((x) => `x${virgul(x)}`).join(' → ')}.</p>
 <ul>
@@ -510,12 +509,12 @@ function zincirTablosu() {
 <li><span>4'lü sıra</span><strong>✨ Parlak meyve: eşleşince satırı ya da sütunu temizler</strong></li>
 <li><span>L ya da T</span><strong>💥 Parlak bomba: eşleşince çevresini (3x3) patlatır</strong></li>
 <li><span>5'li ve üstü</span><strong>🌟 Süper parlak: eşleşince geniş çevresini (5x5) patlatır</strong></li>
-<li><span>İki süper</span><strong>9x9 dev patlama · +${kat(BIRLESIM_ODULU.ss)}</strong></li>
-<li><span>Süper + bomba</span><strong>7x7 patlama · +${kat(BIRLESIM_ODULU.sb)}</strong></li>
-<li><span>Süper + çizgili</span><strong>5 satır, 5 sütun · +${kat(BIRLESIM_ODULU.sc)}</strong></li>
-<li><span>Bomba + bomba</span><strong>5x5 patlama · +${kat(BIRLESIM_ODULU.bb)}</strong></li>
-<li><span>Bomba + çizgili</span><strong>3 satır, 3 sütun · +${kat(BIRLESIM_ODULU.bc)}</strong></li>
-<li><span>Çizgili + çizgili</span><strong>Satır ve sütun · +${kat(BIRLESIM_ODULU.cc)}</strong></li>
+<li><span>İki süper</span><strong>9x9 dev patlama</strong></li>
+<li><span>Süper + bomba</span><strong>7x7 patlama</strong></li>
+<li><span>Süper + çizgili</span><strong>5 satır, 5 sütun</strong></li>
+<li><span>Bomba + bomba</span><strong>5x5 patlama</strong></li>
+<li><span>Bomba + çizgili</span><strong>3 satır, 3 sütun</strong></li>
+<li><span>Çizgili + çizgili</span><strong>Satır ve sütun</strong></li>
 </ul>
 <p class="not">Paketler: ${Object.entries(PAKETLER).map(([n, p]) => `${n} hamle bahsin ${virgul(p.kat)} katı`).join(', ')}. Giriş ücreti ayrıca alınır, hazineye gider, geri dönmez. Patlatmayan takas hamle harcamaz. Yapacak eşleşme kalmayınca bütün şekerler dökülür, yenileri yağar; yağarken eşleşenler kendiliğinden patlar ve öder. Bir süre hamle yapmazsan eşleşme yapılabilecek şekerler beyaz parlar. Bir el en çok bahsin ${ZINCIR_TAVAN} katını kazanır. 3 dakika hamle yapmazsan kalan hamleler yanar, o ana kadarki kazanç ödenir.</p>
 </section>`
