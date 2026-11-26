@@ -971,3 +971,9 @@ main.degisti .oyun-kutu { animation: none; }
 .zincir-tablo li strong { text-align: right; }
 @media (min-width: 960px) { .kumarhane .zh { font-size: 1.8rem; } .zincir-makine { max-width: 500px; } }
 @media (prefers-reduced-motion: reduce) { .kumarhane .zh.ozel-b::after, .kumarhane .zh.ozel-s::after, .kumarhane .zh.ozel-h::after, .kumarhane .zh.ozel-v::after { animation: none; } .kumarhane .zh.ipucu::before { animation: none; opacity: 1; } }
+/* Telefonda tahta tek ekrana sığsın: genişlik ekran yüksekliğine göre sınırlanır (üst çubuk, başlık, alt menü
+   ve bitir düğmesi düşülür), son satır alt menünün arkasında kalmasın. */
+@media (max-width: 959px) {
+  .zincir-makine { max-width: min(560px, calc((100svh - 200px) / 1.13)); padding: .45rem; }
+  .acik-el[data-oyun="zincir"] > h2, .acik-el[data-oyun="zincir"] > .not:first-of-type { display: none; }
+}
