@@ -370,3 +370,43 @@ test('motor: büyük kazanç akışta bir kez paylaşılır, küçüğü paylaş
   assert.deepEqual([v.oyun, v.bahis, v.kazanc, v.carpan], ['crash', 1000, 4000, 5])
   assert.equal(m.vurgunAl(kim), null)
 })
+
+test('hesap motoru: panelde mülk al, sat, devret, yükselt; sayfa sandığı çizer', async () => {
+  const { coinAyarla, mulkDurumu } = await import('../lib/stats.js')
+  const { emlakSayfasi } = await import('../panel/emlakSayfalari.js')
+  for (const u of ['em@lid', 'em2@lid']) {
+    db.prepare('INSERT OR REPLACE INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, ?, 1, 0, 0, 5000, 1)').run(GRUP, u)
+  }
+  coinAyarla({ chatJid: GRUP, userJid: 'em@lid', adet: 100 })
+  let simdi = 70_000_000
+  const hm = hesapMotoru({ saat: () => simdi })
+  const kim = { chat: GRUP, user: 'em@lid' }
+  const yap = (alanlar) => {
+    simdi += 1000
+    hm.islem(kim, alanlar)
+    return hm.durum(kim).bildirim
+  }
+  const adet = (u, kod) => mulkDurumu({ chatJid: GRUP, userJid: u }).find((m) => m.mulk.kod === kod)?.adet ?? 0
+
+  for (let i = 0; i < 6; i += 1) assert.ok(yap({ islem: 'mulk-al', urun: 'ev' }).tamam)
+  assert.equal(adet('em@lid', 'ev'), 6)
+  assert.ok(yap({ islem: 'mulk-al', urun: 'ev_efsane' }).hata.includes('satın alınmaz'))
+  assert.ok(yap({ islem: 'mulk-al', urun: 'otel' }).hata.includes('coin gerekiyor'))
+
+  assert.ok(yap({ islem: 'mulk-sat', urun: 'ev', miktar: '1' }).tamam.includes('satıldı'))
+  assert.ok(yap({ islem: 'mulk-devret', urun: 'ev', miktar: '1', hedef: 'bot@s.whatsapp.net' }).hata, 'bota verilmez')
+  assert.ok(yap({ islem: 'mulk-devret', urun: 'ev', miktar: '1', hedef: 'em@lid' }).hata, 'kendine verilmez')
+  assert.ok(yap({ islem: 'mulk-devret', urun: 'ev', miktar: '1', hedef: 'em2@lid' }).tamam)
+  assert.equal(adet('em2@lid', 'ev'), 1)
+  assert.equal(adet('em@lid', 'ev'), 4)
+
+  simdi += 1000
+  hm.islem(kim, { islem: 'mulk-yukselt', urun: 'ev', miktar: '4' })
+  const d = hm.durum(kim)
+  assert.deepEqual([d.bildirim.yukselt.basarili, d.bildirim.yukselt.sans], [true, 100])
+  assert.equal(adet('em@lid', 'ev_efsane'), 1)
+  const html = String(emlakSayfasi({ chat: GRUP, durum: d, emlak: hm.emlak(kim) }))
+  assert.ok(html.includes('id="sandik"') && html.includes('kazandi') && !html.includes('id="bildirim"'))
+  assert.ok(html.includes('em2@lid') && !html.includes('value="em@lid"'), 'devir listesi kendini içermez')
+  assert.ok(yap({ islem: 'mulk-yukselt', urun: 'ev', miktar: '1' }).hata.includes('gerekiyor'))
+})

@@ -370,7 +370,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 85 (tamam):** Şeker Zinciri kazandırır: 5 çeşit, birleşim ek ödülü yok, ödeme insan oyuncuya göre. Faz 83 bölümüne işlendi.
 - **Faz 86 (tamam):** panelde Yıldırım Kalesi. Ayrıntı aşağıda.
 - **Faz 87 (tamam):** Suly piyasadan çıktı (kur döngüsü), alış kuru, `.tüik`'te Suly fiyatı. Faz 36 ve Faz 50 bölümlerine işlendi.
-- **Faz 88+:** yeni komutlar, her biri ayrı adım
+- **Faz 88 (tamam):** panelde Emlak: mülk al, sat, devret, animasyonlu yükseltme. Ayrıntı aşağıda.
+- **Faz 89+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1310,7 +1311,7 @@ panel/hesapSayfalari.js  hesap bölümünün HTML'i
 - **Açık el** hangi sayfada olursa olsun tektir. Başka oyunun sayfasında bahis formu yerine ele dönen bağlantı çıkar, lobide de aynı bağlantı vardır.
 - **Hesap işlemleri** (`POST /oyun/islem`) kural kopyalamaz, komutların çağırdığı `lib/stats.js` fonksiyonlarını çağırır (`bankaYatir`, `bankaCek`, `krediCek`, `krediOde`, `coinAl`, `coinSat`, `claimDaily`, `calis`, `kiraTopla`). İşlem adı `Object.hasOwn` ile denetlenir. Sonuç bir kez gösterilir (`bildirim`). Tutar alanının adı `tutar`'dır: `oyun.js` `miktar` adlı bahis alanlarını birbirine eşitler.
 - Hesap sayfası açılınca faiz ve kira işlenir (`bankaDurumu`, `mulkDurumu`), `.banka` ve `.mülk` yazmak gibi. Servet `servetDurumu` ile hesaplanır, yazmaz.
-- Meslek seçimi, market, mülk alım satımı, borsa, Suly, soygun ve grup oyunları panelde yoktur, WhatsApp'ta kalır.
+- Meslek seçimi, market, borsa, soygun ve grup oyunları panelde yoktur, WhatsApp'ta kalır. Suly (Faz 74) ve mülk (Faz 88) sonradan panele geldi.
 - **Panelde kumar yasağı yoktur (bot sahibinin kararı, "enflasyon umrumuzda değil"):** `panel/kumar.js` `kumarYasagi()` çağırmaz; iflas, hapis ve dolan günlük tavan yalnızca WhatsApp komutlarını kapatır. `bahisOyna` ve `kumarOde` panelden `tavansiz: true` ile çağrılır: kazanç kırpılmaz ve `kumar_gun.net`'e yazılmaz, yani panel kazancı WhatsApp'taki tavanı da doldurmaz. 500 XP şartı (`kumarEngeli`) panelde de geçerlidir. Faz 53 ve Faz 58'deki "tavan ve yasaklar ortaktır" notları panel için artık geçerli değildir.
 
 ### Faz 61 — Panel blackjack'i: çift, böl, sigorta, teslim
@@ -1595,6 +1596,15 @@ Bot sahibi Gates of Olympus istedi; oyun o türün (düşen semboller, her yerde
 - **Efektler telefonu yormamalı:** şimşekler Şeker Fırtınası'nın tek kanvaslı motorunda çizilir (`window.SekerEfekt().simsek`): her karede yeniden zikzaklanır, parlaklık `shadowBlur` yerine geniş yarı saydam ve ince beyaz iki çizgiyle verilir; zayıf cihazda daha az parça. Patlayan kümeye en çok 3 şimşek iner, küre düşünce şimşek çakar, sayılırken kürelerden çarpan göstergesine şimşek uzanır ve tahta kararır (`.karanlik`, küreler parlak kalır). Arka planda arada uzak şimşek çakar (`::before` opaklığı). CSS'te yalnızca `transform` ve `opacity` canlandırılır.
 - **Tarayıcı:** `oyun.js` `canlandir` ve `beklemeGoster`'da `window.YildirimKalesi`'ni çağırır; otomatik çevirmenin bonusta duraklaması Şeker Fırtınası'ndaki gibidir; sonuç yazısı oynatma bitene kadar gizlidir (`.oynuyor .gecikmeli`). Otomatik çevirme, turbo (`localStorage` `yildirim-turbo`), boşluk tuşu ve makinenin altındaki çevir düğmesi Şeker Fırtınası'ndaki gibidir.
 
+### Faz 88 — Panelde Emlak
+
+Bot sahibinin isteğiyle mülk işleri panele geldi (`/oyun/emlak`, `panel/emlakSayfalari.js`, yan menüde Hesap altında). İşlemler `panel/hesap.js`'teki `mulk-al`, `mulk-sat`, `mulk-devret`, `mulk-yukselt`'tir, kural kopyalanmaz: `mulkAl`, `mulkSat`, `mulkDevret`, `mulkYukselt` çağrılır.
+
+- **Devir:** hedef formdan gelir (`hedef` alanı) ve yalnızca grubun istatistiği olan bir üye olabilir (`lib/sosyal.js:uyeler`, bot hariç); kendine verilmez. WhatsApp'taki gibi grup üyeliği sorulamaz, gruptan çıkmış ama satırı duran üyeye de verilebilir.
+- **Satış** adet kadar `mulkSat` çağırır, her tane kendi transaction'ındadır.
+- **Yükseltme sandığı (bot sahibinin isteği: "efsanevi sandık açılışı gibi döne döne"):** sonuç işlem anında sunucuda belli olur, bildirim `yukselt` alanını taşır. Sayfa bildirim yerine `#sandik` kartını çizer, `panel/emlak.js` (`window.EmlakSandik`) oynatır: sandık iner, konan mülkler içine uçar, üç kez sertleşerek sallanır, patlar, ödül kartı 7 tur dönerek yavaşlar ve sonuç yüzünde durur (%100'de de döner). Kart `rotateY` ile döner, iki yüzlüdür (`backface-visibility`), son açı sonuçtan hesaplanır. "Geç" düğmesi animasyonları bitirir. `oyun.js` `canlandir`'da sandığı ilk sorar, Promise döner, bakiye bitince sayılır. Hareketler WAAPI, yalnızca transform ve opacity; parçacıklar `window.SekerEfekt`, sesler `window.KumarhaneSes`. Betik yoksa ya da hareketi azalt açıksa kart son halini (`kazandi`/`yandi`) düz gösterir. Başarılı yükseltme akışa bülten olarak düşer.
+- İki işlem arası 700 ms'dir (`hesapMotoru`): hızlı ikinci form sessizce düşer.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1765,3 +1775,4 @@ Bot sahibi Gates of Olympus istedi; oyun o türün (düşen semboller, her yerde
 152. Panelde Yıldırım Kalesi → semboller yağar; 8+ aynı sembol parlar, tepeden şimşek iner, patlar; ⚡ küre düşünce şimşek çakar. Kazandıran dönüşte tahta kararır, her küreden çarpan göstergesine şimşek uzanır, "⚡ xN" yazar, kazanç çarpılır. 🎁 Bonus al → onay sorar, 15 bedava dönüş, makine mora döner, çarpan tur boyunca birikir. Sonuç yazısı animasyon bitmeden görünmez. Telefonda ve bilgisayarda yatay taşma ve takılma yok
 153. Şeker Fırtınası ya da Yıldırım Kalesi'nde 100 otomatik, "Bonus gelince duraklat" işaretli → bonus gelince alt çubukta "⏸ Bonus geldi ▶ DEVAM (N)"; DEVAM kalan çevirmelerle sürer, DURDUR bitirir; duraklamışken elle çevirme otomatiği başlatmaz
 154. `.tüik` → Suly'nin dolar fiyatı, XP karşılığı ve dolaşımdaki Suly; `.kripto al suly 0,1` → piyasadaki para ödenen kadar azalır; `.kripto` ve `.coinmarket` alış ve değer/bozdurma fiyatını ayrı yazar
+155. Panelde Emlak → mülkler, piyasa ve efsaneviler; Villa al → coin düşer; Ev SAT → XP gelir; Devret'te üye seç → WhatsApp'ta `.mülk` iki tarafta da doğru adedi yazar; 4 ev YÜKSELT → sandık iner, sallanır, patlar, kart döne döne Efsanevi'de durur, konfeti; 1 ev (%25) → tutmazsa kart "YANDI"da durur; Geç düğmesi atlar; telefonda yatay taşma yok

@@ -13,6 +13,7 @@ import { btcFiyati, btcGecmisi, GRAFIK_ARALIKLARI } from '../lib/kripto.js'
 import { nftBul } from '../lib/nft.js'
 import { nftGorseli } from '../lib/nftResim.js'
 import { coinCanli, coinSayfasi, sulyCanli, sulyMarketSayfasi, sulySayfasi } from './sulySayfalari.js'
+import { emlakSayfasi } from './emlakSayfalari.js'
 import { bankaSayfasi, HESAP_SAYFALARI, hesapSayfasi } from './hesapSayfalari.js'
 import { grupSecimi, hesapLink, lobi, oyunLink, oyunSayfasi, oyunVar } from './oyunSayfalari.js'
 import { girisSayfasi, grupListesi, grupSayfasi, hataSayfasi, hisseSayfasi, kisiSayfasi } from './sayfalar.js'
@@ -31,6 +32,7 @@ const OYUN_BETIGI = readFileSync(path.join(KLASOR, 'oyun.js'))
 const SEKER_BETIGI = readFileSync(path.join(KLASOR, 'seker.js'))
 const ZINCIR_BETIGI = readFileSync(path.join(KLASOR, 'zincir.js'))
 const YILDIRIM_BETIGI = readFileSync(path.join(KLASOR, 'yildirim.js'))
+const EMLAK_BETIGI = readFileSync(path.join(KLASOR, 'emlak.js'))
 const SOSYAL_STIL = readFileSync(path.join(KLASOR, 'sosyal.css'))
 const SOSYAL_BETIGI = readFileSync(path.join(KLASOR, 'sosyal-istemci.js'))
 const SERVIS_ISCISI = readFileSync(path.join(KLASOR, 'sw.js'))
@@ -184,7 +186,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       return gonder(res, 200, coinCanli({ chat: hesap.chat_jid, ...hesapIsleri.coinBorsa({ chat: hesap.chat_jid, user: hesap.user_jid }) }).metin)
     }
 
-    const HESAP_CIZIMI = { hesap: hesapSayfasi, banka: bankaSayfasi, coin: coinSayfasi, suly: sulySayfasi, sulymarket: sulyMarketSayfasi }
+    const HESAP_CIZIMI = { hesap: hesapSayfasi, banka: bankaSayfasi, coin: coinSayfasi, suly: sulySayfasi, sulymarket: sulyMarketSayfasi, emlak: emlakSayfasi }
     const hesapSayfa = yontem === 'GET' ? HESAP_SAYFALARI.find((ad) => url.pathname === `/oyun/${ad}`) : null
 
     if (yol === 'GET /oyun' || hesapSayfa) {
@@ -202,7 +204,8 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       if (hesapSayfa) {
         const ek = hesapSayfa === 'suly' ? { suly: await sulyVerisi(kim, url) }
           : hesapSayfa === 'coin' ? { borsa: { chat, ...hesapIsleri.coinBorsa(kim) } }
-          : hesapSayfa === 'sulymarket' ? { market: hesapIsleri.market(kim), ben: hesap.user_jid } : {}
+          : hesapSayfa === 'sulymarket' ? { market: hesapIsleri.market(kim), ben: hesap.user_jid }
+          : hesapSayfa === 'emlak' ? { emlak: hesapIsleri.emlak(kim) } : {}
         return gonder(res, 200, HESAP_CIZIMI[hesapSayfa]({ chat, cokGrup, durum: hesapIsleri.durum(kim), ...ek }))
       }
 
@@ -234,7 +237,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
       if (yol === 'POST /oyun/islem') {
         const islem = form.get('islem') ?? ''
         const usd = islem.startsWith('suly-') ? (await fiyat())?.usd : null
-        hesapIsleri.islem(kim, { islem, miktar: form.get('tutar') ?? '', urun: form.get('urun') ?? '', vade: form.get('vade') ?? '', usd })
+        hesapIsleri.islem(kim, { islem, miktar: form.get('tutar') ?? '', urun: form.get('urun') ?? '', vade: form.get('vade') ?? '', hedef: form.get('hedef') ?? '', usd })
         const donus = HESAP_SAYFALARI.find((ad) => ad === form.get('sayfa')) ?? 'hesap'
         return yonlendir(res, hesapLink(chat, donus))
       }
@@ -324,6 +327,9 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     }
     if (yol === 'GET /yildirim.js') {
       return gonder(res, 200, YILDIRIM_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    }
+    if (yol === 'GET /emlak.js') {
+      return gonder(res, 200, EMLAK_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
     }
     if (yol === 'GET /zincir.js') {
       return gonder(res, 200, ZINCIR_BETIGI, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })

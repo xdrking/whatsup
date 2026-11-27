@@ -232,7 +232,7 @@ ${coinCanli(v)}
     ? h`${durum.mulkler.map((m) => satir('🏠', `${m.mulk.ad} · ${m.adet} adet`, m.kira ? `kira ${xp(m.kira)}` : 'kira yok'))}
   <div class="isler">${islemFormu(chat, 'coin', 'kira', `🏠 Kira topla${kira ? ` · ${xp(kira)}` : ''}`)}</div>`
     : h`<p class="not">Mülkün yok.</p>`}
-  <p class="not">Mülk alım satımı ve yükseltme WhatsApp'ta: <code>.mülk</code></p>
+  <p class="not"><a href="${hesapLink(chat, 'emlak')}">🏘️ Emlak</a> sayfasında mülk alıp satabilir, devredebilir ve efsaneviye yükseltebilirsin.</p>
 </section>`)
 }
 

@@ -9,9 +9,10 @@ import { nftBul } from '../lib/nft.js'
 import {
   bankaCek, bankaDurumu, bankaYatir, calis, claimDaily, coinAl, coinDurumu, coinPiyasasi, coinSat, ekonomiDurumu, faizDurumu, getStats,
   fidyeDurumu, fidyeOde, firarEt, hapisDurumu, karaborsaAl, karaborsaDurumu, kiraTopla, kriptoAl, kriptoDurumu, kriptoSat,
-  krediCek, krediDurumu, krediOde, maskeBitisi, maskeTak, meslekDurumu, mulkDurumu, nftAl, nftBoz, nftListesi, pasaportKullan, rusvetVer, servetDurumu, sulyPiyasasi,
+  krediCek, krediDurumu, krediOde, maskeBitisi, maskeTak, meslekDurumu, mulkAl, mulkDevret, mulkDurumu, mulkSat, mulkYukselt, nftAl, nftBoz, nftListesi, pasaportKullan, rusvetVer, servetDurumu, sulyPiyasasi,
 } from '../lib/stats.js'
-import { botGonderisi } from '../lib/sosyal.js'
+import { MULKLER, YUKSELTME_ADEDI } from '../lib/mulk.js'
+import { botGonderisi, uyeler } from '../lib/sosyal.js'
 import { displayName } from '../lib/target.js'
 import { AZAMI_ADET, kutuMetni, urunKoduyla } from '../lib/sulymarket.js'
 import { HAZINE_YOK, hazineyiTani, miktarMetni } from './kumar.js'
@@ -22,6 +23,8 @@ const KAPALI = 'Banka şu an kapalı, sonra dene.'
 const dakika = (ms) => `${Math.max(1, Math.ceil(ms / 60_000))} dk`
 
 const MARKET_KAPALI = 'SulyMarket şu an kapalı, sonra dene.'
+const TAPU_KAPALI = 'Tapu şu an kapalı, sonra dene.'
+const mulkKoduyla = (kod) => MULKLER.find((m) => m.kod === kod) ?? null
 const FIYAT_YOK = 'Suly fiyatı şu an alınamıyor, alım satım kapalı. Birazdan dene.'
 
 const tamam = (metin) => ({ tamam: metin })
@@ -151,6 +154,76 @@ const ISLEMLER = {
     if (!s) return hata('Tapu şu an kapalı, sonra dene.')
     if (!s.kira) return hata('Toplanacak kira yok.')
     return tamam(`Kira toplandı: +${sayi.format(s.kira)} XP`)
+  },
+
+  'mulk-al': ({ chat, user }, { urun }) => {
+    const mulk = mulkKoduyla(urun)
+    if (!mulk) return hata('Böyle bir mülk yok.')
+    const s = mulkAl({ chatJid: chat, userJid: user, mulk })
+    if (!s) return hata(TAPU_KAPALI)
+    if (s.satilmaz) return hata(`${mulk.ad} satın alınmaz, ${YUKSELTME_ADEDI} taneden yükseltmeyle çıkar.`)
+    if (s.yetersiz) return hata(`${mulk.fiyat} coin gerekiyor, sende ${sayi.format(s.bakiye)} var.`)
+    return tamam(`${mulk.ad} senin! ${s.adet} tane oldu. Kalan coin: ${sayi.format(s.bakiye)}`)
+  },
+
+  // mulkSat bir tane satar; adet kadar tekrarlanır, her biri kendi transaction'ındadır.
+  'mulk-sat': ({ chat, user }, { urun, miktar }) => {
+    const mulk = mulkKoduyla(urun)
+    if (!mulk) return hata('Böyle bir mülk yok.')
+    const adet = miktar ? tamSayi(miktar) : 1
+    if (!adet || adet > 9999) return hata('Kaç tane satacağını yaz.')
+    let kazanc = 0
+    let kira = 0
+    let satilan = 0
+    for (; satilan < adet; satilan += 1) {
+      const s = mulkSat({ chatJid: chat, userJid: user, mulk })
+      if (!s) return satilan ? tamam(`${satilan} ${mulk.ad} satıldı: +${sayi.format(kazanc + kira)} XP`) : hata(TAPU_KAPALI)
+      if (s.yok) break
+      kazanc += s.kazanc
+      kira += s.kira
+    }
+    if (!satilan) return hata(`Sende ${mulk.ad} yok.`)
+    return tamam(`${satilan} ${mulk.ad} satıldı: +${sayi.format(kazanc)} XP${kira ? `, birikmiş kira +${sayi.format(kira)} XP` : ''}`)
+  },
+
+  // Hedef formdan gelir; yalnızca bu grubun istatistiği olan bir üye olabilir (bot `uyeler`'de yoktur).
+  'mulk-devret': ({ chat, user }, { urun, miktar, hedef }) => {
+    const mulk = mulkKoduyla(urun)
+    if (!mulk) return hata('Böyle bir mülk yok.')
+    const kisi = uyeler(chat).find((u) => u.jid === hedef)
+    if (!kisi) return hata('Kime vereceğini seç.')
+    if (kisi.jid === user) return hata('Kendine mülk veremezsin.')
+    const adet = miktar ? tamSayi(miktar) : 1
+    if (!adet || adet > 9999) return hata('Kaç tane vereceğini yaz.')
+    const s = mulkDevret({ chatJid: chat, kaynak: user, hedef: kisi.jid, mulk, adet })
+    if (!s) return hata(TAPU_KAPALI)
+    if (s.ambargo) return hata(`Ambargodasın, ${dakika(s.ambargo - Date.now())} kaldı.`)
+    if (s.borclu) return hata('Kredi borcun ya da eksi cüzdanın varken mülk devredilemez.')
+    if (s.yetersiz) return hata(`O kadar ${mulk.ad} yok. Sende: ${s.adet}`)
+    const ad = kisi.ad || displayName(kisi.jid)
+    return tamam(`${adet} ${mulk.ad} → ${ad}. Sende ${s.kaynakAdet}, onda ${s.hedefAdet} tane.${s.kira ? ` Birikmiş kira sana ödendi: +${sayi.format(s.kira)} XP` : ''}`)
+  },
+
+  // Sonuç işlem anında belli olur; `yukselt` alanı sayfada sandık açılışı olarak oynatılır (panel/emlak.js).
+  'mulk-yukselt': ({ chat, user }, { urun, miktar }) => {
+    const mulk = mulkKoduyla(urun)
+    if (!mulk) return hata('Böyle bir mülk yok.')
+    const adet = miktar ? tamSayi(miktar) : YUKSELTME_ADEDI
+    if (!adet || adet > YUKSELTME_ADEDI) return hata(`1 ile ${YUKSELTME_ADEDI} arası mülk konur.`)
+    const s = mulkYukselt({ chatJid: chat, userJid: user, mulk, adet })
+    if (!s) return hata(TAPU_KAPALI)
+    if (s.efsaneYok) return hata('Efsanevi mülk daha fazla yükseltilmez.')
+    if (s.yetersiz) return hata(`${adet} tane ${mulk.ad} gerekiyor. Sende: ${s.adet}`)
+    if (s.basarili) botGonderisi(chat, `✨ ${displayName(user)} ${adet} ${mulk.ad} koydu, %${s.sans} şansla ${s.efsane.ad} çıkardı!`)
+    return {
+      tamam: s.basarili
+        ? `${s.efsane.ad} senin! ${s.efsaneAdet} tane oldu, kira %${String(s.efsane.kiraYuzde).replace('.', ',')}.`
+        : `Tutmadı, ${adet} ${mulk.ad} yandı.`,
+      yukselt: {
+        basarili: s.basarili, sans: s.sans, adet, kalan: s.kalan, kira: s.kira,
+        taban: mulk.ad, efsane: s.efsane.ad, efsaneAdet: s.efsaneAdet,
+      },
+    }
   },
 
   // `usd` sunucudan gelir (taze fiyat), formdan değil: kişi kendi fiyatını yazamasın.
@@ -315,6 +388,11 @@ export function hesapMotoru({ saat = Date.now } = {}) {
     return k && { birim: k.birim, kur: k.kur, sonFiyat: k.fiyat, ...sulyPiyasasi({ chatJid: h.chat }), ekonomi: ekonomiDurumu({ chatJid: h.chat }) }
   }
 
+  /** Emlak sayfası: devir için grubun öteki üyeleri. */
+  function emlak(h) {
+    return { uyeler: uyeler(h.chat).filter((u) => u.jid !== h.user).map((u) => ({ jid: u.jid, ad: u.ad || displayName(u.jid) })) }
+  }
+
   /** Coin borsasının grup verisi; bildirimi tüketmez, canlı yenileme de okur. */
   function coinBorsa(h) {
     return { ekonomi: ekonomiDurumu({ chatJid: h.chat }), ...coinPiyasasi({ chatJid: h.chat }), coin: coinDurumu(h.chat, h.user), simdi: saat() }
@@ -331,5 +409,5 @@ export function hesapMotoru({ saat = Date.now } = {}) {
     }
   }
 
-  return { islem, durum, suly, coinBorsa, market }
+  return { islem, durum, suly, coinBorsa, market, emlak }
 }

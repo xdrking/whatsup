@@ -12,7 +12,7 @@ const dakika = (ms) => {
   return dk >= 60 ? `${Math.floor(dk / 60)} sa ${dk % 60} dk` : `${dk} dk`
 }
 
-export const HESAP_SAYFALARI = ['hesap', 'banka', 'coin', 'suly', 'sulymarket']
+export const HESAP_SAYFALARI = ['hesap', 'banka', 'coin', 'suly', 'sulymarket', 'emlak']
 
 const bildirim = (b) => (b
   ? h`<p id="bildirim" class="bildirim ${b.hata ? 'olmadi' : 'oldu'}" role="status">${b.hata ? '⚠️' : '✅'} ${b.hata ?? b.tamam}</p>`

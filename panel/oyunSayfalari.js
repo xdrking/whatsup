@@ -111,6 +111,7 @@ export function yanMenu({ chat, cokGrup, secili = '' }) {
   <h3>👤 Hesap</h3>
   ${baglanti(hesapLink(chat, 'hesap'), 'hesap', '💎', 'Hesabım')}
   ${baglanti(hesapLink(chat, 'banka'), 'banka', '🏦', 'Banka ve kredi')}
+  ${baglanti(hesapLink(chat, 'emlak'), 'emlak', '🏘️', 'Emlak')}
   <h3>📈 Borsa</h3>
   ${baglanti(hesapLink(chat, 'coin'), 'coin', '🪙', 'Coin borsası')}
   ${baglanti(hesapLink(chat, 'suly'), 'suly', '📈', 'Suly borsası')}

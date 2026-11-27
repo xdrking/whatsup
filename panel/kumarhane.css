@@ -1076,3 +1076,63 @@ main.degisti .oyun-kutu { animation: none; }
 /* Kararan tahtada küreler ve çarpan göstergesi parlak kalır. */
 .yk-makine.karanlik .yk.kure { z-index: 3; }
 .kumarhane .oto-cubuk button.oto-devam { background: linear-gradient(180deg, #5ee08a, #1f9e55); }
+
+/* ---- Emlak (panel/emlakSayfalari.js) ---------------------------------------------------------
+   Sandık açılışı panel/emlak.js'te Web Animations ile oynar; canlandırılan yalnızca transform ve opacity'dir,
+   parçacıklar .seker-tuval kanvasındadır. Betik yoksa sandık kartı son halini (kazandi / yandi) gösterir. */
+.mulk-liste { display: grid; gap: .7rem; margin-top: .8rem; }
+.mulk-kart { padding: .8rem; border: 1px solid rgb(139 92 246 / .3); border-radius: .9rem; background: rgb(255 255 255 / .03); }
+.mulk-kart.efsane { border-color: rgb(245 197 66 / .55); background: linear-gradient(160deg, rgb(245 197 66 / .1), rgb(139 92 246 / .08)); box-shadow: 0 0 22px rgb(245 197 66 / .12); }
+.mulk-ust { display: flex; align-items: center; gap: .7rem; }
+.mulk-ikon { font-size: 1.9rem; line-height: 1; }
+.mulk-ad { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.mulk-ad small { color: var(--soluk); overflow-wrap: anywhere; }
+.mulk-isler { display: grid; gap: .55rem; margin-top: .7rem; }
+.mulk-isler .islem .alan select, .mulk-isler .islem .alan input { min-height: 42px; }
+.mulk-isler .islem:has(.adet) { grid-template-columns: minmax(0, 1fr) 4.5rem auto; }
+.kumarhane button.yukselt-dugme { background: linear-gradient(180deg, #ffe08a, #f5c542 55%, #c98a10); color: #2a1a00; box-shadow: 0 3px 0 #8a5a00, 0 0 18px rgb(245 197 66 / .35); }
+.mulk-pazar { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .6rem; margin-top: .6rem; }
+.pazar-kart { display: flex; flex-direction: column; align-items: center; gap: .25rem; padding: .8rem .6rem; text-align: center; border: 1px solid rgb(255 255 255 / .08); border-radius: .9rem; background: rgb(255 255 255 / .03); }
+.pazar-kart small { color: var(--soluk); font-size: .75rem; }
+.pazar-kart .mulk-ikon { font-size: 2.2rem; }
+.pazar-kart.efsane { border-color: rgb(245 197 66 / .45); background: linear-gradient(170deg, rgb(245 197 66 / .12), transparent); }
+.kumarhane .pazar-kart button { width: 100%; margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 0; padding-block: .45rem; }
+.kumarhane .pazar-kart button small { color: inherit; opacity: .75; font-weight: 600; }
+
+.sandik-kart { max-width: 44rem; margin: 0 auto 1rem; text-align: center; overflow: hidden; background: radial-gradient(circle at 50% 40%, #3a2368, #140c24 70%); border-color: rgb(245 197 66 / .4); }
+.sandik-kart h2 { color: var(--altin); letter-spacing: .06em; }
+.sandik-sahne { position: relative; display: grid; place-items: center; height: clamp(15rem, 62vw, 19rem); perspective: 900px; overflow: hidden; }
+.sandik-sahne > * { grid-area: 1 / 1; }
+.sandik-isin { position: absolute; left: 50%; top: 50%; width: 36rem; height: 36rem; margin: -18rem 0 0 -18rem; border-radius: 50%; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(rgb(255 215 106 / .32) 0 9deg, transparent 9deg 30deg);
+  -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 62%); mask-image: radial-gradient(circle, #000 18%, transparent 62%); }
+.sandik-konan { position: relative; width: 0; height: 0; }
+.konan { position: absolute; left: -1.5rem; top: -1.5rem; display: grid; place-items: center; width: 3rem; height: 3rem; font-size: 1.8rem; border-radius: .7rem; background: #2c2244; box-shadow: 0 4px 14px rgb(0 0 0 / .45); opacity: 0; }
+.sandik { position: relative; width: 9rem; height: 7.6rem; }
+.sandik-kapak, .sandik-govde { position: absolute; left: 0; right: 0; border: 4px solid var(--altin); box-shadow: inset 0 -6px 0 rgb(0 0 0 / .25), 0 10px 24px rgb(0 0 0 / .5); }
+.sandik-kapak { top: 0; height: 3.1rem; border-radius: 2.6rem 2.6rem .4rem .4rem; background: linear-gradient(180deg, #a678ff, #6a3fd0); transform-origin: 50% 100%; z-index: 1; }
+.sandik-govde { bottom: 0; height: 4.8rem; border-radius: .4rem .4rem .9rem .9rem; background: linear-gradient(180deg, #7b4fe0, #46268f); }
+.sandik-govde::before { content: ""; position: absolute; inset: 0 42%; background: linear-gradient(180deg, var(--altin2), var(--altin)); }
+.sandik-kilit { position: absolute; left: 50%; top: -.9rem; width: 1.9rem; height: 1.9rem; margin-left: -.95rem; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff4c4, var(--altin) 55%, #b9850f); box-shadow: 0 0 12px rgb(245 197 66 / .7); z-index: 2; }
+.odul { width: 9.5rem; height: 12.5rem; perspective: 800px; }
+.odul-ic { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+.odul-yuz { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem; padding: .6rem;
+  border-radius: 1rem; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.odul-yuz b { font-size: 3.6rem; line-height: 1; }
+.odul-yuz span { font-weight: 900; letter-spacing: .12em; }
+.kumarhane .odul-yuz small { font-size: .78rem; color: inherit; opacity: .8; font-weight: 700; }
+.odul-yuz.on { border: 3px solid var(--altin2); background: linear-gradient(160deg, #ffe08a, #f5a623 45%, #b5651d); color: #2a1300; box-shadow: 0 0 34px rgb(245 197 66 / .65); }
+.odul-yuz.arka { transform: rotateY(180deg); border: 3px solid #6b7280; background: linear-gradient(160deg, #4b5563, #1f2937); color: #d1d5db; }
+.sandik-kart.yandi .odul-ic { transform: rotateY(180deg); }
+.sandik-kart.kazandi:not(.oynuyor) .sandik-isin { opacity: 1; }
+.sandik-kart:not(.oynuyor) .sandik, .sandik-kart:not(.oynuyor) .sandik-konan { display: none; }
+.sandik-kart.oynuyor .odul { opacity: 0; }
+.sandik-kart.oynuyor .sandik-sonuc { visibility: hidden; }
+.sandik-sans { color: var(--soluk); }
+.sandik-sans b { color: var(--altin2); }
+.sandik-sonuc { margin: .5rem 0 0; font-size: 1.15rem; font-weight: 800; }
+.sandik-kart.kazandi .sandik-sonuc { color: var(--altin2); text-shadow: 0 0 16px rgb(245 197 66 / .45); }
+.sandik-kart.yandi .sandik-sonuc { color: #ff9a9a; }
+.sandik-kart.bitti .sandik-sonuc { animation: buyu .5s var(--yay) backwards; }
+.kumarhane button.sandik-gec { width: auto; margin: .6rem auto 0; padding: .35rem 1rem; font-size: .85rem; }
+@media (min-width: 640px) { .mulk-isler { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mulk-isler .mulk-yukselt { grid-column: 1 / -1; } }

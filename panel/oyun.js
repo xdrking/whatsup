@@ -157,6 +157,9 @@
 
   /** Sunucudan gelen sonucun sesini CSS animasyonunun zamanlamasıyla çalar. */
   function canlandir(hamleSonrasi) {
+    // Emlak yükseltmesi: sandık açılışı panel/emlak.js'tedir, bitince çözülen Promise döner.
+    const sandik = document.getElementById('sandik')
+    if (sandik) return window.EmlakSandik?.oynat(sandik) ?? 0
     const kutu = document.getElementById('sonuc')
     if (!kutu) {
       const el = document.getElementById('acik-el')
@@ -348,7 +351,7 @@
     if (bildirim?.classList.contains('oldu')) sesler.para()
     else if (bildirim) sesler.kaybet()
     history.replaceState(null, '', adres)
-    const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el') ?? document.getElementById('bildirim')
+    const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el') ?? document.getElementById('sandik') ?? document.getElementById('bildirim')
     hedef?.scrollIntoView({ behavior: 'smooth', block: govde.classList.contains('yerinde') ? 'nearest' : 'start' })
   }
 
