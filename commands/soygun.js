@@ -56,6 +56,7 @@ function sonucMetni(s, hirsiz, kurban) {
         `${mentionOf(hirsiz)}, ${mentionOf(kurban)} kişisinden *${binlik(s.miktar)} XP* çaldı!`,
         ...(s.odul ? [`🎯 Başındaki *${binlik(s.odul)} XP* ödülü de aldı!`] : []),
         `💰 ${binlik(s.hirsizXp)} XP  •  😭 ${binlik(s.kurbanXp)} XP`,
+        ...(s.kasa ? [`🎁 *Kasa düştü:* ${s.kasa.ad}! \`.kasa\` ile bak.`] : []),
       ].join('\n')
     : [
         `🚓 *YAKALANDIN*`,

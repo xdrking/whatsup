@@ -72,7 +72,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event ka
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
 games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu, .vampir, .poker, .vurgun)
-panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58), sosyal bölüm (Faz 66), Suly borsası ve SulyMarket (Faz 74)
+panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58), sosyal bölüm (Faz 66), Suly borsası ve SulyMarket (Faz 74), Kasalar (Faz 89)
 scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
@@ -152,6 +152,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `games/reborn.js` | süren reborn oylamasının oyları | bellek (süreçle ölür) |
 | `lib/db.js` + `lib/stats.js` | geçmiş reborn'lar ve o anki en zenginler | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.pet` evcil hayvanlar | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/stats.js` | kasa ve anahtar envanteri, haftalık düşme ve alım sayaçları, gecelik anahtarın günü | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | `.kripto` Suly bakiyeleri ve son Bitcoin fiyatı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | kara borsa envanteri, hack hakkı ve duvarı, çete cephaneliği, NFT sahipleri | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/stats.js` | offshore hesapları, saldırı kayıtları, fidye kilidi, maske, son vurgun, hileli zar, SulyMarket'in süreli etkileri | `data/stats.db` (kalıcı) |
@@ -371,7 +372,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 86 (tamam):** panelde Yıldırım Kalesi. Ayrıntı aşağıda.
 - **Faz 87 (tamam):** Suly piyasadan çıktı (kur döngüsü), alış kuru, `.tüik`'te Suly fiyatı. Faz 36 ve Faz 50 bölümlerine işlendi.
 - **Faz 88 (tamam):** panelde Emlak: mülk al, sat, devret, animasyonlu yükseltme. Ayrıntı aşağıda.
-- **Faz 89+:** yeni komutlar, her biri ayrı adım
+- **Faz 89 (tamam):** `.kasa` (5 tier kasa ve anahtar), coinmarket'te kasa, taktik NFT serisi, Mistik; panelde Kasalar, Çark ve Coin Market. Ayrıntı aşağıda.
+- **Faz 90+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1558,7 +1560,7 @@ Bot sahibinin isteğiyle. Ürünler `URUNLER`'in sonuna eklendi (19-22), numara 
   - **Casus yazılımı** özelden (`casusRaporu`): hedefin cüzdan, banka, coin, Suly, mülk ve NFT sayısı, duvar, korunma, soğuk cüzdan ve fidye kilidi. Hiçbir şey yazmaz, yalnızca yazılımı harcar. Kimlik yazılmazsa gruptaki kimlikler listelenir (`.hack` gibi, grupta hedef belli olmasın).
   - **Korsan yayın** özelden (`korsanYayin`): gruba "kaynağı bilinmeyen" duyuru ve akışa bülten, kişi başı 24 saatte bir (`sureli` `korsan` satırı bekleme), en çok 300 karakter. Susturulmuş gruba gitmez, o zaman harcanmaz.
   - **Sahte ihbar** grupta etiketle (`sahteIhbar`): hedef 30 dk hapse girer (`hapseAt`, kefalet hapisteki gibi; kumar, soygun, hack kapanır). VPN varsa harcanır ve risk yoktur; yoksa %30 ihbarcı 1 saat içeri girer, hedef dokunulmaz. Hapisteki hedefe ihbar harcanmaz.
-- **NFT serisi 2** (`lib/nft.js:YENI_SERI`, 31-53): `mitik` sınıfında tek NFT, Suly (gözlüklü, kumral bir kız; `lib/nftResim.js:sulyKiz`, vektör çizim), `sirket` sınıfında 9 şirket NFT'si, `efsane` sınıfında Omar (#53, `lib/nftResim.js:omarCizimi`, fotoğraftan aktarılmış vektör çizim; tişörtteki marka çizilmez). Şirketlerin logosu çizilmez, kartta yalnızca borsa kodu (`kod`) yazar. NFT'ler zaten tekildir (`nft` PK'si `chat_jid, no`): sahibi satışa koymadan başkası alamaz.
+- **NFT serisi 2** (`lib/nft.js:YENI_SERI`, 31-53): `mistik` sınıfında tek NFT, Suly (gözlüklü, kumral bir kız; `lib/nftResim.js:sulyKiz`, vektör çizim), `sirket` sınıfında 9 şirket NFT'si, `efsane` sınıfında Omar (#53, `lib/nftResim.js:omarCizimi`, fotoğraftan aktarılmış vektör çizim; tişörtteki marka çizilmez). Şirketlerin logosu çizilmez, kartta yalnızca borsa kodu (`kod`) yazar. NFT'ler zaten tekildir (`nft` PK'si `chat_jid, no`): sahibi satışa koymadan başkası alamaz.
 
 ### Faz 81 — Şeker Fırtınası (yalnızca panel)
 
@@ -1604,6 +1606,27 @@ Bot sahibinin isteğiyle mülk işleri panele geldi (`/oyun/emlak`, `panel/emlak
 - **Satış** adet kadar `mulkSat` çağırır, her tane kendi transaction'ındadır.
 - **Yükseltme sandığı (bot sahibinin isteği: "efsanevi sandık açılışı gibi döne döne"):** sonuç işlem anında sunucuda belli olur, bildirim `yukselt` alanını taşır. Sayfa bildirim yerine `#sandik` kartını çizer, `panel/emlak.js` (`window.EmlakSandik`) oynatır: sandık iner, konan mülkler içine uçar, üç kez sertleşerek sallanır, patlar, ödül kartı 7 tur dönerek yavaşlar ve sonuç yüzünde durur (%100'de de döner). Kart `rotateY` ile döner, iki yüzlüdür (`backface-visibility`), son açı sonuçtan hesaplanır. "Geç" düğmesi animasyonları bitirir. `oyun.js` `canlandir`'da sandığı ilk sorar, Promise döner, bakiye bitince sayılır. Hareketler WAAPI, yalnızca transform ve opacity; parçacıklar `window.SekerEfekt`, sesler `window.KumarhaneSes`. Betik yoksa ya da hareketi azalt açıksa kart son halini (`kazandi`/`yandi`) düz gösterir. Başarılı yükseltme akışa bülten olarak düşer.
 - İki işlem arası 700 ms'dir (`hesapMotoru`): hızlı ikinci form sessizce düşer.
+
+### Faz 89 — Kasalar, panelde Çark ve Coin Market
+
+```
+sandik(chat_jid, user_jid, tur, tier, adet)                         PK(chat_jid,user_jid,tur,tier)   tur kasa|anahtar
+sandik_hafta(chat_jid, user_jid, hafta, kumar, soygun, alim)        PK(chat_jid,user_jid)
+sandik_gun(chat_jid, user_jid, day)                                 PK(chat_jid,user_jid)
+```
+
+Bot sahibinin isteğiyle CS tarzı kasalar. Kurallar `lib/sandik.js`'te saftır, yazma `lib/stats.js`'in sonundaki kasa bölümündedir. `.market`'in XP'li random key'leri (`lib/kasa.js`, Faz 23) ayrı sistemdir, karıştırılmaz.
+
+- **Tier:** 5 kasa (`KASALAR`): Çaylak 10, Asker 25, Elit 50, Efsane 100, Mistik 200 coin; anahtarları 3, 6, 12, 20, 40 coin. Kasa aynı tier'den bir anahtarla açılır (`sandikAc`, kasa ve anahtar aynı transaction'da düşer). Ödülün rengi CS'teki nadirliktir (`RENKLER`: mavi, mor, pembe, kırmızı, altın). Ağırlıkların toplamı 1000'dir.
+- **Ödüller:** coin, koleksiyon kartı (`lib/kart.js`), unvan (var olan unvanı ezmez, yerine yedek coin), NFT (o sınıftan grupta sahibi olmayan biri; hepsi satılmışsa yedek coin, `alis` 0). Suly NFT'si (mistik) yalnızca Mistik Kasası'ndan %0,1 çıkar. Coin beklentisi (yedekler dahil) kasa ve anahtarın fiyatının %35-75'i arasında kalmalı, `test/sandik.test.js` denetler: kasa coinle alındığı için beklenti fiyatı geçerse coin basılırdı.
+- **Bedava kasa (bot sahibinin kararı):** WhatsApp kumarında kazanılan elde %4 (`KUMAR_DUSME`), başarılı `.soygun`'da %25 (`SOYGUN_DUSME`), haftada kumardan 3, soygundan 2 (`sandik_hafta`). Düşme `bahisOyna` ve `kumarOde`'de `tavansiz` değilken (yani panel değilken) ve `soygunYap`'ta başarıda olur (`kasaDusur`); sonuç `kasa` alanıyla döner, `sonucSatirlari` ve soygun mesajı yazar. Tier rastgeledir (`rastgeleTier`, Mistik %2).
+- **Gecelik anahtar:** her İstanbul gece yarısı herkese 1 rastgele anahtar. Bot kendiliğinden yazmadığı için anahtar kişi `.kasa`'ya ya da paneldeki Kasalar'a baktığında verilir (`gecelikAnahtar`, `sandik_gun`); girmeyenin anahtarı en çok 7 gün birikir (`ANAHTAR_BIRIKME`), ilk bakışta 1.
+- **Alım:** `.coinmarket kasa|anahtar <tier> [adet]` ya da `.kasa al|anahtar` (`sandikAl`), ödenen coin yanar. Coinle haftada en çok 7 kasa (`HAFTALIK_ALIM`), anahtar sınırsız. Sınırlar sabittir, değişirse yalnızca `lib/sandik.js` değişir.
+- **Devir:** `.kasa devret @kişi kasa|anahtar <tier> [adet]` (`sandikDevret`). Borçlu ve ambargolu gönderemez (`.coindevret` gibi), bota verilmez.
+- **Reborn** `sandik` ve `sandik_hafta`'yı siler (`SILINEN_TABLOLAR`).
+- **NFT (bot sahibinin isteği):** `mitik` sınıfı `mistik` oldu. Taktik seri (`TAKTIK_SERI`, 54-63): taktik nişancı oyunlarından esinlenen bıçak, tüfek, tabanca, bomba ve eldiven; hiçbir oyunun skin adı, logosu ya da görseli kopyalanmaz, çizim `lib/nftResim.js:silahCizimi`'dir (vektör, desen `renk`).
+- **Panel** (`panel/kasaSayfalari.js`, menüde 🎁 Ödüller): **Kasalar** (`/oyun/kasa`) envanter, açma, kasa ve anahtar alma, içerik yüzdeleri, devir; **Çark** (`/oyun/cark`) `carkOyna`'yı çağırır, WhatsApp'taki `.çark` ile aynı haklardır; **Coin Market** (`/oyun/coinmarket`) `COIN_URUNLERI` (`.hacizall` hariç, o yalnızca WhatsApp'ta işler) ve kasa/anahtar satışı. İşlemler `panel/hesap.js`'tedir (`cark`, `coinmarket-al`, `kasa-al`, `anahtar-al`, `kasa-ac`, `kasa-devret`).
+- **Açılış animasyonu** (`panel/kasa.js`, `window.KasaAcilis`): sonuç işlem anında sunucuda belli olur; bildirim `kasaAc` alanında 44 kutuluk şeridi (`serit`, kazanan 38. sırada) taşır. Şerit 6,8 sn'de yavaşlayarak kayar, kazanan kutu ortadaki altın çizgide durur (kutunun ortasına değil, rastgele biraz yanına), geçen her kutuda tık sesi; kırmızı ve altında parlama, konfeti ve fanfar. Çark tekerleği sunucuda SVG çizilir, grup sonuca dönük durur, dış kap ondan geri sarılıp sıfıra döner (betik yoksa sonuç düz görünür). Hareketler WAAPI, yalnızca transform ve opacity; parçacıklar `window.SekerEfekt`, sesler `window.KumarhaneSes`. `oyun.js` `canlandir`'da önce bunları sorar.
 
 ## Elle Doğrulama
 
@@ -1759,7 +1782,7 @@ Bot sahibinin isteğiyle mülk işleri panele geldi (`/oyun/emlak`, `panel/emlak
 136. `.sulymarket al 11` iki kez → ikincisi "hâlâ sürüyor"; `.sulymarket al 11 2` → "tek tek alınır"; `.sulymarket kullan emp @kişi` → duvarı yanar; ambargoluyken `kullan pasaport` → kalkar
 137. `.sulymarket al 22` → hileli zar başlar, `.sulymarket` kalan süreyi yazar; 2 saat içinde `.slot` kayıpları seyrekleşir; panelde SulyMarket "Hileli zar" satırını gösterir
 138. 4 dükkanla `.mülk yükselt dükkan` → "TUTTU", `.mülk` efsanevi dükkanı %7,5 kirayla listeler; `.mülk al efsane dükkan` → "satın alınmaz"; `.mülk sat efsane dükkan` → satılır
-139. `.nft` → galeri 52 kutu, en üstte Mitik ve Mavi Çip satırları; `.nft 31` → Suly kartı; biri alınca `.nft al 31` başkasına "satmıyor" der
+139. `.nft` → galeri 63 kutu, en üstte Mistik ve Mavi Çip satırları; `.nft 31` → Suly kartı; biri alınca `.nft al 31` başkasına "satmıyor" der
 140. Panelde Coin borsası → anlık kur, grafikler, saat 20 sn'de bir değişir; XP İLE AL'a `1 milyar` → "N coin aldın", cüzdanda kurdan küçük artık kalır; 1 coinden az XP → "1 coine yetmiyor"
 141. `.coinmarket coin 1 milyar xp` → tam coin alır; `.kripto al suly 50m xp` → küsuratlı Suly alır, ödenen 50 milyonu geçmez; `.kripto al suly hepsi` → bütün cüzdanla
 142. Özelden `.sulymarket kullan casus` → kimlik listesi; kimlikle → gizli rapor. `kullan mantık <kimlik>` → kurulur; hedef `.banka çek` yazınca "mantık bombası" satırı, kuranın bankası artar
@@ -1776,3 +1799,5 @@ Bot sahibinin isteğiyle mülk işleri panele geldi (`/oyun/emlak`, `panel/emlak
 153. Şeker Fırtınası ya da Yıldırım Kalesi'nde 100 otomatik, "Bonus gelince duraklat" işaretli → bonus gelince alt çubukta "⏸ Bonus geldi ▶ DEVAM (N)"; DEVAM kalan çevirmelerle sürer, DURDUR bitirir; duraklamışken elle çevirme otomatiği başlatmaz
 154. `.tüik` → Suly'nin dolar fiyatı, XP karşılığı ve dolaşımdaki Suly; `.kripto al suly 0,1` → piyasadaki para ödenen kadar azalır; `.kripto` ve `.coinmarket` alış ve değer/bozdurma fiyatını ayrı yazar
 155. Panelde Emlak → mülkler, piyasa ve efsaneviler; Villa al → coin düşer; Ev SAT → XP gelir; Devret'te üye seç → WhatsApp'ta `.mülk` iki tarafta da doğru adedi yazar; 4 ev YÜKSELT → sandık iner, sallanır, patlar, kart döne döne Efsanevi'de durur, konfeti; 1 ev (%25) → tutmazsa kart "YANDI"da durur; Geç düğmesi atlar; telefonda yatay taşma yok
+156. `.kasa` → beş tier, kasa ve anahtar sayıları, bugünün anahtarı; ertesi gün yine `.kasa` → "Gece anahtarın geldi". `.coinmarket kasa 3` → coin düşer, sekizinci kasa haftada reddedilir; `.coinmarket anahtar 3 2` → iki anahtar. `.kasa aç 3` → ödül satırı rengiyle; anahtarsız → "anahtarın yok". `.kasa devret @kişi anahtar 3` → karşıda görünür. WhatsApp'ta `.slot` kazanınca ara sıra "🎁 Kasa düştü"; panel kumarında hiç düşmez
+157. Panelde Ödüller › Kasalar → AÇ: şerit kayar, tıklar yavaşlar, ortadaki çizgide durur, rengine göre parlama ve ses; Geç atlar. Çark → ÇEVİR: tekerlek döner, oktaki dilim sonuç yazısıyla aynı. Coin Market → ürün alınır, WhatsApp'ta `.coinmarket` aynı coini gösterir. Telefonda yatay taşma yok

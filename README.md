@@ -502,7 +502,8 @@ XP TL ise coin altındır. Kur piyasadaki paraya göre anlık değişir: üyeler
 
 | Komut | Yapar |
 |---|---|
-| `.coinmarket` | Ürünleri, coinini ve XP'ni gösterir (kısa yol `.cm`) |
+| `.coinmarket` | Ürünleri, coinini ve XP'ni gösterir (kısa yol `.cm`); `kasa <1-5>` ve `anahtar <1-5>` kasa satar |
+| `.kasa` | Kasaların ve anahtarların; `aç <1-5>`, `al`, `anahtar`, `devret @kişi kasa\|anahtar <1-5> [adet]` |
 | `.coinmarket coin 2` | Cüzdandaki XP ile 2 coin alır |
 | `.coinmarket coin 1 milyar xp` / `coin hepsi` | O XP'nin aldığı kadar tam coin alır, artan XP cüzdanda kalır |
 | `.coinmarket sat 2` | 2 coini kurun %90'ına bozdurur |
@@ -566,7 +567,7 @@ Efsanevi mülkler satın alınmaz, `.mülk yükselt` ile çıkar. Efsanevi mülk
 | `.hack` (özelden) | Hedeflerin kimliklerini listeler |
 | `.hack <kimlik> usta` (özelden) | Hedefin parasını bankana geçirir, usta 1 mülk, kara şapka coin, mülk ve NFT de alır; elit ve zero-day daha büyük pay alır, daha sık tutar |
 | `.çete bas <çete> [bomba]` | Lider baskın yapar, kazanan rakip kasanın %20'sini alır |
-| `.nft` | 53 NFT'lik koleksiyon (mitik Suly, şirket NFT'leri, mahluklar): `al`, `sat`, `iptal`, `ver`, `boz` |
+| `.nft` | 63 NFT'lik koleksiyon (mistik Suly, şirket NFT'leri, taktik silahlar, mahluklar): `al`, `sat`, `iptal`, `ver`, `boz` |
 | `.sulymarket al 16` | Gizemli kutu: silah, hacker, NFT ya da polis |
 | `.sulymarket kullan kimlik` | 1 saatlik maske; özelden `.soygun <kimlik>` yazınca grupta "Maskeli" görünürsün |
 | `.hack fidye <kimlik>` (özelden) | Hedefin bankasını 6 saat kilitler, fidyeyi sen alırsın |

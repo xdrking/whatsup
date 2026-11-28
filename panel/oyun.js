@@ -160,6 +160,10 @@
     // Emlak yükseltmesi: sandık açılışı panel/emlak.js'tedir, bitince çözülen Promise döner.
     const sandik = document.getElementById('sandik')
     if (sandik) return window.EmlakSandik?.oynat(sandik) ?? 0
+    const acilis = document.getElementById('kasa-acilis')
+    if (acilis) return window.KasaAcilis?.oynat(acilis) ?? 0
+    const cark = document.querySelector('#cark-kutu.sonuclu')
+    if (cark) return window.KasaAcilis?.cevir(cark) ?? 0
     const kutu = document.getElementById('sonuc')
     if (!kutu) {
       const el = document.getElementById('acik-el')
@@ -351,7 +355,7 @@
     if (bildirim?.classList.contains('oldu')) sesler.para()
     else if (bildirim) sesler.kaybet()
     history.replaceState(null, '', adres)
-    const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el') ?? document.getElementById('sandik') ?? document.getElementById('bildirim')
+    const hedef = document.getElementById('sonuc') ?? document.getElementById('acik-el') ?? document.getElementById('sandik') ?? document.getElementById('kasa-acilis') ?? document.getElementById('cark-kutu') ?? document.getElementById('bildirim')
     hedef?.scrollIntoView({ behavior: 'smooth', block: govde.classList.contains('yerinde') ? 'nearest' : 'start' })
   }
 

@@ -9,9 +9,13 @@ import { nftBul } from '../lib/nft.js'
 import {
   bankaCek, bankaDurumu, bankaYatir, calis, claimDaily, coinAl, coinDurumu, coinPiyasasi, coinSat, ekonomiDurumu, faizDurumu, getStats,
   fidyeDurumu, fidyeOde, firarEt, hapisDurumu, karaborsaAl, karaborsaDurumu, kiraTopla, kriptoAl, kriptoDurumu, kriptoSat,
+  carkDurumu, carkOyna, coinMarketAl, sandikAc, sandikAl, sandikDevret, sandikDurumu,
   krediCek, krediDurumu, krediOde, maskeBitisi, maskeTak, meslekDurumu, mulkAl, mulkDevret, mulkDurumu, mulkSat, mulkYukselt, nftAl, nftBoz, nftListesi, pasaportKullan, rusvetVer, servetDurumu, sulyPiyasasi,
 } from '../lib/stats.js'
 import { MULKLER, YUKSELTME_ADEDI } from '../lib/mulk.js'
+import { carkCevir, EKSTRA_GUNLUK, ODULLER as CARK_ODULLERI } from '../lib/cark.js'
+import { COIN_URUNLERI } from '../lib/coin.js'
+import { HAFTALIK_ALIM, kasaBul, odulMetni, serit } from '../lib/sandik.js'
 import { botGonderisi, uyeler } from '../lib/sosyal.js'
 import { displayName } from '../lib/target.js'
 import { AZAMI_ADET, kutuMetni, urunKoduyla } from '../lib/sulymarket.js'
@@ -34,6 +38,18 @@ const hata = (metin) => ({ hata: metin })
 function tamSayi(ham) {
   const n = Number(miktarMetni(ham))
   return Number.isSafeInteger(n) && n > 0 ? n : 0
+}
+
+function kasaSatinAl({ chat, user }, { urun, miktar }, tur) {
+  const kasa = kasaBul(urun)
+  if (!kasa) return hata('Böyle bir kasa yok.')
+  const adet = miktar ? tamSayi(miktar) : 1
+  if (!adet || adet > 999) return hata('Kaç tane alacağını yaz.')
+  const s = sandikAl({ chatJid: chat, userJid: user, tur, tier: kasa.tier, adet })
+  if (!s) return hata('Kasa deposu şu an kapalı.')
+  if (s.sinir !== undefined) return hata(`Bu hafta coinle en çok ${HAFTALIK_ALIM} kasa alınır. Kalan hakkın: ${Math.max(0, s.sinir)}`)
+  if (s.yetersiz) return hata(`${sayi.format(s.ucret)} coin gerekiyor, sende ${sayi.format(s.bakiye)} var.`)
+  return tamam(`${adet} × ${kasa.ad}${tur === 'anahtar' ? ' anahtarı' : ''} alındı, ${sayi.format(s.ucret)} coin ödendi.`)
 }
 
 /** Her işlem `(kim, form alanları, şimdi)` alır, `{ tamam }` ya da `{ hata }` döner. */
@@ -226,6 +242,58 @@ const ISLEMLER = {
     }
   },
 
+  // Çark: sonuç sunucuda çekilir, `cark` alanı sayfada çarkın döndüğü dilimdir (panel/kasa.js oynatır).
+  cark: ({ chat, user }, { urun }, simdi) => {
+    const s = carkOyna({ chatJid: chat, userJid: user, ekstra: urun === 'ekstra', cevir: carkCevir, now: simdi })
+    if (!s) return hata('Çark şu an kapalı, sonra dene.')
+    if (s.hakYok) return hata(`Ücretsiz hakkın bitti, ${dakika(s.yenilenme - simdi)} sonra yenilenir.${s.ekstraKalan > 0 ? ' Ekstra çevirme alabilirsin.' : ''}`)
+    if (s.ekstraBitti) return hata(`Günde en çok ${EKSTRA_GUNLUK} ekstra çevirme alınır.`)
+    if (s.yetersiz) return hata(`Ekstra çevirme ${sayi.format(s.ekstraFiyat)} XP, cüzdanın yetmiyor.`)
+    return { tamam: `${s.odul.etiket}${s.ucret ? ` · ücret ${sayi.format(s.ucret)} XP` : ''}`, cark: { dilim: CARK_ODULLERI.indexOf(s.odul) } }
+  },
+
+  'coinmarket-al': ({ chat, user }, { urun: no }) => {
+    const urun = COIN_URUNLERI[Number(no) - 1]
+    if (!urun) return hata('Böyle bir ürün yok.')
+    if (urun.topluHaciz) return hata('Bu ürün satın alınmaz, WhatsApp\'ta .hacizall yazınca işler.')
+    const s = coinMarketAl({ chatJid: chat, userJid: user, urun })
+    if (!s) return hata('Coin market şu an kapalı.')
+    if (s.zatenVar) return hata('Bu unvan zaten sende.')
+    if (s.yetersiz) return hata(`${urun.fiyat} coin gerekiyor, sende ${sayi.format(s.bakiye)} var.`)
+    return tamam(`${urun.ad} alındı. Kalan coin: ${sayi.format(s.bakiye)}`)
+  },
+
+  'kasa-al': (h, alanlar) => kasaSatinAl(h, alanlar, 'kasa'),
+  'anahtar-al': (h, alanlar) => kasaSatinAl(h, alanlar, 'anahtar'),
+
+  // Sonuç işlem anında belli olur; `kasaAc` alanı açılış şerididir, panel/kasa.js oynatır.
+  'kasa-ac': ({ chat, user }, { urun }) => {
+    const kasa = kasaBul(urun)
+    if (!kasa) return hata('Böyle bir kasa yok.')
+    const s = sandikAc({ chatJid: chat, userJid: user, tier: kasa.tier })
+    if (!s) return hata('Kasa deposu şu an kapalı.')
+    if (s.kasaYok) return hata(`Sende ${kasa.ad} yok.`)
+    if (s.anahtarYok) return hata(`${kasa.ad} için T${kasa.tier} anahtarın yok.`)
+    const metin = odulMetni(s.odul, s.sonuc).replace(/\*/g, '').replace(/^\S+\s/, '')
+    return { tamam: metin, kasaAc: { tier: kasa.tier, ad: kasa.ad, serit: serit(kasa, s.odul), renk: s.odul.renk, metin, nft: s.sonuc.nft?.no ?? 0 } }
+  },
+
+  'kasa-devret': ({ chat, user }, { urun, miktar, hedef }) => {
+    const [tur, tierHam] = String(urun).split(':')
+    const kasa = kasaBul(tierHam)
+    if (!kasa || !['kasa', 'anahtar'].includes(tur)) return hata('Neyi devredeceğini seç.')
+    const kisi = uyeler(chat).find((u) => u.jid === hedef)
+    if (!kisi || kisi.jid === user) return hata('Kime vereceğini seç.')
+    const adet = miktar ? tamSayi(miktar) : 1
+    if (!adet || adet > 999) return hata('Kaç tane vereceğini yaz.')
+    const s = sandikDevret({ chatJid: chat, kaynak: user, hedef: kisi.jid, tur, tier: kasa.tier, adet })
+    if (!s) return hata('Kasa deposu şu an kapalı.')
+    if (s.ambargo) return hata(`Ambargodasın, ${dakika(s.ambargo - Date.now())} kaldı.`)
+    if (s.borclu) return hata('Kredi borcun ya da eksi cüzdanın varken devredemezsin.')
+    if (s.yetersiz) return hata(`O kadar yok. Sende: ${s.adet}`)
+    return tamam(`${adet} × T${kasa.tier} ${tur} → ${kisi.ad || displayName(kisi.jid)}.`)
+  },
+
   // `usd` sunucudan gelir (taze fiyat), formdan değil: kişi kendi fiyatını yazamasın.
   'suly-al': ({ chat, user }, { miktar, usd }) => {
     if (!usd) return hata(FIYAT_YOK)
@@ -409,5 +477,12 @@ export function hesapMotoru({ saat = Date.now } = {}) {
     }
   }
 
-  return { islem, durum, suly, coinBorsa, market, emlak }
+  /** Kasa sayfası: gecelik anahtar burada verilir (sandikDurumu yazar). */
+  function kasalar(h) {
+    return { sandik: sandikDurumu({ chatJid: h.chat, userJid: h.user }), ...emlak(h) }
+  }
+
+  const cark = (h) => carkDurumu({ chatJid: h.chat, userJid: h.user })
+
+  return { islem, durum, suly, coinBorsa, market, emlak, kasalar, cark }
 }

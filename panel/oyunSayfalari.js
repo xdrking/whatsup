@@ -112,6 +112,10 @@ export function yanMenu({ chat, cokGrup, secili = '' }) {
   ${baglanti(hesapLink(chat, 'hesap'), 'hesap', '💎', 'Hesabım')}
   ${baglanti(hesapLink(chat, 'banka'), 'banka', '🏦', 'Banka ve kredi')}
   ${baglanti(hesapLink(chat, 'emlak'), 'emlak', '🏘️', 'Emlak')}
+  <h3>🎁 Ödüller</h3>
+  ${baglanti(hesapLink(chat, 'kasa'), 'kasa', '🎁', 'Kasalar')}
+  ${baglanti(hesapLink(chat, 'cark'), 'cark', '🎡', 'Çark')}
+  ${baglanti(hesapLink(chat, 'coinmarket'), 'coinmarket', '🛒', 'Coin Market')}
   <h3>📈 Borsa</h3>
   ${baglanti(hesapLink(chat, 'coin'), 'coin', '🪙', 'Coin borsası')}
   ${baglanti(hesapLink(chat, 'suly'), 'suly', '📈', 'Suly borsası')}

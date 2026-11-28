@@ -4,13 +4,15 @@ import { requireGroup } from '../lib/group.js'
 import { binlik, xpButcesi } from '../lib/sayi.js'
 import { coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getStats, sigortaBitisi } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
+import { HAFTALIK_ALIM, KASALAR } from '../lib/sandik.js'
+import { sandikSatinAl } from './kasa.js'
 import logger from '../lib/logger.js'
 
 export default {
   name: 'coinmarket',
   aliases: ['cm', 'coinmarketi'],
   description: 'XP ile coin al, coinle özel ürünler satın al',
-  usage: '.coinmarket  —  .coinmarket coin <adet|XP xp|hepsi>  —  .coinmarket sat <adet>  —  .coinmarket al <numara>',
+  usage: '.coinmarket  —  .coinmarket coin <adet|XP xp|hepsi>  —  .coinmarket sat <adet>  —  .coinmarket al <numara>  —  .coinmarket kasa|anahtar <1-5> [adet]',
   details: [
     `Kur piyasadaki paraya göre anlık değişir, en az ${binlik(COIN_TABAN)} XP. \`.coinmarket coin 2\` cüzdandaki XP ile 2 coin alır.`,
     '`.coinmarket coin 1 milyar xp` 1 milyar XP\'nin aldığı kadar coin alır, `.coinmarket coin hepsi` bütün cüzdanla. Coin küsuratlı olmaz: artan XP cüzdanda kalır.',
@@ -18,6 +20,7 @@ export default {
     '`.coinmarket al 1` ürünü coinle alır. Unvan `.market` unvanının yerine geçer.',
     'Toplu soygun hakkı `.soygun herkes` ile kullanılır. Coin her grupta ayrıdır.',
     'Toplu haciz `.hacizall` ile kullanılır, coin o an düşer.',
+    `\`.coinmarket kasa 3\` T3 kasa, \`.coinmarket anahtar 3 2\` iki T3 anahtar alır. Kasa haftada en çok ${HAFTALIK_ALIM}, anahtar sınırsız. Açmak için \`.kasa aç 3\`.`,
   ],
   category: 'ekonomi',
   cooldown: 5,
@@ -56,6 +59,10 @@ export default {
         return await yaz(`🪙 *${binlik(adet)} coin* bozdurdun: +${binlik(s.kazanc)} XP\n💰 Coin: ${binlik(s.bakiye)}  •  XP'n: ${binlik(s.xp)}`)
       }
 
+      if (islem === 'kasa' || islem === 'anahtar') {
+        return await sandikSatinAl({ from, sender, tur: islem, args: args.slice(1), yaz })
+      }
+
       if (['al', 'satınal', 'satinal', 'buy'].includes(islem)) {
         const urun = COIN_URUNLERI[Number(args[1]) - 1]
         if (!urun) return await yaz(`🪙 Ürün numarası yaz: \`.coinmarket al 1\` (1-${COIN_URUNLERI.length})`)
@@ -79,6 +86,9 @@ export default {
         '',
         ...COIN_URUNLERI.map((u, i) => `${i + 1}. ${u.ad} — ${u.fiyat} coin`),
         '',
+        '🎁 *Kasalar* (kasa / anahtar)',
+        ...KASALAR.map((k) => `T${k.tier} ${k.ad} — ${k.fiyat} / ${k.anahtar} coin`),
+        '',
         `💰 Coin: ${binlik(bakiye)}  •  XP'n: ${binlik(getStats(from, sender).xp)}`,
         ...(topluHak ? [`💣 Toplu soygun hakkın: ${topluHak}`] : []),
         ...(sigorta ? [`☂️ Haciz sigortası: ${sureYaz(sigorta - Date.now())} kaldı`] : []),
@@ -86,6 +96,7 @@ export default {
         'Coin almak için `.coinmarket coin <adet>` ya da `.coinmarket coin 1 milyar xp`',
         'Bozdurmak için `.coinmarket sat <adet>`',
         'Ürün almak için `.coinmarket al <numara>`',
+        'Kasa için `.coinmarket kasa 3`, anahtar için `.coinmarket anahtar 3`, açmak için `.kasa aç 3`',
         'Mülkler için `.mülk`',
       ].join('\n'))
     } catch (err) {

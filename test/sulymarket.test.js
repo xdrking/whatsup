@@ -526,9 +526,9 @@ test('efsanevi mülk: satılmaz, 4 tane kesin, azı şansa; değer konanlara eş
   assert.ok(kiraTopla({ chatJid, userJid: 'a', now: T + 3 * 3_600_000 }).kira > 0)
 })
 
-test('yeni NFT serisi: Suly tek mitik ve en pahalısı, şirketlerin borsa kodu var, numaralar kaymadı', () => {
+test('yeni NFT serisi: Suly tek mistik ve en pahalısı, şirketlerin borsa kodu var, numaralar kaymadı', () => {
   assert.equal(nftBul(30).ad, 'Ping 999')
-  const suly = NFTLER.filter((n) => n.sinif === 'mitik')
+  const suly = NFTLER.filter((n) => n.sinif === 'mistik')
   assert.equal(suly.length, 1)
   assert.equal(suly[0].ad, 'Suly')
   assert.ok(NFTLER.every((n) => n.fiyat <= suly[0].fiyat))
@@ -646,6 +646,6 @@ test('Omar efsane NFT\'dir, çizilir', async () => {
   const omar = NFTLER.find((n) => n.ozel === 'omar')
   assert.equal(omar.ad, 'Omar')
   assert.equal(omar.sinif, 'efsane')
-  assert.equal(omar.no, NFTLER.length)
+  assert.equal(omar.no, 53, 'numara kaymadı')
   assert.ok((await nftKarti(omar)).length > 1000)
 })

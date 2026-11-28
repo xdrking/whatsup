@@ -65,7 +65,7 @@ function sonuclandir(state, odeme, sebep) {
   state.finished = true
   const s = kumarOde({ oyun: 'kule', chatJid: state.chatJid, userJid: state.starterJid, bahis: state.bahis, odeme })
   const lines = ['🐉 *EJDERHA KULESİ*', '', cizim(state, true), '', sebep]
-  if (s) lines.push(...sonucSatirlari({ once: s.xp - s.fark, xp: s.xp, fark: s.fark, kesilen: s.kesilen }))
+  if (s) lines.push(...sonucSatirlari({ once: s.xp - s.fark, xp: s.xp, fark: s.fark, kesilen: s.kesilen, kasa: s.kasa }))
   else lines.push('❌ Sonuç yazılamadı.')
   return { text: lines.join('\n') }
 }

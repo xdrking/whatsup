@@ -705,7 +705,7 @@ main.degisti .oyun-kutu { animation: none; }
 .kumarhane .karanlik .islem button { width: 100%; min-width: 0; min-height: 42px; padding: .4rem; border: 1px solid var(--km); border-radius: 8px; background: rgb(57 255 136 / .12); color: var(--km); box-shadow: none; font: inherit; font-weight: 700; font-size: .82rem; text-shadow: none; }
 .kumarhane .karanlik .islem button:active { background: rgb(57 255 136 / .3); transform: scale(.98); }
 .mal.nft img { width: 100%; height: auto; border-radius: 8px; image-rendering: pixelated; }
-.mal.nft.n-mitik { border-color: rgb(255 143 208 / .85); box-shadow: 0 0 18px rgb(255 143 208 / .35); }
+.mal.nft.n-mistik { border-color: rgb(255 143 208 / .85); box-shadow: 0 0 18px rgb(255 143 208 / .35); }
 .mal.nft.n-sirket { border-color: rgb(41 199 255 / .7); }
 .mal.nft.n-efsane { border-color: rgb(255 184 0 / .6); }
 .mal.nft.n-nadir { border-color: rgb(139 61 255 / .65); }
@@ -1136,3 +1136,62 @@ main.degisti .oyun-kutu { animation: none; }
 .sandik-kart.bitti .sandik-sonuc { animation: buyu .5s var(--yay) backwards; }
 .kumarhane button.sandik-gec { width: auto; margin: .6rem auto 0; padding: .35rem 1rem; font-size: .85rem; }
 @media (min-width: 640px) { .mulk-isler { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mulk-isler .mulk-yukselt { grid-column: 1 / -1; } }
+
+/* ---- Kasalar, Çark, Coin Market (Faz 89, panel/kasaSayfalari.js) ----------------------------
+   Kasa şeridi ve çark panel/kasa.js'te Web Animations ile oynar; yalnızca transform ve opacity canlandırılır.
+   Nadirlik renkleri: mavi, mor, pembe, kırmızı, altın. */
+.r-mavi { --nadir: #4b69ff; } .r-mor { --nadir: #8847ff; } .r-pembe { --nadir: #d32ce6; } .r-kirmizi { --nadir: #eb4b4b; } .r-altin { --nadir: #ffd700; }
+.kasa-acilis { max-width: 44rem; margin: 0 auto 1rem; text-align: center; background: radial-gradient(circle at 50% 30%, #2a1d4a, #110b1e 70%); border-color: var(--nadir); }
+.kasa-acilis h2 { color: var(--altin); }
+.serit-pencere { position: relative; overflow: hidden; margin: .6rem -0.4rem; padding: .7rem 0; border-radius: .8rem; background: #0b0814; box-shadow: inset 0 0 30px rgb(0 0 0 / .8); }
+.serit-pencere::before, .serit-pencere::after { content: ""; position: absolute; top: 0; bottom: 0; width: 18%; z-index: 2; pointer-events: none; }
+.serit-pencere::before { left: 0; background: linear-gradient(90deg, #0b0814, transparent); }
+.serit-pencere::after { right: 0; background: linear-gradient(-90deg, #0b0814, transparent); }
+.serit-isaret { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; margin-left: -1.5px; z-index: 4; background: var(--altin2); box-shadow: 0 0 12px var(--altin); }
+.serit { display: flex; gap: 8px; margin: 0; padding: 0 0 0 50%; list-style: none; will-change: transform; }
+.serit li { flex: 0 0 104px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; height: 104px; border-radius: .6rem;
+  background: linear-gradient(180deg, #221a36, #150f24); border-bottom: 5px solid var(--nadir); box-shadow: inset 0 -30px 30px -24px var(--nadir); }
+.serit li b { font-size: 2.3rem; line-height: 1; }
+.serit li small { font-size: .72rem; color: var(--yazi); font-weight: 700; }
+.serit li.kazandi { box-shadow: inset 0 -40px 40px -20px var(--nadir), 0 0 26px var(--nadir); }
+.kasa-sonuc { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+.kasa-sonuc img { border-radius: .8rem; box-shadow: 0 0 24px var(--nadir); }
+.kasa-sonuc p { margin: 0; font-size: 1.1rem; font-weight: 800; }
+.kasa-sonuc .rozet { background: var(--nadir); color: #fff; }
+.kasa-acilis.oynuyor .kasa-sonuc { visibility: hidden; }
+.kasa-acilis.bitti .kasa-sonuc { animation: buyu .5s var(--yay) backwards; }
+.kumarhane button.kasa-gec { width: auto; margin: .6rem auto 0; padding: .35rem 1rem; font-size: .85rem; }
+.tier-liste { display: grid; gap: .7rem; margin-top: .8rem; }
+.tier-kart { padding: .8rem; border: 1px solid rgb(255 255 255 / .1); border-radius: .9rem; background: rgb(255 255 255 / .03); }
+.tier-kart.t1 { --nadir: #8fa0ab; } .tier-kart.t2 { --nadir: #4b69ff; } .tier-kart.t3 { --nadir: #8847ff; } .tier-kart.t4 { --nadir: #eb4b4b; } .tier-kart.t5 { --nadir: #ffd700; }
+.tier-kart { border-left: 4px solid var(--nadir); }
+.tier-ust { display: flex; align-items: center; gap: .7rem; margin-bottom: .6rem; }
+.tier-ikon { font-size: 2rem; line-height: 1; }
+.tier-ad { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.tier-ad small { color: var(--soluk); }
+.tier-sayi { font-size: .85rem; color: var(--soluk); white-space: nowrap; }
+.tier-sayi b { color: var(--altin2); font-size: 1rem; }
+.kumarhane button.kasa-ac-dugme { background: linear-gradient(180deg, #ffe08a, #f5c542 55%, #c98a10); color: #2a1a00; box-shadow: 0 3px 0 #8a5a00, 0 0 18px rgb(245 197 66 / .35); }
+.tier-al { display: grid; gap: .5rem; margin-top: .5rem; }
+.tier-icerik { margin-top: .5rem; font-size: .85rem; }
+.tier-icerik summary { cursor: pointer; color: var(--soluk); }
+.tier-icerik ul { margin: .4rem 0 0; padding: 0; list-style: none; display: grid; gap: .2rem; }
+.tier-icerik li { display: flex; justify-content: space-between; gap: .5rem; padding: .25rem .5rem; border-left: 3px solid var(--nadir); background: rgb(255 255 255 / .03); border-radius: .3rem; }
+.kasa-devret { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .tier-al { grid-template-columns: 1fr 1fr; } .kasa-devret { grid-template-columns: 1.4fr 1.2fr 4.5rem auto; } }
+
+.cark-kart { max-width: 44rem; margin: 0 auto 1rem; text-align: center; }
+.cark-sahne { position: relative; width: min(320px, 82vw); margin: .4rem auto 1rem; }
+.cark-don { transform-origin: 50% 50%; will-change: transform; }
+.cark-svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 20px rgb(0 0 0 / .5)); }
+.cark-ok { position: absolute; top: -6px; left: 50%; z-index: 4; width: 0; height: 0; margin-left: -14px; border: 14px solid transparent; border-top: 26px solid var(--altin2); filter: drop-shadow(0 2px 4px rgb(0 0 0 / .6)); }
+.cark-sonuc { font-size: 1.2rem; font-weight: 800; color: var(--altin2); }
+.cark-kart.oynuyor .cark-sonuc { visibility: hidden; }
+.cark-kart.bitti .cark-sonuc { animation: buyu .5s var(--yay) backwards; }
+
+.market-liste { display: grid; gap: .5rem; margin-top: .6rem; }
+.market-urun { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .55rem .7rem; border-radius: .7rem; background: rgb(255 255 255 / .04); }
+.market-urun span { min-width: 0; overflow-wrap: anywhere; }
+.market-urun small { color: var(--soluk); }
+.kumarhane .market-urun button { width: auto; min-width: 5.5rem; padding-block: .45rem; }
+.kasa-urun form { margin: 0; }
