@@ -121,6 +121,8 @@ Geçmiş senkronu upsert'ten gelmez, `messaging-history.set` olayından gelir. E
 
 Şifresi çözülemeyen mesajlar upsert'e `message: null` ile düşer; komut çıkarılamayacağı için atlanır.
 
+**Aynı mesaj ikinci kez işlenmez (Faz 94).** Botun kendi telefonundan yazılan mesaj (sahibin bot numarasından yazdığı `.panel kayıt`, `.devret`, birine özelden `.news`) bağlı cihaza şifreli gelir; çözülemezse bot telefondan yeniden ister ve telefon mesajı dakikalar ya da saatler sonra yeni zaman damgasıyla tekrar gönderebilir. 90 sn'lik yaş denetimi bunu yakalamıyordu: `.panel kayıt` günde 15 kez, `.devret` 5 dakika sonra yeniden çalıştı (bot sahibinin şikâyeti). `lib/handler.js` her mesajın başında `lib/islenenMesaj.js:ilkKezMi()` çağırır: anahtar `sohbet|yazan|key.id`'dir, `islenen_mesaj(anahtar PK, zaman)` tablosuna yazılır, aynı anahtar gelirse mesaj log'a "yeniden geldi" yazılıp atlanır. Yeniden başlatmada da hatırlansın diye veritabanındadır; 7 günden eskisi saatte bir silinir. `message: null` gelen mesaj kaydedilmez: sonradan çözülen kopyası bir kez işlensin. Kimliksiz mesaj ve veritabanı hatası engellenmez, bot susmasın. Bu denetim kaldırılmaz.
+
 ### Ad önbelleği (`lib/contacts.js`)
 
 Baileys, yanıtlanan mesajın **yazarının adını vermez** — `contextInfo` yalnızca JID taşır. Bu yüzden `lib/handler.js`, prefix kontrolünden önce her gelen mesajın `pushName`'ini `rememberName()` ile not eder; `.sticker` alıntı kartı adı oradan okur.
@@ -175,6 +177,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/komutKilit.js` | bakıma alınan komutlar ve panel oyunları, 10 sn bellekte | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/sosyal.js` | yönetimin sosyal bölümde koyduğu yazma engeli | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/yonetim.js` | yönetim uyarıları ve uyarı alan cihazlar | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/islenenMesaj.js` | son 7 günde işlenen mesajların kimliği (yalnızca kimlik, içerik değil) | `data/stats.db` (kalıcı) |
 | `panel/yonetim.js` | botun son bilinen bağlantı durumu, yöneticiye gösterilen son uyarı | panel belleği (panelle ölür) |
 | tarayıcı çerezi `tema` | sosyal bölümün açık/koyu tema tercihi | tarayıcıda |
 
@@ -384,7 +387,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 91 (tamam):** yönetim paneli 2. aşama: üyeler, devlet, kumarhane bakım modu, grup ayarları. Ayrıntı aşağıda.
 - **Faz 92 (tamam):** yönetim paneli 3. aşama: sosyal moderasyon, zamanlanmış duyuru, yedek ve reborn. Ayrıntı aşağıda.
 - **Faz 93 (tamam):** yönetim paneli 4. aşama: ekonomi grafikleri, uyarılar ve push, toplu işlem, fiyat ayarları, kayıt defterinde arama. Ayrıntı aşağıda.
-- **Faz 94+:** yeni komutlar, her biri ayrı adım
+- **Faz 94 (tamam):** aynı mesajın ikinci kez işlenmesi engellendi (mesaj kimliği). `messages.upsert` bölümüne işlendi.
+- **Faz 95+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1900,3 +1904,4 @@ Yeni sayfalar: Uyarılar, Grafikler, Toplu işlem; kayıt defterine süzgeç, Ek
 172. Toplu işlem'de herkese 1 milyon XP → her üyenin `.profil`'i artar, bot artmaz, kayıt defterinde tek satır; "seçtiklerim" ve iki üye → yalnızca ikisi
 173. Kasalar'da T1 fiyatı 30 → `.coinmarket` ve paneldeki Coin Market 30 yazar, alımda 30 coin düşer; beklentinin altı reddedilir. Ekonomi'de market %150 → `.market` ürünleri pahalı, key fiyatı aynı; kredi eki 3 → `.kredi` faizleri 3 puan yüksek, açık kredi değişmez
 174. Kayıt defterinde "faiz" ara ya da işlem seç, tarih aralığı ver → yalnızca uyanlar
+175. Bot numarasından kendine `.ping` yaz → bir yanıt gelir; log'da sonradan "Aynı mesaj yeniden geldi, yok sayıldı" görülürse telefon mesajı yeniden göndermiştir ve komut ikinci kez çalışmamıştır. `.panel kayıt` ve `.devret` günler içinde kendiliğinden tekrar etmez
