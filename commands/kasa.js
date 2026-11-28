@@ -4,8 +4,8 @@ import {
   ANAHTAR_BIRIKME, HAFTALIK_ALIM, HAFTALIK_KUMAR, HAFTALIK_SOYGUN, KASALAR, kasaBul, KUMAR_DUSME, odulMetni, RENKLER, SOYGUN_DUSME, tierCoz,
 } from '../lib/sandik.js'
 import { binlik } from '../lib/sayi.js'
-import { botHesabiMi, sandikAc, sandikAl, sandikDevret, sandikDurumu } from '../lib/stats.js'
-import { mentionOf, resolveTargets } from '../lib/target.js'
+import { botHesabiMi, sandikAc, sandikAl, sandikDagit, sandikDevret, sandikDurumu } from '../lib/stats.js'
+import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
 import { trLower } from '../lib/turkishWords.js'
 import logger from '../lib/logger.js'
 
@@ -68,7 +68,7 @@ export default {
   cooldown: 3,
   ownerOnly: false,
 
-  async execute({ sock, msg, from, sender, args, parsed }) {
+  async execute({ sock, msg, from, sender, args, parsed, isOwner }) {
     const yaz = (text, mentions = []) => sock.sendMessage(from, { text, mentions }, { quoted: msg })
 
     try {
@@ -88,6 +88,23 @@ export default {
           '',
           odulMetni(s.odul, s.sonuc),
           ...(s.sonuc.coin ? [`🪙 Coin: ${binlik(s.coin)}`] : []),
+        ].join('\n'))
+      }
+
+      // Yalnızca bot sahibi (bot sahibinin isteği). Başkası yazarsa iz bırakmadan düşer, `.help`'te görünmez.
+      if (['dağıt', 'dagit'].includes(islem)) {
+        if (!isOwner) return
+        const metadata = await requireGroupMetadata({ sock, msg, from, parsed })
+        if (!metadata) return
+        const dagitilan = sandikDagit({ chatJid: from, uyeler: metadata.participants.map((u) => u.id) })
+        if (!dagitilan) return await yaz(KAPALI)
+        // Herkes etiketlenmez: liste büyük grupta herkese bildirim düşürürdü. Ad düz yazılır.
+        return await yaz([
+          `🎁 *KASA YAĞMURU!* ${dagitilan.length} kişiye birer kasa düştü:`,
+          '',
+          ...dagitilan.map((d) => `${kasaBul(d.tier).ad.split(' ')[0]} ${displayName(d.jid)} — ${kasaBul(d.tier).ad.replace(/^\S+\s/, '')}`),
+          '',
+          'Açmak için `.kasa aç <tier>` (anahtar gerekir).',
         ].join('\n'))
       }
 

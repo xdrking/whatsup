@@ -98,9 +98,9 @@ function soygunKur(hirsizXp = 200, kurbanXp = 1000) {
 
 test('soygun başarılı: XP geçer, kurban korunur, toplam değişmez', () => {
   const s = soygunKur()
-  assert.deepEqual(soygunYap({ ...s, sans: () => true, now: T }), {
-    basarili: true, miktar: 100, odul: 0, hirsizXp: 300, kurbanXp: 900,
-  })
+  // Başarılı soygunda %25 olasılıkla `kasa` alanı da gelir (Faz 89); burada yalnızca para denetlenir.
+  const { kasa: _kasa, ...sonuc } = soygunYap({ ...s, sans: () => true, now: T })
+  assert.deepEqual(sonuc, { basarili: true, miktar: 100, odul: 0, hirsizXp: 300, kurbanXp: 900 })
   assert.deepEqual(soygunYap({ ...s, sans: () => true, now: T + 1 }), { engel: 'korunma', bitis: T + KORUNMA_MS })
   assert.equal(soygunYap({ ...s, sans: () => true, now: T + KORUNMA_MS }).basarili, true)
 })

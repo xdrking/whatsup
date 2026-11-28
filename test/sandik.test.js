@@ -115,3 +115,15 @@ test('devir: anahtar geçer, fazlası ve borçlu reddedilir', () => {
   getDb().prepare('INSERT OR REPLACE INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, ?, 0, 0, 0, -5, 1)').run(chatJid, 'a')
   assert.ok(sandikDevret({ chatJid, kaynak: 'a', hedef: 'b', tur: 'anahtar', tier: 2, adet: 1, now: T }).borclu)
 })
+
+test('sahibin dağıtımı: her üyeye 1 kasa, Mistik yok, bot almaz, haftalık sınıra sayılmaz', async () => {
+  const { sandikDagit, botHesabiniTani } = await import('../lib/stats.js')
+  botHesabiniTani({ id: '905550000000@s.whatsapp.net' })
+  const chatJid = yeniGrup()
+  const d = sandikDagit({ chatJid, uyeler: ['a', 'b', 'a', '905550000000@s.whatsapp.net'], rnd: (n) => n - 1 })
+  assert.deepEqual(d.map((x) => x.jid), ['a', 'b'])
+  assert.ok(d.every((x) => x.tier === 4), 'en nadir dilimde bile T4')
+  const durum = sandikDurumu({ chatJid, userJid: 'a', now: T })
+  assert.equal(durum.kasa[4], 1)
+  assert.equal(durum.hafta.kumar + durum.hafta.soygun + durum.hafta.alim, 0)
+})

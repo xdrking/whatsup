@@ -76,7 +76,9 @@ test('kasaya alınan bahis geri ödenir, karneye net yazılır', () => {
 
   assert.deepEqual(xpCek({ ...k, miktar: 150 }), { yetersiz: true, xp: 100 })
   assert.deepEqual(xpCek({ ...k, miktar: 60 }), { yetersiz: false, xp: 40 })
-  assert.deepEqual(kumarOde({ ...k, bahis: 60, odeme: 120 }), { xp: 160, fark: 60, kesilen: 0 })
+  // Kazançta %4 olasılıkla `kasa` alanı da gelir (Faz 89); burada yalnızca para denetlenir.
+  const { kasa: _kasa, ...odeme } = kumarOde({ ...k, bahis: 60, odeme: 120 })
+  assert.deepEqual(odeme, { xp: 160, fark: 60, kesilen: 0 })
   assert.deepEqual(kumarSiralama(k.chatJid).kazananlar, [{ user_jid: 'u@lid', net: 60, games: 1 }])
 })
 
