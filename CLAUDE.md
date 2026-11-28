@@ -173,6 +173,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/ayarlar.js` | yönetim panelinden değişen ayarlar (`ayar.yonetim:*`), 10 sn bellekte | `data/stats.db` (kalıcı) |
 | `panel/yonetim.js` | yönetim panelinde bir kez gösterilen sonuç, iki işlem arası bekleme | panel belleği (panelle ölür) |
 | `lib/db.js` + `lib/komutKilit.js` | bakıma alınan komutlar ve panel oyunları, 10 sn bellekte | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/sosyal.js` | yönetimin sosyal bölümde koyduğu yazma engeli | `data/stats.db` (kalıcı) |
 | tarayıcı çerezi `tema` | sosyal bölümün açık/koyu tema tercihi | tarayıcıda |
 
 WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp yolu bir üyenin açıkça yazdığı `.paylaş`'tır (Faz 69): yalnızca yanıtlanan o mesaj akışa yazılır. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
@@ -379,7 +380,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 89 (tamam):** `.kasa` (5 tier kasa ve anahtar), coinmarket'te kasa, taktik NFT serisi, Mistik; panelde Kasalar, Çark ve Coin Market. Ayrıntı aşağıda.
 - **Faz 90 (tamam):** yönetim paneli 1. aşama: `.yonetim kod`, roller, ayarlar, duyuru, ekonomi ve kasa işlemleri, kayıt defteri. Ayrıntı aşağıda.
 - **Faz 91 (tamam):** yönetim paneli 2. aşama: üyeler, devlet, kumarhane bakım modu, grup ayarları. Ayrıntı aşağıda.
-- **Faz 92+:** yeni komutlar, her biri ayrı adım
+- **Faz 92 (tamam):** yönetim paneli 3. aşama: sosyal moderasyon, zamanlanmış duyuru, yedek ve reborn. Ayrıntı aşağıda.
+- **Faz 93+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1674,6 +1676,20 @@ Yeni sayfalar: Üyeler (liste, arama, üye kartı), Kumarhane, Devlet, Gruplar. 
 - **Devlet:** makamlar ve açık seçimler (`secimDurumu`), kayyum ata ve kaldır (`kayyumAta`, `kayyumKaldir`), seçim iptali (`secimIptal`: adaylık ve oy ücretleri yanar, kayyumdaki gibi), darbe bitir (`darbeBitir`). Darbe başlatmak `.darbe` ile aynıdır ve iş kuyruğundan gider (`darbe`: `darbeBaslat` + `darbeDuyur`); "ONAYLIYORUM" yazılmadan sıraya girmez.
 - **Gizli şans** (`.şans`) panelden açılıp kapanır (`sansAc([])` `.env`'deki sahip kimliklerini yazar); `.env`'de sahip yoksa açılmaz.
 
+### Faz 92 — Yönetim paneli (3. aşama)
+
+```
+sosyal_engel(chat_jid, user_jid, bitis ms)   PK(chat_jid,user_jid)
+yonetim_is.calisma                            işin yapılacağı an (zamanlanmış duyuru); eski satırlar zaman'la taşınır
+```
+
+Yeni sayfalar: Moderasyon (sosyal bölüm) ve Sistem (yalnızca sahip, `sistem` izni).
+
+- **Moderasyon** (`moderasyon` izni, moderatör dahil): son gönderiler ve yorumlar, açık hikâyeler; zorla silme `gonderiSil`/`yorumSil`'in `zorla` seçeneğidir (sahiplik sorulmaz, gönderinin yorumları, tepkileri ve fotoğrafı da gider), hikâye `hikayeKaldir`. **Yazma engeli** 1 saat ile 30 gün arasıdır (`engelYaz`): engelli kişi okur ve tepki verir, ama `panel/sosyal.js` bekleme denetiminden sonraki her yazmayı (gönderi, yorum, DM, grup sohbeti, hikâye, profil) reddeder; `.paylaş` da reddedilir. Tepki ve beğeni o denetimden önce olduğu için serbesttir.
+- **Zamanlanmış duyuru:** form `datetime-local` alır, İstanbul saati (+03:00 sabit), en az 1 dakika en çok 30 gün sonrası (`ZAMANLAMA_AZAMI_MS`). İş `calisma` anıyla yazılır, bot `isAl(now)` ile yalnızca zamanı gelmiş işi alır (`calisma, id` sırasıyla). 10 dakika kuralı `calisma` üzerindendir ve iki yönlüdür (`yakinDuyuru`): hemen atılan ile birkaç dakika sonraya kurulan arka arkaya gitmesin. Hemen atılan için `bekle`, zamanlanan için `cakisma` döner. Zamanı gelmeden iptal edilebilir.
+- **Sistem:** veritabanı boyutu, yedek listesi (`panel/yedek.js:yedekListesi`: günlük, elle, reborn ve sıfır atma öncesi), "şimdi yedek al" (`elleYedekAl`, `db.backup`, `elle-YYYYMMDD-HHMMSS.db`, son 5'i kalır) ve indirme (`/yonetim/yedek?ad=`; ad kalıba ve listeye uymazsa verilmez, yol dışına çıkılamaz; indirme kayda yazılır). Reborn önizlemesi (`rebornOnizle`), oylamayı başlatma ("ONAYLIYORUM", iş `reborn`: bot `rebornDuyur`) ve süren oylamayı iptal (iş `reborn_iptal`, oylama bot belleğindedir). Sıfır atma panelden yapılmaz, bot kapalıyken çalışması gerektiği için yalnızca komutu yazar.
+- Yönetim işlemi artık `async`'tir (`motor.islem`), yedek alma beklenir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1856,3 +1872,6 @@ Yeni sayfalar: Üyeler (liste, arama, üye kartı), Kumarhane, Devlet, Gruplar. 
 164. Gruplar'da Sustur → birkaç saniyede bot gruba "🤐 Yönetim beni susturdu" yazar, komutlar susar; Konuştur → "🗣️ Geri döndüm!"; bu grupta `.wordle` kapat → yalnızca bu grupta bakımda
 165. Üyeler'de ara, kişiye tıkla → kart; Sustur 1 dk → kişinin mesajları silinir, 1 dk sonra kalkar; unvan yaz → `.profil` unvanı gösterir; hapisteki kişiye Hapisten çıkar → `.hapis` listesinde yok
 166. Devlet'te kayyum ata → `.seçim` "(kayyum)" yazar; açık seçimi iptal et → `.seçim` seçimi göstermez; sahip ONAYLIYORUM yazıp Darbe yap → grupta darbe duyurusu; Darbeyi bitir → seçim açılır. Moderatör Devlet ve Kumarhane'yi görmez
+167. Moderasyon'da bir gönderiyi Sil → akıştan gider, yorumları da; bir üyeyi 1 saat engelle → panelde yazınca "yazmaktan engelledi", beğeni çalışır, `.paylaş` reddedilir; Kaldır → yazabilir
+168. Duyuru'da 10 dakika sonrasına zamanla → tabloda ⏰ ve "Zamanlandı"; o saatte grupta duyuru; aynı saate ikinci duyuru → "yakın başka bir duyuru"; zamanı gelmeden İptal → gitmez
+169. Sistem'de Şimdi yedek al → listede `elle-…db`, İndir dosyayı verir; ONAYLIYORUM yazıp reborn oylamasını başlat → grupta oylama; İptal → oylama kapanır. Yönetici ve moderatör Sistem'i görmez

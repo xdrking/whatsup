@@ -253,6 +253,14 @@ button.anahtar.kapali { color: var(--sari); border-color: rgba(251, 191, 36, .5)
 button.tehlike-dugme { background: linear-gradient(180deg, #f87171, #dc2626); color: #fff; }
 button.tehlike-dugme:hover { background: linear-gradient(180deg, #fca5a5, #ef4444); }
 
+/* Faz 92 */
+a.dugme-link { display: inline-block; border: 1px solid var(--cizgi2); border-radius: 9px; background: var(--pano2); color: var(--yazi); white-space: nowrap; }
+a.dugme-link:hover { border-color: var(--vurgu); text-decoration: none; }
+pre.kod { margin: 0; padding: 12px 14px; background: var(--zemin2); border: 1px solid var(--cizgi); border-radius: 9px; font-family: var(--rakam); font-size: 13px; overflow-x: auto; white-space: pre; color: var(--soluk); }
+.pano .grup-sekme { margin-bottom: 12px; }
+.pano > .satir-form { margin-top: 10px; }
+input[type="datetime-local"] { color-scheme: dark; }
+
 /* Telefon */
 @media (max-width: 860px) {
   /* minmax(0, …): yoksa kayan menünün genişliği ızgarayı büyütüp sayfayı yatay taşırıyordu. */

@@ -2,7 +2,7 @@ import { downloadMediaMessage, jidNormalizedUser } from '@whiskeysockets/baileys
 import { getDb } from '../lib/db.js'
 import { requireGroup } from '../lib/group.js'
 import logger, { baileysLogger } from '../lib/logger.js'
-import { gonderiYaz, medyaKaydet, medyaSil } from '../lib/sosyal.js'
+import { engelBitisi, gonderiYaz, medyaKaydet, medyaSil } from '../lib/sosyal.js'
 
 // Yalnızca açıkça paylaşılan mesaj saklanır: bot WhatsApp içeriğini kendiliğinden tutmaz (Faz 69).
 const MEDYA_TURLERI = new Set(['imageMessage', 'stickerMessage'])
@@ -24,6 +24,10 @@ export default {
   async execute({ sock, msg, text, from, sender, parsed }) {
     if (!(await requireGroup({ sock, msg, from, parsed }))) return
     const yanit = (metin) => sock.sendMessage(from, { text: metin }, { quoted: msg })
+    if (engelBitisi(from, sender)) {
+      await yanit('🚫 Yönetim seni sosyal bölümde yazmaktan engelledi.')
+      return
+    }
     const q = parsed.quoted
     const not = text.trim()
     const medyaVar = q && MEDYA_TURLERI.has(q.type) && !q.message.stickerMessage?.isAnimated

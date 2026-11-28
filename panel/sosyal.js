@@ -156,6 +156,15 @@ async function postIsle({ req, res, yol, hesapBul, ortak, motor, now }) {
 
   if (motor.hizli(kim)) return istemci ? gonder(res, 429, 'Biraz yavaş.', DUZ) : yonlendir(res, geriAdres(req, P.sLink(chat)))
 
+  // Yönetimin yazma engeli (Faz 92): okumak ve tepki serbest, yazmak kapalı.
+  const engel = S.engelBitisi(chat, ben, now)
+  if (engel) {
+    const metin = `Yönetim seni ${new Date(engel).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} tarihine kadar yazmaktan engelledi.`
+    if (istemci) return gonder(res, 403, metin, DUZ)
+    motor.bildir(kim, metin, true)
+    return yonlendir(res, geriAdres(req, P.sLink(chat)))
+  }
+
   if (yol === '/s/paylas') {
     const don = al('don')
     const medya = await motor.fotoKaydet(form.dosya)

@@ -86,7 +86,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
   bildirimKancasiKur(push)
   const sinir = denemeSiniri()
   const oturum = oturumlar({ depo })
-  const yonetimM = yonetim ?? yonetimMotoru({ depo, veri })
+  const yonetimM = yonetim ?? yonetimMotoru({ depo, veri, yedekKlasoru })
   // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.
   const sahteHash = sifreHashle('panel-sahte-sifre')
 
@@ -363,7 +363,7 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     if (nftYolu) return nftGonder(res, nftYolu[1])
 
     // Yönetim paneli (Faz 90) kendi çerezi ve oturumuyla çalışır.
-    if (await yonetimIsle({ req, res, url, yontem, motor: yonetimM, ortak: { gonder, yonlendir, govdeOku, sinir, istemciIp, bekleMetni } })) return
+    if (await yonetimIsle({ req, res, url, yontem, motor: yonetimM, ortak: { gonder, yonlendir, govdeOku, sinir, istemciIp, bekleMetni, guvenlik: GUVENLIK_BASLIKLARI } })) return
 
     const jeton = cerezOku(req)
     // Yönetim oturumunun jetonu bu çereze yazılsa bile eski yönetici sayılmaz: yalnızca bilinen iki tür geçer.

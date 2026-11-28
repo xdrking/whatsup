@@ -121,7 +121,7 @@ test('bot turu duyuruyu gizli etiketle atar, susturulmuş gruba atmaz, kasa dağ
   setMuted(susuk, false)
 })
 
-test('panel motoru: izin, onay ve kayıt', () => {
+test('panel motoru: izin, onay ve kayıt', async () => {
   const g = yeniGrup()
   getDb().prepare("INSERT INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, 'x@lid', 1, 0, 0, 100, 1)").run(g)
   let saat = T
@@ -130,17 +130,17 @@ test('panel motoru: izin, onay ve kayıt', () => {
   const sahip = kodlaGir(kodUret({ now: T }).kod, T)
   const form = (alanlar) => new URLSearchParams({ grup: g, ...alanlar })
 
-  assert.match(motor.islem(mod, form({ islem: 'xp', kisi: 'x@lid', miktar: '5', onay: '1' })).hata, /rolün/)
+  assert.match((await motor.islem(mod, form({ islem: 'xp', kisi: 'x@lid', miktar: '5', onay: '1' }))).hata, /rolün/)
   saat += 1000
-  assert.match(motor.islem(sahip, form({ islem: 'xp', kisi: 'x@lid', miktar: '5' })).hata, /Onay/)
+  assert.match((await motor.islem(sahip, form({ islem: 'xp', kisi: 'x@lid', miktar: '5' }))).hata, /Onay/)
   saat += 1000
-  assert.ok(motor.islem(sahip, form({ islem: 'xp', kisi: 'x@lid', miktar: '1 bin', onay: '1' })).tamam)
+  assert.ok((await motor.islem(sahip, form({ islem: 'xp', kisi: 'x@lid', miktar: '1 bin', onay: '1' }))).tamam)
   assert.equal(getStats(g, 'x@lid').xp, 1100)
-  assert.match(motor.islem(sahip, form({ islem: 'faiz', oran: '20' })).hata, /hızlı/, 'iki işlem arası bekleme')
+  assert.match((await motor.islem(sahip, form({ islem: 'faiz', oran: '20' }))).hata, /hızlı/, 'iki işlem arası bekleme')
   saat += 1000
-  assert.match(motor.islem(sahip, form({ islem: 'xp', kisi: 'yok@lid', miktar: '5', onay: '1' })).hata, /Üye/)
+  assert.match((await motor.islem(sahip, form({ islem: 'xp', kisi: 'yok@lid', miktar: '5', onay: '1' }))).hata, /Üye/)
   saat += 1000
-  assert.match(motor.islem(sahip, form({ islem: 'constructor' })).hata, /Bilinmeyen/)
+  assert.match((await motor.islem(sahip, form({ islem: 'constructor' }))).hata, /Bilinmeyen/)
   const kayit = getDb().prepare("SELECT * FROM yonetim_kayit WHERE islem = 'xp'").all()
   assert.equal(kayit.length, 1)
   assert.match(kayit[0].ayrinti, /\+1\.000 XP/)
@@ -207,7 +207,7 @@ test('bot turu: sus, konuş ve üye susturma', async () => {
   assert.ok(giden[0].text.startsWith('🤐') && giden[1].text.startsWith('🗣'))
 })
 
-test('panel motoru: moderatör susturur ama unvan veremez, darbe onay ister', () => {
+test('panel motoru: moderatör susturur ama unvan veremez, darbe onay ister', async () => {
   const g = yeniGrup()
   getDb().prepare("INSERT INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, 'x@lid', 1, 0, 0, 100, 1)").run(g)
   let saat = T
@@ -215,17 +215,64 @@ test('panel motoru: moderatör susturur ama unvan veremez, darbe onay ister', ()
   const mod = kodlaGir(kodUret({ rol: 'moderator', ad: 'Mod2', now: T }).kod, T)
   const sahip = kodlaGir(kodUret({ now: T }).kod, T)
   const form = (alanlar) => new URLSearchParams({ grup: g, ...alanlar })
-  assert.ok(motor.islem(mod, form({ islem: 'sustur', kisi: 'x@lid', dakika: '30' })).tamam)
+  assert.ok((await motor.islem(mod, form({ islem: 'sustur', kisi: 'x@lid', dakika: '30' }))).tamam)
   saat += 1000
-  assert.match(motor.islem(mod, form({ islem: 'unvan', kisi: 'x@lid', unvan: 'a' })).hata, /rolün/)
+  assert.match((await motor.islem(mod, form({ islem: 'unvan', kisi: 'x@lid', unvan: 'a' }))).hata, /rolün/)
   saat += 1000
-  assert.match(motor.islem(mod, form({ islem: 'kilit', kapsam: '*', komut: 'slot', durum: 'kapat' })).hata, /rolün/)
+  assert.match((await motor.islem(mod, form({ islem: 'kilit', kapsam: '*', komut: 'slot', durum: 'kapat' }))).hata, /rolün/)
   saat += 1000
-  assert.match(motor.islem(sahip, form({ islem: 'darbe', onay: 'evet' })).hata, /ONAYLIYORUM/)
+  assert.match((await motor.islem(sahip, form({ islem: 'darbe', onay: 'evet' }))).hata, /ONAYLIYORUM/)
   saat += 1000
-  assert.match(motor.islem(sahip, form({ islem: 'kilit', kapsam: '*', komut: 'yonetim', durum: 'kapat' })).hata, /kilitlenemez/)
+  assert.match((await motor.islem(sahip, form({ islem: 'kilit', kapsam: '*', komut: 'yonetim', durum: 'kapat' }))).hata, /kilitlenemez/)
   saat += 1000
-  assert.ok(motor.islem(sahip, form({ islem: 'kilit', kapsam: g, komut: 'panel:slot', durum: 'kapat' })).tamam)
+  assert.ok((await motor.islem(sahip, form({ islem: 'kilit', kapsam: g, komut: 'panel:slot', durum: 'kapat' }))).tamam)
   assert.ok(komutKapali(g, 'panel:slot'))
   while (isAl());
+})
+
+// Faz 92
+const S = await import('../lib/sosyal.js')
+const { mkdtempSync, existsSync } = await import('node:fs')
+const { tmpdir } = await import('node:os')
+const pathMod = (await import('node:path')).default
+const { yedekListesi, yedekYolu } = await import('../panel/yedek.js')
+
+test('zamanlanmış duyuru: zamanı gelmeden alınmaz, 10 dakika kuralı zamanlananı da sayar', () => {
+  while (isAl());
+  const g = yeniGrup()
+  const sonra = T + 3_600_000
+  const z = isEkle({ chatJid: g, tur: 'duyuru', veri: { metin: 'z' }, yoneticiId: 1, now: T, calisma: sonra })
+  assert.ok(z.id)
+  assert.equal(isAl(T), null, 'zamanı gelmedi')
+  assert.equal(isEkle({ chatJid: g, tur: 'duyuru', veri: { metin: 'y' }, yoneticiId: 1, now: T, calisma: sonra + 5 * 60_000 }).cakisma, sonra)
+  assert.ok(isEkle({ chatJid: g, tur: 'duyuru', veri: { metin: 'hemen' }, yoneticiId: 1, now: T }).id, 'şimdi atılabilir')
+  assert.equal(isEkle({ chatJid: g, tur: 'duyuru', veri: { metin: 'x' }, yoneticiId: 1, now: sonra - 60_000 }).bekle, sonra + DUYURU_ARALIGI_MS)
+  assert.equal(isAl(T).veri.metin, 'hemen')
+  assert.equal(isAl(sonra).veri.metin, 'z')
+})
+
+test('moderasyon: zorla silme ve yazma engeli', () => {
+  const g = yeniGrup()
+  const id = S.gonderiYaz({ chatJid: g, userJid: 'a@lid', metin: 'kötü söz', now: T }).id
+  assert.ok(id)
+  const yorumId = S.yorumYaz(g, 'b@lid', id, 'yorum', T)
+  assert.ok(S.sonGonderiler(g).some((x) => x.id === id))
+  assert.ok(S.sonYorumlar(g).length >= 1, String(yorumId))
+  assert.equal(S.gonderiSil(g, 'c@lid', id), false, 'başkası silemez')
+  assert.equal(S.gonderiSil(g, '', id, { zorla: true }), true)
+  assert.equal(S.sonYorumlar(g).length, 0, 'yorumları da gider')
+  S.engelYaz(g, 'a@lid', 2, T)
+  assert.ok(S.engelBitisi(g, 'a@lid', T + 3_600_000))
+  assert.equal(S.engelBitisi(g, 'a@lid', T + 3 * 3_600_000), 0, 'süre dolunca düşer')
+  assert.ok(S.engelKaldir(g, 'a@lid'))
+  assert.equal(S.engelBitisi(g, 'a@lid', T), 0)
+})
+
+test('yedek: yalnızca bilinen adlar indirilir', () => {
+  const k = mkdtempSync(pathMod.join(tmpdir(), 'yonetim-yedek-'))
+  assert.deepEqual(yedekListesi(k), [])
+  assert.equal(yedekYolu(k, '../stats.db'), null)
+  assert.equal(yedekYolu(k, 'stats-2026-01-01.db'), null, 'listede olmayan')
+  assert.deepEqual(yedekListesi(pathMod.join(k, 'yok')), [])
+  assert.ok(existsSync(k))
 })

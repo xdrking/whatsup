@@ -1,7 +1,8 @@
 // Yönetim paneli (Faz 90): `/yonetim` yolları. Giriş bot sahibinin `.yonetim kod` ile verdiği tek kullanımlık
 // kodladır, oturum ayrı çerezdedir ve oyuncu ya da eski panel oturumuyla karışmaz. Her işlem rolün izniyle denetlenir
 // ve kayıt defterine yazılır. Kural kopyalanmaz: işlemler komutların çağırdığı lib/ fonksiyonlarını çağırır.
-import { readFileSync } from 'node:fs'
+import { createReadStream, readFileSync } from 'node:fs'
+import path from 'node:path'
 import { ASGARI_FAIZ, AZAMI_FAIZ, faizOranCoz, oranYaz } from '../lib/banka.js'
 import { AYARLAR, ayarListesi, ayarYaz } from '../lib/ayarlar.js'
 import logger from '../lib/logger.js'
@@ -10,24 +11,25 @@ import { binlik, miktarlariCoz } from '../lib/sayi.js'
 import { uyeler as grupUyeleri } from '../lib/sosyal.js'
 import {
   ambargoKaldir, coinAyarla, darbeBitir, ekonomiDurumu, faizDurumu, faizKarari, hapistenCikar, hapistekiler, kayyumAta,
-  kayyumKaldir, sandikVer, secimDurumu, secimIptal, servetDurumu, tesvikDagit, unvanAyarla, uyeDurumu, xpAyarla,
+  kayyumKaldir, rebornOnizle, sandikVer, secimDurumu, secimIptal, servetDurumu, tesvikDagit, unvanAyarla, uyeDurumu, xpAyarla,
 } from '../lib/stats.js'
 import { makamKoduyla } from '../lib/devlet.js'
 import { getDb } from '../lib/db.js'
 import { HEPSI, KILITLENMEZ, kilitler, kilitYaz } from '../lib/komutKilit.js'
 import { panelUyeCikar } from '../lib/panelHesap.js'
 import { sahipKimlikleri, sansAc, sansKapat, sansKisileri } from '../lib/sahipSans.js'
-import { katla } from '../lib/sosyal.js'
+import { acikHikayeler, ENGEL_AZAMI_SAAT, engelKaldir, engelliler, engelYaz, gonderiSil, hikayeKaldir, katla, sonGonderiler, sonYorumlar, yorumSil } from '../lib/sosyal.js'
 import { loadCommands } from '../commands/index.js'
 import { panelOyunlari } from './oyunSayfalari.js'
 import {
-  DUYURU_AZAMI, duyuruBekleme, isEkle, isIptal, isler, izinVar, kayitlar, kayitYaz, kodlaGir, NABIZ_ESIGI_MS, nabizOku,
+  DUYURU_AZAMI, ZAMANLAMA_AZAMI_MS, duyuruBekleme, isEkle, isIptal, isler, izinVar, kayitlar, kayitYaz, kodlaGir, NABIZ_ESIGI_MS, nabizOku,
   oturumYoneticisi, ROLLER, yoneticiBul, yoneticiGuncelle, yoneticiListesi,
 } from '../lib/yonetim.js'
 import { oturumlar } from './guvenlik.js'
 import { hazineyiTani } from './kumar.js'
+import { elleYedekAl, yedekListesi, yedekYolu } from './yedek.js'
 import {
-  devletSayfasi, duyuruSayfasi, ekonomiSayfasi, gostergeSayfasi, gruplarSayfasi, kasaSayfasi, kayitSayfasi,
+  devletSayfasi, duyuruSayfasi, sistemSayfasi, sosyalSayfasi, ekonomiSayfasi, gostergeSayfasi, gruplarSayfasi, kasaSayfasi, kayitSayfasi,
   kumarhaneSayfasi, uyelerSayfasi, uyeSayfasi, YONETIM_SAYFALARI, yasakSayfasi, yoneticilerSayfasi, yonetimGiris,
 } from './yonetimSayfalari.js'
 
@@ -35,6 +37,32 @@ const CEREZ = '__Host-yonetim'
 // Yönetim oturumu kısadır: açık kalan bir tarayıcı ekonomiye günlerce dokunabilmesin.
 const OTURUM_MS = 12 * 60 * 60_000
 const STIL = readFileSync(new URL('./yonetim.css', import.meta.url))
+const tarihYaz = (x) => new Date(x).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+/**
+ * Formdaki `datetime-local` değeri İstanbul saatidir (+03:00, Türkiye yaz saati uygulamıyor). Boşsa null (hemen).
+ * @returns {number | { hata: string } | null}
+ */
+function zamanCoz(deger, simdi) {
+  const d = String(deger ?? '').trim()
+  if (!d) return null
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(d)) return { hata: 'Tarih ve saat anlaşılmadı.' }
+  const ms = Date.parse(`${d}:00+03:00`)
+  if (!Number.isFinite(ms) || ms <= simdi + 60_000) return { hata: 'Zaman ileri bir an olmalı (en az 1 dakika sonra).' }
+  if (ms > simdi + ZAMANLAMA_AZAMI_MS) return { hata: 'En çok 30 gün sonrasına kurulur.' }
+  return ms
+}
+
+async function elleYedek(ortam, simdi) {
+  if (!ortam.db || !ortam.yedekKlasoru) return null
+  try {
+    return await elleYedekAl(ortam.db, ortam.yedekKlasoru, new Date(simdi))
+  } catch (err) {
+    logger.error({ err }, 'Elle yedek alınamadı')
+    return null
+  }
+}
+
 // İki işlem arası: form iki kez gönderilmesin.
 const ISLEM_ARALIK_MS = 700
 
@@ -49,7 +77,7 @@ function cerezOku(req) {
 
 const SAYFA_CIZIMI = {
   gosterge: gostergeSayfasi, duyuru: duyuruSayfasi, ekonomi: ekonomiSayfasi, kasa: kasaSayfasi, uyeler: uyelerSayfasi,
-  uye: uyeSayfasi, devlet: devletSayfasi, kumarhane: kumarhaneSayfasi, gruplar: gruplarSayfasi,
+  uye: uyeSayfasi, devlet: devletSayfasi, sosyal: sosyalSayfasi, sistem: sistemSayfasi, kumarhane: kumarhaneSayfasi, gruplar: gruplarSayfasi,
   yoneticiler: yoneticilerSayfasi, kayit: kayitSayfasi,
 }
 
@@ -69,15 +97,19 @@ function tutarCoz(metin) {
 const ISLEMLER = {
   duyuru: {
     izin: 'duyuru', grup: true,
-    yap({ y, f, chat }) {
+    yap({ y, f, chat, simdi }) {
       const metin = String(f.get('metin') ?? '').replace(/\r\n/g, '\n').trim()
       if (!metin) return { hata: 'Metin boş.' }
       if (metin.length > DUYURU_AZAMI) return { hata: `Metin en çok ${DUYURU_AZAMI} karakter.` }
       const etiket = f.get('etiket') === '1'
-      const s = isEkle({ chatJid: chat, tur: 'duyuru', veri: { metin, etiket }, yoneticiId: y.id })
+      const zamanlama = zamanCoz(f.get('zaman'), simdi)
+      if (zamanlama?.hata) return zamanlama
+      const s = isEkle({ chatJid: chat, tur: 'duyuru', veri: { metin, etiket }, yoneticiId: y.id, now: simdi, calisma: zamanlama ?? simdi })
       if (!s) return { hata: 'Sıraya konamadı.' }
-      if (s.bekle) return { hata: `Bu gruba son duyurudan beri 10 dakika geçmedi. Saat ${new Date(s.bekle).toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit' })} sonrası tekrar dene.` }
-      return { tamam: 'Duyuru sıraya kondu, bot birkaç saniyede gönderir.', kayit: `${etiket ? 'etiketli' : 'etiketsiz'} · ${metin.slice(0, 120)}` }
+      if (s.bekle) return { hata: `Bu gruba 10 dakika içinde başka duyuru var. ${tarihYaz(s.bekle)} sonrası tekrar dene.` }
+      if (s.cakisma) return { hata: `O saate 10 dakikadan yakın başka bir duyuru kurulu (${tarihYaz(s.cakisma)}). Başka saat seç.` }
+      const ne = zamanlama ? `${tarihYaz(zamanlama)} için zamanlandı` : 'sıraya kondu, bot birkaç saniyede gönderir'
+      return { tamam: `Duyuru ${ne}.`, kayit: `${zamanlama ? `${tarihYaz(zamanlama)} · ` : ''}${etiket ? 'etiketli' : 'etiketsiz'} · ${metin.slice(0, 120)}` }
     },
   },
   'is-iptal': {
@@ -292,6 +324,64 @@ const ISLEMLER = {
       return { tamam: 'Şansın kapalı, normal oynuyorsun.', kayit: 'kapalı' }
     },
   },
+  // Faz 92: sosyal moderasyon.
+  'gonderi-sil': {
+    izin: 'moderasyon', grup: true,
+    yap({ f, chat }) {
+      const id = Number(f.get('id'))
+      return gonderiSil(chat, '', id, { zorla: true }) ? { tamam: 'Gönderi silindi.', kayit: `#${id}` } : { hata: 'Gönderi bulunamadı.' }
+    },
+  },
+  'yorum-sil': {
+    izin: 'moderasyon', grup: true,
+    yap({ f, chat }) {
+      const id = Number(f.get('id'))
+      return yorumSil(chat, '', id, { zorla: true }) ? { tamam: 'Yorum silindi.', kayit: `#${id}` } : { hata: 'Yorum bulunamadı.' }
+    },
+  },
+  'hikaye-sil': {
+    izin: 'moderasyon', grup: true,
+    yap({ f, chat }) {
+      const id = Number(f.get('id'))
+      return hikayeKaldir(chat, id) ? { tamam: 'Hikâye silindi.', kayit: `#${id}` } : { hata: 'Hikâye bulunamadı.' }
+    },
+  },
+  engel: {
+    izin: 'moderasyon', grup: true, kisi: true,
+    yap({ f, chat, kisi, simdi }) {
+      const saat = Number(f.get('saat'))
+      if (!Number.isInteger(saat) || saat < 1 || saat > ENGEL_AZAMI_SAAT) return { hata: `Süre 1 ile ${ENGEL_AZAMI_SAAT} saat arasında olmalı.` }
+      const bitis = engelYaz(chat, kisi.jid, saat, simdi)
+      return { tamam: `${kisi.ad} ${tarihYaz(bitis)} tarihine kadar sosyal bölümde yazamaz.`, kayit: `${kisi.ad} · ${saat} saat` }
+    },
+  },
+  'engel-kaldir': {
+    izin: 'moderasyon', grup: true, kisi: true,
+    yap({ chat, kisi }) {
+      return engelKaldir(chat, kisi.jid) ? { tamam: `${kisi.ad}'nin engeli kalktı.`, kayit: kisi.ad } : { hata: 'Engeli yok.' }
+    },
+  },
+  // Sistem: yalnızca sahip.
+  'yedek-al': {
+    izin: 'sistem',
+    async yap({ ortam, simdi }) {
+      const ad = await elleYedek(ortam, simdi)
+      return ad ? { tamam: `Yedek alındı: ${ad}`, kayit: ad } : { hata: 'Yedek alınamadı.' }
+    },
+  },
+  reborn: {
+    izin: 'sistem', grup: true,
+    yap({ y, f, chat }) {
+      if (String(f.get('onay') ?? '').trim().toLocaleUpperCase('tr') !== 'ONAYLIYORUM') return { hata: 'Onay için ONAYLIYORUM yaz.' }
+      return isEkle({ chatJid: chat, tur: 'reborn', veri: {}, yoneticiId: y.id }) ? { tamam: 'Reborn oylaması sıraya kondu, bot birkaç saniyede başlatır.', kayit: '' } : { hata: 'Sıraya konamadı.' }
+    },
+  },
+  'reborn-iptal': {
+    izin: 'sistem', grup: true,
+    yap({ y, chat }) {
+      return isEkle({ chatJid: chat, tur: 'reborn_iptal', veri: {}, yoneticiId: y.id }) ? { tamam: 'Oylamanın iptali sıraya kondu.', kayit: '' } : { hata: 'Sıraya konamadı.' }
+    },
+  },
   'yonetici-rol': {
     izin: 'yoneticiler',
     yap({ f }) {
@@ -337,7 +427,8 @@ function komutListesi() {
   return komutlarSozu
 }
 
-export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
+export function yonetimMotoru({ depo = null, saat = Date.now, veri, yedekKlasoru = '' } = {}) {
+  const ortam = { db: veri?.db, yedekKlasoru }
   const oturum = oturumlar({ depo, sure: OTURUM_MS, saat })
   const bildirimler = new Map()
   const sonIslem = new Map()
@@ -396,6 +487,24 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
     if (ad === 'devlet') {
       return { ...v, secim: chat ? secimDurumu({ chatJid: chat, userJid: '', now: saat() }) : null, uyeler: chat ? grupUyeleri(chat) : [] }
     }
+    if (ad === 'sosyal') {
+      const adlar = new Map((chat ? grupUyeleri(chat) : []).map((u) => [u.jid, u.ad || u.jid.split('@')[0]]))
+      return {
+        ...v, adlar, uyeler: chat ? grupUyeleri(chat) : [],
+        gonderiler: chat ? sonGonderiler(chat) : [], yorumlar: chat ? sonYorumlar(chat) : [],
+        hikayeler: chat ? acikHikayeler(chat) : [], engelliler: chat ? engelliler(chat, saat()) : [],
+      }
+    }
+    if (ad === 'sistem') {
+      const db = ortam.db
+      return {
+        ...v, adlar: new Map((chat ? grupUyeleri(chat) : []).map((u) => [u.jid, u.ad || u.jid.split('@')[0]])),
+        yedekler: ortam.yedekKlasoru ? yedekListesi(ortam.yedekKlasoru) : [],
+        dbBoyut: db ? db.pragma('page_count', { simple: true }) * db.pragma('page_size', { simple: true }) : 0,
+        reborn: chat ? rebornOnizle({ chatJid: chat, now: saat() }) : null,
+        rebornIsleri: isler({ adet: 10 }).filter((i) => i.tur.startsWith('reborn')),
+      }
+    }
     if (ad === 'kumarhane') {
       return { ...v, kilitler: kilitler(), komutlar: (await komutListesi()).filter((k) => k.kategori === 'kumar'), panelOyunlari: panelOyunlari(), sansAcik: sansKisileri().length > 0 }
     }
@@ -406,10 +515,10 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
   }
 
   /** Bir işlem; sonucu bir kez gösterilecek bildirime yazar. */
-  function islem(y, f) {
+  async function islem(y, f) {
     const ad = String(f.get('islem') ?? '')
     const t = Object.hasOwn(ISLEMLER, ad) ? ISLEMLER[ad] : null
-    const sonuc = (() => {
+    const sonuc = await (async () => {
       if (!t) return { hata: 'Bilinmeyen işlem.' }
       if (!izinVar(y.rol, t.izin)) return { hata: 'Bu işlem için rolün yetmiyor.' }
       const simdi = saat()
@@ -426,7 +535,7 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
       }
       // Tesvik ve kasa dağıtımı hazineyi bilmeli: bot kimliği her işlemde tanınır.
       hazineyiTani()
-      return t.yap({ y, f, chat, kisi, gruplarVar: (c) => gruplar().some((g) => g.chat_jid === c) })
+      return t.yap({ y, f, chat, kisi, simdi, ortam, gruplarVar: (c) => gruplar().some((g) => g.chat_jid === c) })
     })()
     bildirimler.set(y.id, sonuc.hata ? { hata: sonuc.hata } : { tamam: sonuc.tamam })
     if (!sonuc.hata) {
@@ -437,7 +546,7 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
     return sonuc
   }
 
-  return { oturum, sayfaVerisi, islem, nabiz }
+  return { oturum, sayfaVerisi, islem, nabiz, ortam }
 }
 
 /**
@@ -508,11 +617,27 @@ export async function yonetimIsle({ req, res, url, yontem, motor, ortak }) {
       gonder(res, 413, 'İstek çok büyük.')
       return true
     }
-    motor.islem(y, form)
+    await motor.islem(y, form)
     const donus = Object.values(YONETIM_SAYFALARI).find((s) => s.ad === form.get('donus'))?.yol ?? '/yonetim'
     const grup = form.get('grup')
     const kisi = form.get('donus') === 'uye' ? form.get('kisi') : null
     yonlendir(res, grup ? `${donus}?grup=${encodeURIComponent(grup)}${kisi ? `&id=${encodeURIComponent(kisi)}` : ''}` : donus)
+    return true
+  }
+
+  // Yedek indirme (Faz 92): yalnızca sahip, yalnızca yedek klasöründeki bilinen adlar.
+  if (yontem === 'GET' && yol === '/yonetim/yedek') {
+    const dosya = izinVar(y.rol, 'sistem') && motor.ortam.yedekKlasoru ? yedekYolu(motor.ortam.yedekKlasoru, url.searchParams.get('ad')) : null
+    if (!dosya) {
+      gonder(res, 404, 'Yedek bulunamadı.', { 'Content-Type': 'text/plain; charset=utf-8' })
+      return true
+    }
+    kayitYaz(y, 'yedek-indir', path.basename(dosya))
+    res.writeHead(200, { ...ortak.guvenlik, 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="${path.basename(dosya)}"`, 'Cache-Control': 'no-store' })
+    createReadStream(dosya).on('error', (err) => {
+      logger.error({ err }, 'Yedek gönderilemedi')
+      res.destroy()
+    }).pipe(res)
     return true
   }
 

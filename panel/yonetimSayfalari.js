@@ -29,6 +29,8 @@ const SAYFALAR = [
   { ad: 'kumarhane', yol: '/yonetim/kumarhane', baslik: 'Kumarhane', ikon: '♠', izin: 'kumarhane' },
   { ad: 'devlet', yol: '/yonetim/devlet', baslik: 'Devlet', ikon: '⚖', izin: 'devlet' },
   { ad: 'gruplar', yol: '/yonetim/gruplar', baslik: 'Gruplar', ikon: '⚙', izin: 'gruplar' },
+  { ad: 'sosyal', yol: '/yonetim/sosyal', baslik: 'Moderasyon', ikon: '⚑', izin: 'moderasyon' },
+  { ad: 'sistem', yol: '/yonetim/sistem', baslik: 'Sistem', ikon: '⛁', izin: 'sistem' },
   { ad: 'yoneticiler', yol: '/yonetim/yoneticiler', baslik: 'Yöneticiler', ikon: '⚿', izin: 'yoneticiler' },
   { ad: 'kayit', yol: '/yonetim/kayit', baslik: 'Kayıt defteri', ikon: '☰', izin: 'kayit' },
 ]
@@ -88,7 +90,10 @@ const uyeSecimi = (uyeler, ad = 'kisi') => h`<select name="${ad}" required><opti
 const onayKutusu = (metin) => h`<label class="onay"><input type="checkbox" name="onay" value="1" required> ${metin}</label>`
 
 const durumRozeti = (d) => h`<span class="durum ${d}">${{ bekliyor: 'Sırada', isleniyor: 'Gönderiliyor', tamam: 'Gönderildi', hata: 'Hata', iptal: 'İptal' }[d] ?? d}</span>`
-const IS_ADI = { duyuru: '📢 Duyuru', kasa_dagit: '🎁 Kasa dağıtımı' }
+const IS_ADI = {
+  duyuru: '📢 Duyuru', kasa_dagit: '🎁 Kasa dağıtımı', sus: '🤐 Sus', konus: '🗣️ Konuş', sustur: '🔇 Üye susturma',
+  sustur_kaldir: '🔊 Susturma kaldırma', darbe: '🪖 Darbe', reborn: '♻️ Reborn oylaması', reborn_iptal: '🛑 Reborn iptali',
+}
 
 export function yonetimGiris(hata = '') {
   return belge('Giriş', h`
@@ -157,6 +162,8 @@ export function duyuruSayfasi(v) {
       <textarea name="metin" rows="6" maxlength="${DUYURU_AZAMI}" required placeholder="Gruba gidecek duyuru…"></textarea>
     </label>
     <label class="onay"><input type="checkbox" name="etiket" value="1" checked> Herkesi etiketle (bildirim düşer, etiketler metinde görünmez)</label>
+    <label>Zamanla (isteğe bağlı, İstanbul saati)<input type="datetime-local" name="zaman"></label>
+    <p class="kucuk">Boş bırakırsan hemen gider. Zamanlanan duyuru en çok 30 gün sonrasına kurulur, o saate kadar iptal edilebilir.</p>
     ${bekle ? h`<p class="kucuk sari">Bu gruba sonraki duyuru saat ${saat.format(new Date(bekle))} sonrası atılabilir.</p>` : ''}
     <div class="onizleme"><small>Grupta görünüşü</small><pre>📢 <b>DUYURU</b>
 
@@ -179,9 +186,9 @@ function isTablosu(v, isler) {
 <tbody>${isler.map((i) => {
     const veri = JSON.parse(i.veri)
     return h`<tr>
-  <td class="nowrap">${zaman(i.zaman)}</td><td>${adlar.get(i.chat_jid) ?? i.chat_jid}</td><td class="nowrap">${IS_ADI[i.tur] ?? i.tur}</td>
+  <td class="nowrap">${zaman(i.zaman)}${i.calisma > i.zaman + 60_000 ? h`<small class="blok">⏰ ${zaman(i.calisma)}</small>` : ''}</td><td>${adlar.get(i.chat_jid) ?? i.chat_jid}</td><td class="nowrap">${IS_ADI[i.tur] ?? i.tur}</td>
   <td class="metin">${veri.metin ?? ''}${i.sonuc ? h`<small>${i.sonuc}</small>` : ''}</td>
-  <td>${durumRozeti(i.durum)}</td>
+  <td>${i.durum === 'bekliyor' && i.calisma > Date.now() ? h`<span class="durum bekliyor">Zamanlandı</span>` : durumRozeti(i.durum)}</td>
   <td>${i.durum === 'bekliyor' ? h`<form method="post" action="/yonetim/islem">${gizli('is-iptal', 'duyuru', { id: i.id })}<button class="kucuk-dugme">İptal</button></form>` : ''}</td>
 </tr>`
   })}</tbody></table></div>`
@@ -540,4 +547,93 @@ ${!g ? h`<p class="bos">Grup yok.</p>` : h`
 <h2 class="bolum">Bu grupta kapalı</h2>
 ${grupKilit.size ? h`<ul class="anahtar-liste pano">${[...grupKilit].map((k) => h`<li><span><strong>${adi(k)}</strong></span>${kilitDugmesi(v.chat, k, true, 'gruplar', v.chat)}</li>`)}</ul>` : h`<p class="bos">Bu gruba özel kapalı komut yok.</p>`}
 ${genel.size ? h`<p class="kucuk">Bütün gruplarda bakımda: ${[...genel].map(adi).join(', ')} (<a href="/yonetim/kumarhane">Kumarhane</a>).</p>` : ''}`}`)
+}
+
+// Faz 92: moderasyon ve sistem.
+
+const MB = (b) => `${(b / 1024 / 1024).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} MB`
+const silFormu = (islem, chat, id, etiket = 'Sil') =>
+  h`<form class="satir-form" method="post" action="/yonetim/islem">${gizli(islem, 'sosyal', { grup: chat, id })}<button class="kucuk-dugme tehlike">${etiket}</button></form>`
+
+export function sosyalSayfasi(v) {
+  const ad = (jid) => v.adlar.get(jid) ?? jid.split('@')[0]
+  const kisalt = (m) => (m.length > 160 ? `${m.slice(0, 160)}…` : m)
+  return kabuk(v, 'sosyal', 'Moderasyon', h`
+${grupSecici(v, '/yonetim/sosyal')}
+<p class="kucuk">Panelin sosyal bölümü. Silinen içerik geri gelmez, fotoğrafı da silinir. Engellenen kişi okur ve tepki verir ama gönderi, yorum, mesaj ve hikâye yazamaz, <code>.paylaş</code> da çalışmaz.</p>
+<section class="izgara iki">
+  <article class="pano">
+    <header><h3>Yazma engeli</h3><span class="etiket">${v.engelliler.length} engelli</span></header>
+    <form class="form" method="post" action="/yonetim/islem">${gizli('engel', 'sosyal', { grup: v.chat })}
+      <label>Üye${uyeSecimi(v.uyeler)}</label>
+      <label>Süre<select name="saat">${[[1, '1 saat'], [6, '6 saat'], [24, '1 gün'], [72, '3 gün'], [168, '1 hafta'], [720, '30 gün']].map(([n, t]) => h`<option value="${n}"${n === 24 ? ' selected' : ''}>${t}</option>`)}</select></label>
+      <button class="birincil">Engelle</button>
+    </form>
+    ${v.engelliler.length ? h`<ul class="anahtar-liste">${v.engelliler.map((e) => h`<li><span><strong>${ad(e.user_jid)}</strong><small>bitiş ${zaman(e.bitis)}</small></span>
+      <form class="satir-form" method="post" action="/yonetim/islem">${gizli('engel-kaldir', 'sosyal', { grup: v.chat, kisi: e.user_jid })}<button class="kucuk-dugme">Kaldır</button></form></li>`)}</ul>` : ''}
+  </article>
+  <article class="pano">
+    <header><h3>Açık hikâyeler</h3><span class="etiket">${v.hikayeler.length}</span></header>
+    ${v.hikayeler.length ? h`<ul class="anahtar-liste">${v.hikayeler.map((x) => h`<li><span><strong>${ad(x.user_jid)}</strong><small>${zaman(x.zaman)}${x.metin ? ` · ${x.metin}` : ''}</small></span>${silFormu('hikaye-sil', v.chat, x.id)}</li>`)}</ul>` : h`<p class="kucuk">Açık hikâye yok.</p>`}
+  </article>
+</section>
+<h2 class="bolum">Son gönderiler</h2>
+${v.gonderiler.length ? h`<div class="tablo-kap"><table class="tablo">
+<thead><tr><th>Zaman</th><th>Yazan</th><th>Gönderi</th><th></th></tr></thead>
+<tbody>${v.gonderiler.map((g) => h`<tr>
+  <td class="nowrap">${zaman(g.zaman)}</td>
+  <td class="nowrap">${ad(g.user_jid)}${g.hedef_jid ? h`<small class="blok">▸ ${ad(g.hedef_jid)}</small>` : ''}</td>
+  <td class="metin">${g.medya ? '📷 ' : ''}${g.alinti_id && !g.metin ? '↻ paylaşım' : kisalt(g.metin)}</td>
+  <td>${silFormu('gonderi-sil', v.chat, g.id)}</td>
+</tr>`)}</tbody></table></div>` : h`<p class="bos">Gönderi yok.</p>`}
+<h2 class="bolum">Son yorumlar</h2>
+${v.yorumlar.length ? h`<div class="tablo-kap"><table class="tablo">
+<thead><tr><th>Zaman</th><th>Yazan</th><th>Yorum</th><th></th></tr></thead>
+<tbody>${v.yorumlar.map((y) => h`<tr><td class="nowrap">${zaman(y.zaman)}</td><td class="nowrap">${ad(y.user_jid)}</td><td class="metin">${kisalt(y.metin)}<small class="blok">gönderi #${y.gonderi_id}</small></td><td>${silFormu('yorum-sil', v.chat, y.id)}</td></tr>`)}</tbody>
+</table></div>` : h`<p class="bos">Yorum yok.</p>`}`)
+}
+
+export function sistemSayfasi(v) {
+  const r = v.reborn
+  const sonIs = v.rebornIsleri[0]
+  return kabuk(v, 'sistem', 'Sistem', h`
+<section class="kutucuklar">
+  <div class="kutucuk"><small>Veritabanı</small><strong>${MB(v.dbBoyut)}</strong><span>data/stats.db</span></div>
+  <div class="kutucuk"><small>Yedek</small><strong>${sayi.format(v.yedekler.length)}</strong><span>${v.yedekler[0] ? `en yenisi ${zaman(v.yedekler[0].zaman)}` : 'henüz yok'}</span></div>
+</section>
+<section class="izgara iki">
+  <article class="pano">
+    <header><h3>Yedekler</h3><span class="etiket">günde bir otomatik</span></header>
+    <form class="form" method="post" action="/yonetim/islem">${gizli('yedek-al', 'sistem')}
+      <p>Şimdi tutarlı bir kopya alınır (son 5 elle yedek kalır). Yedekler aynı sunucuda durur; sunucu giderse onlar da gider, ara sıra indir.</p>
+      <button class="birincil">Şimdi yedek al</button>
+    </form>
+    ${v.yedekler.length ? h`<ul class="anahtar-liste">${v.yedekler.map((y) => h`<li><span><strong>${y.ad}</strong><small>${zaman(y.zaman)} · ${MB(y.boyut)}</small></span><a class="kucuk-dugme dugme-link" href="/yonetim/yedek?ad=${encodeURIComponent(y.ad)}">İndir</a></li>`)}</ul>` : ''}
+  </article>
+  <article class="pano tehlikeli">
+    <header><h3>♻️ Reborn</h3><span class="etiket">${grupAdi(v.gruplar.find((g) => g.chat_jid === v.chat))}</span></header>
+    ${grupSecici(v, '/yonetim/sistem')}
+    ${r ? h`<dl class="liste">
+      <div><dt>Kaçıncı reborn</dt><dd>${r.no}.</dd></div>
+      <div><dt>Hesabı olan üye</dt><dd>${sayi.format(r.uye)}</dd></div>
+      <div><dt>Piyasadaki para</dt><dd>${kisa(r.arz)} XP</dd></div>
+      <div><dt>Kur</dt><dd>${kisa(r.kur)} XP</dd></div>
+      <div><dt>Hazine</dt><dd>${kisa(r.kasa)} XP</dd></div>
+      <div><dt>Yıldız alacaklar</dt><dd>${r.zenginler.length ? r.zenginler.map((z) => v.adlar?.get(z.user_jid) ?? z.user_jid.split('@')[0]).join(', ') : '—'}</dd></div>
+    </dl>` : h`<p class="kucuk">Önizleme alınamadı.</p>`}
+    ${sonIs ? h`<p class="kucuk">Son iş: ${IS_ADI[sonIs.tur]} · ${zaman(sonIs.zaman)} · ${sonIs.sonuc || sonIs.durum}</p>` : ''}
+    <form class="form" method="post" action="/yonetim/islem">${gizli('reborn', 'sistem', { grup: v.chat })}
+      <p><code>.reborn onay</code> ile aynıdır: grupta oylama başlar, 10 dakika sonra evet fazlaysa grubun ekonomisi sıfırlanır (önce yedek alınır). Mesaj sayıları, kartlar, petler kalır.</p>
+      <label><span>Onay için <b>ONAYLIYORUM</b> yaz</span><input name="onay" autocomplete="off" required></label>
+      <button class="birincil tehlike-dugme">Oylamayı başlat</button>
+    </form>
+    <form class="satir-form" method="post" action="/yonetim/islem">${gizli('reborn-iptal', 'sistem', { grup: v.chat })}<button class="kucuk-dugme">Süren oylamayı iptal et</button></form>
+  </article>
+  <article class="pano">
+    <header><h3>Sıfır atma</h3><span class="etiket">sunucuda, elle</span></header>
+    <p>Rakamları 1000'e böler, enflasyonu durdurmaz. Bot <b>kapalıyken</b> sunucuda çalıştırılır, panelden yapılmaz:</p>
+    <pre class="kod">node scripts/sifir-at.js            # önizleme
+node scripts/sifir-at.js --uygula   # önce yedek alır</pre>
+  </article>
+</section>`)
 }
