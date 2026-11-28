@@ -92,11 +92,12 @@ const ozet = (jeton) => createHash('sha256').update(jeton).digest('hex')
 
 /**
  * Bellekte jetonun kendisi değil özeti durur. `veri` oturumun kime ait olduğudur:
- * `{ tur: 'yonetici' }` ya da `{ tur: 'oyuncu', numara, lid, surum }`.
+ * `{ tur: 'yonetici' }`, `{ tur: 'oyuncu', numara, lid, surum }` ya da `{ tur: 'yonetim', id, surum }` (Faz 90).
+ * `sure`: oturumun ömrü; yönetim oturumu oyuncununkinden kısadır.
  * `depo` verilirse (Faz 72, `panel_oturum`) oturumlar oraya da yazılır: panel yeniden başlayınca
  * bellekte olmayan jeton depodan okunur, kimse düşmez. Depo da yalnızca özeti tutar.
  */
-export function oturumlar({ saat = Date.now, depo = null } = {}) {
+export function oturumlar({ saat = Date.now, depo = null, sure = OTURUM_MS } = {}) {
   const acik = new Map()
 
   const oku = (jeton) => {
@@ -118,7 +119,7 @@ export function oturumlar({ saat = Date.now, depo = null } = {}) {
       }
       depo?.temizle(simdi)
       const jeton = randomBytes(32).toString('base64url')
-      const o = { bitis: simdi + OTURUM_MS, veri }
+      const o = { bitis: simdi + sure, veri }
       acik.set(ozet(jeton), o)
       depo?.yaz(ozet(jeton), veri, o.bitis)
       return jeton

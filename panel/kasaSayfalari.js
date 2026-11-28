@@ -3,7 +3,8 @@
 // Betik yoksa sonuç düz görünür.
 import { EKSTRA_GUNLUK, ODULLER as CARK_ODULLERI, UCRETSIZ_HAK } from '../lib/cark.js'
 import { COIN_URUNLERI } from '../lib/coin.js'
-import { HAFTALIK_ALIM, HAFTALIK_KUMAR, HAFTALIK_SOYGUN, KASALAR, RENKLER } from '../lib/sandik.js'
+import { KASALAR, RENKLER } from '../lib/sandik.js'
+import { ayarDeger } from '../lib/ayarlar.js'
 import { h, nftAdresi } from './sayfalar.js'
 import { satir, sayfa } from './hesapSayfalari.js'
 import { hesapLink } from './oyunSayfalari.js'
@@ -96,9 +97,9 @@ ${d.yeniAnahtar.length ? h`<p class="bildirim oldu">🔑 Gece anahtarın geldi: 
 <section class="kart hesap-kart">
   <h2>Deponda</h2>
   ${satir('🪙', 'Coinin', sayi.format(d.coin))}
-  ${satir('🎰', 'Bu hafta kumardan düşen', `${d.hafta.kumar}/${HAFTALIK_KUMAR}`)}
-  ${satir('🥷', 'Bu hafta soygundan düşen', `${d.hafta.soygun}/${HAFTALIK_SOYGUN}`)}
-  ${satir('🛒', 'Bu hafta coinle alınan kasa', `${d.hafta.alim}/${HAFTALIK_ALIM}`)}
+  ${satir('🎰', 'Bu hafta kumardan düşen', `${d.hafta.kumar}/${ayarDeger('kasaHaftalikKumar')}`)}
+  ${satir('🥷', 'Bu hafta soygundan düşen', `${d.hafta.soygun}/${ayarDeger('kasaHaftalikSoygun')}`)}
+  ${satir('🛒', 'Bu hafta coinle alınan kasa', `${d.hafta.alim}/${ayarDeger('kasaHaftalikAlim')}`)}
   <div class="tier-liste">${KASALAR.map((k) => tierKarti(chat, k, d))}</div>
   <p class="not">Kasa aynı tier'den bir anahtarla açılır. Her gece herkese 1 rastgele anahtar gelir, buraya girince verilir. Kasa WhatsApp'taki kumarda kazanınca ve başarılı soygunda düşük olasılıkla düşer; panel kumarında düşmez.</p>
 </section>
@@ -183,6 +184,6 @@ export function coinMarketSayfasi(veri) {
     <form method="post" action="/oyun/islem">${gizli(chat, 'coinmarket', 'kasa-al', k.tier)}<button class="${coin >= k.fiyat ? '' : 'ikincil'}">🎁 ${k.fiyat}</button></form>
     <form method="post" action="/oyun/islem">${gizli(chat, 'coinmarket', 'anahtar-al', k.tier)}<button class="${coin >= k.anahtar ? '' : 'ikincil'}">🔑 ${k.anahtar}</button></form>
   </div>`)}</div>
-  <p class="not">Coinle haftada en çok ${HAFTALIK_ALIM} kasa alınır, anahtar sınırsız. Açmak için <a href="${hesapLink(chat, 'kasa')}">🎁 Kasalar</a>.</p>
+  <p class="not">Coinle haftada en çok ${ayarDeger('kasaHaftalikAlim')} kasa alınır, anahtar sınırsız. Açmak için <a href="${hesapLink(chat, 'kasa')}">🎁 Kasalar</a>.</p>
 </section>`)
 }

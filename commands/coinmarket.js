@@ -4,7 +4,8 @@ import { requireGroup } from '../lib/group.js'
 import { binlik, xpButcesi } from '../lib/sayi.js'
 import { coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getStats, sigortaBitisi } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
-import { HAFTALIK_ALIM, KASALAR } from '../lib/sandik.js'
+import { KASALAR } from '../lib/sandik.js'
+import { ayarDeger } from '../lib/ayarlar.js'
 import { sandikSatinAl } from './kasa.js'
 import logger from '../lib/logger.js'
 
@@ -13,15 +14,17 @@ export default {
   aliases: ['cm', 'coinmarketi'],
   description: 'XP ile coin al, coinle özel ürünler satın al',
   usage: '.coinmarket  —  .coinmarket coin <adet|XP xp|hepsi>  —  .coinmarket sat <adet>  —  .coinmarket al <numara>  —  .coinmarket kasa|anahtar <1-5> [adet]',
-  details: [
+  get details() {
+    return [
     `Kur piyasadaki paraya göre anlık değişir, en az ${binlik(COIN_TABAN)} XP. \`.coinmarket coin 2\` cüzdandaki XP ile 2 coin alır.`,
     '`.coinmarket coin 1 milyar xp` 1 milyar XP\'nin aldığı kadar coin alır, `.coinmarket coin hepsi` bütün cüzdanla. Coin küsuratlı olmaz: artan XP cüzdanda kalır.',
     `\`.coinmarket sat 2\` coini kurun %${BOZDURMA_YUZDESI}'ine bozdurur. Kur gün içinde çıktıysa bozdurma günün ilk kuruyla yapılır. Ödenen XP yanar. Açık kredin varken coin alamazsın.`,
     '`.coinmarket al 1` ürünü coinle alır. Unvan `.market` unvanının yerine geçer.',
     'Toplu soygun hakkı `.soygun herkes` ile kullanılır. Coin her grupta ayrıdır.',
     'Toplu haciz `.hacizall` ile kullanılır, coin o an düşer.',
-    `\`.coinmarket kasa 3\` T3 kasa, \`.coinmarket anahtar 3 2\` iki T3 anahtar alır. Kasa haftada en çok ${HAFTALIK_ALIM}, anahtar sınırsız. Açmak için \`.kasa aç 3\`.`,
-  ],
+    `\`.coinmarket kasa 3\` T3 kasa, \`.coinmarket anahtar 3 2\` iki T3 anahtar alır. Kasa haftada en çok ${ayarDeger('kasaHaftalikAlim')}, anahtar sınırsız. Açmak için \`.kasa aç 3\`.`,
+    ]
+  },
   category: 'ekonomi',
   cooldown: 5,
   ownerOnly: false,

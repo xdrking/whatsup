@@ -194,6 +194,7 @@ Grup komutları özel sohbette çalışmaz, kısa bir uyarıyla döner.
 | `.haciz @kişi 2000` | **Yalnızca owner.** Önce bankadan, yetmezse cüzdandan alıp botun bankasına aktarır. Onlar da yetmezse kalanı cüzdana eksi yazar, eksi kısım kasaya girmez. `hepsi` ve `yarısı` banka hesabına göredir. Kesinti yoktur, kredi borcundan düşmez. Sonuç grupta yazılır |
 | `.xpver <grup id> <numara ya da @lid id> <miktar>` | **Yalnızca owner, yalnızca özelden.** Gruptaki kişiye XP verir/alır (`-50`); grupta yazılırsa yok sayılır. Grup id'si ve kişinin id'si grupta `.id @kişi` ile öğrenilir (`Sohbet` ve `Hedef` satırları) |
 | `.coinver <grup id> <numara ya da @lid id> <adet>` | **Yalnızca owner, yalnızca özelden.** `.xpver` gibi, coin verir/alır (`-2`); bakiye sıfırın altına inmez, grupta yazılırsa yok sayılır |
+| `.yonetim kod [moderatör\|yönetici] [ad]` | **Yalnızca owner, yalnızca özelden.** Yönetim paneline (`/yonetim`) tek kullanımlık, 10 dakikalık giriş kodu verir. Argümansız kod sahibindir; `.yonetim kod moderatör Ali` Ali için kod üretir, kodu sen iletirsin. `.yonetim liste` panele girebilenleri, `.yonetim kapat Ali` erişimi kapatır |
 | `.reborn <grup id>` → `.reborn onay <grup id>` | **Yalnızca owner, yalnızca özelden.** İlki önizler, ikincisi grupta herkesi etiketleyip ekonomiyi sıfırlama oylaması açar (10 dk, evet fazlaysa uygulanır). `.reborn iptal <grup id>` oylamayı kapatır. Ayrıntı: özelden `.help reborn` |
 
 Sayaçlar sohbet başına ayrı tutulur ve `data/stats.db` içinde kalıcıdır.

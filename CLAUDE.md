@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Kişisel, eğlence amaçlı bir WhatsApp botu. Tek bir arkadaş grubunda kullanılır.
 
 - **Ticari değil.** Ücretli özellik, müşteri, SLA yok.
-- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz. İstisnalar sahibin `.darbe`'si ve `.reborn` oylaması (grup üyelerine özelden yazar, Faz 49 ve Faz 63) ve susturulduğu halde yazmaya devam edene özelden giden uyarıdır (Faz 54), bir de özelden yazılan `.hack`'in ve maskeli `.soygun`'un gruba düşen duyurusudur (Faz 73, Faz 74); ilk ikisi de bot sahibinin kararıdır, ban riski bilerek kabul edildi.
+- **Toplu mesaj / spam / numara toplama yapılmaz.** Bot yalnızca kendisine gelen komutlara yanıt verir; kendiliğinden mesaj başlatmaz. İstisnalar sahibin `.darbe`'si ve `.reborn` oylaması (grup üyelerine özelden yazar, Faz 49 ve Faz 63) ve susturulduğu halde yazmaya devam edene özelden giden uyarıdır (Faz 54), bir de özelden yazılan `.hack`'in ve maskeli `.soygun`'un gruba düşen duyurusudur (Faz 73, Faz 74), bir de yönetim panelinden atılan duyuru ve kasa yağmurudur (Faz 90, aynı gruba 10 dakikada en çok bir duyuru); ilk ikisi de bot sahibinin kararıdır, ban riski bilerek kabul edildi.
 - Kod kalitesi hedefi: bir kişinin altı ay sonra okuyup anlayabileceği sadelik. Üretim ölçekli soyutlama, DI container, mikroservis vb. **istenmiyor**.
 
 ## Stack
@@ -72,7 +72,7 @@ index.js        Giriş noktası: Baileys soketi, QR, yeniden bağlanma, event ka
 lib/            Paylaşılan yardımcılar (logger, mesaj parse, komut yönlendirme)
 commands/       Her komut ayrı dosya + index.js komutları otomatik yükler
 games/          Oyun mantığı ve oyun veri havuzları (.kelime, .kimim, .quiz, .düello, .emoji, .adamasmaca, .evlen, .dava, .hilo, .kule, .yarış, .wordle, .tabu, .vampir, .poker, .vurgun)
-panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58), sosyal bölüm (Faz 66), Suly borsası ve SulyMarket (Faz 74), Kasalar (Faz 89)
+panel/          Web paneli: bottan ayrı süreç, istatistiği salt okunur okur, kumarhane XP yazar (Faz 58), sosyal bölüm (Faz 66), Suly borsası ve SulyMarket (Faz 74), Kasalar (Faz 89), yönetim paneli `/yonetim` (Faz 90)
 scripts/        Tek seferlik bakım raporları, veritabanını salt okunur açar (`wordle-rapor.js`)
 test/           node --test dosyaları (soket gerektirmeyen mantık)
 data/           Eğlence komutlarının içerik havuzları (JSON dizileri) + stats.db
@@ -169,6 +169,9 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `panel/sosyal.js` | sosyal bölümde bir kez gösterilen sonuç, iki yazma arası bekleme, DM ve grup sohbetinde "yazıyor" sinyali, son çevrimiçi yazımı | panel belleği (panelle ölür) |
 | `panel/kumar.js` | paylaşılmamış son büyük kazanç (akışta paylaşılır) | panel belleği (panelle ölür) |
 | `lib/db.js` + `lib/panelHesap.js` | panel oturumları (jetonun sha256 özeti) | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/yonetim.js` | yöneticiler, giriş kodları (sha256 özeti), panelin bota bıraktığı işler, işlem kaydı, bot nabzı | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/ayarlar.js` | yönetim panelinden değişen ayarlar (`ayar.yonetim:*`), 10 sn bellekte | `data/stats.db` (kalıcı) |
+| `panel/yonetim.js` | yönetim panelinde bir kez gösterilen sonuç, iki işlem arası bekleme | panel belleği (panelle ölür) |
 | tarayıcı çerezi `tema` | sosyal bölümün açık/koyu tema tercihi | tarayıcıda |
 
 WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp yolu bir üyenin açıkça yazdığı `.paylaş`'tır (Faz 69): yalnızca yanıtlanan o mesaj akışa yazılır. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
@@ -373,7 +376,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 87 (tamam):** Suly piyasadan çıktı (kur döngüsü), alış kuru, `.tüik`'te Suly fiyatı. Faz 36 ve Faz 50 bölümlerine işlendi.
 - **Faz 88 (tamam):** panelde Emlak: mülk al, sat, devret, animasyonlu yükseltme. Ayrıntı aşağıda.
 - **Faz 89 (tamam):** `.kasa` (5 tier kasa ve anahtar), coinmarket'te kasa, taktik NFT serisi, Mistik; panelde Kasalar, Çark ve Coin Market. Ayrıntı aşağıda.
-- **Faz 90+:** yeni komutlar, her biri ayrı adım
+- **Faz 90 (tamam):** yönetim paneli 1. aşama: `.yonetim kod`, roller, ayarlar, duyuru, ekonomi ve kasa işlemleri, kayıt defteri. Ayrıntı aşağıda.
+- **Faz 91+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -986,7 +990,7 @@ girmez: yeni ürün eklenince numarası kayar.
 ### Faz 31 — Web paneli
 
 Numara ban yese ya da grup dağılsa da veriler görülsün diye vardır. Bottan ayrı süreçtir, WhatsApp'a
-hiç bağlanmaz, istatistikleri `data/stats.db`'den **salt okunur** okur. Yazan özellikler kumarhane (Faz 58), sosyal bölüm (Faz 66) ve oturum tablosudur (Faz 72), ilk ikisi bot sahibinin kararıdır; başka veri değiştiren panel özelliği eklenmez.
+hiç bağlanmaz, istatistikleri `data/stats.db`'den **salt okunur** okur. Yazan özellikler kumarhane (Faz 58), sosyal bölüm (Faz 66), oturum tablosu (Faz 72) ve yönetim panelidir (Faz 90); kumarhane, sosyal bölüm ve yönetim paneli bot sahibinin kararıdır; başka veri değiştiren panel özelliği eklenmez.
 Yeni npm paketi yoktur: Node `http` + sunucuda üretilen HTML + `panel/stil.css`.
 
 ```
@@ -1630,6 +1634,29 @@ Bot sahibinin isteğiyle CS tarzı kasalar. Kurallar `lib/sandik.js`'te saftır,
 - **Panel** (`panel/kasaSayfalari.js`, menüde 🎁 Ödüller): **Kasalar** (`/oyun/kasa`) envanter, açma, kasa ve anahtar alma, içerik yüzdeleri, devir; **Çark** (`/oyun/cark`) `carkOyna`'yı çağırır, WhatsApp'taki `.çark` ile aynı haklardır; **Coin Market** (`/oyun/coinmarket`) `COIN_URUNLERI` (`.hacizall` hariç, o yalnızca WhatsApp'ta işler) ve kasa/anahtar satışı. İşlemler `panel/hesap.js`'tedir (`cark`, `coinmarket-al`, `kasa-al`, `anahtar-al`, `kasa-ac`, `kasa-devret`).
 - **Açılış animasyonu** (`panel/kasa.js`, `window.KasaAcilis`): sonuç işlem anında sunucuda belli olur; bildirim `kasaAc` alanında 44 kutuluk şeridi (`serit`, kazanan 38. sırada) taşır. Şerit 6,8 sn'de yavaşlayarak kayar, kazanan kutu ortadaki altın çizgide durur (kutunun ortasına değil, rastgele biraz yanına), geçen her kutuda tık sesi; kırmızı ve altında parlama, konfeti ve fanfar. Çark tekerleği sunucuda SVG çizilir, grup sonuca dönük durur, dış kap ondan geri sarılıp sıfıra döner (betik yoksa sonuç düz görünür). Hareketler WAAPI, yalnızca transform ve opacity; parçacıklar `window.SekerEfekt`, sesler `window.KumarhaneSes`. `oyun.js` `canlandir`'da önce bunları sorar.
 
+### Faz 90 — Yönetim paneli (1. aşama)
+
+```
+yonetici(id, ad, rol, eklendi, son_giris, aktif, surum)                               rol sahip|yonetici|moderator
+yonetim_kod(ozet PK, yonetici_id, bitis)                                              kodun sha256 özeti
+yonetim_is(id, chat_jid, tur, veri JSON, durum, yonetici_id, zaman, islendi, sonuc)   tur duyuru|kasa_dagit
+yonetim_kayit(id, yonetici_id, ad, rol, islem, ayrinti, zaman)
+ayar 'yonetim:<anahtar>', 'bot_nabiz'
+```
+
+Bot sahibinin isteğiyle botu sahip ve yetki verdiği kişilerin yönettiği ayrı bir panel. Aynı panel sürecindedir, `/yonetim` yollarıdır: kurallar ve yazma `lib/yonetim.js` ve `lib/ayarlar.js`'te, yollar ve işlemler `panel/yonetim.js`'te, HTML `panel/yonetimSayfalari.js`'te, stil `panel/yonetim.css`'tedir. Betik yoktur, her işlem bir formdur.
+
+- **Giriş:** yalnızca `.env`'deki sahip bota özelden `.yonetim kod` yazar (`hidden`, `ownerOnly`, grupta iz bırakmadan düşer). Argümansız kod sahibin kendisinindir; `.yonetim kod moderatör Ali` Ali için kod üretir, sahip kodu kendisi iletir. Kod tek kullanımlıktır, 10 dakika geçerlidir (`KOD_MS`), tabloda yalnızca sha256 özeti durur; kişinin yeni kodu eskisini siler. Giriş eski panelin deneme sınırını paylaşır. Kişi adla bulunur (büyük küçük harf fark etmez), kapatılmış kişi yeni kodla yeniden açılır.
+- **Oturum** ayrı çerezdedir (`__Host-yonetim`), 12 saattir, `panel_oturum`'a `{ tur: 'yonetim', id, surum }` yazılır. Her istekte yönetici satırı yeniden okunur (`oturumYoneticisi`): kapatılan ya da rolü değişen (`surum`) hemen düşer. Ana çerezde `yonetim` türü oturum eski yönetici sayılmaz: `panel/sunucu.js` yalnızca `oyuncu` ve `yonetici` türünü kabul eder.
+- **Roller** (`IZINLER`): sahip her şey; yönetici duyuru, ekonomi, kasalar, ayarlar, kayıt defteri; moderatör gösterge ve duyuru. Sahip satırı tektir, kapatılamaz, rolü değişmez. Rolü ve erişimi Yöneticiler sayfasından ya da `.yonetim kapat <ad>` ile sahip değiştirir.
+- **İşlemler** (`ISLEMLER`) kural kopyalamaz, komutların fonksiyonlarını çağırır: `faizKarari` (sahip gibi, günlük sınır yok), `tesvikDagit`, `xpAyarla` (`.xpver`), `coinAyarla` (`.coinver`), `sandikVer` (haftalık sınırlara sayılmaz, eksi alır). Ad `Object.hasOwn` ile denetlenir. Para basan ya da hazineden dağıtan işlemler onay kutusu ister, sunucu da denetler. İki işlem arası 700 ms. Başarılı her işlem `yonetim_kayit`'e yazılır, giriş de.
+- **Ayarlar** (`lib/ayarlar.js:AYARLAR`): kasa düşme yüzdeleri ve haftalık sınırları, coinle alım sınırı, gecelik anahtar (aç/kapa) ve birikme günü, günlük kumar tavanı (piyasanın yüzdesi). Bütün gruplarda geçerlidir. Varsayılan `lib/sandik.js` ve `KUMAR_GUNLUK_TAVAN`'dadır; varsayılana dönen ayarın satırı silinir. Okuyan yer `ayarDeger()` çağırır, değer 10 sn bellekte kalır: panelde değişen ayar bota en geç 10 sn sonra geçer. Bu yüzden `.kasa` ve `.coinmarket`'in `details`'i getter'dır. Yeni ayar `AYARLAR`'a bir satırdır.
+- **İş kuyruğu:** panel WhatsApp'a bağlanmadığı için duyuru ve kasa yağmuru `yonetim_is`'e yazılır, bot `lib/yonetimIs.js` ile 5 sn'de bir işler (yalnızca bağlantı açıkken). İş alınırken `isleniyor` yazılır; bot yeniden başlarken yarıda kalan iş hata sayılır, yeniden denenmez: duyuru gitmiş olabilir. Susturulmuş (`.sus`) gruba gitmez, hata yazar. Sırada bekleyen iş iptal edilir.
+- **Duyuru** (bot sahibinin kararı, "kendiliğinden mesaj" kuralının istisnası): aynı gruba 10 dakikada en çok bir (`DUYURU_ARALIGI_MS`; denetim ve yazma aynı transaction'da, iptal ve hata sayılmaz), en çok 2000 karakter. "Herkesi etiketle" seçiliyse bütün üyeler `mentions`'a girer ama metne yazılmaz (gizli etiket): uzun @ listesi duyuruyu okunmaz yapardı. İmza "Yönetim"dir, yazan grupta görünmez, kayıt defterinde durur.
+- **Kasa yağmuru** `.kasa dağıt` ile aynıdır (`sandikDagit`, duyuru `kasaYagmuruMetni`).
+- **Nabız:** bot her turda `ayar.bot_nabiz` yazar, panel 30 sn'den eskisini çevrimdışı gösterir. Bot bağlı değilken duyuru sırada bekler.
+- **Görünüm:** koyu "kontrol odası", 860 px altında yan menü üst çubuğa döner. Izgara `minmax(0, 1fr)`'dir: `1fr` olunca kayan menü sayfayı telefonda 762 px'e genişletiyordu.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1804,3 +1831,7 @@ Bot sahibinin isteğiyle CS tarzı kasalar. Kurallar `lib/sandik.js`'te saftır,
 156. `.kasa` → beş tier, kasa ve anahtar sayıları, bugünün anahtarı; ertesi gün yine `.kasa` → "Gece anahtarın geldi". `.coinmarket kasa 3` → coin düşer, sekizinci kasa haftada reddedilir; `.coinmarket anahtar 3 2` → iki anahtar. `.kasa aç 3` → ödül satırı rengiyle; anahtarsız → "anahtarın yok". `.kasa devret @kişi anahtar 3` → karşıda görünür. WhatsApp'ta `.slot` kazanınca ara sıra "🎁 Kasa düştü"; panel kumarında hiç düşmez
 157. Panelde Ödüller › Kasalar → AÇ: şerit kayar, tıklar yavaşlar, ortadaki çizgide durur, rengine göre parlama ve ses; Geç atlar. Çark → ÇEVİR: tekerlek döner, oktaki dilim sonuç yazısıyla aynı. Coin Market → ürün alınır, WhatsApp'ta `.coinmarket` aynı coini gösterir. Telefonda yatay taşma yok
 158. Sahip grupta `.kasa dağıt` → "KASA YAĞMURU", her üye listede T1-T4 bir kasayla, kimse etiketlenmez; `.kasa` her üyede +1 kasa; sıradan üye yazarsa hiç tepki yok
+159. Sahip bota özelden `.yonetim kod` → kod gelir; panelde `/yonetim` → giriş, kod yazınca Gösterge; aynı kod ikinci kez → "kullanılmış"; grupta `.yonetim` → hiç tepki yok
+160. Duyurular'da metin yaz, Sıraya koy → birkaç saniyede grupta "📢 DUYURU", herkese bildirim düşer, metinde @ listesi yok; hemen ikinci duyuru → "10 dakika geçmedi"; bot kapalıyken sıraya konan duyuru bot açılınca gider; Gösterge "Bot çevrimdışı" yazar
+161. `.yonetim kod moderatör Ali` ile giren Ali yalnızca Gösterge ve Duyurular'ı görür, `/yonetim/ekonomi` → yetki yok; sahip Yöneticiler'den kapatınca Ali'nin sayfası girişe düşer
+162. Kasalar'da "Coinle haftalık kasa alım sınırı" 2 yapılınca 10 sn içinde WhatsApp'ta `.kasa al 1 3` → "en çok 2"; Ekonomi'de faiz 12,5 → `.banka` %12,5 yazar; XP ver → `.profil` artar; Kayıt defteri hepsini listeler

@@ -23,6 +23,7 @@ import { sosyalIsle, sosyalMotoru } from './sosyal.js'
 import { ikonlar, MANIFEST } from './pwa.js'
 import { pushMotoru } from './push.js'
 import { bildirimKancasiKur } from '../lib/sosyal.js'
+import { yonetimIsle, yonetimMotoru } from './yonetim.js'
 
 const CEREZ = '__Host-panel'
 const AZAMI_GOVDE = 1024
@@ -81,10 +82,11 @@ function bekleMetni(ms) {
 }
 
 /** @param {{ sifreHash: string, veri: object, yedekKlasoru: string }} ayar */
-export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru(), push = pushMotoru(), depo = oturumDeposu(), fiyat = btcFiyati, gecmis = btcGecmisi }) {
+export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru(), hesap: hesapIsleri = hesapMotoru(), sosyal = sosyalMotoru(), push = pushMotoru(), depo = oturumDeposu(), yonetim = null, fiyat = btcFiyati, gecmis = btcGecmisi }) {
   bildirimKancasiKur(push)
   const sinir = denemeSiniri()
   const oturum = oturumlar({ depo })
+  const yonetimM = yonetim ?? yonetimMotoru({ depo, veri })
   // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.
   const sahteHash = sifreHashle('panel-sahte-sifre')
 
@@ -360,8 +362,13 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
     const nftYolu = yontem === 'GET' && /^\/nft\/(\d{1,3})\.png$/.exec(url.pathname)
     if (nftYolu) return nftGonder(res, nftYolu[1])
 
+    // Yönetim paneli (Faz 90) kendi çerezi ve oturumuyla çalışır.
+    if (await yonetimIsle({ req, res, url, yontem, motor: yonetimM, ortak: { gonder, yonlendir, govdeOku, sinir, istemciIp, bekleMetni } })) return
+
     const jeton = cerezOku(req)
-    const kim = oturum.veri(jeton)
+    // Yönetim oturumunun jetonu bu çereze yazılsa bile eski yönetici sayılmaz: yalnızca bilinen iki tür geçer.
+    const okunan = oturum.veri(jeton)
+    const kim = okunan?.tur === 'oyuncu' || okunan?.tur === 'yonetici' ? okunan : null
     const girisli = Boolean(kim)
 
     if (yol === 'POST /giris') return girisYap(req, res)

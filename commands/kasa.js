@@ -1,8 +1,7 @@
 import { ambargoMesaji } from '../lib/devlet.js'
 import { requireGroup, requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
-import {
-  ANAHTAR_BIRIKME, HAFTALIK_ALIM, HAFTALIK_KUMAR, HAFTALIK_SOYGUN, KASALAR, kasaBul, KUMAR_DUSME, odulMetni, RENKLER, SOYGUN_DUSME, tierCoz,
-} from '../lib/sandik.js'
+import { kasaBul, KASALAR, kasaYagmuruMetni, odulMetni, RENKLER, tierCoz } from '../lib/sandik.js'
+import { ayarDeger } from '../lib/ayarlar.js'
 import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, sandikAc, sandikAl, sandikDagit, sandikDevret, sandikDurumu } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
@@ -24,7 +23,7 @@ export async function sandikSatinAl({ from, sender, tur, args, yaz }) {
   const kasa = kasaBul(tier)
   const s = sandikAl({ chatJid: from, userJid: sender, tur, tier, adet })
   if (!s) return yaz(KAPALI)
-  if (s.sinir !== undefined) return yaz(`🎁 Bu hafta coinle en çok ${HAFTALIK_ALIM} kasa alınır. Kalan hakkın: ${Math.max(0, s.sinir)}`)
+  if (s.sinir !== undefined) return yaz(`🎁 Bu hafta coinle en çok ${ayarDeger('kasaHaftalikAlim')} kasa alınır. Kalan hakkın: ${Math.max(0, s.sinir)}`)
   if (s.yetersiz) return yaz(`🪙 ${binlik(s.ucret)} coin gerekiyor, sende ${binlik(s.bakiye)} var.`)
   return yaz([
     `🎁 ${adet} × *${kasa.ad}${tur === 'anahtar' ? ' anahtarı' : ''}* alındı, ${binlik(s.ucret)} coin ödendi.`,
@@ -43,7 +42,7 @@ function durumMetni(d) {
     ...(d.yeniAnahtar.length ? [`🔑 Gece anahtarın geldi: ${d.yeniAnahtar.map((t) => `T${t}`).join(', ')}`, ''] : ['']),
     ...KASALAR.map(satir),
     '',
-    `📅 Bu hafta düşen: kumardan ${d.hafta.kumar}/${HAFTALIK_KUMAR}, soygundan ${d.hafta.soygun}/${HAFTALIK_SOYGUN}  •  coinle alınan: ${d.hafta.alim}/${HAFTALIK_ALIM}`,
+    `📅 Bu hafta düşen: kumardan ${d.hafta.kumar}/${ayarDeger('kasaHaftalikKumar')}, soygundan ${d.hafta.soygun}/${ayarDeger('kasaHaftalikSoygun')}  •  coinle alınan: ${d.hafta.alim}/${ayarDeger('kasaHaftalikAlim')}`,
     `🪙 Coin: ${binlik(d.coin)}`,
     '',
     '`.kasa aç 3` aynı tier\'den bir kasa ve bir anahtar harcar. Kasa ve anahtar `.coinmarket`\'te satılır.',
@@ -55,15 +54,18 @@ export default {
   aliases: ['kasalar', 'sandık', 'sandik'],
   description: 'CS tarzı kasalar: anahtarla aç, coin, kart, unvan ve NFT çıkar',
   usage: KULLANIM,
-  details: [
+  // Sayılar yönetim panelinden değişebildiği için her okumada yeniden yazılır (Faz 90).
+  get details() {
+    return [
     `5 tier: ${KASALAR.map((k) => `T${k.tier} ${k.ad} (${k.fiyat} coin, anahtarı ${k.anahtar})`).join(', ')}.`,
-    `Her gece herkese 1 rastgele anahtar verilir (\`.kasa\` yazınca gelir, en çok ${ANAHTAR_BIRIKME} gün birikir).`,
-    `Kasa WhatsApp kumarında kazanınca %${KUMAR_DUSME}, başarılı soygunda %${SOYGUN_DUSME} olasılıkla düşer: haftada kumardan ${HAFTALIK_KUMAR}, soygundan ${HAFTALIK_SOYGUN}. Panel kumarında düşmez.`,
-    `Coinle haftada en çok ${HAFTALIK_ALIM} kasa alınır: \`.kasa al 3\` ya da \`.coinmarket kasa 3\`. Anahtar sınırsız: \`.kasa anahtar 3\`.`,
+    ayarDeger('kasaGecelikAnahtar') ? `Her gece herkese 1 rastgele anahtar verilir (\`.kasa\` yazınca gelir, en çok ${ayarDeger('kasaAnahtarBirikme')} gün birikir).` : 'Gecelik bedava anahtar şu an kapalı.',
+    `Kasa WhatsApp kumarında kazanınca %${ayarDeger('kasaKumarDusme')}, başarılı soygunda %${ayarDeger('kasaSoygunDusme')} olasılıkla düşer: haftada kumardan ${ayarDeger('kasaHaftalikKumar')}, soygundan ${ayarDeger('kasaHaftalikSoygun')}. Panel kumarında düşmez.`,
+    `Coinle haftada en çok ${ayarDeger('kasaHaftalikAlim')} kasa alınır: \`.kasa al 3\` ya da \`.coinmarket kasa 3\`. Anahtar sınırsız: \`.kasa anahtar 3\`.`,
     `Ödülün rengi nadirliğidir: ${Object.values(RENKLER).map((r) => `${r.emoji} ${r.ad}`).join(', ')}. Mistik Kasası'ndan çok düşük olasılıkla Suly NFT'si çıkar.`,
     '`.kasa devret @ali anahtar 2` iki T2 anahtarını Ali\'ye verir. Borçluyken ve ambargodayken devredilemez.',
     'Panelde kasa açılışı animasyonludur: Kumarhane › Kasalar.',
-  ],
+    ]
+  },
   category: 'ekonomi',
   cooldown: 3,
   ownerOnly: false,
@@ -99,13 +101,7 @@ export default {
         const dagitilan = sandikDagit({ chatJid: from, uyeler: metadata.participants.map((u) => u.id) })
         if (!dagitilan) return await yaz(KAPALI)
         // Herkes etiketlenmez: liste büyük grupta herkese bildirim düşürürdü. Ad düz yazılır.
-        return await yaz([
-          `🎁 *KASA YAĞMURU!* ${dagitilan.length} kişiye birer kasa düştü:`,
-          '',
-          ...dagitilan.map((d) => `${kasaBul(d.tier).ad.split(' ')[0]} ${displayName(d.jid)} — ${kasaBul(d.tier).ad.replace(/^\S+\s/, '')}`),
-          '',
-          'Açmak için `.kasa aç <tier>` (anahtar gerekir).',
-        ].join('\n'))
+        return await yaz(kasaYagmuruMetni(dagitilan, displayName))
       }
 
       if (['al', 'satınal', 'satinal'].includes(islem)) return await sandikSatinAl({ from, sender, tur: 'kasa', args: args.slice(1), yaz })

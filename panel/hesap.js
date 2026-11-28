@@ -15,7 +15,8 @@ import {
 import { MULKLER, YUKSELTME_ADEDI } from '../lib/mulk.js'
 import { carkCevir, EKSTRA_GUNLUK, ODULLER as CARK_ODULLERI } from '../lib/cark.js'
 import { COIN_URUNLERI } from '../lib/coin.js'
-import { HAFTALIK_ALIM, kasaBul, odulMetni, serit } from '../lib/sandik.js'
+import { kasaBul, odulMetni, serit } from '../lib/sandik.js'
+import { ayarDeger } from '../lib/ayarlar.js'
 import { botGonderisi, uyeler } from '../lib/sosyal.js'
 import { displayName } from '../lib/target.js'
 import { AZAMI_ADET, kutuMetni, urunKoduyla } from '../lib/sulymarket.js'
@@ -47,7 +48,7 @@ function kasaSatinAl({ chat, user }, { urun, miktar }, tur) {
   if (!adet || adet > 999) return hata('Kaç tane alacağını yaz.')
   const s = sandikAl({ chatJid: chat, userJid: user, tur, tier: kasa.tier, adet })
   if (!s) return hata('Kasa deposu şu an kapalı.')
-  if (s.sinir !== undefined) return hata(`Bu hafta coinle en çok ${HAFTALIK_ALIM} kasa alınır. Kalan hakkın: ${Math.max(0, s.sinir)}`)
+  if (s.sinir !== undefined) return hata(`Bu hafta coinle en çok ${ayarDeger('kasaHaftalikAlim')} kasa alınır. Kalan hakkın: ${Math.max(0, s.sinir)}`)
   if (s.yetersiz) return hata(`${sayi.format(s.ucret)} coin gerekiyor, sende ${sayi.format(s.bakiye)} var.`)
   return tamam(`${adet} × ${kasa.ad}${tur === 'anahtar' ? ' anahtarı' : ''} alındı, ${sayi.format(s.ucret)} coin ödendi.`)
 }

@@ -16,6 +16,7 @@ import { gonderilenMesaj, trackOutgoing } from './lib/outgoing.js'
 import { grupOnbellekSil, soketGrupBilgisi } from './lib/group.js'
 import { panelGrupKapat, panelUyeCikar } from './lib/panelHesap.js'
 import { loadCommands } from './commands/index.js'
+import { yonetimDongusu } from './lib/yonetimIs.js'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const AUTH_DIR = path.join(ROOT, 'auth')
@@ -35,6 +36,8 @@ function ageSeconds(timestamp) {
 
 let commands = new Map()
 let reconnectAttempts = 0
+// Yönetim işleri yalnızca açık bağlantıyla işlenir (lib/yonetimIs.js).
+let acikSoket = null
 
 async function connect() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR)
@@ -72,10 +75,12 @@ async function connect() {
 
     if (connection === 'open') {
       reconnectAttempts = 0
+      acikSoket = sock
       logger.info('Bağlantı kuruldu. Bot hazır.')
     }
 
     if (connection === 'close') {
+      if (acikSoket === sock) acikSoket = null
       const statusCode = lastDisconnect?.error?.output?.statusCode
 
       // Oturum kapatılmışsa yeniden bağlanmak sonsuz döngüdür: kimlik
@@ -136,6 +141,7 @@ async function connect() {
 async function main() {
   commands = await loadCommands()
   logger.info(`${new Set(commands.values()).size} komut yüklendi`)
+  yonetimDongusu(() => acikSoket)
   await connect()
 }
 
