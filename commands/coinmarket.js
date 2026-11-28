@@ -5,7 +5,7 @@ import { binlik, xpButcesi } from '../lib/sayi.js'
 import { coinAl, coinDurumu, coinMarketAl, coinSat, ekonomiDurumu, getStats, sigortaBitisi } from '../lib/stats.js'
 import { trLower } from '../lib/turkishWords.js'
 import { KASALAR } from '../lib/sandik.js'
-import { ayarDeger } from '../lib/ayarlar.js'
+import { anahtarFiyati, ayarDeger, kasaFiyati } from '../lib/ayarlar.js'
 import { sandikSatinAl } from './kasa.js'
 import logger from '../lib/logger.js'
 
@@ -90,7 +90,7 @@ export default {
         ...COIN_URUNLERI.map((u, i) => `${i + 1}. ${u.ad} — ${u.fiyat} coin`),
         '',
         '🎁 *Kasalar* (kasa / anahtar)',
-        ...KASALAR.map((k) => `T${k.tier} ${k.ad} — ${k.fiyat} / ${k.anahtar} coin`),
+        ...KASALAR.map((k) => `T${k.tier} ${k.ad} — ${kasaFiyati(k.tier)} / ${anahtarFiyati(k.tier)} coin`),
         '',
         `💰 Coin: ${binlik(bakiye)}  •  XP'n: ${binlik(getStats(from, sender).xp)}`,
         ...(topluHak ? [`💣 Toplu soygun hakkın: ${topluHak}`] : []),

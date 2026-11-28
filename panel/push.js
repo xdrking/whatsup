@@ -5,6 +5,7 @@ import { createPrivateKey, generateKeyPairSync, sign } from 'node:crypto'
 import { getDb } from '../lib/db.js'
 import logger from '../lib/logger.js'
 import { pushAlicilari, pushSil } from '../lib/sosyal.js'
+import { yonetimPushSil } from '../lib/yonetim.js'
 
 // Kullanıcı aboneliği kendisi gönderir, sunucu o adrese istek atar: yalnızca bilinen push
 // servislerine izin verilir, yoksa iç ağdaki bir adres kaydedilip sunucuya istek attırılırdı.
@@ -89,7 +90,10 @@ export function pushMotoru({ gonder = fetch, zamanlayici = setTimeout } = {}) {
         signal: AbortSignal.timeout(10_000),
       })
       // Abonelik ölmüş: cihaz izni kaldırdı ya da uygulama silindi.
-      if (yanit.status === 404 || yanit.status === 410) pushSil(endpoint)
+      if (yanit.status === 404 || yanit.status === 410) {
+        pushSil(endpoint)
+        yonetimPushSil(endpoint)
+      }
       // Gövde servisin sebebidir (Apple: {"reason":"BadJwtToken"}); adres yazılmaz, aboneliğin anahtarıdır.
       else if (!yanit.ok) logger.warn({ status: yanit.status, servis: new URL(endpoint).hostname, sebep: (await yanit.text().catch(() => '')).slice(0, 200) }, 'Push servisi reddetti')
     } catch (err) {
@@ -97,7 +101,7 @@ export function pushMotoru({ gonder = fetch, zamanlayici = setTimeout } = {}) {
     }
   }
 
-  return function kanca(chatJid, userJid) {
+  const kanca = function kanca(chatJid, userJid) {
     const anahtar = `${chatJid}|${userJid}`
     if (bekleyen.has(anahtar)) return
     bekleyen.add(anahtar)
@@ -106,4 +110,7 @@ export function pushMotoru({ gonder = fetch, zamanlayici = setTimeout } = {}) {
       for (const endpoint of pushAlicilari(chatJid, userJid)) cihazaGonder(endpoint)
     }, BEKLEME_MS)
   }
+  // Yönetim uyarıları (Faz 93) aynı cihaz aralığıyla doğrudan gönderilir.
+  kanca.cihaza = cihazaGonder
+  return kanca
 }

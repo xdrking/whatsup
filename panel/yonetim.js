@@ -4,7 +4,7 @@
 import { createReadStream, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { ASGARI_FAIZ, AZAMI_FAIZ, faizOranCoz, oranYaz } from '../lib/banka.js'
-import { AYARLAR, ayarListesi, ayarYaz } from '../lib/ayarlar.js'
+import { AYARLAR, ayarDeger, ayarListesi, ayarYaz } from '../lib/ayarlar.js'
 import logger from '../lib/logger.js'
 import { kasaBul } from '../lib/sandik.js'
 import { binlik, miktarlariCoz } from '../lib/sayi.js'
@@ -22,14 +22,16 @@ import { acikHikayeler, ENGEL_AZAMI_SAAT, engelKaldir, engelliler, engelYaz, gon
 import { loadCommands } from '../commands/index.js'
 import { panelOyunlari } from './oyunSayfalari.js'
 import {
-  DUYURU_AZAMI, ZAMANLAMA_AZAMI_MS, duyuruBekleme, isEkle, isIptal, isler, izinVar, kayitlar, kayitYaz, kodlaGir, NABIZ_ESIGI_MS, nabizOku,
-  oturumYoneticisi, ROLLER, yoneticiBul, yoneticiGuncelle, yoneticiListesi,
+  DUYURU_AZAMI, ZAMANLAMA_AZAMI_MS, duyuruBekleme, kayitAra, kayitIslemleri, uyariVar, uyariYaz, uyarilar, yeniUyari,
+  yonetimPushAlicilari, yonetimPushKaydet, yonetimPushSil, yonetimPushVar, isEkle, isIptal, isler, izinVar, kayitlar, kayitYaz, kodlaGir, NABIZ_ESIGI_MS, nabizOku,
+  oturumYoneticisi, ROLLER, UYARI_TURLERI, yoneticiBul, yoneticiGuncelle, yoneticiListesi,
 } from '../lib/yonetim.js'
 import { oturumlar } from './guvenlik.js'
 import { hazineyiTani } from './kumar.js'
 import { elleYedekAl, yedekListesi, yedekYolu } from './yedek.js'
+import { endpointGecerli, vapid } from './push.js'
 import {
-  devletSayfasi, duyuruSayfasi, sistemSayfasi, sosyalSayfasi, ekonomiSayfasi, gostergeSayfasi, gruplarSayfasi, kasaSayfasi, kayitSayfasi,
+  devletSayfasi, duyuruSayfasi, grafikSayfasi, sistemSayfasi, sosyalSayfasi, topluSayfasi, uyarilarSayfasi, ekonomiSayfasi, gostergeSayfasi, gruplarSayfasi, kasaSayfasi, kayitSayfasi,
   kumarhaneSayfasi, uyelerSayfasi, uyeSayfasi, YONETIM_SAYFALARI, yasakSayfasi, yoneticilerSayfasi, yonetimGiris,
 } from './yonetimSayfalari.js'
 
@@ -37,6 +39,8 @@ const CEREZ = '__Host-yonetim'
 // Yönetim oturumu kısadır: açık kalan bir tarayıcı ekonomiye günlerce dokunabilmesin.
 const OTURUM_MS = 12 * 60 * 60_000
 const STIL = readFileSync(new URL('./yonetim.css', import.meta.url))
+// Tek betik: uyarı aboneliği (Faz 93). Satır içi betik yine yasaktır.
+const BETIK = readFileSync(new URL('./yonetim-istemci.js', import.meta.url))
 const tarihYaz = (x) => new Date(x).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 /**
@@ -76,7 +80,7 @@ function cerezOku(req) {
 }
 
 const SAYFA_CIZIMI = {
-  gosterge: gostergeSayfasi, duyuru: duyuruSayfasi, ekonomi: ekonomiSayfasi, kasa: kasaSayfasi, uyeler: uyelerSayfasi,
+  gosterge: gostergeSayfasi, duyuru: duyuruSayfasi, uyarilar: uyarilarSayfasi, grafik: grafikSayfasi, toplu: topluSayfasi, ekonomi: ekonomiSayfasi, kasa: kasaSayfasi, uyeler: uyelerSayfasi,
   uye: uyeSayfasi, devlet: devletSayfasi, sosyal: sosyalSayfasi, sistem: sistemSayfasi, kumarhane: kumarhaneSayfasi, gruplar: gruplarSayfasi,
   yoneticiler: yoneticilerSayfasi, kayit: kayitSayfasi,
 }
@@ -324,6 +328,36 @@ const ISLEMLER = {
       return { tamam: 'Şansın kapalı, normal oynuyorsun.', kayit: 'kapalı' }
     },
   },
+  // Faz 93: toplu işlem. Alıcılar: herkes, son 7 günde yazanlar ya da seçilenler (bot hiçbirinde yok).
+  toplu: {
+    izin: 'ekonomi', grup: true, onay: true,
+    yap({ f, chat, simdi }) {
+      const tur = String(f.get('tur') ?? '')
+      if (!['xp', 'coin', 'kasa', 'anahtar'].includes(tur)) return { hata: 'Tür seç.' }
+      const hedef = String(f.get('hedef') ?? '')
+      const tumu = grupUyeleri(chat)
+      const secilen = new Set(f.getAll('kisiler'))
+      const alicilar = hedef === 'hepsi' ? tumu
+        : hedef === 'aktif' ? tumu.filter((u) => u.last_seen >= simdi - 7 * 86_400_000)
+          : tumu.filter((u) => secilen.has(u.jid))
+      if (!alicilar.length) return { hata: 'Alıcı yok.' }
+      const ham = String(f.get('miktar') ?? '').trim()
+      const miktar = tur === 'xp' ? tutarCoz(ham) : /^[+-]?\d{1,9}$/.test(ham) ? Number(ham) : 0
+      if (!miktar) return { hata: 'Geçerli bir miktar yaz (eksi alır).' }
+      const kasa = tur === 'kasa' || tur === 'anahtar' ? kasaBul(f.get('tier')) : null
+      if ((tur === 'kasa' || tur === 'anahtar') && (!kasa || Math.abs(miktar) > 999)) return { hata: 'Tier seç, adet en çok 999.' }
+      let olan = 0
+      for (const u of alicilar) {
+        // last_seen değişmesin: toplu XP herkesi "son 7 günde yazan" gösterirdi.
+        const s = tur === 'xp' ? xpAyarla({ chatJid: chat, userJid: u.jid, miktar, at: u.last_seen })
+          : tur === 'coin' ? coinAyarla({ chatJid: chat, userJid: u.jid, adet: miktar })
+            : sandikVer({ chatJid: chat, userJid: u.jid, tur, tier: kasa.tier, adet: miktar })
+        if (s && !s.yok) olan += 1
+      }
+      const ne = tur === 'xp' ? `${binlik(miktar)} XP` : tur === 'coin' ? `${miktar} coin` : `${miktar} × T${kasa.tier} ${tur}`
+      return { tamam: `${olan} kişiye ${ne} uygulandı.`, kayit: `${ne} · ${olan} kişi (${hedef === 'hepsi' ? 'herkes' : hedef === 'aktif' ? 'son 7 gün' : 'seçilenler'})` }
+    },
+  },
   // Faz 92: sosyal moderasyon.
   'gonderi-sil': {
     izin: 'moderasyon', grup: true,
@@ -427,7 +461,7 @@ function komutListesi() {
   return komutlarSozu
 }
 
-export function yonetimMotoru({ depo = null, saat = Date.now, veri, yedekKlasoru = '' } = {}) {
+export function yonetimMotoru({ depo = null, saat = Date.now, veri, yedekKlasoru = '', push = null } = {}) {
   const ortam = { db: veri?.db, yedekKlasoru }
   const oturum = oturumlar({ depo, sure: OTURUM_MS, saat })
   const bildirimler = new Map()
@@ -437,6 +471,46 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri, yedekKlasoru
   const nabiz = () => {
     const son = nabizOku()
     return { son, cevrimici: Boolean(son) && saat() - son < NABIZ_ESIGI_MS }
+  }
+
+  // Uyarılar (Faz 93). Panel dakikada bir bakar; bot kendisi koptuğunda uyaramaz, bu yüzden denetim paneldedir.
+  // Botun önceki durumu bellektedir: panel açılırken bot zaten kapalıysa bir kez uyarılır.
+  let botAcikti = null
+  const sonGosterilen = new Map()
+  function uyar(tur, chatJid, metin) {
+    uyariYaz({ tur, chatJid, metin, now: saat() })
+    logger.warn({ tur, chatJid }, `Yönetim uyarısı: ${metin}`)
+    if (push?.cihaza) for (const endpoint of yonetimPushAlicilari()) push.cihaza(endpoint)
+  }
+  function uyariTuru() {
+    const simdi = saat()
+    const n = nabiz()
+    if (ayarDeger('uyariBot', simdi) && n.son) {
+      if (botAcikti !== false && !n.cevrimici && !uyariVar('bot', '', n.son)) uyar('bot', '', `Bot bağlantısı koptu (son nabız ${tarihYaz(n.son)}).`)
+      if (botAcikti === false && n.cevrimici) uyar('bot', '', 'Bot yeniden bağlandı.')
+    }
+    botAcikti = n.cevrimici
+    const esik = ayarDeger('uyariEnflasyon', simdi)
+    const gunBasi = Date.parse(`${new Date(simdi + 3 * 3_600_000).toISOString().slice(0, 10)}T00:00:00+03:00`)
+    for (const g of esik ? gruplar() : []) {
+      const e = ekonomiDurumu({ chatJid: g.chat_jid, now: simdi })
+      const artis = e?.gunKur ? Math.round(((e.kur - e.gunKur) / e.gunKur) * 100) : 0
+      if (artis >= esik && !uyariVar('enflasyon', g.chat_jid, gunBasi)) {
+        uyar('enflasyon', g.chat_jid, `${g.ad || 'Grup'}: coin kuru bugün %${artis} arttı (${tarihYaz(simdi)}).`)
+      }
+    }
+    if (n.cevrimici) {
+      const takilan = isler({ adet: 50 }).filter((i) => i.durum === 'bekliyor' && i.calisma < simdi - 5 * 60_000)
+      if (takilan.length && !uyariVar('is', '', simdi - 60 * 60_000)) uyar('is', '', `${takilan.length} yönetim işi 5 dakikadır bekliyor.`)
+    }
+  }
+
+  /** Servis işçisinin push özeti: bu yöneticinin görmediği son uyarı; yoksa null. */
+  function pushOzeti(y) {
+    const u = yeniUyari(sonGosterilen.get(y.id) ?? 0)
+    if (!u || u.zaman < saat() - 30 * 60_000) return null
+    sonGosterilen.set(y.id, u.id)
+    return { baslik: `${UYARI_TURLERI[u.tur]?.emoji ?? '⚠️'} Yönetim uyarısı`, metin: u.metin, adres: '/yonetim/uyarilar', etiket: `yonetim-${u.tur}` }
   }
 
   function grupBilgisi(g) {
@@ -458,11 +532,31 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri, yedekKlasoru
       const g = liste.find((x) => x.chat_jid === chat)
       return {
         ...v, grup: g ? grupBilgisi(g) : null, uyeler: chat ? grupUyeleri(chat) : [],
-        ayarlar: { ekonomi: ayarListesi('ekonomi'), kasa: ayarListesi('kasa') },
+        ayarlar: {
+          ekonomi: [...ayarListesi('ekonomi'), ...ayarListesi('fiyat').filter((a) => !/^(kasa|anahtar)Fiyat/.test(a.anahtar))],
+          kasa: [...ayarListesi('kasa'), ...ayarListesi('fiyat').filter((a) => /^(kasa|anahtar)Fiyat/.test(a.anahtar))],
+        },
       }
     }
     if (ad === 'yoneticiler') return { ...v, yoneticiler: yoneticiListesi() }
-    if (ad === 'kayit') return { ...v, kayitlar: kayitlar(200) }
+    if (ad === 'kayit') {
+      const gun = (ad) => {
+        const d = String(url.searchParams.get(ad) ?? '')
+        return /^\d{4}-\d{2}-\d{2}$/.test(d) ? { yazi: d, ms: Date.parse(`${d}T00:00:00+03:00`) } : { yazi: '', ms: 0 }
+      }
+      const bas = gun('bas')
+      const bit = gun('bit')
+      const suz = { ara: String(url.searchParams.get('ara') ?? '').slice(0, 60), islem: String(url.searchParams.get('islem') ?? '').slice(0, 30), bas: bas.yazi, bit: bit.yazi }
+      return { ...v, suz, islemler: kayitIslemleri(), kayitlar: kayitAra({ ...suz, bas: bas.ms, bit: bit.ms ? bit.ms + 86_400_000 : 0 }) }
+    }
+    if (ad === 'uyarilar') {
+      return { ...v, uyarilar: uyarilar(100), ayarlar: ayarListesi('uyari'), cihaz: yonetimPushVar(y.id) }
+    }
+    if (ad === 'grafik') {
+      const g = liste.find((x) => x.chat_jid === chat)
+      return { ...v, grup: g ? grupBilgisi(g) : null, gunler: chat ? tum('SELECT day, arz, kur, kasa FROM ekonomi WHERE chat_jid = ? ORDER BY day DESC LIMIT 60', chat).reverse() : [], maaslar: chat ? tum('SELECT day, toplam FROM maas_gun WHERE chat_jid = ? ORDER BY day DESC LIMIT 60', chat).reverse() : [] }
+    }
+    if (ad === 'toplu') return { ...v, uyeler: chat ? grupUyeleri(chat) : [] }
     if (ad === 'uyeler') {
       const ara = String(url.searchParams.get('ara') ?? '').trim().slice(0, 40)
       const hepsi = chat ? grupUyeleri(chat) : []
@@ -546,7 +640,7 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri, yedekKlasoru
     return sonuc
   }
 
-  return { oturum, sayfaVerisi, islem, nabiz, ortam }
+  return { oturum, sayfaVerisi, islem, nabiz, ortam, uyariTuru, pushOzeti }
 }
 
 /**
@@ -555,16 +649,28 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri, yedekKlasoru
  */
 export async function yonetimIsle({ req, res, url, yontem, motor, ortak }) {
   const yol = url.pathname
-  if (yol !== '/yonetim' && !yol.startsWith('/yonetim/') && yol !== '/yonetim.css') return false
+  if (yol !== '/yonetim' && !yol.startsWith('/yonetim/') && yol !== '/yonetim.css' && yol !== '/yonetim.js') return false
   const { gonder, yonlendir, govdeOku } = ortak
 
   if (yol === '/yonetim.css') {
     gonder(res, 200, STIL, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
     return true
   }
+  if (yol === '/yonetim.js') {
+    gonder(res, 200, BETIK, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'public, max-age=3600' })
+    return true
+  }
 
   const jeton = cerezOku(req)
   const y = oturumYoneticisi(motor.oturum.veri(jeton))
+
+  // Servis işçisi her push'ta önce buraya sorar (Faz 93): yönetim oturumu ya da görülmemiş uyarı yoksa 204.
+  if (yol === '/yonetim/push-ozet') {
+    const ozet = y && izinVar(y.rol, 'gosterge') ? motor.pushOzeti(y) : null
+    if (ozet) gonder(res, 200, JSON.stringify(ozet), { 'Content-Type': 'application/json; charset=utf-8' })
+    else gonder(res, 204, '')
+    return true
+  }
 
   if (yol === '/yonetim/giris') {
     if (yontem === 'GET') {
@@ -608,6 +714,29 @@ export async function yonetimIsle({ req, res, url, yontem, motor, ortak }) {
   if (yontem === 'POST' && yol === '/yonetim/cikis') {
     motor.oturum.kapat(jeton)
     yonlendir(res, '/yonetim/giris', { 'Set-Cookie': cerez('', 0) })
+    return true
+  }
+
+  if (yol === '/yonetim/push-anahtar') {
+    gonder(res, 200, vapid().acik, { 'Content-Type': 'text/plain; charset=utf-8' })
+    return true
+  }
+  if (yontem === 'POST' && (yol === '/yonetim/push-kayit' || yol === '/yonetim/push-sil' || yol === '/yonetim/push-durum')) {
+    const form = await govdeOku(req, 2048)
+    const endpoint = form?.get('endpoint') ?? ''
+    if (yol === '/yonetim/push-durum') {
+      gonder(res, 200, yonetimPushAlicilari().includes(endpoint) ? '1' : '0', { 'Content-Type': 'text/plain; charset=utf-8' })
+      return true
+    }
+    if (!endpointGecerli(endpoint)) {
+      gonder(res, 400, 'Geçersiz abonelik.', { 'Content-Type': 'text/plain; charset=utf-8' })
+      return true
+    }
+    if (yol === '/yonetim/push-kayit') {
+      yonetimPushKaydet(endpoint, y.id)
+      kayitYaz(y, 'uyari-cihaz', 'eklendi')
+    } else yonetimPushSil(endpoint)
+    gonder(res, 204, '')
     return true
   }
 

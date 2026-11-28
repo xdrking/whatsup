@@ -174,6 +174,8 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `panel/yonetim.js` | yönetim panelinde bir kez gösterilen sonuç, iki işlem arası bekleme | panel belleği (panelle ölür) |
 | `lib/db.js` + `lib/komutKilit.js` | bakıma alınan komutlar ve panel oyunları, 10 sn bellekte | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/sosyal.js` | yönetimin sosyal bölümde koyduğu yazma engeli | `data/stats.db` (kalıcı) |
+| `lib/db.js` + `lib/yonetim.js` | yönetim uyarıları ve uyarı alan cihazlar | `data/stats.db` (kalıcı) |
+| `panel/yonetim.js` | botun son bilinen bağlantı durumu, yöneticiye gösterilen son uyarı | panel belleği (panelle ölür) |
 | tarayıcı çerezi `tema` | sosyal bölümün açık/koyu tema tercihi | tarayıcıda |
 
 WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp yolu bir üyenin açıkça yazdığı `.paylaş`'tır (Faz 69): yalnızca yanıtlanan o mesaj akışa yazılır. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
@@ -381,7 +383,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 90 (tamam):** yönetim paneli 1. aşama: `.yonetim kod`, roller, ayarlar, duyuru, ekonomi ve kasa işlemleri, kayıt defteri. Ayrıntı aşağıda.
 - **Faz 91 (tamam):** yönetim paneli 2. aşama: üyeler, devlet, kumarhane bakım modu, grup ayarları. Ayrıntı aşağıda.
 - **Faz 92 (tamam):** yönetim paneli 3. aşama: sosyal moderasyon, zamanlanmış duyuru, yedek ve reborn. Ayrıntı aşağıda.
-- **Faz 93+:** yeni komutlar, her biri ayrı adım
+- **Faz 93 (tamam):** yönetim paneli 4. aşama: ekonomi grafikleri, uyarılar ve push, toplu işlem, fiyat ayarları, kayıt defterinde arama. Ayrıntı aşağıda.
+- **Faz 94+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1690,6 +1693,23 @@ Yeni sayfalar: Moderasyon (sosyal bölüm) ve Sistem (yalnızca sahip, `sistem` 
 - **Sistem:** veritabanı boyutu, yedek listesi (`panel/yedek.js:yedekListesi`: günlük, elle, reborn ve sıfır atma öncesi), "şimdi yedek al" (`elleYedekAl`, `db.backup`, `elle-YYYYMMDD-HHMMSS.db`, son 5'i kalır) ve indirme (`/yonetim/yedek?ad=`; ad kalıba ve listeye uymazsa verilmez, yol dışına çıkılamaz; indirme kayda yazılır). Reborn önizlemesi (`rebornOnizle`), oylamayı başlatma ("ONAYLIYORUM", iş `reborn`: bot `rebornDuyur`) ve süren oylamayı iptal (iş `reborn_iptal`, oylama bot belleğindedir). Sıfır atma panelden yapılmaz, bot kapalıyken çalışması gerektiği için yalnızca komutu yazar.
 - Yönetim işlemi artık `async`'tir (`motor.islem`), yedek alma beklenir.
 
+### Faz 93 — Yönetim paneli (4. aşama)
+
+```
+ekonomi.kasa                                   günün açılışındaki hazine (gununEkonomisi yazar, sıfır atmada bölünür)
+yonetim_uyari(id, tur, chat_jid, metin, zaman)  tur bot|enflasyon|is
+yonetim_push(endpoint PK, yonetici_id, zaman)
+```
+
+Yeni sayfalar: Uyarılar, Grafikler, Toplu işlem; kayıt defterine süzgeç, Ekonomi ve Kasalar'a fiyat ayarları.
+
+- **Grafikler** (`ekonomi` izni): `ekonomi` tablosunun son 60 günü (kur, piyasa, hazine) ve `maas_gun`; günlük kur değişimi çubuktur (artış kırmızı, düşüş yeşil). Grafikler sunucuda SVG'dir, betik yoktur; yazı 17 birimdir çünkü telefonda SVG küçülür. Her nokta günün açılış kaydıdır, anlık değerler başlıkta yazar. Hazine bu sürümden önceki günlerde 0'dır, o günler çizilmez.
+- **Uyarılar:** panel dakikada bir `uyariTuru()` çalıştırır (`sunucuKur`'daki `setInterval`, `unref`): bot nabzı eskidiyse "koptu" (kopma başına bir kez: `uyariVar('bot', '', son nabız)`), geri gelince "yeniden bağlandı"; bir grubun anlık kuru günün açılışından `uyariEnflasyon` yüzdesi kadar arttıysa gün başına bir kez; bot bağlıyken 5 dakikadır bekleyen yönetim işi varsa saatte bir kez. Bot kendisi koptuğunu bildiremeyeceği için denetim paneldedir. Ayarlar `uyari` grubundadır (`uyariEnflasyon` 0 kapalı, `uyariBot`).
+- **Push:** Web Push altyapısı (Faz 67) kullanılır, ayrı servis işçisi yoktur. Uyarılar sayfasındaki `panel/yonetim-istemci.js` (yönetim panelinin tek betiği) cihazı `/sw.js` ile abone eder, uç noktayı `/yonetim/push-kayit`'e yazar (`endpointGecerli` denetler). Abonelik sosyal bölümle aynı olabilir; "kapat" yalnızca yönetim kaydını siler, kayıtlı mı `/yonetim/push-durum`'a sorulur. `panel/push.js`'in `kanca.cihaza` gönderir; 404/410 gelince iki tablodan da silinir. Servis işçisi push gelince önce `/yonetim/push-ozet`'e sorar: yönetim oturumu ve bu yöneticinin görmediği son 30 dakikalık uyarı varsa JSON, yoksa 204 döner (`pushOzeti`, son gösterilen bellekte), sonra `/s/push-ozet`. Kapatılan yöneticinin cihazına gitmez.
+- **Toplu işlem** (`ekonomi` izni, onay kutusu): XP, coin, kasa ya da anahtar; herkese, son 7 günde yazanlara ya da seçilenlere (`kisiler`, `getAll`). Bot `uyeler()`'de olmadığı için almaz. XP `xpAyarla`'ya kişinin kendi `last_seen`'iyle verilir: yoksa toplu XP herkesi "son 7 günde yazan" yapardı. Kayıt defterine tek satır düşer.
+- **Fiyat ayarları** (`fiyat` grubu): kasa ve anahtar fiyatı tier başına (`kasaFiyati`, `anahtarFiyati`; satın alma, `.kasa`, `.coinmarket` ve panel bunları okur). Kasa fiyatı kasanın coin beklentisinin altına inemez (`en: ceil(coinBeklentisi)`), yoksa coinle kasa alıp açmak coin basardı. Market çarpanı (`marketFiyatKati`, %25-1000) yalnızca `.market` ürünlerine işler (`marketKatli`: `marketAl` ve `marketFiyati`), random key ve vitrine işlemez: key'in beklentisi fiyatının altında kalmalı. Kredi ek faizi (`krediFaizEk`, 0-20 puan) bütün ürünlere eklenir ve çekilirken `kredi.fark`'a yazılır: açık kredi eski farkla işler. Ayarlar Ekonomi (market, kredi) ve Kasalar (kasa, anahtar) sayfalarındadır.
+- **Kayıt defteri araması** (`kayitAra`): metin (kişi, işlem, ayrıntı; Türkçe küçük harf, son 2000 kayıtta JS'te), işlem adı ve İstanbul günü aralığı. En yeni 200 gösterilir.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1875,3 +1895,8 @@ Yeni sayfalar: Moderasyon (sosyal bölüm) ve Sistem (yalnızca sahip, `sistem` 
 167. Moderasyon'da bir gönderiyi Sil → akıştan gider, yorumları da; bir üyeyi 1 saat engelle → panelde yazınca "yazmaktan engelledi", beğeni çalışır, `.paylaş` reddedilir; Kaldır → yazabilir
 168. Duyuru'da 10 dakika sonrasına zamanla → tabloda ⏰ ve "Zamanlandı"; o saatte grupta duyuru; aynı saate ikinci duyuru → "yakın başka bir duyuru"; zamanı gelmeden İptal → gitmez
 169. Sistem'de Şimdi yedek al → listede `elle-…db`, İndir dosyayı verir; ONAYLIYORUM yazıp reborn oylamasını başlat → grupta oylama; İptal → oylama kapanır. Yönetici ve moderatör Sistem'i görmez
+170. Grafikler'de kur, piyasa, hazine ve maaş çizgileri, günlük değişim çubukları; telefonda yazılar okunur
+171. Uyarılar'da Bildirimleri aç → izin sorulur, "Bu cihaz uyarı alıyor"; botu durdur → 1-2 dakika içinde telefona "Bot bağlantısı koptu", listede de görünür; botu başlat → "yeniden bağlandı"; eşiği 1 yapınca kur artan grupta enflasyon uyarısı; Bu cihazda kapat → uyarı gelmez, sosyal bildirimler sürer
+172. Toplu işlem'de herkese 1 milyon XP → her üyenin `.profil`'i artar, bot artmaz, kayıt defterinde tek satır; "seçtiklerim" ve iki üye → yalnızca ikisi
+173. Kasalar'da T1 fiyatı 30 → `.coinmarket` ve paneldeki Coin Market 30 yazar, alımda 30 coin düşer; beklentinin altı reddedilir. Ekonomi'de market %150 → `.market` ürünleri pahalı, key fiyatı aynı; kredi eki 3 → `.kredi` faizleri 3 puan yüksek, açık kredi değişmez
+174. Kayıt defterinde "faiz" ara ya da işlem seç, tarih aralığı ver → yalnızca uyanlar

@@ -1,7 +1,7 @@
 import { ambargoMesaji } from '../lib/devlet.js'
 import { requireGroup, requireGroupMetadata, uyeKimligiBul } from '../lib/group.js'
 import { kasaBul, KASALAR, kasaYagmuruMetni, odulMetni, RENKLER, tierCoz } from '../lib/sandik.js'
-import { ayarDeger } from '../lib/ayarlar.js'
+import { anahtarFiyati, ayarDeger, kasaFiyati } from '../lib/ayarlar.js'
 import { binlik } from '../lib/sayi.js'
 import { botHesabiMi, sandikAc, sandikAl, sandikDagit, sandikDevret, sandikDurumu } from '../lib/stats.js'
 import { displayName, mentionOf, resolveTargets } from '../lib/target.js'
@@ -57,7 +57,7 @@ export default {
   // Sayılar yönetim panelinden değişebildiği için her okumada yeniden yazılır (Faz 90).
   get details() {
     return [
-    `5 tier: ${KASALAR.map((k) => `T${k.tier} ${k.ad} (${k.fiyat} coin, anahtarı ${k.anahtar})`).join(', ')}.`,
+    `5 tier: ${KASALAR.map((k) => `T${k.tier} ${k.ad} (${kasaFiyati(k.tier)} coin, anahtarı ${anahtarFiyati(k.tier)})`).join(', ')}.`,
     ayarDeger('kasaGecelikAnahtar') ? `Her gece herkese 1 rastgele anahtar verilir (\`.kasa\` yazınca gelir, en çok ${ayarDeger('kasaAnahtarBirikme')} gün birikir).` : 'Gecelik bedava anahtar şu an kapalı.',
     `Kasa WhatsApp kumarında kazanınca %${ayarDeger('kasaKumarDusme')}, başarılı soygunda %${ayarDeger('kasaSoygunDusme')} olasılıkla düşer: haftada kumardan ${ayarDeger('kasaHaftalikKumar')}, soygundan ${ayarDeger('kasaHaftalikSoygun')}. Panel kumarında düşmez.`,
     `Coinle haftada en çok ${ayarDeger('kasaHaftalikAlim')} kasa alınır: \`.kasa al 3\` ya da \`.coinmarket kasa 3\`. Anahtar sınırsız: \`.kasa anahtar 3\`.`,

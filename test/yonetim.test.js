@@ -276,3 +276,94 @@ test('yedek: yalnızca bilinen adlar indirilir', () => {
   assert.deepEqual(yedekListesi(pathMod.join(k, 'yok')), [])
   assert.ok(existsSync(k))
 })
+
+// Faz 93
+const { kayitAra, kayitYaz, uyarilar: uyariListesi, nabizYaz } = await import('../lib/yonetim.js')
+const { kasaFiyati, anahtarFiyati, AYARLAR } = await import('../lib/ayarlar.js')
+const { coinBeklentisi, KASALAR } = await import('../lib/sandik.js')
+
+test('fiyat ayarları: kasa fiyatı beklentinin altına inmez, alımda geçerli fiyat kullanılır', () => {
+  const t1 = KASALAR[0]
+  assert.ok(ayarYaz('kasaFiyat1', String(Math.ceil(coinBeklentisi(t1)) - 1)).hata, 'beklentinin altı reddedilir')
+  assert.ok(!ayarYaz('kasaFiyat1', '30').hata)
+  assert.ok(!ayarYaz('anahtarFiyat1', '7').hata)
+  assert.equal(kasaFiyati(1), 30)
+  assert.equal(anahtarFiyati(1), 7)
+  const g = yeniGrup()
+  coinAyarla({ chatJid: g, userJid: 'f@lid', adet: 100 })
+  assert.equal(sandikAl({ chatJid: g, userJid: 'f@lid', tur: 'kasa', tier: 1, now: T }).ucret, 30)
+  assert.equal(sandikAl({ chatJid: g, userJid: 'f@lid', tur: 'anahtar', tier: 1, adet: 2, now: T }).ucret, 14)
+  ayarYaz('kasaFiyat1', String(t1.fiyat))
+  ayarYaz('anahtarFiyat1', String(t1.anahtar))
+  assert.equal(kasaFiyati(1), t1.fiyat)
+  assert.ok(Object.keys(AYARLAR).filter((k) => k.startsWith('kasaFiyat')).length === KASALAR.length)
+})
+
+test('kredi faiz eki yeni krediye yazılır', async () => {
+  const { krediCek, krediDurumu } = await import('../lib/stats.js')
+  const g = yeniGrup()
+  getDb().prepare("INSERT INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, 'k1@lid', 1, 0, 0, 1000, 1), (?, 'bot@s.whatsapp.net', 0, 0, 0, 0, 1)").run(g, g)
+  getDb().prepare("INSERT OR REPLACE INTO banka (chat_jid, user_jid, bakiye, faiz_saat, faiz_artik, bekleyen, vergi_day, son_vergi) VALUES (?, 'bot@s.whatsapp.net', 10000000000, 0, 0, 0, '', 0)").run(g)
+  botHesabiniTani({ id: 'bot@s.whatsapp.net' })
+  ayarYaz('krediFaizEk', '3')
+  const once = krediDurumu({ chatJid: g, userJid: 'k1@lid', now: T })
+  const u = once.urunler.find((x) => x.no === 11)
+  assert.equal(u.fark, 7, 'listede ek görünür')
+  const s = krediCek({ chatJid: g, userJid: 'k1@lid', miktar: 50_000, urun: 11, saat: 6, now: T })
+  assert.ok(s && !s.hata, JSON.stringify(s))
+  assert.equal(getDb().prepare('SELECT fark FROM kredi WHERE chat_jid = ? AND user_jid = ?').get(g, 'k1@lid').fark, 7)
+  ayarYaz('krediFaizEk', '0')
+})
+
+test('kayıt defteri araması', () => {
+  const y = { id: 900, ad: 'Arayan', rol: 'yonetici' }
+  kayitYaz(y, 'xp', '[Grup] Şükrü · +5 XP', T)
+  kayitYaz(y, 'faiz', '%15 → %12', T + 86_400_000)
+  assert.ok(kayitAra({ ara: 'şükrü' }).some((r) => r.ayrinti.includes('Şükrü')), 'Türkçe küçük harf')
+  assert.ok(kayitAra({ islem: 'faiz' }).every((r) => r.islem === 'faiz'))
+  assert.equal(kayitAra({ ara: 'Arayan', bas: T + 3_600_000 }).length, 1)
+  assert.equal(kayitAra({ ara: 'Arayan', bit: T + 3_600_000 }).length, 1)
+})
+
+test('toplu işlem: herkes, aktifler ve seçilenler', async () => {
+  const g = yeniGrup()
+  const ekle = getDb().prepare('INSERT INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, ?, 1, 0, 0, 100, ?)')
+  ekle.run(g, 't1@lid', T)
+  ekle.run(g, 't2@lid', T - 30 * 86_400_000)
+  ekle.run(g, 't3@lid', T)
+  let saat = T
+  const motor = yonetimMotoru({ veri: { gruplar: () => [{ chat_jid: g, ad: 'G', uye: 3, mesaj: 3 }] }, saat: () => saat })
+  const sahip = kodlaGir(kodUret({ now: T }).kod, T)
+  const islem = async (alanlar) => { saat += 1000; return motor.islem(sahip, new URLSearchParams({ grup: g, islem: 'toplu', onay: '1', ...alanlar })) }
+  assert.match((await islem({ tur: 'xp', miktar: '10', hedef: 'hepsi' })).tamam, /^3 kişiye/)
+  assert.match((await islem({ tur: 'coin', miktar: '2', hedef: 'aktif' })).tamam, /^2 kişiye/)
+  const p = new URLSearchParams({ grup: g, islem: 'toplu', onay: '1', tur: 'kasa', tier: '2', miktar: '1', hedef: 'secili' })
+  p.append('kisiler', 't2@lid')
+  saat += 1000
+  assert.match((await motor.islem(sahip, p)).tamam, /^1 kişiye/)
+  assert.equal(getStats(g, 't1@lid').xp, 110)
+  assert.equal(sandikDurumu({ chatJid: g, userJid: 't2@lid', now: T }).kasa[2], 1)
+  assert.match((await islem({ tur: 'xp', miktar: '10', hedef: 'secili' })).hata, /Alıcı yok/)
+})
+
+test('uyarılar: bot kopunca bir kez, push özeti bir kez görünür', () => {
+  let saat = Date.now()
+  const gidenler = []
+  const motor = yonetimMotoru({ veri: { gruplar: () => [] }, saat: () => saat, push: { cihaza: (e) => gidenler.push(e) } })
+  getDb().prepare('INSERT OR REPLACE INTO yonetim_push (endpoint, yonetici_id, zaman) VALUES (?, ?, ?)').run('https://fcm.googleapis.com/x', kodlaGir(kodUret({ now: saat }).kod, saat).id, saat)
+  nabizYaz(saat)
+  motor.uyariTuru()
+  const once = uyariListesi().length
+  saat += 5 * 60_000
+  motor.uyariTuru()
+  motor.uyariTuru()
+  assert.equal(uyariListesi().length, once + 1, 'kopma bir kez')
+  assert.match(uyariListesi()[0].metin, /koptu/)
+  assert.ok(gidenler.length >= 1)
+  const sahip = kodlaGir(kodUret({ now: saat }).kod, saat)
+  assert.match(motor.pushOzeti(sahip).metin, /koptu/)
+  assert.equal(motor.pushOzeti(sahip), null, 'ikinci kez gösterilmez')
+  nabizYaz(saat)
+  motor.uyariTuru()
+  assert.match(uyariListesi()[0].metin, /yeniden bağlandı/)
+})

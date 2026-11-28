@@ -4,14 +4,16 @@ import { readFileSync } from 'node:fs'
 import { oranYaz } from '../lib/banka.js'
 import { fnv1a } from '../lib/hash.js'
 import { KASALAR } from '../lib/sandik.js'
-import { DUYURU_ARALIGI_MS, DUYURU_AZAMI, IZINLER, izinVar, ROLLER } from '../lib/yonetim.js'
+import { DUYURU_ARALIGI_MS, DUYURU_AZAMI, IZINLER, izinVar, ROLLER, UYARI_TURLERI } from '../lib/yonetim.js'
 import { MAKAMLAR } from '../lib/devlet.js'
 import { HEPSI } from '../lib/komutKilit.js'
 import { sulyYaz } from '../lib/kripto.js'
 import { MULKLER } from '../lib/mulk.js'
 import { h } from './sayfalar.js'
+import { anahtarFiyati, kasaFiyati } from '../lib/ayarlar.js'
 
 const STIL_SURUMU = fnv1a(readFileSync(new URL('./yonetim.css', import.meta.url), 'utf8'))
+const BETIK_SURUMU = fnv1a(readFileSync(new URL('./yonetim-istemci.js', import.meta.url), 'utf8'))
 const sayi = new Intl.NumberFormat('tr-TR')
 const kompakt = new Intl.NumberFormat('tr-TR', { notation: 'compact', maximumFractionDigits: 1 })
 const kisa = (n) => kompakt.format(n).replace(/B$/, 'bin')
@@ -21,10 +23,13 @@ const zaman = (ms) => (ms ? tarih.format(new Date(ms)) : '—')
 
 const SAYFALAR = [
   { ad: 'gosterge', yol: '/yonetim', baslik: 'Gösterge', ikon: '◉', izin: 'gosterge' },
+  { ad: 'uyarilar', yol: '/yonetim/uyarilar', baslik: 'Uyarılar', ikon: '⚠', izin: 'gosterge' },
   { ad: 'duyuru', yol: '/yonetim/duyuru', baslik: 'Duyurular', ikon: '✉', izin: 'duyuru' },
   { ad: 'uyeler', yol: '/yonetim/uyeler', baslik: 'Üyeler', ikon: '☺', izin: 'uyeler' },
   { ad: 'uye', yol: '/yonetim/uye', baslik: 'Üye', ikon: '☺', izin: 'uyeler', gizli: true },
   { ad: 'ekonomi', yol: '/yonetim/ekonomi', baslik: 'Ekonomi', ikon: '₺', izin: 'ekonomi' },
+  { ad: 'grafik', yol: '/yonetim/grafik', baslik: 'Grafikler', ikon: '◢', izin: 'ekonomi' },
+  { ad: 'toplu', yol: '/yonetim/toplu', baslik: 'Toplu işlem', ikon: '⇶', izin: 'ekonomi' },
   { ad: 'kasa', yol: '/yonetim/kasa', baslik: 'Kasalar', ikon: '▣', izin: 'kasa' },
   { ad: 'kumarhane', yol: '/yonetim/kumarhane', baslik: 'Kumarhane', ikon: '♠', izin: 'kumarhane' },
   { ad: 'devlet', yol: '/yonetim/devlet', baslik: 'Devlet', ikon: '⚖', izin: 'devlet' },
@@ -49,6 +54,7 @@ function belge(baslik, govde) {
 <meta name="theme-color" content="#0a0e16">
 <title>${baslik} · Yönetim</title>
 <link rel="stylesheet" href="/yonetim.css?v=${STIL_SURUMU}">
+<script src="/yonetim.js?v=${BETIK_SURUMU}" defer></script>
 </head>
 <body class="yonetim">${govde}</body>
 </html>`.metin
@@ -291,7 +297,7 @@ ${v.grup ? h`<section class="izgara iki">
 <h2 class="bolum">Tier'ler</h2>
 <div class="tablo-kap"><table class="tablo">
 <thead><tr><th>Tier</th><th>Kasa</th><th>Kasa fiyatı</th><th>Anahtar</th></tr></thead>
-<tbody>${KASALAR.map((k) => h`<tr><td>T${k.tier}</td><td>${k.ad}</td><td>${k.fiyat} coin</td><td>${k.anahtar} coin</td></tr>`)}</tbody>
+<tbody>${KASALAR.map((k) => h`<tr><td>T${k.tier}</td><td>${k.ad}</td><td>${kasaFiyati(k.tier)} coin</td><td>${anahtarFiyati(k.tier)} coin</td></tr>`)}</tbody>
 </table></div>`)
 }
 
@@ -327,7 +333,18 @@ function kayitTablosu(liste) {
 }
 
 export function kayitSayfasi(v) {
-  return kabuk(v, 'kayit', 'Kayıt defteri', v.kayitlar.length ? kayitTablosu(v.kayitlar) : h`<p class="bos">Henüz kayıt yok.</p>`)
+  const s = v.suz
+  const suzuldu = s.ara || s.islem || s.bas || s.bit
+  return kabuk(v, 'kayit', 'Kayıt defteri', h`
+<form class="suzgec" method="get" action="/yonetim/kayit">
+  <label>Ara<input name="ara" value="${s.ara}" placeholder="kişi, işlem ya da ayrıntı" autocomplete="off"></label>
+  <label>İşlem<select name="islem"><option value="">Hepsi</option>${v.islemler.map((i) => h`<option value="${i}"${i === s.islem ? ' selected' : ''}>${i}</option>`)}</select></label>
+  <label>Başlangıç<input type="date" name="bas" value="${s.bas}"></label>
+  <label>Bitiş<input type="date" name="bit" value="${s.bit}"></label>
+  <div class="suzgec-dugmeler"><button class="birincil">Süz</button>${suzuldu ? h`<a class="kucuk-dugme dugme-link" href="/yonetim/kayit">Temizle</a>` : ''}</div>
+</form>
+<p class="kucuk">${v.kayitlar.length} kayıt${v.kayitlar.length >= 200 ? ' (en yeni 200)' : ''}</p>
+${v.kayitlar.length ? kayitTablosu(v.kayitlar) : h`<p class="bos">${suzuldu ? 'Bu süzgece uyan kayıt yok.' : 'Henüz kayıt yok.'}</p>`}`)
 }
 
 export const yasakSayfasi = (v) => kabuk(v, '', 'Yetki yok', h`<p class="bos">Bu sayfa için rolün yetmiyor.</p>`)
@@ -636,4 +653,127 @@ export function sistemSayfasi(v) {
 node scripts/sifir-at.js --uygula   # önce yedek alır</pre>
   </article>
 </section>`)
+}
+
+// Faz 93: uyarılar, grafikler, toplu işlem.
+
+export function uyarilarSayfasi(v) {
+  const duzenler = izinVar(v.yonetici.rol, 'ekonomi')
+  return kabuk(v, 'uyarilar', 'Uyarılar', h`
+<section class="izgara iki">
+  <article class="pano">
+    <header><h3>📲 Bu cihaza bildirim</h3><span class="etiket">${v.cihaz} cihaz kayıtlı</span></header>
+    <p>Bot koptuğunda, enflasyon eşiği aştığında ya da yönetim işi takıldığında telefonuna bildirim gelir. Panel dakikada bir bakar.</p>
+    <div id="uyari-cihaz" class="form" data-durum="yok">
+      <button type="button" class="birincil uyari-ac" hidden>Bildirimleri aç</button>
+      <button type="button" class="kucuk-dugme uyari-kapat" hidden>Bu cihazda kapat</button>
+      <p class="kucuk uyari-not">Bildirim için tarayıcı desteği gerekir. iPhone'da önce paneli Ana Ekrana ekle, oradan aç.</p>
+    </div>
+  </article>
+  ${duzenler ? h`<article class="pano ayarlar">${v.ayarlar.map((a) => ayarFormu(a, 'uyarilar'))}</article>` : ''}
+</section>
+<h2 class="bolum">Son uyarılar</h2>
+${v.uyarilar.length ? h`<div class="tablo-kap"><table class="tablo">
+<thead><tr><th>Zaman</th><th>Tür</th><th>Uyarı</th></tr></thead>
+<tbody>${v.uyarilar.map((u) => h`<tr><td class="nowrap">${zaman(u.zaman)}</td><td class="nowrap">${UYARI_TURLERI[u.tur]?.emoji ?? '⚠️'} ${UYARI_TURLERI[u.tur]?.ad ?? u.tur}</td><td class="metin">${u.metin}</td></tr>`)}</tbody>
+</table></div>` : h`<p class="bos">Henüz uyarı yok.</p>`}`)
+}
+
+/** Sunucuda çizilen çizgi grafiği. `noktalar`: { etiket, deger } eskiden yeniye. */
+function cizgiGrafik(noktalar, { ad, yaz, sinif = '' }) {
+  if (noktalar.length < 2) return h`<p class="kucuk">${ad}: en az iki günlük kayıt gerekiyor.</p>`
+  const en = 640
+  const boy = 220
+  const sol = 8
+  const sag = en - 92
+  const ust = 14
+  const alt = boy - 32
+  const d = noktalar.map((n) => n.deger)
+  const enAz = Math.min(...d, 0)
+  const enCok = Math.max(...d) || 1
+  const x = (i) => sol + (i / (noktalar.length - 1)) * (sag - sol)
+  const y = (v) => alt - ((v - enAz) / (enCok - enAz || 1)) * (alt - ust)
+  const yol = noktalar.map((n, i) => `${x(i).toFixed(1)},${y(n.deger).toFixed(1)}`).join(' ')
+  const izgara = [0, 0.25, 0.5, 0.75, 1].map((o) => enAz + (enCok - enAz) * o)
+  const adim = Math.max(1, Math.ceil(noktalar.length / 6))
+  const son = noktalar.at(-1)
+  return h`<figure class="grafik ${sinif}"><figcaption><span>${ad}</span><strong>${yaz(son.deger)}</strong></figcaption>
+<svg viewBox="0 0 ${en} ${boy}" role="img" aria-label="${ad}: son ${yaz(son.deger)}, en yüksek ${yaz(enCok)}">
+  ${izgara.map((v) => h`<line class="g-izgara" x1="${sol}" x2="${sag}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="g-yazi" x="${sag + 8}" y="${(y(v) + 4).toFixed(1)}" font-size="17">${yaz(v)}</text>`)}
+  ${noktalar.map((n, i) => (i % adim === 0 || i === noktalar.length - 1 ? h`<text class="g-yazi" x="${x(i).toFixed(1)}" y="${boy - 8}" font-size="17" text-anchor="${i === 0 ? 'start' : i === noktalar.length - 1 ? 'end' : 'middle'}">${n.etiket}</text>` : ''))}
+  <polygon class="g-dolgu" points="${sol},${alt} ${yol} ${x(noktalar.length - 1).toFixed(1)},${alt}"/>
+  <polyline class="g-hat" fill="none" stroke-width="2.5" points="${yol}"/>
+  ${noktalar.map((n, i) => h`<circle class="g-nokta" r="3" cx="${x(i).toFixed(1)}" cy="${y(n.deger).toFixed(1)}"><title>${n.etiket}: ${yaz(n.deger)}</title></circle>`)}
+</svg></figure>`
+}
+
+/** Günlük değişim çubukları (yüzde): artış ve düşüş ayrı renkte. */
+function cubukGrafik(noktalar, { ad }) {
+  if (!noktalar.length) return h`<p class="kucuk">${ad}: en az iki günlük kayıt gerekiyor.</p>`
+  const en = 640
+  const boy = 200
+  const sol = 8
+  const sag = en - 92
+  const ust = 14
+  const alt = boy - 32
+  const enCok = Math.max(...noktalar.map((n) => Math.abs(n.deger)), 1)
+  const orta = (ust + alt) / 2
+  const g = (sag - sol) / noktalar.length
+  const yuzdeYaz = (v) => `${v < 0 ? '-' : ''}%${Math.abs(Math.round(v)).toLocaleString('tr-TR')}`
+  const adim = Math.max(1, Math.ceil(noktalar.length / 6))
+  return h`<figure class="grafik"><figcaption><span>${ad}</span><strong>${yuzdeYaz(noktalar.at(-1).deger)}</strong></figcaption>
+<svg viewBox="0 0 ${en} ${boy}" role="img" aria-label="${ad}">
+  <line class="g-izgara" x1="${sol}" x2="${sag}" y1="${orta}" y2="${orta}"/>
+  <text class="g-yazi" x="${sag + 8}" y="${ust + 4}" font-size="17">${yuzdeYaz(enCok)}</text>
+  <text class="g-yazi" x="${sag + 8}" y="${orta + 4}" font-size="17">%0</text>
+  <text class="g-yazi" x="${sag + 8}" y="${alt + 4}" font-size="17">${yuzdeYaz(-enCok)}</text>
+  ${noktalar.map((n, i) => {
+    const yuk = (Math.abs(n.deger) / enCok) * (orta - ust)
+    return h`<rect class="${n.deger >= 0 ? 'g-artis' : 'g-dusus'}" x="${(sol + i * g + g * 0.15).toFixed(1)}" width="${(g * 0.7).toFixed(1)}" y="${(n.deger >= 0 ? orta - yuk : orta).toFixed(1)}" height="${Math.max(yuk, 0.5).toFixed(1)}"><title>${n.etiket}: ${yuzdeYaz(n.deger)}</title></rect>`
+  })}
+  ${noktalar.map((n, i) => (i % adim === 0 ? h`<text class="g-yazi" x="${(sol + i * g + g / 2).toFixed(1)}" y="${boy - 8}" font-size="17" text-anchor="${i === 0 ? 'start' : 'middle'}">${n.etiket}</text>` : ''))}
+</svg></figure>`
+}
+
+const gunEtiketi = (gun) => new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${gun}T00:00:00Z`))
+
+export function grafikSayfasi(v) {
+  const gunler = v.gunler.map((r) => ({ ...r, etiket: gunEtiketi(r.day) }))
+  const enflasyon = gunler.slice(1).map((r, i) => ({ etiket: r.etiket, deger: gunler[i].kur ? ((r.kur - gunler[i].kur) / gunler[i].kur) * 100 : 0 }))
+  const e = v.grup?.ekonomi
+  const hazineli = gunler.filter((r) => r.kasa > 0)
+  return kabuk(v, 'grafik', 'Ekonomi grafikleri', h`
+${grupSecici(v, '/yonetim/grafik')}
+<p class="kucuk">Her nokta günün açılış kaydıdır (günün ilk mesajında yazılır), son 60 gün. Bugünün anlık değerleri: kur ${e ? kisa(e.kur) : '—'}, piyasa ${e ? kisa(e.anlik) : '—'}, hazine ${e ? kisa(e.kasa) : '—'}.</p>
+<section class="izgara iki grafikler">
+  ${cizgiGrafik(gunler.map((r) => ({ etiket: r.etiket, deger: r.kur })), { ad: 'Coin kuru (XP)', yaz: kisa })}
+  ${cubukGrafik(enflasyon, { ad: 'Günlük kur değişimi' })}
+  ${cizgiGrafik(gunler.map((r) => ({ etiket: r.etiket, deger: r.arz })), { ad: 'Piyasadaki para (XP)', yaz: kisa, sinif: 'g-mavi' })}
+  ${hazineli.length >= 2 ? cizgiGrafik(hazineli.map((r) => ({ etiket: r.etiket, deger: r.kasa })), { ad: 'Hazine (XP)', yaz: kisa, sinif: 'g-sari' }) : h`<p class="kucuk">Hazine grafiği bu sürümden sonraki günlerde dolar.</p>`}
+  ${cizgiGrafik(v.maaslar.map((r) => ({ etiket: gunEtiketi(r.day), deger: r.toplam })), { ad: 'Günlük maaş (XP)', yaz: kisa, sinif: 'g-mor' })}
+</section>`)
+}
+
+export function topluSayfasi(v) {
+  return kabuk(v, 'toplu', 'Toplu işlem', h`
+${grupSecici(v, '/yonetim/toplu')}
+<form class="pano form" method="post" action="/yonetim/islem">${gizli('toplu', 'toplu', { grup: v.chat })}
+  <div class="yan-yana">
+    <label>Ne<select name="tur"><option value="xp">XP</option><option value="coin">Coin</option><option value="kasa">Kasa</option><option value="anahtar">Anahtar</option></select></label>
+    <label>Miktar (eksi alır)<input name="miktar" placeholder="ör. 1 milyon, 5, -2" autocomplete="off" required></label>
+    <label>Tier (kasa/anahtar)<select name="tier">${KASALAR.map((k) => h`<option value="${k.tier}">T${k.tier}</option>`)}</select></label>
+  </div>
+  <fieldset class="secim">
+    <legend>Kime</legend>
+    <label class="onay"><input type="radio" name="hedef" value="hepsi" checked> Herkes (${v.uyeler.length} kişi, bot hariç)</label>
+    <label class="onay"><input type="radio" name="hedef" value="aktif"> Son 7 günde yazanlar</label>
+    <label class="onay"><input type="radio" name="hedef" value="secili"> Yalnızca aşağıda seçtiklerim</label>
+  </fieldset>
+  <details class="uye-secim"><summary>Üye seç (${v.uyeler.length})</summary>
+    <div class="uye-kutular">${v.uyeler.map((u) => h`<label class="onay"><input type="checkbox" name="kisiler" value="${u.jid}"> ${adOf(u)} <small>${kisa(u.xp)} XP</small></label>`)}</div>
+  </details>
+  <p class="kucuk">XP ve coin basılır ya da yanar (hazineden çıkmaz). Kasa ve anahtar haftalık sınırlara sayılmaz. Bakiye sıfırın altına inmez.</p>
+  ${onayKutusu('Bu işlemin seçilen herkese uygulanacağını biliyorum')}
+  <button class="birincil">Uygula</button>
+</form>`)
 }

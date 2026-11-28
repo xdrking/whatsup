@@ -55,17 +55,17 @@ h1, h2, h3 { margin: 0; line-height: 1.25; }
   background: conic-gradient(from 210deg, var(--vurgu), var(--mavi), var(--mor), var(--vurgu));
   box-shadow: 0 0 0 3px rgba(45, 212, 191, .12), 0 6px 18px rgba(45, 212, 191, .25);
 }
-.yan nav { display: flex; flex-direction: column; gap: 2px; }
+.yan nav { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .yan nav a {
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 12px; border-radius: 9px;
-  color: var(--soluk); font-weight: 500;
+  padding: 7px 12px; border-radius: 9px;
+  color: var(--soluk); font-weight: 500; flex: none;
   border: 1px solid transparent;
 }
 .yan nav a:hover { background: var(--pano); color: var(--yazi); text-decoration: none; }
 .yan nav a.secili { background: var(--pano2); color: var(--yazi); border-color: var(--cizgi2); box-shadow: inset 3px 0 0 var(--vurgu); }
 .ikon { width: 20px; text-align: center; color: var(--vurgu); font-size: 15px; }
-.yan-alt { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+.yan-alt { flex: none; display: flex; flex-direction: column; gap: 10px; }
 .bot-durum {
   display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center;
   padding: 10px 12px; border-radius: 10px; background: var(--pano); border: 1px solid var(--cizgi);
@@ -261,6 +261,34 @@ pre.kod { margin: 0; padding: 12px 14px; background: var(--zemin2); border: 1px 
 .pano > .satir-form { margin-top: 10px; }
 input[type="datetime-local"] { color-scheme: dark; }
 
+/* Faz 93: grafik, süzgeç, toplu işlem */
+.suzgec { display: grid; grid-template-columns: 2fr 1.2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 10px; }
+.suzgec label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--soluk); }
+.suzgec-dugmeler { display: flex; gap: 8px; align-items: center; }
+input[type="date"] { color-scheme: dark; }
+.grafikler { margin-top: 6px; }
+figure.grafik { margin: 0; background: var(--pano); border: 1px solid var(--cizgi); border-radius: var(--yaricap); padding: 14px 16px 8px; min-width: 0; }
+figure.grafik figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+figure.grafik figcaption span { color: var(--soluk); font-size: 13px; text-transform: uppercase; letter-spacing: .07em; }
+figure.grafik figcaption strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+figure.grafik svg { display: block; width: 100%; height: auto; }
+.g-izgara { stroke: var(--cizgi); stroke-width: 1; }
+.g-yazi { fill: var(--cok-soluk); }
+.g-hat { stroke: var(--vurgu); }
+.g-nokta { fill: var(--vurgu); }
+.g-dolgu { fill: rgba(45, 212, 191, .12); }
+.grafik.g-mavi .g-hat { stroke: var(--mavi); } .grafik.g-mavi .g-nokta { fill: var(--mavi); } .grafik.g-mavi .g-dolgu { fill: rgba(96, 165, 250, .12); }
+.grafik.g-sari .g-hat { stroke: var(--sari); } .grafik.g-sari .g-nokta { fill: var(--sari); } .grafik.g-sari .g-dolgu { fill: rgba(251, 191, 36, .12); }
+.grafik.g-mor .g-hat { stroke: var(--mor); } .grafik.g-mor .g-nokta { fill: var(--mor); } .grafik.g-mor .g-dolgu { fill: rgba(167, 139, 250, .12); }
+.g-artis { fill: var(--kirmizi); }
+.g-dusus { fill: var(--yesil); }
+fieldset.secim { border: 1px solid var(--cizgi); border-radius: 10px; padding: 10px 14px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+fieldset.secim legend { color: var(--soluk); font-size: 13px; padding: 0 6px; }
+label.onay input[type="radio"] { width: 18px; height: 18px; accent-color: var(--vurgu); flex: none; }
+.uye-secim summary { cursor: pointer; color: var(--vurgu); font-size: 14px; }
+.uye-kutular { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 14px; margin-top: 10px; max-height: 320px; overflow-y: auto; padding: 4px; }
+.uye-kutular small { color: var(--cok-soluk); }
+
 /* Telefon */
 @media (max-width: 860px) {
   /* minmax(0, …): yoksa kayan menünün genişliği ızgarayı büyütüp sayfayı yatay taşırıyordu. */
@@ -273,7 +301,7 @@ input[type="datetime-local"] { color-scheme: dark; }
     min-width: 0;
   }
   .marka { padding: 0; font-size: 16px; }
-  .yan nav { min-width: 0; order: 3; flex-direction: row; overflow-x: auto; width: 100%; gap: 4px; padding-bottom: 2px; scrollbar-width: none; }
+  .yan nav { min-width: 0; flex: none; overflow-y: visible; order: 3; flex-direction: row; overflow-x: auto; width: 100%; gap: 4px; padding-bottom: 2px; scrollbar-width: none; }
   .yan nav a { white-space: nowrap; padding: 7px 11px; font-size: 14px; }
   .yan nav a.secili { box-shadow: inset 0 -2px 0 var(--vurgu); }
   .yan-alt { margin: 0 0 0 auto; flex-direction: row; align-items: center; gap: 8px; }
@@ -283,6 +311,8 @@ input[type="datetime-local"] { color-scheme: dark; }
   main { padding: 20px 16px 48px; }
   .ust h1 { font-size: 22px; }
   .ayar-satir { grid-template-columns: minmax(0, 1fr) 96px; }
+  .suzgec { grid-template-columns: 1fr 1fr; }
+  .suzgec label:first-child { grid-column: 1 / -1; }
   .ayar-satir button { grid-column: 1 / -1; }
   .yan-yana { grid-template-columns: 1fr 1fr; }
   .yan-yana label:last-child { grid-column: 1 / -1; }

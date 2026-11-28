@@ -43,11 +43,17 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', (e) => {
   e.waitUntil((async () => {
     let ozet = { baslik: 'Yeni bildirim', metin: 'Açıp bak.', adres: '/s' }
-    try {
-      const yanit = await fetch('/s/push-ozet', { credentials: 'same-origin', cache: 'no-store' })
-      if (yanit.ok && (yanit.headers.get('content-type') || '').includes('json')) ozet = await yanit.json()
-    } catch (err) {
-      console.warn('Bildirim özeti alınamadı', err)
+    // Önce yönetim uyarısı sorulur (Faz 93): yalnızca yönetim oturumu ve görülmemiş uyarı varsa JSON döner.
+    for (const adres of ['/yonetim/push-ozet', '/s/push-ozet']) {
+      try {
+        const yanit = await fetch(adres, { credentials: 'same-origin', cache: 'no-store' })
+        if (yanit.ok && (yanit.headers.get('content-type') || '').includes('json')) {
+          ozet = await yanit.json()
+          break
+        }
+      } catch (err) {
+        console.warn('Bildirim özeti alınamadı', adres, err)
+      }
     }
     await self.registration.showNotification(ozet.baslik, {
       body: ozet.metin, icon: '/ikon-192.png', badge: '/ikon-192.png',

@@ -86,7 +86,15 @@ export function sunucuKur({ sifreHash, veri, yedekKlasoru, kumar = kumarMotoru()
   bildirimKancasiKur(push)
   const sinir = denemeSiniri()
   const oturum = oturumlar({ depo })
-  const yonetimM = yonetim ?? yonetimMotoru({ depo, veri, yedekKlasoru })
+  const yonetimM = yonetim ?? yonetimMotoru({ depo, veri, yedekKlasoru, push })
+  // Yönetim uyarıları dakikada bir denetlenir (Faz 93); süreç kapanırken beklenmez.
+  setInterval(() => {
+    try {
+      yonetimM.uyariTuru()
+    } catch (err) {
+      logger.error({ err }, 'Yönetim uyarı turu başarısız')
+    }
+  }, 60_000).unref()
   // Kimliği bulunmayan girişte de scrypt çalışır: yanıt süresinden hesabın varlığı anlaşılmasın.
   const sahteHash = sifreHashle('panel-sahte-sifre')
 

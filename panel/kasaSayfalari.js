@@ -4,7 +4,7 @@
 import { EKSTRA_GUNLUK, ODULLER as CARK_ODULLERI, UCRETSIZ_HAK } from '../lib/cark.js'
 import { COIN_URUNLERI } from '../lib/coin.js'
 import { KASALAR, RENKLER } from '../lib/sandik.js'
-import { ayarDeger } from '../lib/ayarlar.js'
+import { anahtarFiyati, ayarDeger, kasaFiyati } from '../lib/ayarlar.js'
 import { h, nftAdresi } from './sayfalar.js'
 import { satir, sayfa } from './hesapSayfalari.js'
 import { hesapLink } from './oyunSayfalari.js'
@@ -68,11 +68,11 @@ function tierKarti(chat, k, d) {
   </form>
   <div class="tier-al">
     <form class="islem" method="post" action="/oyun/islem">${gizli(chat, 'kasa', 'kasa-al', k.tier)}
-      <label class="alan"><small>Kasa · ${k.fiyat} coin</small><input name="tutar" value="1" inputmode="numeric" autocomplete="off" required></label>
+      <label class="alan"><small>Kasa · ${kasaFiyati(k.tier)} coin</small><input name="tutar" value="1" inputmode="numeric" autocomplete="off" required></label>
       <button class="ikincil">AL</button>
     </form>
     <form class="islem" method="post" action="/oyun/islem">${gizli(chat, 'kasa', 'anahtar-al', k.tier)}
-      <label class="alan"><small>Anahtar · ${k.anahtar} coin</small><input name="tutar" value="1" inputmode="numeric" autocomplete="off" required></label>
+      <label class="alan"><small>Anahtar · ${anahtarFiyati(k.tier)} coin</small><input name="tutar" value="1" inputmode="numeric" autocomplete="off" required></label>
       <button class="ikincil">AL</button>
     </form>
   </div>
@@ -181,8 +181,8 @@ export function coinMarketSayfasi(veri) {
   <h2>🎁 Kasalar ve anahtarlar</h2>
   <div class="market-liste">${KASALAR.map((k) => h`<div class="market-urun kasa-urun">
     <span>${k.ad} <small>T${k.tier}</small></span>
-    <form method="post" action="/oyun/islem">${gizli(chat, 'coinmarket', 'kasa-al', k.tier)}<button class="${coin >= k.fiyat ? '' : 'ikincil'}">🎁 ${k.fiyat}</button></form>
-    <form method="post" action="/oyun/islem">${gizli(chat, 'coinmarket', 'anahtar-al', k.tier)}<button class="${coin >= k.anahtar ? '' : 'ikincil'}">🔑 ${k.anahtar}</button></form>
+    <form method="post" action="/oyun/islem">${gizli(chat, 'coinmarket', 'kasa-al', k.tier)}<button class="${coin >= kasaFiyati(k.tier) ? '' : 'ikincil'}">🎁 ${kasaFiyati(k.tier)}</button></form>
+    <form method="post" action="/oyun/islem">${gizli(chat, 'coinmarket', 'anahtar-al', k.tier)}<button class="${coin >= anahtarFiyati(k.tier) ? '' : 'ikincil'}">🔑 ${anahtarFiyati(k.tier)}</button></form>
   </div>`)}</div>
   <p class="not">Coinle haftada en çok ${ayarDeger('kasaHaftalikAlim')} kasa alınır, anahtar sınırsız. Açmak için <a href="${hesapLink(chat, 'kasa')}">🎁 Kasalar</a>.</p>
 </section>`)
