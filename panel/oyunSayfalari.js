@@ -7,6 +7,7 @@ import { AZAMI_KAT as ZINCIR_TAVAN, BOYUT, coz, HUCRE_DEGERI, KOMBO as ZINCIR_KO
 import * as YK from '../lib/yildirim.js'
 import { COK_OYUNLAR, TEK_OYUNLAR, VURGUN_KAT, zincirGirisi } from './kumar.js'
 import { h, kabuk } from './sayfalar.js'
+import { komutKapali } from '../lib/komutKilit.js'
 
 const sayi = new Intl.NumberFormat('tr-TR')
 /** Lobi; `oyun` verilirse o oyunun sayfası. */
@@ -95,6 +96,8 @@ export const KATEGORILER = [
 ]
 
 export const oyunVar = (oyun) => Object.hasOwn(VITRIN, oyun)
+/** Yönetim panelinin bakım listesi (Faz 91). */
+export const panelOyunlari = () => KATEGORILER.flatMap((k) => k.oyunlar.map((id) => ({ id, ad: OYUN_ADI[id].ad, ikon: OYUN_ADI[id].ikon })))
 
 /**
  * Yan menü: oyun kategorileri ve hesap bölümü. Telefonda çekmecedir, `kabuk` içindeki
@@ -169,8 +172,9 @@ function oyunKarti(chat, oyun, varsayilan, secim = '') {
 const oyunKutusu = (chat, oyun) => {
   const t = OYUN_ADI[oyun]
   const { aciklama, etiket } = VITRIN[oyun]
+  const bakim = komutKapali(chat, `panel:${oyun}`)
   return h`<a class="oyun-kutu k-${oyun}" href="${oyunLink(chat, oyun)}">
-  ${etiket ? h`<span class="rozet">${etiket}</span>` : ''}
+  ${bakim ? h`<span class="rozet">🔧 Bakımda</span>` : etiket ? h`<span class="rozet">${etiket}</span>` : ''}
   <span class="kutu-ikon" aria-hidden="true">${t.ikon}</span>
   <strong>${t.ad}</strong>
   <small>${aciklama}</small>

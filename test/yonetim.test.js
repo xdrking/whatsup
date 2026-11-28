@@ -145,3 +145,87 @@ test('panel motoru: izin, onay ve kayıt', () => {
   assert.equal(kayit.length, 1)
   assert.match(kayit[0].ayrinti, /\+1\.000 XP/)
 })
+
+// Faz 91
+const { kilitYaz, komutKapali, HEPSI } = await import('../lib/komutKilit.js')
+const { hapistenCikar, ambargoKaldir, unvanAyarla, uyeDurumu, secimIptal, adayOl, secimDurumu } = await import('../lib/stats.js')
+const { isMuted } = await import('../lib/mute.js')
+const { uyeSusturuldu } = await import('../lib/uyeSustur.js')
+
+test('komut kilidi: bütün gruplar, tek grup, kilitlenmeyen komutlar', () => {
+  const g = yeniGrup()
+  const t = Date.now()
+  assert.ok(kilitYaz(HEPSI, 'slot', true))
+  assert.ok(!kilitYaz(HEPSI, 'slot', true), 'ikinci kez değişmez')
+  assert.ok(komutKapali(g, 'slot', t) && komutKapali('x@s.whatsapp.net', 'slot', t))
+  assert.ok(kilitYaz(g, 'wordle', true))
+  assert.ok(komutKapali(g, 'wordle', t) && !komutKapali(yeniGrup(), 'wordle', t))
+  assert.ok(!kilitYaz(HEPSI, 'help', true) && !komutKapali(g, 'help', t), 'help kilitlenmez')
+  kilitYaz(HEPSI, 'slot', false)
+  kilitYaz(g, 'wordle', false)
+  assert.ok(!komutKapali(g, 'slot', t) && !komutKapali(g, 'wordle', t))
+})
+
+test('hapis, ambargo, unvan ve seçim iptali', () => {
+  const g = yeniGrup()
+  const db = getDb()
+  db.prepare("INSERT INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, 'u@lid', 1, 0, 0, 1000000000, 1)").run(g)
+  db.prepare("INSERT INTO hapis (chat_jid, user_jid, bitis, kefalet) VALUES (?, 'u@lid', ?, 5)").run(g, T + 3_600_000)
+  db.prepare("INSERT INTO ambargo (chat_jid, user_jid, bitis) VALUES (?, 'u@lid', ?)").run(g, T + 3_600_000)
+  assert.ok(uyeDurumu({ chatJid: g, userJid: 'u@lid', now: T }).hapis)
+  assert.equal(hapistenCikar({ chatJid: g, userJid: 'u@lid', now: T }), true)
+  assert.equal(hapistenCikar({ chatJid: g, userJid: 'u@lid', now: T }), false)
+  assert.equal(ambargoKaldir({ chatJid: g, userJid: 'u@lid', now: T }), true)
+  assert.equal(uyeDurumu({ chatJid: g, userJid: 'u@lid', now: T }).ambargo, 0)
+  assert.deepEqual(unvanAyarla({ chatJid: g, userJid: 'u@lid', unvan: 'Patron' }), { once: null })
+  assert.equal(uyeDurumu({ chatJid: g, userJid: 'u@lid', now: T }).unvan, 'Patron')
+  unvanAyarla({ chatJid: g, userJid: 'u@lid', unvan: '' })
+  assert.equal(uyeDurumu({ chatJid: g, userJid: 'u@lid', now: T }).unvan, null)
+
+  assert.ok(adayOl({ chatJid: g, userJid: 'u@lid', makam: 'adalet', now: T }).basladi)
+  assert.ok(secimDurumu({ chatJid: g, userJid: '', now: T }).secimler.adalet)
+  assert.equal(secimIptal({ chatJid: g, makam: 'adalet', now: T }), true)
+  assert.equal(secimDurumu({ chatJid: g, userJid: '', now: T }).secimler.adalet, null)
+  assert.equal(secimIptal({ chatJid: g, makam: 'adalet', now: T }), false)
+})
+
+test('bot turu: sus, konuş ve üye susturma', async () => {
+  while (isAl());
+  const g = yeniGrup()
+  const giden = []
+  const sock = { user: { id: 'bot@s.whatsapp.net' }, sendMessage: async (jid, icerik) => { giden.push({ jid, ...icerik }) } }
+  isEkle({ chatJid: g, tur: 'sus', veri: {}, yoneticiId: 1, now: T })
+  isEkle({ chatJid: g, tur: 'sustur', veri: { kisi: 'k@lid', dakika: 0 }, yoneticiId: 1, now: T })
+  await yonetimTuru(sock)
+  assert.ok(isMuted(g))
+  assert.ok(uyeSusturuldu(g, ['k@lid']), 'susturulmuş grupta da üye susturulur')
+  isEkle({ chatJid: g, tur: 'konus', veri: {}, yoneticiId: 1, now: T })
+  isEkle({ chatJid: g, tur: 'sustur_kaldir', veri: { kisi: 'k@lid' }, yoneticiId: 1, now: T })
+  await yonetimTuru(sock)
+  assert.ok(!isMuted(g))
+  assert.ok(!uyeSusturuldu(g, ['k@lid']))
+  assert.ok(giden[0].text.startsWith('🤐') && giden[1].text.startsWith('🗣'))
+})
+
+test('panel motoru: moderatör susturur ama unvan veremez, darbe onay ister', () => {
+  const g = yeniGrup()
+  getDb().prepare("INSERT INTO stats (chat_jid, user_jid, messages, stickers, voices, xp, last_seen) VALUES (?, 'x@lid', 1, 0, 0, 100, 1)").run(g)
+  let saat = T
+  const motor = yonetimMotoru({ veri: { gruplar: () => [{ chat_jid: g, ad: 'G', uye: 1, mesaj: 1 }] }, saat: () => saat })
+  const mod = kodlaGir(kodUret({ rol: 'moderator', ad: 'Mod2', now: T }).kod, T)
+  const sahip = kodlaGir(kodUret({ now: T }).kod, T)
+  const form = (alanlar) => new URLSearchParams({ grup: g, ...alanlar })
+  assert.ok(motor.islem(mod, form({ islem: 'sustur', kisi: 'x@lid', dakika: '30' })).tamam)
+  saat += 1000
+  assert.match(motor.islem(mod, form({ islem: 'unvan', kisi: 'x@lid', unvan: 'a' })).hata, /rolün/)
+  saat += 1000
+  assert.match(motor.islem(mod, form({ islem: 'kilit', kapsam: '*', komut: 'slot', durum: 'kapat' })).hata, /rolün/)
+  saat += 1000
+  assert.match(motor.islem(sahip, form({ islem: 'darbe', onay: 'evet' })).hata, /ONAYLIYORUM/)
+  saat += 1000
+  assert.match(motor.islem(sahip, form({ islem: 'kilit', kapsam: '*', komut: 'yonetim', durum: 'kapat' })).hata, /kilitlenemez/)
+  saat += 1000
+  assert.ok(motor.islem(sahip, form({ islem: 'kilit', kapsam: g, komut: 'panel:slot', durum: 'kapat' })).tamam)
+  assert.ok(komutKapali(g, 'panel:slot'))
+  while (isAl());
+})

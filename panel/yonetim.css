@@ -225,6 +225,34 @@ button.ikincil { padding: 8px 14px; }
 .giris-kart button { width: 100%; align-self: stretch; padding: 13px; font-size: 16px; }
 .hata { color: var(--kirmizi); margin: 0; font-size: 14px; }
 
+/* Faz 91: üyeler, devlet, kumarhane, gruplar */
+.arama { display: flex; gap: 8px; margin-bottom: 10px; }
+.arama input { flex: 1; }
+.blok { display: block; color: var(--cok-soluk); font-size: 12px; margin-top: 2px; }
+.tablo td.sag, .tablo th.sag { text-align: right; font-variant-numeric: tabular-nums; }
+.tablo td .durum + .durum { margin-left: 4px; }
+dl.liste { margin: 0; display: flex; flex-direction: column; }
+dl.liste > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--cizgi); }
+dl.liste > div:last-child { border-bottom: 0; }
+dl.liste dt { color: var(--soluk); font-size: 14px; }
+dl.liste dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.pano + .kucuk, .tablo-kap + .kucuk { margin-top: 10px; }
+.pano hr { border: 0; border-top: 1px solid var(--cizgi); margin: 16px 0; }
+.form .satir-form { flex-wrap: wrap; }
+.form .satir-form input { flex: 1; min-width: 160px; width: auto; }
+.anahtar-liste { list-style: none; margin: 0; padding: 0; }
+ul.anahtar-liste.pano { padding: 4px 18px; }
+.anahtar-liste li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--cizgi); }
+.anahtar-liste li:last-child { border-bottom: 0; }
+.anahtar-liste li > span { display: flex; flex-direction: column; min-width: 0; }
+.anahtar-liste small { color: var(--cok-soluk); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.anahtar { padding: 6px 12px; font-size: 13px; border-radius: 999px; white-space: nowrap; min-width: 104px; }
+button.anahtar.acik { color: var(--yesil); border-color: rgba(74, 222, 128, .4); background: rgba(74, 222, 128, .08); }
+button.anahtar.kapali { color: var(--sari); border-color: rgba(251, 191, 36, .5); background: rgba(251, 191, 36, .1); }
+.pano.tehlikeli { border-color: rgba(248, 113, 113, .35); background: linear-gradient(170deg, rgba(248, 113, 113, .06), var(--pano)); }
+button.tehlike-dugme { background: linear-gradient(180deg, #f87171, #dc2626); color: #fff; }
+button.tehlike-dugme:hover { background: linear-gradient(180deg, #fca5a5, #ef4444); }
+
 /* Telefon */
 @media (max-width: 860px) {
   /* minmax(0, …): yoksa kayan menünün genişliği ızgarayı büyütüp sayfayı yatay taşırıyordu. */
@@ -251,7 +279,11 @@ button.ikincil { padding: 8px 14px; }
   .yan-yana { grid-template-columns: 1fr 1fr; }
   .yan-yana label:last-child { grid-column: 1 / -1; }
   .izgara { grid-template-columns: 1fr; }
+  .kutucuklar { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kutucuk { padding: 12px 14px; }
+  .kutucuk strong { font-size: 21px; }
   .tablo { font-size: 13px; }
+  .anahtar-liste small { white-space: normal; }
 }
 
 @media (prefers-reduced-motion: reduce) {

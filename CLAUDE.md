@@ -172,6 +172,7 @@ Komutlar durumsuzdur; durum yalnızca şu yerlerdedir:
 | `lib/db.js` + `lib/yonetim.js` | yöneticiler, giriş kodları (sha256 özeti), panelin bota bıraktığı işler, işlem kaydı, bot nabzı | `data/stats.db` (kalıcı) |
 | `lib/db.js` + `lib/ayarlar.js` | yönetim panelinden değişen ayarlar (`ayar.yonetim:*`), 10 sn bellekte | `data/stats.db` (kalıcı) |
 | `panel/yonetim.js` | yönetim panelinde bir kez gösterilen sonuç, iki işlem arası bekleme | panel belleği (panelle ölür) |
+| `lib/db.js` + `lib/komutKilit.js` | bakıma alınan komutlar ve panel oyunları, 10 sn bellekte | `data/stats.db` (kalıcı) |
 | tarayıcı çerezi `tema` | sosyal bölümün açık/koyu tema tercihi | tarayıcıda |
 
 WhatsApp mesajlarının **içeriği** saklanmaz — ne diske ne belleğe. Panelin sosyal bölümüne (Faz 66) üyelerin kendi yazdığı gönderi, DM ve fotoğraf bunun dışındadır, WhatsApp'tan gelmez. Tek WhatsApp yolu bir üyenin açıkça yazdığı `.paylaş`'tır (Faz 69): yalnızca yanıtlanan o mesaj akışa yazılır. Tek WhatsApp istisnası botun **kendi** gönderdiği son 300 mesajdır (`lib/outgoing.js`, yalnızca bellek): alıcının telefonu mesajı çözemeyip yeniden isterse Baileys gövdeyi `index.js`'teki `getMessage` ile alır. `getMessage` verilmezse botla daha önce özel yazışmamış kişide özel mesaj kalıcı olarak "Bu mesaj bekleniyor" der (`.vampir` rolleri böyle kayboldu). Bu kanca kaldırılmaz. Bilinmeyen id'ye `undefined` değil yer tutucu (`KAYIP_MESAJ`) döner: Baileys `undefined`'da yeniden deneme sayacını hiç artırmıyor, her istekte oturumu zorla yeniliyordu; bu döngü bütün oturumları bozup botu `Bad MAC` ile sağır bıraktı.
@@ -377,7 +378,8 @@ Her komut kendi adımında eklenir; bir adım bitmeden sonrakine geçilmez.
 - **Faz 88 (tamam):** panelde Emlak: mülk al, sat, devret, animasyonlu yükseltme. Ayrıntı aşağıda.
 - **Faz 89 (tamam):** `.kasa` (5 tier kasa ve anahtar), coinmarket'te kasa, taktik NFT serisi, Mistik; panelde Kasalar, Çark ve Coin Market. Ayrıntı aşağıda.
 - **Faz 90 (tamam):** yönetim paneli 1. aşama: `.yonetim kod`, roller, ayarlar, duyuru, ekonomi ve kasa işlemleri, kayıt defteri. Ayrıntı aşağıda.
-- **Faz 91+:** yeni komutlar, her biri ayrı adım
+- **Faz 91 (tamam):** yönetim paneli 2. aşama: üyeler, devlet, kumarhane bakım modu, grup ayarları. Ayrıntı aşağıda.
+- **Faz 92+:** yeni komutlar, her biri ayrı adım
 
 ### Faz 7 — Eğlence komutları
 
@@ -1657,6 +1659,21 @@ Bot sahibinin isteğiyle botu sahip ve yetki verdiği kişilerin yönettiği ayr
 - **Nabız:** bot her turda `ayar.bot_nabiz` yazar, panel 30 sn'den eskisini çevrimdışı gösterir. Bot bağlı değilken duyuru sırada bekler.
 - **Görünüm:** koyu "kontrol odası", 860 px altında yan menü üst çubuğa döner. Izgara `minmax(0, 1fr)`'dir: `1fr` olunca kayan menü sayfayı telefonda 762 px'e genişletiyordu.
 
+### Faz 91 — Yönetim paneli (2. aşama)
+
+```
+komut_kilit(chat_jid, komut, zaman)   PK(chat_jid,komut)   chat_jid '*' bütün gruplar, komut asıl ad ya da 'panel:<oyun>'
+```
+
+Yeni sayfalar: Üyeler (liste, arama, üye kartı), Kumarhane, Devlet, Gruplar. Kural yine kopyalanmaz.
+
+- **İzinler** (`IZINLER`): moderatör üyeleri görür ve susturur (`uyeler`, `moderasyon`); unvan, hapis, ambargo ve panel hesabı (`uyeDuzelt`), devlet, kumarhane ve gruplar yöneticinin; darbe ve gizli şans (`darbe`, `sans`) yalnızca sahibin.
+- **Bakım modu** (`lib/komutKilit.js`): `komutKapali()` `lib/handler.js`'te bekleme süresinden sonra denetlenir, yanıt "🔧 bakımda"dır; sahip muaftır. Panel oyunu `panel:<oyun>` adıyla `panel/kumar.js`'in `tekOyna` ve `basla`'sında denetlenir, lobide "🔧 Bakımda" rozeti çıkar, açık el bitirilebilir. `KILITLENMEZ` (`help`, `yonetim`, `konuş`, `sus`, `panel`) kilitlenmez: yardım, yönetim ve susturmayı açma yolu kapanırdı. Liste 10 sn bellektedir (ayarlar gibi). Kumarhane sayfası bütün grupları (`*`), Gruplar sayfası tek grubu yazar. Panel komut adlarını `loadCommands()` ile bir kez okur, gizli komutları göstermez.
+- **Susturma bot belleğinde de tutulur** (`lib/mute.js`, `lib/uyeSustur.js`): panel tabloya yazsa bot görmezdi. `.sus`/`.konuş` ve üye susturma bu yüzden iş kuyruğundan gider (`sus`, `konus`, `sustur`, `sustur_kaldir`); okurken panel kendi önbelleğine değil doğrudan tabloya bakar (`susturulanlar`, `suskunGruplar`). Susturulmuş grupta `konus`, `sustur`, `sustur_kaldir` ve `darbe` yine işlenir (`SUSKUNDA_DA`).
+- **Üye kartı:** `servetDurumu`, `uyeDurumu` (hapis, ambargo, unvan, kalkan, makam), kasa envanteri doğrudan tablodan (`sandikDurumu` gecelik anahtar verdiği için çağrılmaz). İşlemler: susturma, unvan (`unvanAyarla`, kalkan korunur), hapisten çıkarma (`hapistenCikar`, bakan hakkı harcamaz), ambargo kaldırma (`ambargoKaldir`), panel hesabını kapatma (`panelUyeCikar`), XP, coin, kasa.
+- **Devlet:** makamlar ve açık seçimler (`secimDurumu`), kayyum ata ve kaldır (`kayyumAta`, `kayyumKaldir`), seçim iptali (`secimIptal`: adaylık ve oy ücretleri yanar, kayyumdaki gibi), darbe bitir (`darbeBitir`). Darbe başlatmak `.darbe` ile aynıdır ve iş kuyruğundan gider (`darbe`: `darbeBaslat` + `darbeDuyur`); "ONAYLIYORUM" yazılmadan sıraya girmez.
+- **Gizli şans** (`.şans`) panelden açılıp kapanır (`sansAc([])` `.env`'deki sahip kimliklerini yazar); `.env`'de sahip yoksa açılmaz.
+
 ## Elle Doğrulama
 
 `npm test` soket davranışını kapsamaz. Değişiklik sonrası:
@@ -1835,3 +1852,7 @@ Bot sahibinin isteğiyle botu sahip ve yetki verdiği kişilerin yönettiği ayr
 160. Duyurular'da metin yaz, Sıraya koy → birkaç saniyede grupta "📢 DUYURU", herkese bildirim düşer, metinde @ listesi yok; hemen ikinci duyuru → "10 dakika geçmedi"; bot kapalıyken sıraya konan duyuru bot açılınca gider; Gösterge "Bot çevrimdışı" yazar
 161. `.yonetim kod moderatör Ali` ile giren Ali yalnızca Gösterge ve Duyurular'ı görür, `/yonetim/ekonomi` → yetki yok; sahip Yöneticiler'den kapatınca Ali'nin sayfası girişe düşer
 162. Kasalar'da "Coinle haftalık kasa alım sınırı" 2 yapılınca 10 sn içinde WhatsApp'ta `.kasa al 1 3` → "en çok 2"; Ekonomi'de faiz 12,5 → `.banka` %12,5 yazar; XP ver → `.profil` artar; Kayıt defteri hepsini listeler
+163. Kumarhane'de `.slot` Bakımda → 10 sn içinde sıradan üye `.slot 100` → "🔧 `.slot` şu an bakımda", sahip oynayabilir; Panel oyunları'nda Slot bakımda → lobide "🔧 Bakımda", oynamaya çalışınca hata; Açık'a basınca döner
+164. Gruplar'da Sustur → birkaç saniyede bot gruba "🤐 Yönetim beni susturdu" yazar, komutlar susar; Konuştur → "🗣️ Geri döndüm!"; bu grupta `.wordle` kapat → yalnızca bu grupta bakımda
+165. Üyeler'de ara, kişiye tıkla → kart; Sustur 1 dk → kişinin mesajları silinir, 1 dk sonra kalkar; unvan yaz → `.profil` unvanı gösterir; hapisteki kişiye Hapisten çıkar → `.hapis` listesinde yok
+166. Devlet'te kayyum ata → `.seçim` "(kayyum)" yazar; açık seçimi iptal et → `.seçim` seçimi göstermez; sahip ONAYLIYORUM yazıp Darbe yap → grupta darbe duyurusu; Darbeyi bitir → seçim açılır. Moderatör Devlet ve Kumarhane'yi görmez

@@ -20,6 +20,10 @@ import { desteKur, elDegeri, odemeCarpani } from '../games/blackjack.js'
 import { KUTU, mayinCarpani, mayinKur } from '../games/mayin.js'
 import { KAT, kuleCarpani, kuleKur, ZORLUK, zorlukCoz } from '../games/kule.js'
 import { HILO_TAVAN, hiloCarpani, hiloTuttu, kartCek, kartYaz } from '../games/hilo.js'
+import { komutKapali } from '../lib/komutKilit.js'
+
+// Yönetim panelinden bakıma alınan oyun (Faz 91).
+const BAKIMDA = '🔧 Bu oyun şu an bakımda.'
 
 export const SURE_MS = 3 * 60_000
 const binlik = new Intl.NumberFormat('tr-TR')
@@ -201,6 +205,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     const tanim = Object.hasOwn(TEK_OYUNLAR, oyun) ? TEK_OYUNLAR[oyun] : null
     if (!tanim) return sonucYaz(k, { hata: 'Böyle bir oyun yok.' })
     if (!hizKontrol(k)) return
+    if (komutKapali(h.chat, `panel:${oyun}`)) return sonucYaz(k, { oyun, hata: BAKIMDA })
     if (eller.has(k)) return sonucYaz(k, { oyun, hata: 'Önce açık elini bitir.' })
 
     const hazir = tanim.hazirla(secim)
@@ -350,6 +355,7 @@ export function kumarMotoru({ saat = Date.now, zamanlayici = setTimeout, temizle
     const k = anahtar(h)
     if (!Object.hasOwn(COK_OYUNLAR, oyun)) return sonucYaz(k, { hata: 'Böyle bir oyun yok.' })
     if (!hizKontrol(k)) return
+    if (komutKapali(h.chat, `panel:${oyun}`)) return sonucYaz(k, { oyun, hata: BAKIMDA })
     if (eller.has(k)) return sonucYaz(k, { oyun, hata: 'Önce açık elini bitir.' })
 
     const zorluk = oyun === 'kule' ? zorlukCoz(secim) : null

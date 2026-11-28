@@ -8,7 +8,18 @@ import logger from '../lib/logger.js'
 import { kasaBul } from '../lib/sandik.js'
 import { binlik, miktarlariCoz } from '../lib/sayi.js'
 import { uyeler as grupUyeleri } from '../lib/sosyal.js'
-import { coinAyarla, ekonomiDurumu, faizDurumu, faizKarari, sandikVer, tesvikDagit, xpAyarla } from '../lib/stats.js'
+import {
+  ambargoKaldir, coinAyarla, darbeBitir, ekonomiDurumu, faizDurumu, faizKarari, hapistenCikar, hapistekiler, kayyumAta,
+  kayyumKaldir, sandikVer, secimDurumu, secimIptal, servetDurumu, tesvikDagit, unvanAyarla, uyeDurumu, xpAyarla,
+} from '../lib/stats.js'
+import { makamKoduyla } from '../lib/devlet.js'
+import { getDb } from '../lib/db.js'
+import { HEPSI, KILITLENMEZ, kilitler, kilitYaz } from '../lib/komutKilit.js'
+import { panelUyeCikar } from '../lib/panelHesap.js'
+import { sahipKimlikleri, sansAc, sansKapat, sansKisileri } from '../lib/sahipSans.js'
+import { katla } from '../lib/sosyal.js'
+import { loadCommands } from '../commands/index.js'
+import { panelOyunlari } from './oyunSayfalari.js'
 import {
   DUYURU_AZAMI, duyuruBekleme, isEkle, isIptal, isler, izinVar, kayitlar, kayitYaz, kodlaGir, NABIZ_ESIGI_MS, nabizOku,
   oturumYoneticisi, ROLLER, yoneticiBul, yoneticiGuncelle, yoneticiListesi,
@@ -16,8 +27,8 @@ import {
 import { oturumlar } from './guvenlik.js'
 import { hazineyiTani } from './kumar.js'
 import {
-  duyuruSayfasi, ekonomiSayfasi, gostergeSayfasi, kasaSayfasi, kayitSayfasi, YONETIM_SAYFALARI, yasakSayfasi,
-  yoneticilerSayfasi, yonetimGiris,
+  devletSayfasi, duyuruSayfasi, ekonomiSayfasi, gostergeSayfasi, gruplarSayfasi, kasaSayfasi, kayitSayfasi,
+  kumarhaneSayfasi, uyelerSayfasi, uyeSayfasi, YONETIM_SAYFALARI, yasakSayfasi, yoneticilerSayfasi, yonetimGiris,
 } from './yonetimSayfalari.js'
 
 const CEREZ = '__Host-yonetim'
@@ -37,7 +48,8 @@ function cerezOku(req) {
 }
 
 const SAYFA_CIZIMI = {
-  gosterge: gostergeSayfasi, duyuru: duyuruSayfasi, ekonomi: ekonomiSayfasi, kasa: kasaSayfasi,
+  gosterge: gostergeSayfasi, duyuru: duyuruSayfasi, ekonomi: ekonomiSayfasi, kasa: kasaSayfasi, uyeler: uyelerSayfasi,
+  uye: uyeSayfasi, devlet: devletSayfasi, kumarhane: kumarhaneSayfasi, gruplar: gruplarSayfasi,
   yoneticiler: yoneticilerSayfasi, kayit: kayitSayfasi,
 }
 
@@ -148,6 +160,138 @@ const ISLEMLER = {
       return s ? { tamam: 'Kasa yağmuru sıraya kondu, bot birkaç saniyede dağıtır.', kayit: 'herkese 1 kasa' } : { hata: 'Sıraya konamadı.' }
     },
   },
+  // Faz 91: üyeler. Susturma bot belleğinde de durduğu için iş kuyruğundan gider (lib/yonetimIs.js).
+  sustur: {
+    izin: 'moderasyon', grup: true, kisi: true,
+    yap({ y, f, chat, kisi }) {
+      const dakika = String(f.get('dakika') ?? '').trim()
+      const dk = dakika ? Number(dakika) : 0
+      if (!Number.isInteger(dk) || dk < 0 || dk > 7 * 24 * 60) return { hata: 'Süre 0 ile 10080 dakika arasında olmalı (0 = kaldırılana kadar).' }
+      const s = isEkle({ chatJid: chat, tur: 'sustur', veri: { kisi: kisi.jid, dakika: dk }, yoneticiId: y.id })
+      return s ? { tamam: `${kisi.ad} susturuluyor, bot birkaç saniyede işler.`, kayit: `${kisi.ad} · ${dk ? `${dk} dk` : 'süresiz'}` } : { hata: 'Sıraya konamadı.' }
+    },
+  },
+  'sustur-kaldir': {
+    izin: 'moderasyon', grup: true, kisi: true,
+    yap({ y, chat, kisi }) {
+      const s = isEkle({ chatJid: chat, tur: 'sustur_kaldir', veri: { kisi: kisi.jid }, yoneticiId: y.id })
+      return s ? { tamam: `${kisi.ad}'nin susturması kalkıyor.`, kayit: kisi.ad } : { hata: 'Sıraya konamadı.' }
+    },
+  },
+  'hapis-cikar': {
+    izin: 'uyeDuzelt', grup: true, kisi: true,
+    yap({ chat, kisi }) {
+      const s = hapistenCikar({ chatJid: chat, userJid: kisi.jid })
+      return s ? { tamam: `${kisi.ad} hapisten çıktı.`, kayit: kisi.ad } : { hata: s === false ? 'Hapiste değil.' : 'Yazılamadı.' }
+    },
+  },
+  'ambargo-kaldir': {
+    izin: 'uyeDuzelt', grup: true, kisi: true,
+    yap({ chat, kisi }) {
+      const s = ambargoKaldir({ chatJid: chat, userJid: kisi.jid })
+      return s ? { tamam: `${kisi.ad}'nin ambargosu kalktı.`, kayit: kisi.ad } : { hata: s === false ? 'Ambargosu yok.' : 'Yazılamadı.' }
+    },
+  },
+  unvan: {
+    izin: 'uyeDuzelt', grup: true, kisi: true,
+    yap({ f, chat, kisi }) {
+      const unvan = String(f.get('unvan') ?? '').trim().slice(0, 40)
+      const s = unvanAyarla({ chatJid: chat, userJid: kisi.jid, unvan })
+      if (!s) return { hata: 'Yazılamadı.' }
+      return { tamam: unvan ? `${kisi.ad} artık "${unvan}".` : `${kisi.ad}'nin unvanı kaldırıldı.`, kayit: `${kisi.ad}: ${s.once ?? '—'} → ${unvan || '—'}` }
+    },
+  },
+  'panel-kapat': {
+    izin: 'uyeDuzelt', grup: true, kisi: true,
+    yap({ chat, kisi }) {
+      panelUyeCikar(chat, [kisi.jid])
+      return { tamam: `${kisi.ad}'nin bu gruptaki panel hesabı kapandı. Yeniden açmak için bota .panel kayıt yazar.`, kayit: kisi.ad }
+    },
+  },
+  // Devlet.
+  kayyum: {
+    izin: 'devlet', grup: true, kisi: true,
+    yap({ f, chat, kisi }) {
+      const makam = makamKoduyla(f.get('makam'))
+      if (!makam?.yetki) return { hata: 'Bakanlık seç; başkanlığa kayyum atanmaz.' }
+      const s = kayyumAta({ chatJid: chat, makam: makam.kod, hedef: kisi.jid })
+      if (!s || s.degil) return { hata: 'Atanamadı.' }
+      if (s.zaten) return { hata: 'Zaten kayyum.' }
+      return { tamam: `${makam.ad}: ${kisi.ad} kayyum olarak atandı${s.iptal ? ', açık seçim iptal edildi' : ''}.`, kayit: `${makam.ad} → ${kisi.ad}` }
+    },
+  },
+  'kayyum-kaldir': {
+    izin: 'devlet', grup: true,
+    yap({ f, chat }) {
+      const makam = makamKoduyla(f.get('makam'))
+      const s = makam && kayyumKaldir({ chatJid: chat, makam: makam.kod })
+      if (!s || s.kayyumYok) return { hata: 'Bu makamda kayyum yok.' }
+      return { tamam: `${makam.ad}: kayyum kalktı, seçim açıldı.`, kayit: makam.ad }
+    },
+  },
+  'secim-iptal': {
+    izin: 'devlet', grup: true,
+    yap({ f, chat }) {
+      const makam = makamKoduyla(f.get('makam'))
+      const s = makam && secimIptal({ chatJid: chat, makam: makam.kod })
+      if (!s) return { hata: 'Bu makamda açık seçim yok.' }
+      return { tamam: `${makam.ad} seçimi iptal edildi, ücretler yandı.`, kayit: makam.ad }
+    },
+  },
+  'darbe-bitir': {
+    izin: 'darbe', grup: true,
+    yap({ chat }) {
+      const s = darbeBitir({ chatJid: chat })
+      return s ? { tamam: 'Darbe bitti, bütün seçimler yeniden açıldı.', kayit: '' } : { hata: s === false ? 'Bu grupta darbe yok.' : 'Yazılamadı.' }
+    },
+  },
+  darbe: {
+    izin: 'darbe', grup: true,
+    yap({ y, f, chat }) {
+      if (String(f.get('onay') ?? '').trim().toLocaleUpperCase('tr') !== 'ONAYLIYORUM') return { hata: 'Onay için ONAYLIYORUM yaz.' }
+      const s = isEkle({ chatJid: chat, tur: 'darbe', veri: {}, yoneticiId: y.id })
+      return s ? { tamam: 'Darbe sıraya kondu, bot birkaç saniyede başlatır.', kayit: '' } : { hata: 'Sıraya konamadı.' }
+    },
+  },
+  // Gruplar ve kumarhane.
+  sus: {
+    izin: 'gruplar', grup: true,
+    yap({ y, chat }) {
+      return isEkle({ chatJid: chat, tur: 'sus', veri: {}, yoneticiId: y.id }) ? { tamam: 'Susturma sıraya kondu, bot birkaç saniyede susar.', kayit: '' } : { hata: 'Sıraya konamadı.' }
+    },
+  },
+  konus: {
+    izin: 'gruplar', grup: true,
+    yap({ y, chat }) {
+      return isEkle({ chatJid: chat, tur: 'konus', veri: {}, yoneticiId: y.id }) ? { tamam: 'Sıraya kondu, bot birkaç saniyede yeniden konuşur.', kayit: '' } : { hata: 'Sıraya konamadı.' }
+    },
+  },
+  kilit: {
+    // Bütün grupların kilidi kumarhane iznindedir, tek grubunki gruplar izninde; ikisi de şimdilik aynı rollerde.
+    izin: 'gruplar',
+    yap({ f, gruplarVar }) {
+      const kapsam = String(f.get('kapsam') ?? '')
+      if (kapsam !== HEPSI && !gruplarVar(kapsam)) return { hata: 'Grup bulunamadı.' }
+      const komut = String(f.get('komut') ?? '').trim().replace(/^\./, '')
+      if (!/^(panel:)?[\p{L}\d]{1,30}$/u.test(komut) || KILITLENMEZ.has(komut)) return { hata: 'Bu komut kilitlenemez.' }
+      const kapali = f.get('durum') === 'kapat'
+      if (!kilitYaz(kapsam, komut, kapali)) return { hata: kapali ? 'Zaten bakımdaydı.' : 'Zaten açıktı.' }
+      const ad = komut.startsWith('panel:') ? `panel ${komut.slice(6)}` : `.${komut}`
+      return { tamam: `${ad} ${kapali ? 'bakıma alındı' : 'açıldı'}${kapsam === HEPSI ? ' (bütün gruplar)' : ''}. Bota en geç 10 sn'de geçer.`, kayit: `${ad} ${kapali ? 'kapalı' : 'açık'} · ${kapsam === HEPSI ? 'hepsi' : kapsam}` }
+    },
+  },
+  sans: {
+    izin: 'sans',
+    yap({ f }) {
+      if (f.get('durum') === 'ac') {
+        if (!sahipKimlikleri().length) return { hata: ".env'de OWNER_NUMBER ya da OWNER_LID yok, şans kime açılacağını bilmiyor." }
+        const { kapatilan } = sansAc([])
+        return { tamam: `Şansın açık${kapatilan.length ? `, ${kapatilan.length} kişinin şansı kapatıldı` : ''}.`, kayit: 'açık' }
+      }
+      sansKapat()
+      return { tamam: 'Şansın kapalı, normal oynuyorsun.', kayit: 'kapalı' }
+    },
+  },
   'yonetici-rol': {
     izin: 'yoneticiler',
     yap({ f }) {
@@ -170,6 +314,29 @@ const ISLEMLER = {
   },
 }
 
+// Bot susturmayı belleğinde de tuttuğu için panel kendi önbelleğine değil, doğrudan tabloya bakar.
+const tum = (sql, ...p) => {
+  try {
+    return getDb()?.prepare(sql).all(...p) ?? []
+  } catch (err) {
+    logger.error({ err }, 'Yönetim sorgusu başarısız')
+    return []
+  }
+}
+const susturulanlar = (chat) => tum('SELECT user_jid, bitis FROM susturulan_uye WHERE chat_jid = ? AND (bitis = 0 OR bitis > ?)', chat, Date.now())
+const suskunGruplar = () => new Set(tum('SELECT chat_jid FROM muted_chats').map((r) => r.chat_jid))
+const envanter = (chat, jid) => tum('SELECT tur, tier, adet FROM sandik WHERE chat_jid = ? AND user_jid = ? AND adet > 0 ORDER BY tur, tier', chat, jid)
+
+// Komut listesi bir kez yüklenir: panel `commands/` klasörünü botla aynı yoldan tarar, yalnızca ad ve kategori kullanır.
+let komutlarSozu = null
+function komutListesi() {
+  komutlarSozu ??= loadCommands().then((m) => [...new Set(m.values())]
+    .filter((k) => !k.hidden && !KILITLENMEZ.has(k.name))
+    .map((k) => ({ ad: k.name, kategori: k.category, aciklama: k.description }))
+    .sort((a, b) => a.ad.localeCompare(b.ad, 'tr')))
+  return komutlarSozu
+}
+
 export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
   const oturum = oturumlar({ depo, sure: OTURUM_MS, saat })
   const bildirimler = new Map()
@@ -185,7 +352,7 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
     return { ...g, ekonomi: ekonomiDurumu({ chatJid: g.chat_jid }), faiz: faizDurumu(g.chat_jid), duyuruBekleme: duyuruBekleme(g.chat_jid, saat()) }
   }
 
-  function sayfaVerisi(y, ad, url) {
+  async function sayfaVerisi(y, ad, url) {
     const liste = gruplar()
     const istenen = url.searchParams.get('grup')
     const chat = liste.some((g) => g.chat_jid === istenen) ? istenen : liste[0]?.chat_jid ?? ''
@@ -205,6 +372,36 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
     }
     if (ad === 'yoneticiler') return { ...v, yoneticiler: yoneticiListesi() }
     if (ad === 'kayit') return { ...v, kayitlar: kayitlar(200) }
+    if (ad === 'uyeler') {
+      const ara = String(url.searchParams.get('ara') ?? '').trim().slice(0, 40)
+      const hepsi = chat ? grupUyeleri(chat) : []
+      return {
+        ...v, ara, toplam: hepsi.length,
+        uyeler: ara ? hepsi.filter((u) => katla(u.ad || u.jid).includes(katla(ara)) || u.jid.includes(ara)) : hepsi,
+        susturulan: new Map(susturulanlar(chat).map((r) => [r.user_jid, r.bitis])),
+        hapiste: new Set(chat ? hapistekiler(chat, saat()).map((r) => r.user_jid) : []),
+      }
+    }
+    if (ad === 'uye') {
+      const kisi = chat && grupUyeleri(chat).find((u) => u.jid === url.searchParams.get('id'))
+      if (!kisi) return { ...v, kisi: null }
+      return {
+        ...v, kisi,
+        servet: servetDurumu({ chatJid: chat, userJid: kisi.jid, now: saat() }),
+        durum: uyeDurumu({ chatJid: chat, userJid: kisi.jid, now: saat() }),
+        susturma: susturulanlar(chat).find((r) => r.user_jid === kisi.jid) ?? null,
+        envanter: envanter(chat, kisi.jid),
+      }
+    }
+    if (ad === 'devlet') {
+      return { ...v, secim: chat ? secimDurumu({ chatJid: chat, userJid: '', now: saat() }) : null, uyeler: chat ? grupUyeleri(chat) : [] }
+    }
+    if (ad === 'kumarhane') {
+      return { ...v, kilitler: kilitler(), komutlar: (await komutListesi()).filter((k) => k.kategori === 'kumar'), panelOyunlari: panelOyunlari(), sansAcik: sansKisileri().length > 0 }
+    }
+    if (ad === 'gruplar') {
+      return { ...v, kilitler: kilitler(), komutlar: await komutListesi(), panelOyunlari: panelOyunlari(), suskun: suskunGruplar() }
+    }
     return v
   }
 
@@ -229,7 +426,7 @@ export function yonetimMotoru({ depo = null, saat = Date.now, veri } = {}) {
       }
       // Tesvik ve kasa dağıtımı hazineyi bilmeli: bot kimliği her işlemde tanınır.
       hazineyiTani()
-      return t.yap({ y, f, chat, kisi })
+      return t.yap({ y, f, chat, kisi, gruplarVar: (c) => gruplar().some((g) => g.chat_jid === c) })
     })()
     bildirimler.set(y.id, sonuc.hata ? { hata: sonuc.hata } : { tamam: sonuc.tamam })
     if (!sonuc.hata) {
@@ -314,7 +511,8 @@ export async function yonetimIsle({ req, res, url, yontem, motor, ortak }) {
     motor.islem(y, form)
     const donus = Object.values(YONETIM_SAYFALARI).find((s) => s.ad === form.get('donus'))?.yol ?? '/yonetim'
     const grup = form.get('grup')
-    yonlendir(res, grup ? `${donus}?grup=${encodeURIComponent(grup)}` : donus)
+    const kisi = form.get('donus') === 'uye' ? form.get('kisi') : null
+    yonlendir(res, grup ? `${donus}?grup=${encodeURIComponent(grup)}${kisi ? `&id=${encodeURIComponent(kisi)}` : ''}` : donus)
     return true
   }
 
@@ -323,7 +521,7 @@ export async function yonetimIsle({ req, res, url, yontem, motor, ortak }) {
     yonlendir(res, '/yonetim')
     return true
   }
-  const v = motor.sayfaVerisi(y, sayfa.ad, url)
+  const v = await motor.sayfaVerisi(y, sayfa.ad, url)
   gonder(res, izinVar(y.rol, sayfa.izin) ? 200 : 403, izinVar(y.rol, sayfa.izin) ? SAYFA_CIZIMI[sayfa.ad](v) : yasakSayfasi(v))
   return true
 }
